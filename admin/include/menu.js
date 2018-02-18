@@ -94,6 +94,10 @@ function showOptions() {
 }
 
 function hideOptions() {
+  if(document.getElementById("stats-box")){
+    document.getElementById("stats-box").style.display = "none";
+  } 
+
   document.getElementById("options-box").style.display = "none";
   document.getElementById("fade").style.display = "none";
 }

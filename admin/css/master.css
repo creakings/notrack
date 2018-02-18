@@ -748,7 +748,7 @@ span.timer {
     width: 41%;
   }
 }
-@media only screen and (max-width:480px), only screen and (max-device-width:480px) {   /*Mobile view for Conf Nav*/
+@media only screen and (max-width:480px), only screen and (max-device-width:480px) {    /*Mobile view for Conf Nav*/
   .conf-nav {
     width: 91%;
   }
@@ -762,7 +762,7 @@ span.timer {
   width: 100%;
   height: 100%;
   background-color: black;
-  opacity:.80;
+  opacity: 0.80;
   filter: alpha(opacity=80);
   z-index:1000;
 }
@@ -774,6 +774,7 @@ span.timer {
   border-radius: 5px;
   box-shadow: 1px 2px 6px #21BBFF;
 }
+/*Dialog box to be DEPRECATED once API is in full use*/
 #dialog-box {
   width: 30em;
   height: 12em;
@@ -785,7 +786,8 @@ span.timer {
   margin-bottom: 1em;
   display: block;
 }
-#stats-box {    
+/*Stats boxed used in DNS Queries for Report*/
+#stats-box {
   width: 36em;
   height: auto;
   margin: -12em 0 0 -18em;
@@ -796,8 +798,8 @@ span.timer {
   width: 12rem;
   padding: 0.5rem 0;
 }
-#stats-box input[type="submit"] {background-color: #008CD1;}
-#stats-box input[type="submit"]:hover {background-color: #007298;}
+/*#stats-box input[type="submit"] {background-color: #008CD1;}
+#stats-box input[type="submit"]:hover {background-color: #007298;}*/
 #stats-box span {
   margin: 1em 0.5em 1em 0.5em;
   display: block;
