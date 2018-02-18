@@ -83,8 +83,18 @@ function PauseNoTrack(Action, PauseTime) {
     document.forms["operation-form"].submit();
   }
 }
-//Options Box--------------------------------------------------------
-function showOptions() {  
+
+
+/********************************************************************
+ *  Show Options Box
+ *    Set top position of fade, then set display as block
+ *    Set screen centre position of options box, then set display as block
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function showOptions() {
   document.getElementById("fade").style.top=window.pageYOffset+"px";
   document.getElementById("fade").style.display = "block";
     
@@ -93,14 +103,26 @@ function showOptions() {
   document.getElementById("options-box").style.display = "block";
 }
 
+
+/********************************************************************
+ *  Hide Options Box
+ *    Check if stats-box is visible, then hide
+ *    Hide options-box
+ *    Hide fade
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
 function hideOptions() {
-  if(document.getElementById("stats-box")){
+  if (document.getElementById("stats-box")) {
     document.getElementById("stats-box").style.display = "none";
-  } 
+  }
 
   document.getElementById("options-box").style.display = "none";
   document.getElementById("fade").style.display = "none";
 }
+
 
 /********************************************************************
  *  Open Side Menu
