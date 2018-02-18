@@ -79,12 +79,12 @@ function PauseNoTrack(Action, PauseTime) {
   if (Action == "pause" || Action == "start" || Action == "stop") {    
     document.forms["pause-form"].submit();
   }
-  else {    
+  else {
     document.forms["operation-form"].submit();
-  }  
+  }
 }
 //Options Box--------------------------------------------------------
-function ShowOptions() {  
+function showOptions() {  
   document.getElementById("fade").style.top=window.pageYOffset+"px";
   document.getElementById("fade").style.display = "block";
     
@@ -92,30 +92,30 @@ function ShowOptions() {
   document.getElementById("options-box").style.left = (window.innerWidth / 2)+"px";
   document.getElementById("options-box").style.display = "block";
 }
-function HideOptions() {
+
+function hideOptions() {
   document.getElementById("options-box").style.display = "none";
   document.getElementById("fade").style.display = "none";
 }
-//-------------------------------------------------------------------
-function openNav() {  
-  if (typeof window.orientation !== 'undefined') {
-    if (document.getElementById("menu-side").style.width == "0rem" || document.getElementById("menu-side").style.width == "") {
-      document.getElementById("menu-side").style.width = "14rem";
-      document.getElementById("main").style.marginLeft = "14rem";
-    }
-    else {
-      document.getElementById("menu-side").style.width = "0rem";
-      document.getElementById("main").style.marginLeft= "0rem"; 
-    }
+
+/********************************************************************
+ *  Open Side Menu
+ *    Check width of #menu-side
+ *    Expand to 14rem if zero
+ *    Reduce to zero for any other size
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+
+function openNav() {
+  if (document.getElementById("menu-side").style.width == "0rem" || document.getElementById("menu-side").style.width == "") {
+    document.getElementById("menu-side").style.width = "14rem";
+    document.getElementById("main").style.marginLeft = "14rem";
   }
-  else {    
-    if (document.getElementById("menu-side").style.width == "14rem" || document.getElementById("menu-side").style.width == "") {
-      document.getElementById("menu-side").style.width = "3rem";
-      document.getElementById("main").style.marginLeft= "3rem";
-    }
-    else {      
-      document.getElementById("menu-side").style.width = "14rem";
-      document.getElementById("main").style.marginLeft = "14rem";
-    }
-  }
+  else {
+    document.getElementById("menu-side").style.width = "0rem";
+    document.getElementById("main").style.marginLeft= "0rem"; 
+  }  
 }

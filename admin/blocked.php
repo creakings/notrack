@@ -60,14 +60,14 @@ function draw_subnav() {
   
   echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Sites Blocked</h5>'.PHP_EOL;
-  echo '<nav><div class="pag-nav">'.PHP_EOL;
+  echo '<div class="pag-nav">'.PHP_EOL;
   echo '<ul>'.PHP_EOL;
   echo '<li'.is_active_class($view, 'group').'><a class="pag-exwide" href="?view=group">Group</a></li>'.PHP_EOL;
   echo '<li'.is_active_class($view, 'time').'><a class="pag-exwide" href="?view=time">Time</a></li>'.PHP_EOL;
   //echo '<li><a'.is_active_class($view, 'ref').' href="?view=ref">Referrer</a></li>'.PHP_EOL;
   echo '<li'.is_active_class($view, 'visualisation').'><a class="pag-exwide" href="?view=vis">Visualisation</a></li>'.PHP_EOL;
   echo '</ul>'.PHP_EOL;
-  echo '</div></nav>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
 }
 

@@ -59,7 +59,7 @@ function action_topmenu() {
         break;
       case 'stop':                               //Stop
         exec(NTRK_EXEC.'-s');
-        break;      
+        break;
       default:
         return false;
     }
@@ -80,15 +80,17 @@ function action_topmenu() {
  *    None
  */
 function draw_sidemenu() {
-  echo '<nav><div id="menu-side">'.PHP_EOL;  
-  echo '<a href="../admin/"><span><img src="./svg/smenu_dashboard.svg" alt="" title="Dashboard">Dashboard</span></a>'.PHP_EOL;
-  echo '<a href="../admin/queries.php"><span><img src="./svg/smenu_queries.svg" alt="" title="DNS Queries">DNS Queries</span></a>'.PHP_EOL;
-  echo '<a href="../admin/investigate.php"><span><img src="./svg/smenu_investigate.svg" alt="" title="Investigate">Investigate</span></a>'.PHP_EOL;
-  echo '<a href="../admin/blocked.php"><span><img src="./svg/smenu_blocked.svg" alt="" title="Sites Blocked">Sites Blocked</span></a>'.PHP_EOL;
-  echo '<a href="../admin/dhcpleases.php"><span><img src="./svg/smenu_dhcp.svg" alt="" title="Network">Network</span></a>'.PHP_EOL;
-  echo '<a href="../admin/config.php"><span><img src="./svg/smenu_config.svg" alt="" title="Config">Config</span></a>'.PHP_EOL;
-  echo '<a href="../admin/help.php"><span><img src="./svg/smenu_help.svg" alt="" title="Help">Help</span></a>'.PHP_EOL;
+  echo '<nav><div id="menu-side">'.PHP_EOL;
+  echo '<ul>'.PHP_EOL;
+  echo '<li><span><a href="../admin/"><img src="./svg/smenu_dashboard.svg" alt="" title="Dashboard">Dashboard</a></span></li>'.PHP_EOL;
+  echo '<li><span><a href="../admin/queries.php"><img src="./svg/smenu_queries.svg" alt="" title="DNS Queries">DNS Queries</a></span></li>'.PHP_EOL;
+  echo '<li><span><a href="../admin/investigate.php"><img src="./svg/smenu_investigate.svg" alt="" title="Investigate">Investigate</a></span></li>'.PHP_EOL;
+  echo '<li><span><a href="../admin/blocked.php"><img src="./svg/smenu_blocked.svg" alt="" title="Sites Blocked">Sites Blocked</a></span></li>'.PHP_EOL;
+  echo '<li><span><a href="../admin/dhcpleases.php"><img src="./svg/smenu_dhcp.svg" alt="" title="Network">Network</a></span></li>'.PHP_EOL;
+  echo '<li><span><a href="../admin/config.php"><img src="./svg/smenu_config.svg" alt="" title="Config">Config</a></span></li>'.PHP_EOL;
+  echo '<li><span><a href="../admin/help.php"><img src="./svg/smenu_help.svg" alt="" title="Help">Help</a></span></li>'.PHP_EOL;
   
+  echo '</ul>'.PHP_EOL;
   sidemenu_sysstatus();
   
   echo '<span id="menu-side-bottom"><a href="https://quidsup.net/donate" target="_blank"><img src="./svg/smenu_don.svg" alt="Donate" title="Donate"></a></span>'.PHP_EOL;
@@ -107,13 +109,15 @@ function draw_sidemenu() {
  */
 function draw_helpmenu() {
   echo '<nav><div id="menu-side">'.PHP_EOL;
-  echo '<a href="../admin/"><span><img src="./svg/menu_dashboard.svg" alt="">Dashboard</span></a>'.PHP_EOL;
-  echo '<a href="../admin/help.php"><span><img src="./svg/smenu_help.svg" alt="">Help</span></a>'.PHP_EOL;
-  echo '<a href="../admin/help.php?p=security"><span>Security</span></a>'.PHP_EOL;
-  echo '<a href="../admin/help.php?p=position" title="Where To Position NoTrack Device"><span>Positioning Device</span></a>'.PHP_EOL;  
+  echo '<ul>'.PHP_EOL;
+  echo '<li><span><a href="../admin/"><img src="./svg/smenu_dashboard.svg" alt="" title="Dashboard">Dashboard</a></span></li>'.PHP_EOL;
+  echo '<li><span><a href="../admin/help.php"><img src="./svg/smenu_help.svg" alt="">Help</a></span></li>'.PHP_EOL;
+  echo '<li><span><a href="../admin/help.php?p=security">Security</a></span></li>'.PHP_EOL;
+  echo '<li><span><a href="../admin/help.php?p=position" title="Where To Position NoTrack Device">Positioning Device</a></span></li>'.PHP_EOL;
   
+  echo '</ul>'.PHP_EOL;
   echo '</div></nav>'.PHP_EOL;
-  echo PHP_EOL;  
+  echo PHP_EOL;
 }
 
 
@@ -129,8 +133,8 @@ function draw_helpmenu() {
 function draw_topmenu($currentpage='') {
   global $Config, $mem;
   
-  echo '<nav><div id="menu-top">'.PHP_EOL;
-  echo '<span class="menu-top-item float-left pointer" onclick="openNav()">&#9776;</span>'.PHP_EOL;
+  echo '<div id="menu-top">'.PHP_EOL;
+  echo '<span class="menu-top-item float-left pointer mobile-show" onclick="openNav()">&#9776;</span>'.PHP_EOL;   //Hamburger menu to show #menu-side
   
   if ($currentpage == '') {                                //Display version number when $currentpage has not been set
     echo '<a href="./"><span class="logo"><b>No</b>Track <small>v'.VERSION.' A</small></span></a>'.PHP_EOL;
@@ -142,7 +146,7 @@ function draw_topmenu($currentpage='') {
   if (is_password_protection_enabled()) {                  //Show Logout button if there is a password
     echo '<a href="../admin/logout.php"><span class="menu-top-item float-right"><img src="./svg/menu_logout.svg" alt=""><span class="mobile-hide">Logout</span></span></a>'.PHP_EOL;
   }
-  echo '<span class="menu-top-item float-right pointer" onclick="ShowOptions()"><img src="./svg/menu_option.svg" alt=""><span class="mobile-hide">Options</span></span>'.PHP_EOL;
+  echo '<span class="menu-top-item float-right pointer" onclick="showOptions()"><img src="./svg/menu_option.svg" alt=""><span class="mobile-hide">Options</span></span>'.PHP_EOL;
   
   if ($Config['status'] & STATUS_INCOGNITO) {              //Is Incognito set? Draw purple button and text
     echo '<span class="menu-top-item float-right pointer" onclick="menuIncognito()"><img id="incognito-button" src="./svg/menu_incognito_active.svg" alt=""><span id="incognito-text" class="mobile-hide purple">Incognito</span></span>'.PHP_EOL;
@@ -182,7 +186,7 @@ function draw_topmenu($currentpage='') {
   echo '<span class="pointer" onclick="PauseNoTrack(\'pause\', 60)">Pause for 1 Hour</span>'.PHP_EOL;
   echo '</div></div>'.PHP_EOL;
   echo '</form></div></div>'.PHP_EOL;
-  echo '</nav>'.PHP_EOL;
+  //echo '</nav>'.PHP_EOL;
 
   
   //Dialogs----------------------------------------------------------
@@ -204,10 +208,10 @@ function draw_topmenu($currentpage='') {
   echo '<span><a href="#" onclick="PauseNoTrack(\'shutdown\')" class="button-danger button-options">Shutdown System</a></span>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
   
-  echo '<div class="close-button"><img src="./svg/button_close.svg" onmouseover="this.src=\'./svg/button_close_over.svg\'" onmouseout="this.src=\'./svg/button_close.svg\'" alt="Close" onclick="HideOptions()"></div>'.PHP_EOL;
+  echo '<div class="close-button"><img src="./svg/button_close.svg" onmouseover="this.src=\'./svg/button_close_over.svg\'" onmouseout="this.src=\'./svg/button_close.svg\'" alt="Close" onclick="hideOptions()"></div>'.PHP_EOL;
   echo '</div></div>'.PHP_EOL;
 
-  echo '<div id="fade"></div>'.PHP_EOL;
+  echo '<div id="fade" onclick="hideOptions()"></div>'.PHP_EOL;
 }
 
 
