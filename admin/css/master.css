@@ -775,7 +775,7 @@ span.timer {
   box-shadow: 1px 2px 6px #21BBFF;
 }
 /*Dialog box to be DEPRECATED once API is in full use*/
-#dialog-box {
+/*#dialog-box {
   width: 30em;
   height: 12em;
   margin: -10em 0 0 -15em;
@@ -785,7 +785,7 @@ span.timer {
 #dialog-box span {  
   margin-bottom: 1em;
   display: block;
-}
+}*/
 /*Stats boxed used in DNS Queries for Report*/
 #stats-box {
   width: 36em;
@@ -831,7 +831,7 @@ span.timer {
   z-index: 1003;
 }
 #options-box span {
-  margin: 0.8em 0 0.5em 0.5em;  
+  margin: 1.5em auto 1em;
   display: block;
 }
 .close-button {

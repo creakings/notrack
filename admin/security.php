@@ -21,7 +21,6 @@ ensure_active_session();
 
 <body>
 <?php
-action_topmenu();
 draw_topmenu('Config');
 draw_sidemenu();
 echo '<div id="main">';

@@ -14,8 +14,6 @@ require('./include/config-functions.php');
 
 load_config();
 ensure_active_session();
-action_topmenu();
-
 
 /************************************************
 *Constants                                      *
@@ -100,7 +98,6 @@ if (isset($_POST['action'])) {
 
 <body>
 <?php
-action_topmenu();
 draw_topmenu('Config');
 draw_sidemenu();
 echo '<div id="main">';

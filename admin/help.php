@@ -28,7 +28,6 @@ function LoadHelpPage($Page) {
   }
 }
 //-------------------------------------------------------------------
-action_topmenu();
 draw_topmenu();
 draw_helpmenu();
 echo '<div id="main">'.PHP_EOL;

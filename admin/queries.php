@@ -20,7 +20,6 @@ ensure_active_session();
 
 <body>
 <?php
-action_topmenu();
 draw_topmenu('DNS Queries');
 draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;

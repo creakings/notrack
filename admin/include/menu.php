@@ -1,77 +1,5 @@
 <?php
 /********************************************************************
- *  Action Top Menu POST requests
- *    1. Delete config out of Memcached, since its about to be changed by ntrk-pause
- *    2. Execute appropriate action
- *    3. In the case of Restart or Shutdown we want to delay execution of the command for a couple of seconds to finish off any disk writes
- *    3. Sleep for a few seconds to prevent a Race Condition occuring where new config could be loaded before ntrk-pause has been able to modify /etc/notrack/notrack.conf
- *
- *  Params:
- *    None
- *  Return:
- *    true when action carried out, false when nothing done
- */
-function action_topmenu() {
-  global $Config, $mem;
-      
-  if (isset($_POST['operation'])) {
-    switch ($_POST['operation']) {
-      case 'force-notrack':
-        exec(NTRK_EXEC.'--force');
-        sleep(3);                                //Prevent race condition
-        header("Location: ?");
-        break;      
-      case 'restart':
-        sleep(2);
-        exec(NTRK_EXEC.'--restart');
-        exit(0);
-        break;
-      case 'shutdown':
-        sleep(2);
-        exec(NTRK_EXEC.'--shutdown');
-        exit(0);
-        break;      
-    }
-  }
-  
-  if (isset($_POST['pause-time'])) {  
-    $mem->delete('Config');                      //Force reload of config    
-    switch ($_POST['pause-time']) {
-      case 'pause5':                             //Pause 5 minutes
-        exec(NTRK_EXEC.'--pause 5');
-        break;
-      case 'pause15':                            //Pause 15 minutes
-        exec(NTRK_EXEC.'--pause 15');
-        break;
-      case 'pause30':                            //Pause 30 minutes
-        exec(NTRK_EXEC.'--pause 30');
-        break;
-      case 'pause60':                            //Pause 60 minutes
-        exec(NTRK_EXEC.'--pause 60');
-        break;    
-      case 'start':                              //Start / Play
-        if ($Config['status'] & STATUS_ENABLED) {
-          return false;
-        }
-        else {
-          exec(NTRK_EXEC.'-p');
-        }
-        break;
-      case 'stop':                               //Stop
-        exec(NTRK_EXEC.'-s');
-        break;
-      default:
-        return false;
-    }
-    sleep(3);
-    header("Location: ?");
-  }
-  
-  return true;
-}
-
-
-/********************************************************************
  *  Draw Side Menu
  *
  *  Params:
@@ -137,10 +65,10 @@ function draw_topmenu($currentpage='') {
   echo '<span class="menu-top-item float-left pointer mobile-show" onclick="openNav()">&#9776;</span>'.PHP_EOL;   //Hamburger menu to show #menu-side
   
   if ($currentpage == '') {                                //Display version number when $currentpage has not been set
-    echo '<a href="./"><span class="logo"><b>No</b>Track <small>v'.VERSION.' A</small></span></a>'.PHP_EOL;
+    echo '<a href="./"><span id="menu-top-logo" class="logo"><b>No</b>Track <small>v'.VERSION.' A</small></span></a>'.PHP_EOL;
   }
   else {                                                   //$currentpage set, display that next to NoTrack logo
-    echo '<a href="./"><span class="logo"><b>No</b>Track <small> - '.$currentpage.'</small></span></a>'.PHP_EOL;
+    echo '<a href="./"><span id="menu-top-logo" class="logo"><b>No</b>Track <small> - '.$currentpage.'</small></span></a>'.PHP_EOL;
   }
   
   if (is_password_protection_enabled()) {                  //Show Logout button if there is a password
@@ -162,30 +90,30 @@ function draw_topmenu($currentpage='') {
   }
 
   echo '<div id="pause">'.PHP_EOL;
-  echo '<form id="pause-form" action="?" method="post">'.PHP_EOL;
   echo '<input type="hidden" name="pause-time" id="pause-time" value="">'.PHP_EOL;
   if ($Config['status'] & STATUS_PAUSED) {
     echo '<span id="pause-timer" class="timer" title="Paused until">'.date('H:i', $Config['unpausetime']).'</span>'.PHP_EOL;
-    echo '<span id="pause-button" class="pause-btn pointer" title="Enable Blocking" onclick="PauseNoTrack(\'start\')">&#9654;</span>'.PHP_EOL;
+    echo '<span id="pause-button" class="pause-btn pointer" title="Enable Blocking" onclick="enableNoTrack()">&#9654;</span>'.PHP_EOL;
   }
   elseif ($Config['status'] & STATUS_DISABLED) {
     echo '<span id="pause-timer" class="timer" title="NoTrack Disabled">----</span>'.PHP_EOL;
-    echo '<span id="pause-button" class="pause-btn pointer" title="Enable Blocking" onclick="PauseNoTrack(\'start\')">&#9654;</span>'.PHP_EOL;
+    echo '<span id="pause-button" class="pause-btn pointer" title="Enable Blocking" onclick="enableNoTrack()">&#9654;</span>'.PHP_EOL;
   }
   else {
     echo '<span id="pause-timer"></span>'.PHP_EOL;
-    echo '<span id="pause-button" class="pause-btn pointer" title="Disable Blocking" onclick="PauseNoTrack(\'stop\')">&#8545;</span>'.PHP_EOL;
+    echo '<span id="pause-button" class="pause-btn pointer" title="Disable Blocking" onclick="enableNoTrack()">&#8545;</span>'.PHP_EOL;
   }
   
   //Dropdown menu for default pause times
   echo '<div tabindex="1" id="dropbutton" title="Pause for..."><span class="pointer">&#x25BC;</span>'.PHP_EOL;
   echo '<div id="pause-menu">'.PHP_EOL;  
-  echo '<span class="pointer" onclick="PauseNoTrack(\'pause\', 5)">Pause for 5 minutes</span>'.PHP_EOL;
-  echo '<span class="pointer" onclick="PauseNoTrack(\'pause\', 15)">Pause for 15 minutes</span>'.PHP_EOL;
-  echo '<span class="pointer" onclick="PauseNoTrack(\'pause\', 30)">Pause for 30 minutes</span>'.PHP_EOL;
-  echo '<span class="pointer" onclick="PauseNoTrack(\'pause\', 60)">Pause for 1 Hour</span>'.PHP_EOL;
+  echo '<span class="pointer" onclick="pauseNoTrack(5)">Pause for 5 minutes</span>'.PHP_EOL;
+  echo '<span class="pointer" onclick="pauseNoTrack(15)">Pause for 15 minutes</span>'.PHP_EOL;
+  echo '<span class="pointer" onclick="pauseNoTrack(30)">Pause for 30 minutes</span>'.PHP_EOL;
+  echo '<span class="pointer" onclick="pauseNoTrack(60)">Pause for 1 Hour</span>'.PHP_EOL;
+  echo '<span class="pointer" onclick="pauseNoTrack(120)">Pause for 2 Hours</span>'.PHP_EOL;
   echo '</div></div>'.PHP_EOL;
-  echo '</form></div></div>'.PHP_EOL;
+  echo '</div></div>'.PHP_EOL;
   //echo '</nav>'.PHP_EOL;
 
   
@@ -201,12 +129,12 @@ function draw_topmenu($currentpage='') {
   echo '<div class="dialog-bar">Options</div>'.PHP_EOL;
   echo '<div class="centered">'.PHP_EOL;
   
-  echo '<form id="operation-form" action="?" method="post">'.PHP_EOL;
-  echo '<input type="hidden" name="operation" id="operation" value="">'.PHP_EOL;
-  echo '<span><a href="#" onclick="PauseNoTrack(\'force-notrack\')" title="Force Download and Update Blocklist" class="button-grey button-options">Update Blocklist</a></span>'.PHP_EOL;
-  echo '<span><a href="#" onclick="PauseNoTrack(\'restart\')" class="button-grey button-options">Restart System</a></span>'.PHP_EOL;
-  echo '<span><a href="#" onclick="PauseNoTrack(\'shutdown\')" class="button-danger button-options">Shutdown System</a></span>'.PHP_EOL;
-  echo '</form>'.PHP_EOL;
+  //echo '<form id="operation-form" action="?" method="post">'.PHP_EOL;
+  //echo '<input type="hidden" name="operation" id="operation" value="">'.PHP_EOL;
+  echo '<span onclick="updateBlocklist()" title="Force Download and Update Blocklist" class="button-grey button-options pointer">Update Blocklist</span>'.PHP_EOL;
+  echo '<span onclick="restartSystem()" class="button-grey button-options pointer">Restart System</span>'.PHP_EOL;
+  echo '<span onclick="shutdownSystem()" class="button-danger button-options pointer">Shutdown System</span>'.PHP_EOL;
+  //echo '</form>'.PHP_EOL;
   
   echo '<div class="close-button"><img src="./svg/button_close.svg" onmouseover="this.src=\'./svg/button_close_over.svg\'" onmouseout="this.src=\'./svg/button_close.svg\'" alt="Close" onclick="hideOptions()"></div>'.PHP_EOL;
   echo '</div></div>'.PHP_EOL;
@@ -236,19 +164,19 @@ function sidemenu_sysstatus() {
   
   if ($Config['status'] & STATUS_ENABLED) {
     if (file_exists(NOTRACK_LIST)) {
-      echo '<div><img src="./svg/status_green.svg" alt="">Blocking: Enabled</div>'.PHP_EOL;
+      echo '<div id="menu-side-blocking"><img src="./svg/status_green.svg" alt="">Blocking: Enabled</div>'.PHP_EOL;
     }
     else {
       if (file_exists(NOTRACK_LIST)) {
-        echo '<div><img src="./svg/status_red.svg" alt="">Blocklist Missing</div>'.PHP_EOL;
+        echo '<div id="menu-side-blocking"><img src="./svg/status_red.svg" alt="">Blocklist Missing</div>'.PHP_EOL;
       }
     }
   }
   elseif ($Config['status'] & STATUS_PAUSED) {
-    echo '<div><img src="./svg/status_yellow.svg" alt="">Blocking: Paused</div>'.PHP_EOL;
+    echo '<div id="menu-side-blocking"><img src="./svg/status_yellow.svg" alt="">Blocking: Paused</div>'.PHP_EOL;
   }
   elseif ($Config['status'] & STATUS_DISABLED) {
-    echo '<div><img src="./svg/status_red.svg" alt="">Blocking: Disabled</div>'.PHP_EOL;
+    echo '<div id="menu-side-blocking"><img src="./svg/status_red.svg" alt="">Blocking: Disabled</div>'.PHP_EOL;
   }
   
   if ($mempercentage > 85) echo '<div><img src="./svg/status_red.svg" alt="">Memory Used: '.$mempercentage.'%</div>'.PHP_EOL;

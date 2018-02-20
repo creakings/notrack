@@ -19,7 +19,6 @@ ensure_active_session();
 
 <body>
 <?php
-action_topmenu();
 draw_topmenu('Network');
 draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;

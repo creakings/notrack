@@ -1,4 +1,39 @@
 /********************************************************************
+ *  Change Status
+ *    Update pause-timer, pause-button, menu-side-blocking based on new status value
+ *    TODO Home-Nav box to update
+ *  Params:
+ *    New Status (output from API $Config['status'])
+ *  Return:
+ *    None
+ */
+function changeStatus(newstatus) {
+  const STATUS_ENABLED = 1;
+  const STATUS_DISABLED = 2;
+  const STATUS_PAUSED = 4;
+  
+  if (newstatus & STATUS_ENABLED) {
+    document.getElementById("pause-timer").textContent = "";
+    document.getElementById("pause-button").textContent = "\u2161";
+    document.getElementById("pause-button").title = "Disable Blocking";
+    document.getElementById("menu-side-blocking").innerHTML = "<img src='./svg/status_green.svg' alt=''>Blocking: Enabled";
+  }
+  
+  else if (newstatus & STATUS_DISABLED) {
+    document.getElementById("pause-timer").textContent = "----";
+    document.getElementById("pause-button").textContent = "\u25b6";
+    document.getElementById("pause-button").title = "Enable Blocking";
+    document.getElementById("menu-side-blocking").innerHTML = "<img src='./svg/status_red.svg' alt=''>Blocking: Disabled";
+  }
+  
+  else if (newstatus & STATUS_PAUSED) {
+    document.getElementById("pause-button").textContent = "\u25b6";
+    document.getElementById("pause-button").title = "Enable Blocking";
+    document.getElementById("menu-side-blocking").innerHTML = "<img src='./svg/status_yellow.svg' alt=''>Blocking: Paused";
+  }
+}
+
+/********************************************************************
  *  Menu incognito
  *    POST Incognito operation to API
  *    API returns new status value
@@ -39,49 +74,152 @@ function menuIncognito() {
 }
 
 
-function PauseNoTrack(Action, PauseTime) {
-  switch (Action) {
-    case 'pause':
-      document.getElementById("dialogmsg").innerHTML = "Pausing NoTrack for "+PauseTime+" minutes";
-      document.getElementById("pause-time").value = "pause"+PauseTime;
-      break;
-    case 'start':
-      document.getElementById("dialogmsg").innerHTML = "Enabling NoTrack";
-      document.getElementById("pause-time").value = "start";      
-      break;
-    case 'stop':
-      document.getElementById("dialogmsg").innerHTML = "Disabling NoTrack";
-      document.getElementById("pause-time").value = "stop";      
-      break;
-    case 'force-notrack':
-      document.getElementById("dialogmsg").innerHTML = "Updating Blocklists";
-      document.getElementById("operation").value = "force-notrack";
-      break;
-    case 'restart':
-      document.getElementById("dialogmsg").innerHTML = "Restarting System";
-      document.getElementById("operation").value = "restart";
-      break;
-    case 'shutdown':
-      document.getElementById("dialogmsg").innerHTML = "Shutting Down System";
-      document.getElementById("operation").value = "shutdown";
-      break;    
-  }
+/********************************************************************
+ *  Enable NoTrack
+ *    POST enable operation to API
+ *    API returns new status value
+ *    This is the same function for Enable and Disable. 
+ *    Let the API work out what the request is meant to be.
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+
+function enableNoTrack() {
+  var oReq = new XMLHttpRequest();
+  var url = "./include/api.php";
+  var params = "operation=enable";
   
-  document.getElementById("fade").style.top=window.pageYOffset+"px";
-  document.getElementById("fade").style.display = "block";
+  oReq.open("POST", url, true);
+  oReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  
+  oReq.onreadystatechange = function() {
+    if(this.readyState == 4 && this.status == 200) {
+      var apiResponse = JSON.parse(this.responseText);
+      changeStatus(apiResponse["status"]);
+    }
+  }
+  oReq.send(params);
+}
+
+
+/********************************************************************
+ *  Enable NoTrack
+ *    POST enable operation to API
+ *    API returns new status value
+ *    This is the same function for Enable and Disable. 
+ *    Let the API work out what the request is meant to be.
+ *  Params:
+ *    mins to pause for
+ *  Return:
+ *    None
+ */
+
+function pauseNoTrack(mins) {
+  var oReq = new XMLHttpRequest();
+  var url = "./include/api.php";
+  var params = "operation=pause&mins="+mins;
+  
+  oReq.open("POST", url, true);
+  oReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  
+  oReq.onreadystatechange = function() {
+    if(this.readyState == 4 && this.status == 200) {
+      var apiResponse = JSON.parse(this.responseText);
+      changeStatus(apiResponse["status"]);
+      document.getElementById("pause-timer").textContent = apiResponse["unpausetime"];
+    }
+  }
+  oReq.send(params);
+}
+
+
+/********************************************************************
+ *  Restart System
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+
+function restartSystem() {
+  var oReq = new XMLHttpRequest();
+  var url = "./include/api.php";
+  var params = "operation=restart";
   
   document.getElementById("options-box").style.display = "none";
-    
-  document.getElementById("dialog-box").style.top = (window.pageYOffset + (window.innerHeight / 2))+"px";
-  document.getElementById("dialog-box").style.left = (window.innerWidth / 2)+"px";
-  document.getElementById("dialog-box").style.display = "block";
   
-  if (Action == "pause" || Action == "start" || Action == "stop") {    
-    document.forms["pause-form"].submit();
+  oReq.open("POST", url, true);
+  oReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  
+  /*oReq.onreadystatechange = function() {
+    if(this.readyState == 4 && this.status == 200) {
+      var apiResponse = JSON.parse(this.responseText);
+      document.getElementById("menu-top-logo").textContent = "Updating Blocklists";
+    }
+  }*/
+  oReq.send(params);
+}
+
+
+/********************************************************************
+ *  Shutdown System
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+
+function shutdownSystem() {
+  var oReq = new XMLHttpRequest();
+  var url = "./include/api.php";
+  var params = "operation=shutdown";
+  
+  document.getElementById("options-box").style.display = "none";
+  
+  oReq.open("POST", url, true);
+  oReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  
+  /*oReq.onreadystatechange = function() {
+    if(this.readyState == 4 && this.status == 200) {
+      var apiResponse = JSON.parse(this.responseText);
+      document.getElementById("menu-top-logo").textContent = "Updating Blocklists";
+    }
+  }*/
+  oReq.send(params);
+}
+
+
+/********************************************************************
+ *  Update Blocklists
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+
+function updateBlocklist() {
+  var oReq = new XMLHttpRequest();
+  var url = "./include/api.php";
+  var params = "operation=updateblocklist";
+  
+  oReq.open("POST", url, true);
+  oReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  
+  oReq.onreadystatechange = function() {
+    if(this.readyState == 4 && this.status == 200) {
+      var apiResponse = JSON.parse(this.responseText);
+      document.getElementById("menu-top-logo").textContent = "Updating Blocklists";
+      //TODO Show countdown ... then revert to original logo
+    }
   }
-  else {
-    document.forms["operation-form"].submit();
-  }
+  oReq.send(params);
+  
+  hideOptions();
 }
 
 

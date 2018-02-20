@@ -21,7 +21,6 @@ ensure_active_session();
 
 <body>
 <?php
-action_topmenu();
 draw_topmenu('Investigate');
 draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;
