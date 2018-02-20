@@ -631,7 +631,9 @@ function piechart($data, $cx, $cy, $radius, $colours) {
   $chartelem = "";
   $sum = 0;
 
-  $max = count($data);  
+  $max = count($data);
+  
+  if (max($data) == 0) return;                             //Prevent divide by zero warning
 
   foreach ($data as $key=>$val) {
     $sum += $val;
