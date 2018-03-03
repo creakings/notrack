@@ -1,5 +1,5 @@
-#NoTrack Blocklist updated 25 Jan 2018
-#LatestVersion 0.8.8
+#NoTrack Blocklist updated 03 Mar 2018
+#LatestVersion 0.8.9
 1-cl0ud.com #Lead Forensics
 1-creative-1.com #Lead Forensics
 103bees.com #Tracker Unknown
@@ -1559,6 +1559,7 @@ fqtag.com #Forensiq
 frantro.de
 fraudmetrix.cn
 fredhopperservices.com
+fredrik-almroth.se #Detectify
 freegreatapps.com #MdotM
 freeskreen.com #SlimCut Media
 freestar.io #Freestar
@@ -1829,6 +1830,7 @@ in.mydirtyhobby.de #Advertising Adult
 in2panel.com #TMRG
 in2panel.net #TMRG
 inboxreport.com #Campaign Monitor Pty
+incoming.telemetry.mozilla.org #Mozilla
 indexww.com #CassleMedia
 indpcr1.com #Lead Forensics
 industrybrains.com
@@ -11278,6 +11280,7 @@ optilead.co.uk
 optimizely.com #Optimizely
 optinmonster.com
 optnmnstr.com
+optnmstr.com #New Relic
 outbrain.com
 outrageousclick.com #msales
 ownedit.com #Owned it
@@ -11435,6 +11438,7 @@ psma02.com #AdWise
 psma03.com #AdWise
 psplugin.com #Vergic
 psplugin.net #Vergic
+pstmrk.it #Postmark
 pszyzxh.org #Advertising
 ptcolor.com #PTEngine
 ptengine.com #PTEngine
@@ -12057,6 +12061,7 @@ sugarops.com
 sumologic.com #Sumo Logic
 sumome.com #SumoMe
 supernovaoffers.click #msales
+supersonic.com #IronSource
 survata.net
 survey-poll.com #ComScore
 surveybit.com #Campaign Monitor Pty
@@ -12112,6 +12117,7 @@ telemetry.jivosite.com #Jivochat
 telemetry.malwarebytes.com #Malwarebytes
 telemetry.microsoft.com #Microsoft
 telemetry.microsoft.com.nsatc.net #Microsoft
+telemetry.mozilla.org #Mozilla
 telemetry.nvidia.com #Nvidia
 telemetry.urs.microsoft.com #Microsoft
 televisions2compare.com #Digital Window

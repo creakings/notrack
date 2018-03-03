@@ -1,9 +1,10 @@
-#NoTrack Malicious Site list updated 20 Jun 2017
+#NoTrack Malicious Site list updated 03 Mar 2018
 1kdailyprofit.biz #Scam
 1kdailyprofit.co #Scam
 #A-A-A-A-A-A-A-A-A-A-A-A-A-A-A-A-A-A-A-A
 abcd7777.com #Chinese Scammer
 abcdnf.com #Chinese Scammer
+ad2up.com #Potentially Unwanted Application
 adfuture.cn #Chinese Android Data Collection 
 adsunflower.com #Chinese Android Data Collection 
 advmob.cn #Chinese Android Data Collection 
@@ -12,6 +13,7 @@ andr-security.com #Malicious Site
 apple-safari.info #Malicious Site
 ashleyrnadison.com #Typo
 #B-B-B-B-B-B-B-B-B-B-B-B-B-B-B-B-B-B-B-B
+b3stm0b1l3.com #Potentially Unwanted Application
 biosagentplus.com #Scam
 #C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C-C
 com-internet.online #Malicious Site
@@ -28,6 +30,7 @@ epicunitscan.info #Malicious Site
 facebookprofileview.com #Malicious software
 ffdns.net #DNS Exploiters
 #G-G-G-G-G-G-G-G-G-G-G-G-G-G-G-G-G-G-G-G
+giftcards4fans.com #Scam
 globaloffers.link #Malware
 googele.com #Typo
 gonirola.com #Malicious Site
@@ -49,6 +52,7 @@ lhzbdvm.com #Ragentek Rootkit
 m1ll1c4n0.com #Added May 2016
 madmimi.com #Email spam
 minaraca.com #Malicious Site
+myfood.ltd #Potentially Unwanted Application
 myxns.cn #DNS Exploiters
 #N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N
 #O-O-O-O-O-O-O-O-O-O-O-O-O-O-O-O-O-O-O-O
