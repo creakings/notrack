@@ -59,7 +59,7 @@ function menuIncognito() {
     if(this.readyState == 4 && this.status == 200) {
       var apiResponse = JSON.parse(this.responseText);
       if (apiResponse["status"] & 8) {                     //Bitwise check for STATUS_INCOGNITO
-        //Change incognito elements to purle colour
+        //Change incognito elements to purple colour
         document.getElementById("incognito-button").src = "./svg/menu_incognito_active.svg";
         document.getElementById("incognito-text").classList.add("purple");
       }
