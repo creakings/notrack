@@ -1,4 +1,4 @@
-#NoTrack Blocklist updated 03 Mar 2018
+#NoTrack Blocklist updated 28 Mar 2018
 #LatestVersion 0.8.9
 1-cl0ud.com #Lead Forensics
 1-creative-1.com #Lead Forensics
@@ -1452,6 +1452,7 @@ estatcounter.com
 esvdigital.com
 et.lv
 etahub.com
+etracker.de #eTracker
 eue21east.com #Lead Forensics
 eue27west.com #Lead Forensics
 eum-appdynamics.com #AppDynamics
@@ -1519,6 +1520,7 @@ ffftrfg.com #oly.fst
 ffftrgf.com #oly.fst
 fidelity-media.com
 filebulldog.com #Malware
+fileserve.xyz #YouTube Best Video Downloader 2 add-on
 fimserve.com
 final-aws-01.com #Lead Forensics
 final-azr-01.com #Lead Forensics
@@ -1830,7 +1832,6 @@ in.mydirtyhobby.de #Advertising Adult
 in2panel.com #TMRG
 in2panel.net #TMRG
 inboxreport.com #Campaign Monitor Pty
-incoming.telemetry.mozilla.org #Mozilla
 indexww.com #CassleMedia
 indpcr1.com #Lead Forensics
 industrybrains.com
@@ -11265,6 +11266,7 @@ openxenterprise.com #OpenX
 openxenterprise.net #OpenX
 openxenterprise.org #OpenX
 ophan.co.uk
+opinionbar.com #OpinionBar
 opinionsquare.com #TMRG
 opinionsquare.net #TMRG
 oplkc.com #oly.fst
@@ -12144,6 +12146,7 @@ theresulter.com #RevenueHits
 therse.info #Tracker Unknown
 thetacdn.net #Verizon
 thispick.com #Keywee
+thrillingos.herokuapp.com #YouTube Best Video Downloader 2 add-on
 tiansue.com #Tiansue Adverts
 tic-tic-toc.com
 ticket-genie.com #Digital Window
