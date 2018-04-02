@@ -1035,7 +1035,7 @@ prompt_ip_version() {
 #   None
 #######################################
 prompt_dns_server() {
-  menu "Choose DNS Server\nThe job of a DNS server is to translate human readable domain names (e.g. google.com) into an  IP address which your computer will understand (e.g. 109.144.113.88) \nBy default your router forwards DNS queries to your Internet Service Provider (ISP), however ISP DNS servers are not the best." "OpenDNS" "Google Public DNS" "DNS.Watch" "Verisign" "Comodo" "FreeDNS" "Yandex DNS" "Other" 
+  menu "Choose DNS Server\nThe job of a DNS server is to translate human readable domain names (e.g. google.com) into an  IP address which your computer will understand (e.g. 109.144.113.88) \nBy default your router forwards DNS queries to your Internet Service Provider (ISP), however ISP DNS servers are not the best." "OpenDNS" "Google Public DNS" "DNS.Watch" "Verisign" "Comodo" "FreeDNS" "Yandex DNS" "Cloudflare" "Other" 
   
   case "$?" in
     1)                                           #OpenDNS
@@ -1091,7 +1091,16 @@ prompt_dns_server() {
         DNS_SERVER_2="77.88.8.2"
       fi
     ;;
-    8)                                           #Other
+    8)
+      if [[ $1 == $IP_V6 ]]; then
+        DNS_SERVER_1="2606:4700:4700::1111"
+        DNS_SERVER_2="2606:4700:4700::1001"
+      else
+        DNS_SERVER_1="1.1.1.1"
+        DNS_SERVER_2="1.0.0.1"
+      fi
+    ;;
+    9)                                           #Other
       echo -en "DNS Server 1: "
       read -r DNS_SERVER_1
       echo -en "DNS Server 2: "
