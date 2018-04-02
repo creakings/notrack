@@ -1092,7 +1092,7 @@ prompt_dns_server() {
       fi
     ;;
     8)
-      if [[ $1 == $IP_V6 ]]; then
+      if [[ $1 == $IP_V6 ]]; then                #Cloudflare
         DNS_SERVER_1="2606:4700:4700::1111"
         DNS_SERVER_2="2606:4700:4700::1001"
       else
