@@ -30,6 +30,7 @@ epicunitscan.info #Malicious Site
 facebookprofileview.com #Malicious software
 ffdns.net #DNS Exploiters
 #G-G-G-G-G-G-G-G-G-G-G-G-G-G-G-G-G-G-G-G
+gettop.info #RIG Exploit
 giftcards4fans.com #Scam
 globaloffers.link #Malware
 googele.com #Typo
@@ -65,6 +66,7 @@ prugskh.net #Ragentek Rootkit
 #R-R-R-R-R-R-R-R-R-R-R-R-R-R-R-R-R-R-R-R
 reimageplus.com #Fake BSOD Popus &Scam
 reliablesurfingext.biz #Fake updates
+retreatoftheretreat.site #RIG Exploit
 #S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S-S
 ironbeast.io #Suspicious
 safari-code.net #Malicious Site
