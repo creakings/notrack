@@ -1,4 +1,4 @@
-#NoTrack Blocklist updated 28 Mar 2018
+#NoTrack Blocklist updated 10 May 2018
 #LatestVersion 0.8.9
 1-cl0ud.com #Lead Forensics
 1-creative-1.com #Lead Forensics
@@ -125,6 +125,7 @@ ad-serverparc.nl
 ad-stir.com #Ad Stir
 ad.12dt.com #Adverts on 12dt.com
 ad.groupon.co.uk
+ad.weplayer.cc #Advertising Unknown
 ad4game.com #Ad4Game
 adacado.com #Adacado
 adaction.mobi #AdAction
@@ -275,6 +276,7 @@ ads-creativesyndicator.com
 ads-fa.spotify.com #Spotify tracking ads
 ads-for-apps.com #Smaato
 ads-verify.net
+ads.chaturbate.com #Chaturbate
 ads.diamonds #msales
 ads.ebay.com #eBay
 ads.fineco.it #Fineco
@@ -466,6 +468,7 @@ analytics-static.ugc.bazaarvoice.com #Bazaar Voice
 analytics.amakings.com
 analytics.brave.com #Brave Browser
 analytics.ccs.mcafee.com #McAfee
+analytics.cohesionapps.com #Cohesionapps
 analytics.faw.sky.com #Sky
 analytics.gandi.net #Gandi
 analytics.newsinc.com
@@ -704,6 +707,7 @@ brandedshortlinks.com #Click Meter
 brandedshorturl.com #Click Meter
 brandedurl.com #Click Meter
 brandgatekeeper.com #Traffic Cake
+bravo-dog.com #Tracker Unknown
 bravocampmon.com #Campaign Monitor Pty
 bravocreatesend.com #Campaign Monitor Pty
 bravodevcampaignmonitor.com #Campaign Monitor Pty
@@ -778,6 +782,7 @@ buysellads.com #BuySellAds
 buysellads.net #BuySellAds
 buysub.com
 buzzybar.com #Click Meter
+byside.com #BySide
 bz.io
 c-ctrip.com
 c.afekv.com #Public DNS Scan
@@ -1061,6 +1066,7 @@ cooldeal.click #msales
 coremetrics.eu
 corp.aol.com #AOL
 corporate-ir.net
+countess.twitch.tv #Twitch
 coveritlive.com #Coverit Live
 cp1.news.com.au
 cpex.cz #Czech Publisher Exchange
@@ -1228,6 +1234,7 @@ deployupdatemyprofile.com #Campaign Monitor Pty
 despatcho.com #Campaign Monitor Pty
 device-metrics-us.amazon.com
 deviceapps.net #Millennial Media
+deviceidshare.twitch.tv #Twitch
 devnexus.net #AppNexus Inc
 devnxs.net #AppNexus Inc
 dexometer.com #Adobe
@@ -1582,6 +1589,7 @@ fyre.co
 g.alicdn.com
 gaheatmaps.com #PTEngine
 galacticoffers.com #msales
+gall-tarquin.com #Tracker Unknown
 gameofoffers.com #msales
 gamned.com
 gardendiscount.com #Digital Window
@@ -1590,6 +1598,7 @@ gaug.es
 gbl007.com #Lead Forensics
 gblwebcen.com #Lead Forensics
 gemius.pl
+generalsearches.com #Tracker Unknown
 genericlink.com
 geo.query.yahoo.com #Yahoo
 geoadnxs.com #AppNexus Inc
@@ -1648,6 +1657,7 @@ googletagservices.com
 gorillanation.com
 goroost.com
 gosquared.com
+gotourls.bid #Chinese Advertising
 gotraffic.net #Unknown Tracker
 gpwebsolutions.co.uk
 graf.ly #Bright Pixel
@@ -11076,6 +11086,7 @@ myclickmeter.com #Click Meter
 mycomscore.com #comScore
 mycomscore.net #comScore
 mydas.mobi
+mydatabankapp.com #My Databank
 mydefense.info #ShawThing
 myflairware.com #TMRG
 myflairware.net #TMRG
@@ -11580,6 +11591,7 @@ researchresults.com #Reserch Results
 reson8.com.au
 responsetap.com
 retailautomata.com
+retargeting.biz #Retargeting
 returnpath.net #Return Path
 revcontent.com
 revdepo.com #RevenueHits
@@ -11680,6 +11692,7 @@ rubiconproject.org #Rubicon
 runadtag.com
 rundsp.com
 runicy.com
+ruralstring.com #Advertising Unknown
 rushredmsmt.com #msales
 rutargeter.com #iAge
 rvfrm2002.com #RevenueHits
@@ -11974,7 +11987,6 @@ soosooka.com
 sophus3.com
 sortable.com
 sovrn.com
-spclient.wg.spotify.com #Spotify tracking ads
 specificclick.net
 speedshiftmedia.com
 spendandraise.org #Digital Window
@@ -12186,6 +12198,7 @@ track-mv-01.com #MultiView
 track-mv-02.com #MultiView
 track-mv.com #MultiView
 track.cpa.iqoption.com #IQOption
+track.flexlinkspro.com #Tracker Unknown
 track.ft.com #Financial Times
 track.mypcbackup.com #MyPCBackup
 track.us.org #TrackAd
@@ -12242,6 +12255,8 @@ trkthatpaper.org #Advertising Unknown
 trkyme.com
 trovaamici.com #Click Meter
 tru.am #TrueAnthem
+truehits.in.th #Truehits
+truehits.net #Truehits
 truste-svc.net
 truste.com #TRUSTe
 trusted.site #PathDefender
