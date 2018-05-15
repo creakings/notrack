@@ -1,4 +1,4 @@
-#NoTrack Blocklist updated 10 May 2018
+#NoTrack Blocklist updated 15 May 2018
 #LatestVersion 0.8.9
 1-cl0ud.com #Lead Forensics
 1-creative-1.com #Lead Forensics
@@ -1586,7 +1586,6 @@ futureusmedia.com
 fwfgbhjhnlkv.com #Popunder Ad
 fwmrm.net #FreeWheel
 fyre.co
-g.alicdn.com
 gaheatmaps.com #PTEngine
 galacticoffers.com #msales
 gall-tarquin.com #Tracker Unknown
