@@ -1,4 +1,4 @@
-#NoTrack Malicious Site list updated 10 May 2018
+#NoTrack Malicious Site list updated 25 May 2018
 1kdailyprofit.biz #Scam
 1kdailyprofit.co #Scam
 #A-A-A-A-A-A-A-A-A-A-A-A-A-A-A-A-A-A-A-A
@@ -33,6 +33,7 @@ ffdns.net #DNS Exploiters
 gettop.info #RIG Exploit
 giftcards4fans.com #Scam
 globaloffers.link #Malware
+googe.com #Typo
 googele.com #Typo
 gonirola.com #Malicious Site
 gotoout.ml #Phishing
