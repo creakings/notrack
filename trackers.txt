@@ -1,4 +1,4 @@
-#NoTrack Blocklist updated 15 May 2018
+#NoTrack Blocklist updated 25 May 2018
 #LatestVersion 0.8.9
 1-cl0ud.com #Lead Forensics
 1-creative-1.com #Lead Forensics
@@ -273,9 +273,11 @@ adrtx.net #Ascio Technologies
 adrunnr.com #Adverising Unknown
 ads-ai.com #YieldBot
 ads-creativesyndicator.com
+ads-d.viber.com #Viber
 ads-fa.spotify.com #Spotify tracking ads
 ads-for-apps.com #Smaato
 ads-verify.net
+ads.aws.viber.com #Viber
 ads.chaturbate.com #Chaturbate
 ads.diamonds #msales
 ads.ebay.com #eBay
@@ -283,6 +285,7 @@ ads.fineco.it #Fineco
 ads.gold #msales
 ads.hearstmags.com
 ads.msn.com #Microsoft
+ads.viber.com #Viber
 ads.yahoo.com #Yahoo
 ads1.msn.com #Microsoft
 ads2.msn.com #Microsoft
@@ -611,6 +614,8 @@ bae5tracker.com #Lead Forensics
 bandelcot.com
 bannerflow.com #Bannerflow
 bannermeter.com #Click Meter
+barra.iol.pt #IOL
+barranew.iol.pt #IOL
 bars.sapo.pt #PT Telecomunicacoes
 basebanner.com
 bat.bing.com
@@ -624,6 +629,7 @@ beacon.asda.com #Asda
 beacon.groceries.asda.com #Asda
 beacon.guim.co.uk #The Guardian
 beanstock.com
+beemray.com #Beemray
 begun.ru
 behancemanage.com #Adobe
 behavior.com #Adobe
@@ -698,7 +704,7 @@ bpmask.com #Advertising
 brainboxdigital.com #BrainBox Digital
 branch.io #Branch Metrics
 brand-server.com
-brandcrumb.com
+brandcrumb.com #Brandcrumb
 brandedlinks.com #Click Meter
 brandedshort.domains #Click Meter
 brandedshort.link #Click Meter
@@ -11356,6 +11362,7 @@ pictela.net #AOL
 piksel.com
 pimpb.us #AppNexus Inc
 pinchoo.com #RevenueHits
+ping.ublock.org #ublock tracking
 pingdom.net
 pingme.net #RadiumOne
 pingmemessenger.com #RadiumOne
@@ -11956,6 +11963,7 @@ snt4.net #Sentori
 snta0034.com #Lead Forensics
 socialhoney.co
 sociomantic.com
+socy.es #Brandcrumb
 softtrack08.com #Lead Forensics
 softwaredefined.guru #instartlogic
 softwaredefined.us #instartlogic
