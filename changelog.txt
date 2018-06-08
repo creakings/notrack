@@ -1,3 +1,8 @@
+Development
+Handle errors from wget such as connectivity or file missing when updating blocklists
+Updated location of CoinBlockerLists
+
+*************************************************
 v0.8.9 Released 03 Mar 2018
 
 New Styling
