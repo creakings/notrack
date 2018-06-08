@@ -163,7 +163,7 @@ declare -i Dedup=0                               #Count of Deduplication
 #   None
 #--------------------------------------------------------------------
 function error_exit() {  
-  echo "Error. $1"
+  echo "Error: $1"
   echo "Aborting"
   exit "$2"
 }
@@ -451,6 +451,49 @@ function delete_table() {
 
 
 #--------------------------------------------------------------------
+# Download File
+#   1. Download file with wget
+#   2. Check return value of wget
+#   3. Check if file exists
+#
+# Globals:
+#   None
+# Arguments:
+#   1: Output File
+#   2: URL
+# Returns:
+#   0 on success
+#   > 0 on fail
+#--------------------------------------------------------------------
+function download_file() {
+  echo "Downloading $2"
+  wget -qO "$1" "$2"                             #Download with wget
+  
+  exitstatus="$?"
+  
+  if [ $exitstatus -eq 0 ]; then
+    if [ -s "$1" ]; then                         #Check if file has been downloaded
+      return 0                                   #Success
+    else
+      echo "Error: download_file - File not downloaded"
+      return 1
+    fi
+  fi
+
+  case $exitstatus in                            #Review exit code of wget
+    "1") echo "Error: download_file - Generic error" ;;
+    "2") echo "Error: download_file - Parsing error" ;;
+    "3") echo "Error: download_file - File I/O error" ;;
+    "4") echo error_exit "download_file - Network error" "30" ;;
+    "5") echo "Error: download_file - SSL verification failure" ;;
+    "6") echo "Error: download_file - Authentication failure" ;;
+    "7") echo "Error: download_file - Protocol error" ;;
+    "8") echo "Error: download_file - File not available on server" ;;
+  esac
+}
+
+
+#--------------------------------------------------------------------
 # Generate Example Black List File
 #
 # Globals:
@@ -612,12 +655,15 @@ function get_custom() {
     #Determine whether we are dealing with a download or local file
     if [[ $ListUrl =~ ^(https?|ftp):// ]]; then  #Is URL a http(s) or ftp?
       if [ $dlfile_time -lt $((EXECTIME-CHECKTIME)) ]; then #Is list older than 4 days
-        echo "Downloading $FileName"      
-        wget -qO "$dlfile" "$ListUrl"            #Yes, download it
+        download_file "$dlfile" "${URLList[$list]}"         #Yes - Download it
+        if [ $? -gt 0 ]; then
+          echo "Error: get_list - unable to proceed without ${URLList[$list]}"
+        return 1
+        fi
       else
         echo "File in date, not downloading"
       fi
-    elif [ -e "$ListUrl" ]; then                 #Is it a file on the server?        
+    elif [ -e "$ListUrl" ]; then                 #Is it a file on the server?
       echo "$ListUrl File Found on system"
       get_filetime "$ListUrl"                    #Get date of file
       
@@ -692,32 +738,30 @@ function get_list() {
   local list="$1"
   local dlfile="/tmp/$1.txt"
   local zipfile=false
-    
+
   #Should we process this list according to the Config settings?
-  if [ "${Config[bl_$list]}" == 0 ]; then    
+  if [ "${Config[bl_$list]}" == 0 ]; then
     delete_file "$dlfile"  #If not delete the old file, then leave the function
     return 0
   fi
-  
+
   if [[ ${URLList[$list]} =~ \.zip$ ]]; then     #Is the download a zip file?
     dlfile="/tmp/$1.zip"
     zipfile=true
   fi
-    
+
   get_filetime "$dlfile"                         #Is the download in date?
-   
-  if [ $FileTime -gt $((EXECTIME-CHECKTIME)) ]; then  
-    echo "$list in date. Not downloading"    
-  else  
-    echo "Downloading $list"
-    wget -qO "$dlfile" "${URLList[$list]}"       #Download out of date
+
+  if [ $FileTime -gt $((EXECTIME-CHECKTIME)) ]; then
+    echo "$list in date. Not downloading"
+  else
+    download_file "$dlfile" "${URLList[$list]}"  #Download out of date
+    if [ $? -gt 0 ]; then
+      echo "Error: get_list - unable to proceed without ${URLList[$list]}"
+      return 1
+    fi
   fi
-  
-  if [ ! -s "$dlfile" ]; then                    #Check if list has been downloaded
-    echo "File not downloaded"    
-    return 1
-  fi
-  
+
   if [[ $zipfile == true ]]; then                #Do we need to unzip?
     unzip -o "$dlfile" -d "/tmp/"                #Unzip not quietly (-q)
     dlfile="/tmp/$3"                             #dlfile is now the expected unziped file    
@@ -726,10 +770,10 @@ function get_list() {
       return 0
     fi
   fi
-    
+
   SQLList=()                                     #Zero Arrays      
   echo "Processing list $list"                   #Inform user
-  
+
   case $2 in                                     #What type of processing is required?
     "csv") process_csv "$dlfile" ;;
     "easylist") process_easylist "$dlfile" ;;
@@ -739,8 +783,8 @@ function get_list() {
     "tldlist") process_tldlist ;;
     "unix") process_unixlist "$dlfile" ;;    
     *) error_exit "Unknown option $2" "7"
-  esac  
-  
+  esac
+
   if [ ${#SQLList[@]} -gt 0 ]; then              #Are there any URL's in the block list?    
     insert_data "bl_$list"                       #Add data to SQL table    
     echo "Finished processing $list"    
