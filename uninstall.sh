@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 #Title : NoTrack Uninstaller
-#Description : This script remove the files NoTrack created, and then return dnsmasq and lighttpd to their default configuration
+#Description : This script removes the files NoTrack created, and then return dnsmasq and lighttpd to their default configuration
 #Author : QuidsUp
 #Usage : sudo bash uninstall.sh
 
@@ -93,6 +93,7 @@ Find_NoTrack() {
       INSTALL_LOCATION="/opt/notrack"
     else
       echo "Error Unable to find NoTrack folder"
+      echo "When NoTrack was installed in a custom location please specify it in uninstall.sh"
       echo "Aborting"
       exit 22
     fi

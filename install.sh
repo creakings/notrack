@@ -5,15 +5,15 @@
 #Usage : bash install.sh
 
 
-#######################################
+##############################################################################
 # Optional User Customisable Settings
-#######################################
-INSTALL_LOCATION=""
+##############################################################################
+INSTALL_LOCATION=""                         #define custom installation path
 
 
-#######################################
+##############################################################################
 # Constants
-#######################################
+##############################################################################
 readonly IP_V4="IPv4"
 readonly IP_V6="IPv6"
 
@@ -25,9 +25,9 @@ readonly NETWORK_INTERFACES_OLD_PATH="/etc/network/interfaces.old"
 readonly DNSMASQ_CONF_PATH="/etc/dnsmasq.conf"
 
 
-#######################################
+##############################################################################
 # Environment variables
-#######################################
+##############################################################################
 readonly VERSION="0.8.4"
 SUDO_REQUIRED=false                              #true if installing to /opt
 
@@ -48,7 +48,6 @@ SETUP_DHCP=false
 DHCP_RANGE_START=""
 DHCP_RANGE_END=""
 DHCP_LEASE_TIME=""
-
 
 #######################################
 # Exit script with exit code
@@ -1674,7 +1673,9 @@ function show_welcome() {
   echo "Welcome to NoTrack v$VERSION"
   echo
   echo "This installer will transform your system into a network-wide Tracker Blocker"
-  echo "Install Guide: https://youtu.be/MHsrdGT5DzE"
+  echo "Install Guides: https://youtu.be/MHsrdGT5DzE"
+  echo "                https://github.com/quidsup/notrack/wiki"
+  echo "For custom installation locations or preset settings please edit install.sh"
   echo
   echo "Installation of MariaDB might ask you for a root password"
   echo "If it does make a note of it, as you will need it later"
