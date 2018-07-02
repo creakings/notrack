@@ -4,9 +4,9 @@
 #Author : QuidsUp
 #Date : 2016-03-22
 #Usage : ntrk-upgrade
-#Last updated with NoTrack v0.8.2
+#Last updated with NoTrack v0.8.10 - 02 July 2018
 
-#Move file to /scripts at 0.8.5 TODO
+#Move file to /scripts at 0.8.5 TODO - happening at v1.0 moving to Gitlab
 
 #######################################
 # Constants
@@ -157,24 +157,28 @@ if [ $? == 23 ]; then                            #Code hasn't downloaded
 fi
 
 echo
-copy_file "notrack.sh" "/usr/local/sbin/"        #NoTrack.sh
+copy_file "notrack.sh" "/usr/local/sbin/"        #NoTrack.sh DEPRECATED at v1.0
+copy_file "scripts/notrack.sh" "/usr/local/sbin/"          #NoTrack.sh
 rename_file "/usr/local/sbin/notrack.sh" "/usr/local/sbin/notrack"
 
-copy_file "ntrk-exec.sh" "/usr/local/sbin/"      #ntrk-exec.sh
+copy_file "ntrk-exec.sh" "/usr/local/sbin/"      #ntrk-exec.sh DEPRECATED at v1.0
+copy_file "scripts/ntrk-exec.sh" "/usr/local/sbin/"        #ntrk-exec.sh
 rename_file "/usr/local/sbin/ntrk-exec.sh" "/usr/local/sbin/ntrk-exec"
 
-copy_file "ntrk-pause.sh" "/usr/local/sbin/"     #ntrk-pause.sh
+copy_file "ntrk-pause.sh" "/usr/local/sbin/"     #ntrk-pause.sh DEPRECATED at v1.0
+copy_file "scripts/ntrk-pause.sh" "/usr/local/sbin/"       #ntrk-pause.sh
 rename_file "/usr/local/sbin/ntrk-pause.sh" "/usr/local/sbin/ntrk-pause"
 
-copy_file "ntrk-upgrade.sh" "/usr/local/sbin/"   #ntrk-upgrade.sh
+copy_file "ntrk-upgrade.sh" "/usr/local/sbin/"   #ntrk-upgrade.sh DEPRECATED at v1.0
+copy_file "scripts/ntrk-upgrade.sh" "/usr/local/sbin/"     #ntrk-upgrade.sh
 rename_file "/usr/local/sbin/ntrk-upgrade.sh" "/usr/local/sbin/ntrk-upgrade"
 
-copy_file "scripts/ntrk-parse.sh" "/usr/local/sbin/"  #ntrk-parse.sh
+copy_file "scripts/ntrk-parse.sh" "/usr/local/sbin/"       #ntrk-parse.sh
 rename_file "/usr/local/sbin/ntrk-parse.sh" "/usr/local/sbin/ntrk-parse"
 echo "Finished copying scripts"
 echo
   
-sudocheck=$(grep www-data /etc/sudoers)          #Check sudo permissions for lighty
+sudocheck=$(grep www-data /etc/sudoers)                    #Check sudo permissions for lighty
 if [[ $sudocheck == "" ]]; then
   echo "Adding NoPassword permissions for www-data to execute script /usr/local/sbin/ntrk-exec as root"
   echo -e "www-data\tALL=(ALL:ALL) NOPASSWD: /usr/local/sbin/ntrk-exec" | tee -a /etc/sudoers
@@ -197,7 +201,7 @@ if [[ $(grep '"%{%s}t|%V|%r|%s|%b|%{Referer}i|%{User-Agent}i"' /etc/lighttpd/lig
 fi
 
 
-if [ -e "$FILE_CONFIG" ]; then                  #Remove Latestversion number from Config file
+if [ -e "$FILE_CONFIG" ]; then                             #Remove Latestversion number from Config file
   echo "Removing version number from Config file"
   grep -v "LatestVersion" "$FILE_CONFIG" > /tmp/notrack.conf
   mv /tmp/notrack.conf "$FILE_CONFIG"
