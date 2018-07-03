@@ -799,7 +799,7 @@ function setup_mariadb() {
   
   echo
   echo "Creating User ntrk"
-  sudo sudo mysql --user=root --password="$rootpass" -e "CREATE USER 'ntrk'@'localhost' IDENTIFIED BY 'ntrkpass';"
+  sudo mysql --user=root --password="$rootpass" -e "CREATE USER 'ntrk'@'localhost' IDENTIFIED BY 'ntrkpass';"
   
   #Check to see if ntrk user has been added
   if [[ ! `sudo mysql -sN --user=root --password="$rootpass" -e "SELECT User FROM mysql.user"` =~ ntrk[[:space:]]root ]]; then
