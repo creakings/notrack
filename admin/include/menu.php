@@ -65,7 +65,7 @@ function draw_topmenu($currentpage='') {
   echo '<span class="menu-top-item float-left pointer mobile-show" onclick="openNav()">&#9776;</span>'.PHP_EOL;   //Hamburger menu to show #menu-side
   
   if ($currentpage == '') {                                //Display version number when $currentpage has not been set
-    echo '<a href="./"><span id="menu-top-logo" class="logo"><b>No</b>Track <small>v'.VERSION.' A</small></span></a>'.PHP_EOL;
+    echo '<a href="./"><span id="menu-top-logo" class="logo"><b>No</b>Track <small>v'.VERSION.'</small></span></a>'.PHP_EOL;
   }
   else {                                                   //$currentpage set, display that next to NoTrack logo
     echo '<a href="./"><span id="menu-top-logo" class="logo"><b>No</b>Track <small> - '.$currentpage.'</small></span></a>'.PHP_EOL;
