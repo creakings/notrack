@@ -1,6 +1,8 @@
-Development
+v0.8.10 Released 03 Jun 2018
 Handle errors from wget such as connectivity or file missing when updating blocklists
 Updated location of CoinBlockerLists
+Removed No Coin Block list (most sites are in CoinBlockerLists)
+Split NoTrack block lists out of this project and moved them to GitLab
 
 *************************************************
 v0.8.9 Released 03 Mar 2018

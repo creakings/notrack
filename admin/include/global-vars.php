@@ -1,5 +1,4 @@
 <?php
-
 define('STATUS_ENABLED', 1);
 define('STATUS_DISABLED', 2);
 define('STATUS_PAUSED', 4);
@@ -7,7 +6,7 @@ define('STATUS_INCOGNITO', 8);
 define('STATUS_NOTRACKRUNNING', 64);
 define('STATUS_ERROR', 128);
 
-define('VERSION', '0.8.9');
+define('VERSION', '0.8.10');
 define('SERVERNAME', 'localhost');
 define('USERNAME', 'ntrk');
 define('PASSWORD', 'ntrkpass');
@@ -53,8 +52,8 @@ $DEFAULTCONFIG = array(
   'unpausetime' => 0,
   'bl_custom' => '',
   'bl_notrack' => 1,
-  'bl_tld' => 1,
-  'bl_qmalware' => 1,
+  'bl_notrack_malware' => 1,
+  'bl_tld' => 1,  
   'bl_hexxium' => 1,
   'bl_cbl_all' => 0,
   'bl_cbl_browser' => 0,
@@ -69,8 +68,7 @@ $DEFAULTCONFIG = array(
   'bl_fbsocial' => 0,
   'bl_hphosts' => 0,
   'bl_malwaredomainlist' => 0,
-  'bl_malwaredomains' => 0,
-  'bl_nocoin' => 0,
+  'bl_malwaredomains' => 0,  
   'bl_pglyoyo' => 0,  
   'bl_someonewhocares' => 0,
   'bl_spam404' => 0,
@@ -109,8 +107,8 @@ $DEFAULTCONFIG = array(
 $BLOCKLISTNAMES = array(
   'custom' => 'Custom',
   'bl_tld' => 'Top Level Domain',
-  'bl_notrack' => 'NoTrack',  
-  'bl_qmalware' => 'NoTrack Malware',
+  'bl_notrack' => 'NoTrack Block List',
+  'bl_notrack_malware' => 'NoTrack Malware',
   'bl_cbl_all' => 'Coin Block List - All',
   'bl_cbl_browser' => 'Coin Block List - Browser',
   'bl_cbl_opt' => 'Coin Block List - Optional',
@@ -127,12 +125,11 @@ $BLOCKLISTNAMES = array(
   'bl_hphosts' => 'hpHosts',
   'bl_malwaredomainlist' => 'Malware Domain List',
   'bl_malwaredomains' => 'Malware Domains',
-  'bl_nocoin' => 'NoCoin',
   'bl_winhelp2002' => 'MVPS Hosts',
-  'bl_pglyoyo' => 'Peter Lowe&rsquo;s Ad List',  
+  'bl_pglyoyo' => 'Peter Lowe&rsquo;s Ad List',
   'bl_spam404'=> 'Spam 404',
   'bl_swissransom' => 'Swiss Security Ransomware',
-  'bl_swisszeus' => 'Swiss Security ZeuS',  
+  'bl_swisszeus' => 'Swiss Security ZeuS',
   'bl_areasy' => 'AR Easy List',
   'bl_chneasy' => 'CHN Easy List',
   'bl_yhosts' => 'CHN Yhosts',
