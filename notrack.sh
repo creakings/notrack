@@ -1,6 +1,6 @@
 #!/bin/bash
 #Title : NoTrack
-#Description : This script will download latest Adblock Domain block files from quidsup.net, then parse them into Dnsmasq.
+#Description : This script will download latest block lists from various sources, then parse them into Dnsmasq.
 #Author : QuidsUp
 #Date : 2015-01-14
 #Usage : sudo bash notrack.sh
@@ -17,7 +17,7 @@ declare -A Config                                #Config array for Block Lists
 Config[bl_custom]=""
 Config[bl_notrack]=1
 Config[bl_tld]=1
-Config[bl_qmalware]=1
+Config[bl_notrack_malware]=1
 Config[bl_cbl_all]=0
 Config[bl_cbl_browser]=0
 Config[bl_cbl_opt]=0
@@ -69,7 +69,7 @@ Config[bl_yhosts]=0                              #China yhosts
 #######################################
 # Constants
 #######################################
-readonly VERSION="0.8.9"
+readonly VERSION="0.8.10"
 readonly MAIN_BLOCKLIST="/etc/dnsmasq.d/notrack.list"
 readonly FILE_BLACKLIST="/etc/notrack/blacklist.txt"
 readonly FILE_WHITELIST="/etc/notrack/whitelist.txt"
@@ -83,8 +83,8 @@ readonly PASSWORD="ntrkpass"
 readonly DBNAME="ntrkdb"
 
 declare -A URLList                               #Array of URL's
-URLList[notrack]="https://raw.githubusercontent.com/quidsup/notrack/master/trackers.txt"
-URLList[qmalware]="https://raw.githubusercontent.com/quidsup/notrack/master/malicious-sites.txt"
+URLList[notrack]="https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-blocklist.txt"
+URLList[notrack_malware]="https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-malware.txt"
 URLList[cbl_all]="https://zerodot1.gitlab.io/CoinBlockerLists/list.txt"
 URLList[cbl_browser]="https://zerodot1.gitlab.io/CoinBlockerLists/list_browser.txt"
 URLList[cbl_opt]="https://zerodot1.gitlab.io/CoinBlockerLists/list_optional.txt"
@@ -1759,7 +1759,7 @@ process_whitelist                                #Process White List
 get_blacklist                                    #Process Users Blacklist
   
 get_list "notrack" "notrack"
-get_list "qmalware" "plain"
+get_list "notrack_malware" "plain"
 get_list "cedia" "csv" "domains.txt"
 get_list "cedia_immortal" "plain" "immortal_domains.txt"
 get_list "hexxium" "easylist"
