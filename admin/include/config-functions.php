@@ -253,9 +253,9 @@ function show_blocklists() {
   echo '<form action="?v=blocks" method="post">';         //Block Lists
   echo '<input type="hidden" name="action" value="blocklists">';
   draw_systable('NoTrack Block Lists');
-  draw_blocklist_row('bl_notrack', 'NoTrack', 'Default List, containing mixture of Trackers and Ad sites'); 
-  draw_blocklist_row('bl_tld', 'Top Level Domain', 'Whole country and generic domains');
-  draw_blocklist_row('bl_qmalware', 'Malware Sites', 'Malicious sites');
+  draw_blocklist_row('bl_notrack', 'NoTrack List', 'NoTrack Block List contains mixture of Tracking and Advertising sites');
+  draw_blocklist_row('bl_notrack_malware', 'NoTrack Malware', 'NoTrack Malware List contains malicious and dodgy sites that aren&rsquo;t really considered tracking or advertising');
+  draw_blocklist_row('bl_tld', 'Top Level Domains', 'Whole country and generic top level domains');
   echo '</table></div></div>'.PHP_EOL;
   
   //Advert Blocking
@@ -285,14 +285,14 @@ function show_blocklists() {
   
   //Crypto Coin
   draw_systable('Crypto Coin Mining');
-  draw_blocklist_row('bl_nocoin', 'No Coin', 'This blocklist utilises the domains from No Coin to block browser based Coin Miners such as Coinhive. <a href="https://github.com/keraf/NoCoin" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+    
+  draw_blocklist_row('bl_cbl_all', 'Coin Blocker Lists - All', 'This list contains all crypto mining domains - A list for administrators to prevent mining in networks. <a href="https://gitlab.com/ZeroDot1/CoinBlockerLists" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
   
-  draw_blocklist_row('bl_cbl_all', 'Coin Blocker Lists - All', 'This list contains all crypto mining domains - A list for administrators to prevent mining in networks. <a href="https://github.com/ZeroDot1/CoinBlockerLists" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_cbl_opt', 'Coin Blocker Lists - Optional', 'This list contains all optional mining domains - An additional list for administrators. <a href="https://gitlab.com/ZeroDot1/CoinBlockerLists" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
   
-  draw_blocklist_row('bl_cbl_opt', 'Coin Blocker Lists - Optional', 'This list contains all optional mining domains - An additional list for administrators. <a href="https://github.com/ZeroDot1/CoinBlockerLists" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_cbl_browser', 'Coin Blocker Lists - Browser', 'This list contains all browser mining domains - A list to prevent browser mining only. <a href="https://gitlab.com/ZeroDot1/CoinBlockerLists" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');    
   
-  draw_blocklist_row('bl_cbl_browser', 'Coin Blocker Lists - Browser', 'This list contains all browser mining domains - A list to prevent browser mining only. <a href="https://github.com/ZeroDot1/CoinBlockerLists" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  echo '</table></div></div>'.PHP_EOL;
+  echo '</table></div></div>'.PHP_EOL;                     //End Crypto Coin
   
   //Social
   draw_systable('Social');
