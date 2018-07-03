@@ -1,5 +1,12 @@
-#NoTrack Blocklist updated 08 Jun 2018
-#LatestVersion 0.8.9
+#Title: NoTrack Tracker Blocklist
+#Description: Tracker Domains Block List from quidsup.net
+#Author: QuidsUp
+#License: GNU General Public License v3.0
+#Home: https://quidsup.net/notrack/blocklist.php
+#@ GitHub : https://raw.githubusercontent.com/quidsup/notrack/master/trackers.txt
+#Updated: 03 Jul 2018
+#LatestVersion 0.8.10
+#---------------------
 1-cl0ud.com #Lead Forensics
 1-creative-1.com #Lead Forensics
 103bees.com #Tracker Unknown
@@ -462,6 +469,7 @@ amobee.org #Amobee
 ampaign.click #msales
 amplience.com #Amplience
 amplitude.com
+ampmetrics.techcrunch.com #AOL
 amung.us #TBC
 analyse.email #Altaire
 analysing.email #Altaire
@@ -731,6 +739,7 @@ bravodevupdatemyprofile.com #Campaign Monitor Pty
 bravotestcampmon.com #Campaign Monitor Pty
 bravotestconfirmsubscription.com #Campaign Monitor Pty
 bravotestcreatesend.com #Campaign Monitor Pty
+braze.com #Braze
 brealtime.com #bRealTime
 brecon-radnor-today.co.uk #Ad Web
 bridgetrack.com #Bridge Track
@@ -1722,6 +1731,7 @@ helloworldmagic.com #HelloWorld
 helloworldmail.com #HelloWorld
 helloworldptqa.com #HelloWorld
 help24center.com
+herasawelsov.com #Tracker Unknown
 hilltopads.net #HillTopAds
 himediads.com #Hi Media
 himediads.mobi #Hi Media
@@ -10972,7 +10982,6 @@ mobfox.org #MobFox
 mobfox.us #MobFox
 mobile-ad-cloud.com #Smaato
 mobileaccesspanel.com #comScore
-mobileanalytics.us-east-1.amazonaws.com #AWS Mobile Analytics
 mobileapptracking.com
 mobilebenchmarck.com #comScore
 mobilebenchmark.com #comScore
@@ -11033,6 +11042,7 @@ movoxi.com #comScore
 movoxi.net #comScore
 movoxy.com #comScore
 movoxy.net #comScore
+mparticle.com #mParticle
 mpire.com #comScore
 mplxtms.com #Conversant
 mpstat.us #SOASTA
@@ -11139,7 +11149,6 @@ nanovisor.us #instartlogic
 nativeads.com #Native Ads
 nativeads.site #Native Ads
 nativeads.solutions #Native Ads
-nativesdks.mparticle.com #mParticle
 navrcholu.cz #Navrcholu
 nearbyad.com #Rubicon
 nedsms.com #comScore
@@ -11415,6 +11424,7 @@ polarmobile.com
 popads.net #Advertising
 popadvertisement.club #Advertising
 popcash.net #Advertising
+popcon.ubuntu.com #Ubuntu unaproved tracking
 popmonetize.com #Advertising
 popmyads.com #Pop My Ads
 popularix.com
@@ -11574,6 +11584,7 @@ redeye.international
 redfacflowms.com #msales
 redirecting2.net
 redrevmsmt.com #msales
+redshell.io #Red Shell
 redstar.co.uk
 redzumsmtva.com #msales
 reevoo.com
@@ -11754,6 +11765,7 @@ se-core-pipe.com #Lead Forensics
 sea-nov-1.com #Lead Forensics
 search123.com #BrainBox Digital
 search2shop.com #Digital Window
+searchlinks.com #PartnetLinks
 searchmarketing.com
 searchretargeting.guru #Nano Interactive
 searchretargeting.info #Nano Interactive
@@ -12220,7 +12232,6 @@ tracker-api.my.com #Mail.ru
 trackertec.nznweb.com.br #NZN webs piwiki
 tracking.cmjump.com.au #Tracker Unknown
 tracking.lenzmx.com #Mobvista
-tracking.opencandy.com.s3.amazonaws.com #OpenCandy
 tracking.volo-mobile.com #Volo
 tracking.xsellapp.com #Unknown Tracker
 trackjs.com
@@ -12251,6 +12262,7 @@ trakking.info #msales
 trandsey.info #Tracker Unknown
 travel-options.com #Digital Window
 traveloffer-uk.com #Digital Window
+treasuredata.com #Treasure Data
 trees4knowledge.com #TMRG
 treesforknowledge.com #TMRG
 tremorhub.com #Tremor Video
