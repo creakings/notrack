@@ -511,6 +511,7 @@ function generate_blacklist() {
   tmp+=("#doubleclick.net")
   tmp+=("#googletagmanager.com")
   tmp+=("#googletagservices.com")
+  tmp+=("#polling.bbc.co.uk #BBC Breaking News Popup")
   printf "%s\n" "${tmp[@]}" > $FILE_BLACKLIST     #Write Array to file with line seperator
 }
 
