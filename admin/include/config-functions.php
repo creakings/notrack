@@ -508,14 +508,14 @@ function show_domain_list() {
     
   $KeyBlack = array_flip(load_list($FileTLDBlackList, 'TLDBlackList'));
   $KeyWhite = array_flip(load_list($FileTLDWhiteList, 'TLDWhiteList'));
-  $listSize = count($list);
+  $listsize = count($list);
   
-  if ($list[$listSize-1][0] == '') {             //Last line is sometimes blank
-    array_splice($list, $listSize-1);            //Cut last line out
+  if ($list[$listsize-1][0] == '') {             //Last line is sometimes blank
+    array_splice($list, $listsize-1);            //Cut last line out
   }
-  
-  $FlagImage = '';  
-  $UnderscoreName = '';
+
+  $flag_image = '';  
+  $flag_filename = '';
 
   echo '<div class="sys-group"><div class="sys-title">'.PHP_EOL;
   echo '<h5>Domain Blocking</h5>'.PHP_EOL;
@@ -525,73 +525,78 @@ function show_domain_list() {
   echo '<p>High risk domains are home to a high percentage of malicious sites compared to legitimate sites. Often they are cheap / free to buy and are not well policed.<br>'.PHP_EOL;
   echo 'High risk domains are automatically blocked, unless you specifically untick them.</p>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
-  
+
   echo '<span class="key key-orange">Medium</span>'.PHP_EOL;
   echo '<p>Medium risk domains are home to a significant number of malicious sites, but are outnumbered by legitimate sites. You may want to consider blocking these, unless you live in, or utilise the websites of the affected country.</p>'.PHP_EOL;  
   echo '<br>'.PHP_EOL;
-  
+
   echo '<span class="key">Low</span>'.PHP_EOL;
   echo '<p>Low risk may still house some malicious sites, but they are vastly outnumbered by legitimate sites.</p>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
-  
+
   echo '<span class="key key-green">Negligible</span>'.PHP_EOL;
   echo '<p>These domains are not open to the public, therefore extremely unlikely to contain malicious sites.</p>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
-    
+
   echo '</div></div>'.PHP_EOL;
-  
-  
+
   //Tables
   echo '<div class="sys-group">'.PHP_EOL;
-  if ($listSize == 0) {                          //Is List blank?
+  if ($listsize == 0) {                          //Is List blank?
     echo 'No sites found in Block List'.PHP_EOL; //Yes, display error, then leave
     echo '</div>';
     return;
   }
-  
+
   echo '<form name="tld" action="?" method="post">'.PHP_EOL;
   echo '<input type="hidden" name="action" value="tld">'.PHP_EOL;
-    
+
   echo '<p><b>Old Generic Domains</b></p>'.PHP_EOL;
-  echo '<table class="tld-table">'.PHP_EOL;
-  
+  echo '<table class="tld-table">'.PHP_EOL;                //Start TLD Table
+
   foreach ($list as $site) {
-    if ($site[2] == 0) {                         //Zero means draw new table
-      echo '</table>'.PHP_EOL;                   //End old table
+    if ($site[2] == 0) {                                   //Zero means draw new table
+      echo '</table>'.PHP_EOL;                             //End current TLD table
       echo '<br>'.PHP_EOL;
-      echo '<p><b>'.$site[1].'</b></p>'.PHP_EOL; //Title of Table
-      echo '<table class="tld-table">'.PHP_EOL;  //New Table
-      continue;                                  //Jump to end of loop
+      echo '<p><b>'.$site[1].'</b></p>'.PHP_EOL;           //Title of new TLD Table
+      echo '<table class="tld-table">'.PHP_EOL;            //Start new TLD Table
+      continue;                                            //Jump to end of loop
     }
-    
-    switch ($site[2]) {                          //Row colour based on risk
+
+    switch ($site[2]) {                                    //Row colour based on risk
       case 1: echo '<tr class="invalid">'; break;
-      case 2: echo '<tr class="orange">'; break;      
+      case 2: echo '<tr class="orange">'; break;
       case 3: echo '<tr>'; break;                //Use default colour for low risk
       case 5: echo '<tr class="green">'; break;
     }
-    
-    $UnderscoreName = str_replace(' ', '_', $site[1]); //Flag names are seperated by underscore
-    
+
+    //Flag names are seperated by underscore and converted to ASCII, dropping any UTF-8 Characters
+    $flag_filename = iconv('UTF-8', 'ASCII//IGNORE', str_replace(' ', '_', $site[1])); 
+
     //Does a Flag image exist?
-    if (file_exists('./images/flags/Flag_of_'.$UnderscoreName.'.png')) $FlagImage = '<img src="./images/flags/Flag_of_'.$UnderscoreName.'.png" alt=""> ';
-    else $FlagImage = '';
-    
-    //(Risk 1 & NOT in White List) OR (in Black List)
-    if ((($site[2] == 1) && (! array_key_exists($site[0], $KeyWhite))) || (array_key_exists($site[0], $KeyBlack))) {
-      echo '<td><b>'.$site[0].'</b></td><td><b>'.$FlagImage.$site[1].'</b></td><td>'.$site[3].'</td><td><input type="checkbox" name="'.substr($site[0], 1).'" checked="checked"></td></tr>'.PHP_EOL;
+    if (file_exists('./images/flags/Flag_of_'.$flag_filename.'.png')) {
+      $flag_image = '<img src="./images/flags/Flag_of_'.$flag_filename.'.png" alt=""> ';
     }
     else {
-      echo '<td>'.$site[0].'</td><td>'.$FlagImage.$site[1].'</td><td>'.$site[3].'</td><td><input type="checkbox" name="'.substr($site[0], 1).'"></td></tr>'.PHP_EOL;
-    }    
+      $flag_image = '';
+      //$flag_image = iconv('UTF-8', 'ASCII//IGNORE', $flag_filename); Debugging UTF-8 filenames
+    }
+
+    //(Risk 1 & NOT in White List) OR (in Black List)
+    if ((($site[2] == 1) && (! array_key_exists($site[0], $KeyWhite))) || (array_key_exists($site[0], $KeyBlack))) {
+      echo '<td><b>'.$site[0].'</b></td><td><b>'.$flag_image.$site[1].'</b></td><td>'.$site[3].'</td><td><input type="checkbox" name="'.substr($site[0], 1).'" checked="checked"></td></tr>'.PHP_EOL;
+    }
+    else {
+      echo '<td>'.$site[0].'</td><td>'.$flag_image.$site[1].'</td><td>'.$site[3].'</td><td><input type="checkbox" name="'.substr($site[0], 1).'"></td></tr>'.PHP_EOL;
+    }
   }
-  
-  echo '</table>'.PHP_EOL;
+
+  echo '</table>'.PHP_EOL;                                 //End TLD table
   echo '<div class="centered"><br>'.PHP_EOL;
   echo '<input type="submit" class="button-grey" value="Save Changes">'.PHP_EOL;
   echo '</div>'.PHP_EOL;
-  echo '</form></div>'.PHP_EOL;          //End table
-  
+  echo '</form></div>'.PHP_EOL;                            //End Form
+
   return null;
 }
 
