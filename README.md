@@ -1,3 +1,14 @@
+# Moving to GitLab
+NoTrack blocklists have now been split from this project and moved to GitLab. They are no longer being actively maintained and will be removed in August 2018.  
+### NoTrack Users
+Please ensure you have updated to at least version 0.8.10 using the web admin or script `sudo ntrk-upgrade`
+
+### Other Projects
+New URLs are:  
+NoTrack-Blocklist: https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-blocklist.txt  
+NoTrack-Malware: https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-malware.txt  
+   
+   
 # NoTrack
 Tracking is absolutely rife on the Internet, on average 17 cookies are dropped by each website. Although you can block third party cookies, there are also more complex methods of tracking, such as:
  * Tracking Pixels 
