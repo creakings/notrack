@@ -4,7 +4,7 @@
 #License: GNU General Public License v3.0
 #Home: https://quidsup.net/notrack/blocklist.php
 #@ GitHub : https://raw.githubusercontent.com/quidsup/notrack/master/trackers.txt
-#Updated: 16 Jul 2018
+#Updated: 08 Aug 2018
 #LatestVersion 0.8.10
 #---------------------
 1-cl0ud.com #Lead Forensics
@@ -13323,6 +13323,7 @@ stats.olark.com #Olark
 stats.paypal.com #PayPal
 stats.royalbank.com #Canadian Royal Bank
 stats.wp.com #Wordpress
+stats.yellowphoenix18.de #YellowPhoenix18
 statsfe1.ws.microsoft.com #Microsoft
 statsfe2.ws.microsoft.com #Microsoft
 statsy.net #Tracker Unknown
@@ -13507,6 +13508,7 @@ tracking.cmjump.com.au #Tracker Unknown
 tracking.lenzmx.com #Mobvista
 tracking.volo-mobile.com #Volo
 tracking.xsellapp.com #Unknown Tracker
+trackinglove.com #Tracker Unknown
 trackjs.com
 trackwindow.com #Digital Window
 trackwt.com #Wtsense
