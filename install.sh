@@ -28,11 +28,10 @@ readonly DNSMASQ_CONF_PATH="/etc/dnsmasq.conf"
 ##############################################################################
 # Environment variables
 ##############################################################################
-readonly VERSION="0.8.4"
+readonly VERSION="0.8.10"
+
 SUDO_REQUIRED=false                              #true if installing to /opt
-
 REBOOT_REQUIRED=false
-
 SETUP_STATIC_IP_ADDRESS=false
 GATEWAY_ADDRESS=""
 IP_ADDRESS=""
@@ -60,7 +59,7 @@ DHCP_LEASE_TIME=""
 #   Exit Code
 #######################################
 error_exit() {
-  echo "Error. $1"
+  echo "Error :-( $1"
   echo "Aborting"
   exit "$2"
 }
@@ -105,7 +104,7 @@ service_restart() {
 #######################################
 check_file_exists() {
   if [ ! -e "$1" ]; then
-    echo "Error. File $1 is missing.  Aborting."
+    echo "Error. File $1 is missing :-( Aborting."
     exit "$2" 
   fi
 }
@@ -128,25 +127,24 @@ check_file_exists() {
 # Globals:
 #   None
 # Arguments:
-#   $1 = Title, $2, $3... Option 1, 2...
-#   $? = Choice user made
+#   $1 = Title, $2, $3... Option 1, 2
 # Returns:
-#   None
+#   $? = Choice user made
 #######################################
 menu() {
   local choice
   local highlight
-  local menu_size  
-  
+  local menu_size
+
   highlight=1
   menu_size=0
   clear
-  while true; do    
+  while true; do
     for i in "$@"; do
       if [ $menu_size == 0 ]; then                #$1 Is Title
         echo -e "$1"
         echo
-      else        
+      else
         if [ $highlight == $menu_size ]; then
           echo " * $menu_size: $i"
         else
@@ -155,13 +153,12 @@ menu() {
       fi
       ((menu_size++))
     done
-        
+
     read -r -sn1 choice;
     echo "$choice"
     if [[ $choice =~ ^[0-9]+$ ]]; then           #Has the user chosen 0-9
       if [[ $choice -ge 1 ]] && [[ $choice -lt $menu_size ]]; then
-        return "$choice"
-        #break;
+        return "$choice"        
       fi
     elif [[ $choice ==  "A" ]]; then             #Up
       if [ $highlight -le 1 ]; then              #Loop around list
@@ -183,9 +180,9 @@ menu() {
       exit 1
     fi
     #C Right, D Left
-    
+
     menu_size=0
-    clear   
+    clear
   done
 }
 
@@ -211,6 +208,7 @@ function backup_configs() {
   
   check_file_exists "/etc/lighttpd/lighttpd.conf" 24
   sudo cp /etc/lighttpd/lighttpd.conf /etc/lighttpd/lighttpd.conf.old
+  echo "========================================================="
   echo
 }
 
@@ -255,6 +253,8 @@ function copy_scripts() {
   sudo cp "$INSTALL_LOCATION/scripts/ntrk-parse.sh" /usr/local/sbin/
   sudo mv /usr/local/sbin/ntrk-parse.sh /usr/local/sbin/ntrk-parse
   sudo chmod 755 /usr/local/sbin/ntrk-parse
+  echo "========================================================="
+  echo
 }
 
 
@@ -305,9 +305,9 @@ function delete_file() {
 # Returns:
 #   None
 #--------------------------------------------------------------------
-function download_with_git() {  
+function download_with_git() {
   echo "Downloading NoTrack using Git"
-  
+
   if [ $SUDO_REQUIRED == false ]; then
     git clone --depth=1 https://github.com/quidsup/notrack.git "$INSTALL_LOCATION"
   else
@@ -327,7 +327,7 @@ function download_with_git() {
 # Returns:
 #   None
 #--------------------------------------------------------------------
-function download_with_wget() {  
+function download_with_wget() {
   if [ -d "$INSTALL_LOCATION" ]; then            #Check if NoTrack folder exists
     echo "NoTrack folder exists. Skipping download"
   else
@@ -335,8 +335,8 @@ function download_with_wget() {
     wget https://github.com/quidsup/notrack/archive/master.zip -O /tmp/notrack-master.zip
     if [ ! -e /tmp/notrack-master.zip ]; then    #Check to see if download was successful
       #Abort we can't go any further without any code from git
-      error_exit "Error Download from github has failed" "23"      
-    fi  
+      error_exit "Error Download from github has failed" "23"
+    fi
 
     unzip -oq /tmp/notrack-master.zip -d /tmp
     if [ $SUDO_REQUIRED == false ]; then
@@ -344,9 +344,9 @@ function download_with_wget() {
     else
       sudo mv /tmp/notrack-master "$INSTALL_LOCATION"
     fi
-    rm /tmp/notrack-master.zip                  #Cleanup
+    rm /tmp/notrack-master.zip                   #Cleanup
   fi
-  
+
   sudo chown "$(whoami)":"$(whoami)" -hR "$INSTALL_LOCATION"
 }
 
@@ -363,14 +363,18 @@ function download_with_wget() {
 #   None
 #--------------------------------------------------------------------
 function install_packages() {
+echo "========================================================="
+echo "Installing Packages"
+echo
+
   if [ "$(command -v apt-get)" ]; then install_deb
   elif [ "$(command -v dnf)" ]; then install_dnf
   elif [ "$(command -v yum)" ]; then install_yum  
   elif [ "$(command -v pacman)" ]; then install_pacman
   elif [ "$(command -v apk)" ]; then install_apk
   elif [ "$(command -v xbps-install)" ]; then install_xbps
-  else 
-    echo "Unable to work out which package manager is being used."
+  else
+    echo "I don't know which package manager you have."
     echo "Ensure you have the following packages installed:"
     echo -e "\tdnsmasq"
     echo -e "\tlighttpd"
@@ -378,7 +382,7 @@ function install_packages() {
     echo -e "\tmemcached"
     echo -e "\tphp-cgi"
     echo -e "\tphp-curl"
-    echo -e "\tphp-mysql"    
+    echo -e "\tphp-mysql"
     echo -e "\tphp-memcache"
     echo -e "\tunzip"
     echo
@@ -386,6 +390,8 @@ function install_packages() {
     read -rn1
     echo
   fi
+  echo "========================================================="
+  echo
 }
 
 
@@ -403,13 +409,12 @@ function install_packages() {
 function install_deb() {
   local phpversion="php5"
   local phpmemcache="php5-memcache"
-  i=5                                                      #Assume highest version of PHP 7 will be v7.5
-    
-  echo
+  i=6                                                      #Assume highest version of PHP 7 will be v7.6
+
   echo "Refreshing apt"
   sudo apt-get update
   echo
-  
+
   echo "Searching package archives for latest PHP version"
   while [ $i -ge 0 ]; do                                   #Start while loop at highest version
     apt-cache show php7.$i &> /dev/null                    #Check apt-cache
@@ -422,11 +427,11 @@ function install_deb() {
       ((i--))
     fi
   done
-  
+
   if [[ $phpversion == "php5" ]]; then                     #PHP 7 not found, fallback to v5.x
     echo "Installing PHP 5"
   fi
-    
+
   echo "Preparing to install Deb packages..."
   sleep 2s
   echo "Installing dependencies"
@@ -444,7 +449,7 @@ function install_deb() {
   echo "Installing Lighttpd and PHP"
   sleep 2s
   sudo apt-get -y install lighttpd memcached "$phpmemcache" "$phpversion-cgi" "$phpversion-curl" "$phpversion-mysql"
-  echo  
+  echo
 }
 
 
@@ -600,7 +605,7 @@ function install_apk() {
 #--------------------------------------------------------------------
 function install_xbps() {
   echo "Preparing to install XBPS packages..."
-  sudo xbps-install -Suy ##sync & update only once
+  sudo xbps-install -Suy                         ##sync & update only once
   sleep 2s
   echo
   echo "Installing dependencies"
@@ -643,7 +648,7 @@ function install_xbps() {
 # Returns:
 #   None
 #--------------------------------------------------------------------
-function setup_dnsmasq() {  
+function setup_dnsmasq() {
   local hostname=""
   
   echo "Configuring Dnsmasq"
@@ -651,7 +656,7 @@ function setup_dnsmasq() {
   create_folder "/etc/dnsmasq.d"                 #Issue #94 dnsmasq folder not created
   
   #Copy config files modified for NoTrack
-  echo "Copying config files from $INSTALL_LOCATION to /etc/"
+  echo "Copying Dnsmasq config files from $INSTALL_LOCATION to /etc/conf"
   check_file_exists "$INSTALL_LOCATION/conf/dnsmasq.conf" 24
   sudo cp "$INSTALL_LOCATION/conf/dnsmasq.conf" /etc/dnsmasq.conf
   
@@ -671,16 +676,15 @@ function setup_dnsmasq() {
   else
     echo "setup_dnsmasq() WARNING: Unable to find hostname"
   fi
-  
+
   if [[ $hostname != "" ]]; then
     echo "Writing first entry for this system: $IP_ADDRESS - $hostname"
     echo -e "$IP_ADDRESS\t$hostname" | sudo tee -a /etc/localhosts.list 
   fi
-    
-  
+
   sudo touch /var/log/notrack.log                #Create log file for Dnsmasq
   sudo chmod 664 /var/log/notrack.log            #Set permissions for log file
-  
+
   if [[ "$SETUP_DHCP" == true ]]; then           #Optional DHCP Setup
     config_dnsmasq_dhcp_logging
     config_dnsmasq_dhcp_authoritative_mode
@@ -689,10 +693,11 @@ function setup_dnsmasq() {
       setup_dnsmasq_dhcp_ipv4
     fi
   fi
-  
+
   echo "Setup of Dnsmasq complete"
+  echo "========================================================="
   echo
-  sleep 3s
+  sleep 4s
 }
 
 
@@ -771,10 +776,11 @@ setup_lighttpd() {
     sudo cp "$INSTALL_LOCATION/conf/fastcgi.conf" /etc/lighttpd/conf.d/fastcgi.conf
     echo 'include "conf.d/fastcgi.conf"' | sudo tee -a /etc/lighttpd/lighttpd.conf
     sudo sed -i "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=1/" /etc/php/php.ini
-    sudo sed -i "s/;extension=mysqli.so/extension=mysqli.so/" /etc/php/php.ini    
+    sudo sed -i "s/;extension=mysqli.so/extension=mysqli.so/" /etc/php/php.ini
   fi
   
   echo "Setup of Lighttpd complete"
+  echo "========================================================="
   echo
   sleep 3s
 }
@@ -791,10 +797,10 @@ setup_lighttpd() {
 #   None
 #--------------------------------------------------------------------
 function setup_mariadb() {
-  local rootpass=""  
+  local rootpass=""
 
   echo "Setting up MariaDB"
-  echo -n "Please enter MariaDB root password (leave blank if not set): "
+  echo -n "Please enter MariaDB root password you set earlier (leave blank if not set): "
   read -r rootpass;
   
   echo
@@ -826,6 +832,7 @@ function setup_mariadb() {
   echo -e "*/7 * * * *\troot\t/usr/local/sbin/ntrk-parse" | sudo tee /etc/cron.d/ntrk-parse &> /dev/null
 
   echo "MariaDB setup complete"
+  echo "========================================================="
   echo
   sleep 3s
 }
@@ -865,6 +872,9 @@ function setup_notrack() {
   echo "IPVersion = $IP_VERSION" | sudo tee /etc/notrack/notrack.conf
   echo "NetDev = $NETWORK_DEVICE" | sudo tee -a /etc/notrack/notrack.conf
   echo
+  echo "NoTrack configuration complete"
+  echo "========================================================="
+  echo
   sleep 3s
 }
 
@@ -899,6 +909,10 @@ Setup_FirewallD() {
   
   echo "Reloading FirewallD..."
   sudo firewall-cmd --reload
+  echo
+  echo "FirewallD configuration complete"
+  echo "========================================================="
+  echo
 }
 
 
@@ -913,33 +927,33 @@ Setup_FirewallD() {
 #######################################
 
 prompt_installloc() {
-  local HomeLoc="${HOME}"
+  local homefolder="${HOME}"
   
-  if [[ $HomeLoc == "/root" ]]; then      #Change root folder to users folder
-    HomeLoc="$(getent passwd $SUDO_USER | grep /home | grep -v syslog | cut -d: -f6)"    
-    if [ $(wc -w <<< "$HomeLoc") -gt 1 ]; then   #Too many sudo users
+  if [[ $homefolder == "/root" ]]; then      #Change root folder to users folder
+    homefolder="$(getent passwd $SUDO_USER | grep /home | grep -v syslog | cut -d: -f6)"    
+    if [ $(wc -w <<< "$homefolder") -gt 1 ]; then   #Too many sudo users
       echo "Unable to estabilish which Home folder to install to"
       echo "Either run this installer without using sudo / root, or manually set the \$INSTALL_LOCATION variable"
       echo "\$INSTALL_LOCATION=\"/home/you/NoTrack\""
       exit 15
-    fi    
+    fi
   fi
   
-  menu "Select Install Folder" "Home $HomeLoc" "Opt /opt" "Cancel"
+  menu "Select Install Folder" "Home $homefolder" "Opt /opt" "Cancel"
   
   case $? in
-    1) 
-      INSTALL_LOCATION="$HomeLoc/notrack" 
+    1)
+      INSTALL_LOCATION="$homefolder/notrack" 
     ;;
-    2) 
+    2)
       INSTALL_LOCATION="/opt/notrack"
       SUDO_REQUIRED=true
     ;;
     3)
       error_exit "Aborting Install" 1
-    ;;  
+    ;;
   esac
-  
+
   if [[ $INSTALL_LOCATION == "" ]]; then
     error_exit "Install folder not set" 15
   fi  
@@ -976,13 +990,13 @@ prompt_network_device() {
       ((count_net_dev++))
     fi
   done
-   
+
   if [ $count_net_dev == 0 ]; then               #None found
     echo "Error. No Network Devices found"
     echo "Edit user customisable setting \$NetDev with the name of your Network Device"
     echo "e.g. \$NetDev=\"eth0\""
     exit 11
-    
+
   elif [ $count_net_dev == 1 ]; then             #1 Device
     NETWORK_DEVICE=${device_list[0]}             #Simple, just set it
   elif [ $count_net_dev -gt 0 ]; then
@@ -1019,7 +1033,7 @@ prompt_ip_version() {
     1) IP_VERSION=$IP_V4 ;;
     2) IP_VERSION=$IP_V6 ;;
     3) error_exit "Aborting Install" 12
-  esac   
+  esac
 }
 
 
@@ -1105,7 +1119,7 @@ prompt_dns_server() {
       echo -en "DNS Server 2: "
       read -r DNS_SERVER_2
     ;;
-  esac   
+  esac
 }
 
 
@@ -1675,39 +1689,47 @@ function show_welcome() {
   echo "This installer will transform your system into a network-wide Tracker Blocker"
   echo "Install Guides: https://youtu.be/MHsrdGT5DzE"
   echo "                https://github.com/quidsup/notrack/wiki"
-  echo "For custom installation locations or preset settings please edit install.sh"
+  echo
   echo
   echo "Installation of MariaDB might ask you for a root password"
-  echo "If it does make a note of it, as you will need it later"
+  echo "If it does, make a note of it, as you will need it later during the install of NoTrack"
   echo
-  echo "Press any key to contine..."
+  echo "Press any key to continue..."
   read -rn1
 }
 
 #######################################
 # Finish Screen
 # Globals:
-#   None
+#   INSTALL_LOCATION
 # Arguments:
 #   None
 # Returns:
 #   None
 #######################################
-function show_finish() {  
-  echo "NoTrack Install Complete"
-  echo "Access the admin console at http://$(hostname)/admin"
+function show_finish() {
+  echo "========================================================="
   echo
-  echo "Remember to secure MariaDB root User."
-  echo "Run: /usr/bin/mysql_secure_installation"
-
+  echo -e "NoTrack Install Complete :-)"
+  echo "Access the admin console at: http://$(hostname)/admin"
+  echo
+  echo "Post Install Checklist:"
+  echo -e "\t\u2022 Secure MariaDB Installation"
+  echo -e "\t    Run: /usr/bin/mysql_secure_installation"
+  echo
+  echo -e "\t\u2022 Create HTTPS Certificate"
+  echo -e "\t    bash $INSTALL_LOCATION/create-ssl-cert.sh"
+  echo
+  echo "========================================================="
+  echo
+  
   if [[ $REBOOT_REQUIRED == true ]]; then
     echo "System reboot is required"
     echo
     echo "Press any key to reboot"
     read -rn1
-    sudo reboot  
+    sudo reboot
   fi
-  
 }
 
 
@@ -1715,16 +1737,17 @@ function show_finish() {
 # Main
 #######################################
 
-if [[ $(command -v sudo) == "" ]]; then
-  error_exit "NoTrack requires Sudo to be installed for Admin functionality" "10"  
+
+if [[ $(command -v sudo) == "" ]]; then          #Is sudo available?
+  error_exit "NoTrack requires Sudo to be installed for Admin functionality" "10"
 fi
 
 if [ $1 ]; then
-  if [[ $1 == "-sql" ]]; then                    #Special upgrade section to v0.8
+  if [[ $1 == "-sql" ]]; then                    #Special upgrade section to v0.8 DEPRECATED at v1.0
     echo "Upgrading NoTrack to v$VERSION"
     echo "Installation of MariaDB might ask you for a root password"
     echo "If it does make a note of it, as you will need it later"
-    echo "Press any key to contine"
+    echo "Press any key to continue"
     read -rn1
     
     echo "Running ntrk-upgrade"
@@ -1853,7 +1876,9 @@ fi
 service_restart dnsmasq
 service_restart lighttpd
 
-echo "Downloading List of Trackers"
+echo "========================================================="
+echo "Downloading and configuring blocklists"
+echo
 sudo /usr/local/sbin/notrack -f
 
 show_finish
