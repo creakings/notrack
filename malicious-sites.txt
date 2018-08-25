@@ -4,7 +4,7 @@
 #License: GNU General Public License v3.0
 #Home: https://quidsup.net/notrack/blocklist.php
 #@ GitHub : https://raw.githubusercontent.com/quidsup/notrack/master/trackers.txt
-#Updated: 08 Aug 2018
+#Updated: 25 Aug 2018
 #LatestVersion 0.8.10
 #---------------------
 1kdailyprofit.biz #Scam
@@ -22,6 +22,7 @@ ashleyrnadison.com #Typo
 b3stm0b1l3.com #Potentially Unwanted Application
 baidu.om #Fake Site
 biosagentplus.com #Scam
+bitleyco.cc #Phishing
 bqdqnmwwnz.com #Command and Control
 com-internet.online #Malicious Site
 consensu.org #Popups
@@ -45,6 +46,7 @@ gotoout.ml #Phishing
 hanstrackr.com #Malware - Flash Video Downloader
 hemailaccessonline.com #Browser Hijacker
 hoholikik.club #Malware - Ad Injector
+imgfarm.com #PUA - Mindspark
 intimglobus.ru #suspicious
 iphoneoptimizer.com #Scam
 ironbeast.io #Suspicious
@@ -69,6 +71,7 @@ reimageplus.com #Scam
 reliablesurfingext.biz #Fake updates
 retreatoftheretreat.site #Malware - RIG Exploit
 safari-code.net #Malicious Site
+safedownload.co #Malware
 searchnet.com #Malicious Site
 searchtabnew.com #Malicious Site
 servicekgbfit.us #Fake BSODS
@@ -77,7 +80,9 @@ solvusoft.com #Malicious Files
 styleszelife.com #Malware - Unknown
 surveyrouter.com #Toluna Surveys
 taosha.cc #Android Trojan
+tiny.ie #Phishing
 toogle.com #Malicious Site
+tourtodaylaboratory.com #PUA - Filezilla
 trumpetedextremes.com #Ad Injector
 wkvplhxvpk.com #Malware - Unknown Exploit Kit
 wwu-natwiest.com #Typo

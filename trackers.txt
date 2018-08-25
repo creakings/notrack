@@ -4,7 +4,7 @@
 #License: GNU General Public License v3.0
 #Home: https://quidsup.net/notrack/blocklist.php
 #@ GitHub : https://raw.githubusercontent.com/quidsup/notrack/master/trackers.txt
-#Updated: 08 Aug 2018
+#Updated: 25 Aug 2018
 #LatestVersion 0.8.10
 #---------------------
 1-cl0ud.com #Lead Forensics
@@ -134,6 +134,7 @@ ad.12dt.com #Adverts on 12dt.com
 ad.groupon.co.uk
 ad.weplayer.cc #Advertising Unknown
 ad4game.com #Ad4Game
+ad4mat.net #Ad4mat
 adacado.com #Adacado
 adaction.mobi #AdAction
 adadvisor.net #Neustar
@@ -925,6 +926,7 @@ clickwindow.net #Digital Window
 client-event-reporter.twitch.tv #Twitch
 clientsend.com #Campaign Monitor Pty
 clixengine.com #Digital Window
+clixgalore.com #ClixGalore
 clixmetrix.com #ClixMetrix
 clk1002.com #RevenueHits
 clk1003.com #RevenueHits
@@ -1678,8 +1680,26 @@ gotraffic.net #Unknown Tracker
 gpwebsolutions.co.uk
 graf.ly #Bright Pixel
 granify.com #Granify
+grape-shot.com #Grapeshot
 grapemedia.cz #Grape Media
+grapeshot-apac.com #Grapeshot
+grapeshot-emea.com #Grapeshot
+grapeshot-inc.com #Grapeshot
+grapeshot-keywords.com #Grapeshot
+grapeshot-keywords.net #Grapeshot
+grapeshot-rtb.com #Grapeshot
+grapeshot-uk.com #Grapeshot
+grapeshot-usa.com #Grapeshot
+grapeshot.biz #Grapeshot
+grapeshot.co #Grapeshot
 grapeshot.co.uk
+grapeshot.com #Grapeshot
+grapeshot.info #Grapeshot
+grapeshot.net #Grapeshot
+grapeshot.org #Grapeshot
+grapeshotinc.com #Grapeshot
+grapeshotkeywords.com #Grapeshot
+grapeshotkeywords.net #Grapeshot
 graphiq.com #Graphiq
 gravity.com
 greatestoldupgrading.review
@@ -1688,8 +1708,14 @@ grfyti.com #eGain Corporation
 groovygifts.com #Digital Window
 grumft.com #Grumft
 grvcdn.com
+gs-keywords.com #Grapeshot
+gs-keywords.net #Grapeshot
+gscntxt.net #Grapeshot
+gscontext.net #Grapeshot
 gscontxt.net
 gsecondscreen.com #Gamooga Second Screen
+gskeywords.com #Grapeshot
+gskeywords.net #Grapeshot
 gslb-ns.com #AppNexus Inc
 gslb-ns.net #AppNexus Inc
 gslb-ns.org #AppNexus Inc
@@ -1699,6 +1725,7 @@ gslbns.com #AppNexus Inc
 gslbns.net #AppNexus Inc
 gslbns.org #AppNexus Inc
 gssprt.jp
+gsxl.net #Grapeshot
 gu-web.net #The Guardian
 gumgum.com
 gunmedbuyflw.com #msales
@@ -2141,6 +2168,7 @@ mbsuitmsmt.com #msales
 mc.yandex.ru #Yandex
 mcsecure.mobi
 mcstats.org #Minecraft
+mdotlabs.com #Viewability
 mdotm.com #MdotM
 measure.mf.cz #Mlada fronta
 medals.bizrate.com #TBC
@@ -12443,6 +12471,7 @@ netseer.com
 netshelter.net
 netstad.com #comScore
 netstat.asia #comScore
+networkadvertising.org #Network Advertising Initiative
 newdealmedia.info #msales
 newrelic.com #New Relic
 newscurve.com #NeoData Intelligence
@@ -12531,6 +12560,7 @@ onclickads.net #Advertising Technologies
 onclicktop.com
 oneclickdeal.info #msales
 onedmp.com
+onemarketnetwork.com #One Market
 onestat.com
 onetag-sys.com
 online-metrix.net
@@ -13073,7 +13103,7 @@ servesharp.com
 servesharp.net
 serving-sys.com #Microsoft
 servingclks.com #CPMStars
-sessioncam.com
+sessioncam.com #SessionCam
 sex-affiliation.com
 sexcount.com #comScore
 sg-living.co.jp
@@ -13419,6 +13449,7 @@ technorati.com #Technorati
 technoratimedia.com #Technorati
 technoratimedia.net #Technorati
 tedglynn.com #Ad Web
+telemetry-experiment.cdn.mozilla.net #Mozilla
 telemetry-in.battle.net #Battle.net
 telemetry.api.swiftkey.com #Swiftkey
 telemetry.battle.net #Blizzard
@@ -13463,6 +13494,7 @@ tifbs.net #United Internet Media
 tiller.co #Tiller
 timechange.space #Missleading adverts scam
 tinydm.com #Adware
+tinypass.com #Piano
 tiqcdn.com
 titanium1100-en-au.census.trendmicro.com #Trendmicro
 tkqlhce.com
@@ -13561,6 +13593,7 @@ trustedsite.com
 truviewanalytics.com #Adobe
 truviewdata.com #Adobe
 trychameleon.com #Chameleon
+ttmdduyuru.net #Tracker Unknown
 ttxm.co.uk
 tubemogul.com
 tumri.net
@@ -13838,6 +13871,7 @@ yieldoptimizer.com
 yieldpartners.com
 yijia2009.com #Advetising
 yinhaijuan.com #Advertising
+yjoiunf.com #Advertising Unknown
 yjtag.jp
 yldbt.com #YeildBot
 yldmgrimg.net #Yahoo
