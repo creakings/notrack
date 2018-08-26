@@ -224,27 +224,27 @@ function backup_configs() {
 #   None
 #--------------------------------------------------------------------
 function copy_scripts() {
-  check_file_exists "$INSTALL_LOCATION/notrack.sh" "25"              #Main
+  check_file_exists "$INSTALL_LOCATION/scripts/notrack.sh" "25"      #Blocklist parser
   echo "Copying notrack.sh"
-  sudo cp "$INSTALL_LOCATION/notrack.sh" /usr/local/sbin/notrack.sh
+  sudo cp "$INSTALL_LOCATION/scripts/notrack.sh" /usr/local/sbin/notrack.sh
   sudo mv /usr/local/sbin/notrack.sh /usr/local/sbin/notrack 
   sudo chmod 755 /usr/local/sbin/notrack
 
-  check_file_exists "$INSTALL_LOCATION/ntrk-exec.sh" "26"            #Exec
+  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-exec.sh" "26"    #Exec
   echo "Copying ntrk-exec.sh"
-  sudo cp "$INSTALL_LOCATION/ntrk-exec.sh" /usr/local/sbin/
+  sudo cp "$INSTALL_LOCATION/scripts/ntrk-exec.sh" /usr/local/sbin/
   sudo mv /usr/local/sbin/ntrk-exec.sh /usr/local/sbin/ntrk-exec
   sudo chmod 755 /usr/local/sbin/ntrk-exec
   
-  check_file_exists "$INSTALL_LOCATION/ntrk-pause.sh" "27"           #Pause
+  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-pause.sh" "27"   #Pause
   echo "Copying ntrk-pause.sh"
-  sudo cp "$INSTALL_LOCATION/ntrk-pause.sh" /usr/local/sbin/
+  sudo cp "$INSTALL_LOCATION/scripts/ntrk-pause.sh" /usr/local/sbin/
   sudo mv /usr/local/sbin/ntrk-pause.sh /usr/local/sbin/ntrk-pause
   sudo chmod 755 /usr/local/sbin/ntrk-pause
   
-  check_file_exists "$INSTALL_LOCATION/ntrk-upgrade.sh" "28"         #Upgrader
+  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-upgrade.sh" "28" #Upgrader
   echo "Copying ntrk-upgrade.sh"
-  sudo cp "$INSTALL_LOCATION/ntrk-upgrade.sh" /usr/local/sbin/
+  sudo cp "$INSTALL_LOCATION/scripts/ntrk-upgrade.sh" /usr/local/sbin/
   sudo mv /usr/local/sbin/ntrk-upgrade.sh /usr/local/sbin/ntrk-upgrade
   sudo chmod 755 /usr/local/sbin/ntrk-upgrade
   
