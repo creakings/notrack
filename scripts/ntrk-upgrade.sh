@@ -181,4 +181,6 @@ if [ -e "$FILE_CONFIG" ]; then                                       #Remove Lat
   echo
 fi
 
+#mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "DROP TABLE IF EXISTS live,historic,lightyaccess;"
+
 echo "NoTrack update complete :-)"

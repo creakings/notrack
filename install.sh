@@ -809,7 +809,7 @@ function setup_mariadb() {
   
   #Check to see if ntrk user has been added
   if [[ ! `sudo mysql -sN --user=root --password="$rootpass" -e "SELECT User FROM mysql.user"` =~ ntrk[[:space:]]root ]]; then
-    error_exit "MariaDB command failed, have you entered wrong incorrect root password?" "35"
+    error_exit "MariaDB command failed, have you entered incorrect root password?" "35"
   fi
   
   echo "Creating Database ntrkdb"
@@ -822,14 +822,17 @@ function setup_mariadb() {
   sudo mysql --user=root --password="$rootpass" -e "FLUSH PRIVILEGES;"
   
   echo "Creating Tables"
-  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE live (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, dns_result CHAR(1));"
-  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE historic (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, dns_result CHAR(1));" 
+  #dnslog
+  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE dnslog (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, dns_result CHAR(1));"
+  #users (not yet used)
   mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE users (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, user TINYTEXT, pass TEXT, level CHAR(1));"
+  #blocklist
   mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE blocklist (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, bl_source TINYTEXT, site TINYTEXT, site_status BOOLEAN, comment TEXT);"
-  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE lightyaccess (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, site TINYTEXT, http_method CHAR(4), uri_path TEXT, referrer TEXT, user_agent TEXT, remote_host TEXT);"
-  
+  #weblog
+  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE weblog (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, site TINYTEXT, http_method CHAR(4), uri_path TEXT, referrer TEXT, user_agent TEXT, remote_host TEXT);"
+
   echo "Creating CRON job for Log Parser"
-  echo -e "*/7 * * * *\troot\t/usr/local/sbin/ntrk-parse" | sudo tee /etc/cron.d/ntrk-parse &> /dev/null
+  echo -e "*/6 * * * *\troot\t/usr/local/sbin/ntrk-parse" | sudo tee /etc/cron.d/ntrk-parse &> /dev/null
 
   echo "MariaDB setup complete"
   echo "========================================================="

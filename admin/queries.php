@@ -63,7 +63,7 @@ $sys = DEF_SYSTEM;
 
 $datestart = DEF_SDATE;
 $dateend = DEF_EDATE;
-$sqltable = 'live';
+$sqltable = 'dnslog';
 
 /************************************************
 *Arrays                                         *
@@ -84,7 +84,7 @@ $CommonSites = array();                          //Merge Common sites list with 
 function add_datestr() {
   global $sqltable, $filter, $sys, $datestart, $dateend;
   
-  if ($sqltable == 'live') return '';
+  if ($sqltable == 'dnslog') return '';
   
   $searchstr = ' WHERE ';
   if (($filter != DEF_FILTER) || ($sys != DEF_SYSTEM)) $searchstr = ' AND ';
@@ -267,7 +267,7 @@ function draw_viewbuttons() {
   global $sqltable, $view;
     
   echo '<div class="pag-nav float-right"><ul>'.PHP_EOL;
-  if ($sqltable == 'live') {
+  if ($sqltable == 'dnslog') {
     echo '<li class="active"><a class="pag-wide" href="?view=livegroup">Today</a></li>'.PHP_EOL;
     echo '<li><a class="pag-wide" href="?view=historicgroup">Historic</a></li>'.PHP_EOL;
   }
@@ -348,7 +348,7 @@ function search_blockreason($site) {
 //Need to ammend for historic view TODO
 /********************************************************************
  *  Search Systems
- *  
+ * TODO limit results for past day or search time
  *  1. Find unique sys values in table
  *
  *  Params:
@@ -362,7 +362,7 @@ function search_systems() {
   $syslist = $mem->get('syslist');
   
   if (empty($syslist)) {
-    if (! $result = $db->query("SELECT DISTINCT sys FROM live ORDER BY sys")) {
+    if (! $result = $db->query("SELECT DISTINCT sys FROM dnslog ORDER BY sys")) {
       die('There was an error running the query'.$db->error);
     }
     while($row = $result->fetch_assoc()) {       //Read each row of results
@@ -498,11 +498,11 @@ function show_time_view() {
   $site_cell = '';
   
   if ($view == 'livetime') {
-    $rows = count_rows_save('SELECT COUNT(*) FROM live'.add_filterstr());
+    $rows = count_rows_save('SELECT COUNT(*) FROM dnslog'.add_filterstr());
     if ((($page-1) * ROWSPERPAGE) > $rows) {
       $page = 1;    
     }
-    $query = "SELECT *, DATE_FORMAT(log_time, '%H:%i:%s') AS formatted_time FROM live ".add_filterstr(). " ORDER BY UNIX_TIMESTAMP(log_time) $sort LIMIT ".ROWSPERPAGE." OFFSET ".(($page-1) * ROWSPERPAGE);
+    $query = "SELECT *, DATE_FORMAT(log_time, '%H:%i:%s') AS formatted_time FROM dnslog ".add_filterstr(). " ORDER BY UNIX_TIMESTAMP(log_time) $sort LIMIT ".ROWSPERPAGE." OFFSET ".(($page-1) * ROWSPERPAGE);
     $pagination_link = "view=$view&amp;sort=".strtolower($sort)."&amp;filter=$filter&amp;sys=$sys";
   }
   else {    
