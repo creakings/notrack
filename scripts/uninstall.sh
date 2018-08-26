@@ -4,12 +4,14 @@
 #Author : QuidsUp
 #Usage : sudo bash uninstall.sh
 
+#TODO Delete MariaDB Tables
+
 #User Configerable variables-----------------------------------------
 readonly FOLDER_SBIN="/usr/local/sbin"
 readonly FOLDER_ETC="/etc"
 
 #Program Settings----------------------------------------------------
-INSTALL_LOCATION="${HOME}/NoTrack"
+INSTALL_LOCATION="${HOME}/notrack"
 
 
 #######################################
@@ -149,7 +151,6 @@ DeleteFile "/etc/logrotate.d/notrack"
 echo
 
 echo "Removing Cron job"
-DeleteFile "/etc/cron.daily/notrack"             #Legacy
 DeleteFile "/etc/cron.d/ntrk-parse"
 echo
 
