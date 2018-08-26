@@ -309,9 +309,9 @@ function download_with_git() {
   echo "Downloading NoTrack using Git"
 
   if [ $SUDO_REQUIRED == false ]; then
-    git clone --depth=1 https://github.com/quidsup/notrack.git "$INSTALL_LOCATION"
+    git clone --depth=1 https://gitlab.com/quidsup/notrack.git "$INSTALL_LOCATION"
   else
-    sudo git clone --depth=1 https://github.com/quidsup/notrack.git "$INSTALL_LOCATION"
+    sudo git clone --depth=1 https://gitlab.com/quidsup/notrack.git "$INSTALL_LOCATION"
   fi
   echo
 }
@@ -331,11 +331,11 @@ function download_with_wget() {
   if [ -d "$INSTALL_LOCATION" ]; then            #Check if NoTrack folder exists
     echo "NoTrack folder exists. Skipping download"
   else
-    echo "Downloading latest version of NoTrack from github"
-    wget https://github.com/quidsup/notrack/archive/master.zip -O /tmp/notrack-master.zip
+    echo "Downloading latest version of NoTrack from Gitlab"
+    wget https://gitlab.com/quidsup/notrack/archive/master.zip -O /tmp/notrack-master.zip
     if [ ! -e /tmp/notrack-master.zip ]; then    #Check to see if download was successful
       #Abort we can't go any further without any code from git
-      error_exit "Error Download from github has failed" "23"
+      error_exit "Error Download from Gitlab has failed" "23"
     fi
 
     unzip -oq /tmp/notrack-master.zip -d /tmp
