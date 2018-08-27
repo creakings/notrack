@@ -27,8 +27,8 @@ draw_sidemenu();
 *Constants                                      *
 ************************************************/
 define('QRY_BLOCKLIST', 'SELECT COUNT(*) FROM blocklist');
-define('QRY_DNSQUERIES', 'SELECT COUNT(*) FROM live');
-define('QRY_LIGHTY', 'SELECT COUNT(*) FROM lightyaccess WHERE log_time BETWEEN (CURDATE() - INTERVAL 7 DAY) AND NOW()');
+define('QRY_DNSLOG', 'SELECT COUNT(*) FROM dnslog WHERE log_time BETWEEN (CURDATE() - INTERVAL 2 DAY) AND NOW()');
+define('QRY_WEBLOG', 'SELECT COUNT(*) FROM weblog WHERE log_time BETWEEN (CURDATE() - INTERVAL 7 DAY) AND NOW()');
 
 $CHARTCOLOURS = array('#008CD1', '#B1244A', '#00AA00');
 
@@ -48,15 +48,15 @@ $db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
  */
 function home_blocklist() {
   $rows = 0;
-  
+
   exec('pgrep notrack', $pids);
   if(empty($pids)) {
     $rows = count_rows(QRY_BLOCKLIST); 
     echo '<a href="./config.php?v=full"><div class="home-nav"><h2>Block List</h2><hr><span>'.number_format(floatval($rows)).'<br>Domains</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></div></a>'.PHP_EOL;
   }
-  else {    
+  else {
     echo '<a href="./config.php?v=full"><div class="home-nav"><h2>Block List</h2><hr><span>Processing</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></div></a>'.PHP_EOL;
-  }  
+  }
 }
 
 
@@ -98,9 +98,9 @@ function home_queries() {
   $local = 0;
   $chartdata = array();
   
-  $total = count_rows(QRY_DNSQUERIES);
-  $local = count_rows('SELECT COUNT(*) FROM live WHERE dns_result = \'l\'');
-  $blocked = count_rows('SELECT COUNT(*) FROM live WHERE dns_result = \'b\'');
+  $total = count_rows(QRY_DNSLOG);
+  $local = count_rows(QRY_DNSLOG." AND dns_result = 'l'");
+  $blocked = count_rows(QRY_DNSLOG." AND dns_result = 'b'");
   $allowed = $total - $blocked - $local;
   
   if ($local == 0) {
@@ -240,7 +240,7 @@ function home_status() {
 function home_sitesblocked() {
   $rows = 0;
   
-  $rows = count_rows(QRY_LIGHTY);
+  $rows = count_rows(QRY_WEBLOG);
 
   echo '<a href="./blocked.php"><div class="home-nav"><h2>Sites Blocked</h2><hr><span>'.number_format(floatval($rows)).'<br>This Week</span><div class="icon-box"><img src="./svg/home_blocked.svg" alt=""></div></div></a>'.PHP_EOL;
 }
@@ -251,8 +251,8 @@ function home_sitesblocked() {
  *    Live Table runs from 04:00 to 03:59
  *    1. Adjust values for today and tomorrow depending if time is (04:00 to 23:59) or (00:00 to 03:59)
  *    2. Create xlabels
- *    3. Load allowed 'a' results from live table for values per hour
- *    4. Load blocked 'b' results from live table for values per hour
+ *    3. Load allowed 'a' results from dnslog table for values per hour
+ *    4. Load blocked 'b' results from dnslog table for values per hour
  *    5. Send data to linechart()
  *
  *  Params:
@@ -299,55 +299,55 @@ function trafficgraph() {
   $xlabels[] = '02';
   $xlabels[] = '03';
   
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 04:00:00' AND log_time < '$today 05:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 05:00:00' AND log_time < '$today 06:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 06:00:00' AND log_time < '$today 07:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 07:00:00' AND log_time < '$today 08:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 08:00:00' AND log_time < '$today 09:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 09:00:00' AND log_time < '$today 10:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 10:00:00' AND log_time < '$today 11:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 11:00:00' AND log_time < '$today 12:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 12:00:00' AND log_time < '$today 13:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 13:00:00' AND log_time < '$today 14:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 14:00:00' AND log_time < '$today 15:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 15:00:00' AND log_time < '$today 16:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 16:00:00' AND log_time < '$today 17:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 17:00:00' AND log_time < '$today 18:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 18:00:00' AND log_time < '$today 19:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 19:00:00' AND log_time < '$today 20:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 20:00:00' AND log_time < '$today 21:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 21:00:00' AND log_time < '$today 22:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 22:00:00' AND log_time < '$today 23:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$today 23:00:00' AND log_time < '$tomorrow 00:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$tomorrow 00:00:00' AND log_time < '$tomorrow 01:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$tomorrow 01:00:00' AND log_time < '$tomorrow 02:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$tomorrow 02:00:00' AND log_time < '$tomorrow 03:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'a' AND log_time >= '$tomorrow 03:00:00' AND log_time < '$tomorrow 04:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 04:00:00' AND log_time < '$today 05:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 05:00:00' AND log_time < '$today 06:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 06:00:00' AND log_time < '$today 07:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 07:00:00' AND log_time < '$today 08:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 08:00:00' AND log_time < '$today 09:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 09:00:00' AND log_time < '$today 10:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 10:00:00' AND log_time < '$today 11:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 11:00:00' AND log_time < '$today 12:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 12:00:00' AND log_time < '$today 13:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 13:00:00' AND log_time < '$today 14:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 14:00:00' AND log_time < '$today 15:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 15:00:00' AND log_time < '$today 16:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 16:00:00' AND log_time < '$today 17:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 17:00:00' AND log_time < '$today 18:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 18:00:00' AND log_time < '$today 19:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 19:00:00' AND log_time < '$today 20:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 20:00:00' AND log_time < '$today 21:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 21:00:00' AND log_time < '$today 22:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 22:00:00' AND log_time < '$today 23:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$today 23:00:00' AND log_time < '$tomorrow 00:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$tomorrow 00:00:00' AND log_time < '$tomorrow 01:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$tomorrow 01:00:00' AND log_time < '$tomorrow 02:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$tomorrow 02:00:00' AND log_time < '$tomorrow 03:00:00'");
+  $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$tomorrow 03:00:00' AND log_time < '$tomorrow 04:00:00'");
   
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 04:00:00' AND log_time < '$today 05:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 05:00:00' AND log_time < '$today 06:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 06:00:00' AND log_time < '$today 07:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 07:00:00' AND log_time < '$today 08:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 08:00:00' AND log_time < '$today 09:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 09:00:00' AND log_time < '$today 10:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 10:00:00' AND log_time < '$today 11:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 11:00:00' AND log_time < '$today 12:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 12:00:00' AND log_time < '$today 13:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 13:00:00' AND log_time < '$today 14:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 14:00:00' AND log_time < '$today 15:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 15:00:00' AND log_time < '$today 16:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 16:00:00' AND log_time < '$today 17:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 17:00:00' AND log_time < '$today 18:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 18:00:00' AND log_time < '$today 19:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 19:00:00' AND log_time < '$today 20:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 20:00:00' AND log_time < '$today 21:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 21:00:00' AND log_time < '$today 22:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 22:00:00' AND log_time < '$today 23:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$today 23:00:00' AND log_time < '$tomorrow 00:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$tomorrow 00:00:00' AND log_time < '$tomorrow 01:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$tomorrow 01:00:00' AND log_time < '$tomorrow 02:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$tomorrow 02:00:00' AND log_time < '$tomorrow 03:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_result = 'b' AND log_time >= '$tomorrow 03:00:00' AND log_time < '$tomorrow 04:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 04:00:00' AND log_time < '$today 05:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 05:00:00' AND log_time < '$today 06:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 06:00:00' AND log_time < '$today 07:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 07:00:00' AND log_time < '$today 08:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 08:00:00' AND log_time < '$today 09:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 09:00:00' AND log_time < '$today 10:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 10:00:00' AND log_time < '$today 11:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 11:00:00' AND log_time < '$today 12:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 12:00:00' AND log_time < '$today 13:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 13:00:00' AND log_time < '$today 14:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 14:00:00' AND log_time < '$today 15:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 15:00:00' AND log_time < '$today 16:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 16:00:00' AND log_time < '$today 17:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 17:00:00' AND log_time < '$today 18:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 18:00:00' AND log_time < '$today 19:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 19:00:00' AND log_time < '$today 20:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 20:00:00' AND log_time < '$today 21:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 21:00:00' AND log_time < '$today 22:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 22:00:00' AND log_time < '$today 23:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$today 23:00:00' AND log_time < '$tomorrow 00:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$tomorrow 00:00:00' AND log_time < '$tomorrow 01:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$tomorrow 01:00:00' AND log_time < '$tomorrow 02:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$tomorrow 02:00:00' AND log_time < '$tomorrow 03:00:00'");
+  $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$tomorrow 03:00:00' AND log_time < '$tomorrow 04:00:00'");
   
     
   /*print_r($allowed_values);                              //For debugging

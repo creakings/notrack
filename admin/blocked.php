@@ -222,17 +222,17 @@ function show_accesstable() {
   echo '<div class="sys-group">'.PHP_EOL;
   if ($view == 'group') {                                  //Group view
     echo '<h6>Sorted by Unique Site</h6>'.PHP_EOL;
-    $rows = count_rows('SELECT COUNT(DISTINCT site) FROM lightyaccess');
+    $rows = count_rows('SELECT COUNT(DISTINCT site) FROM weblog');
     if ((($page-1) * ROWSPERPAGE) > $rows) $page = 1;
     
-    $query = 'SELECT * FROM lightyaccess GROUP BY site ORDER BY UNIX_TIMESTAMP(log_time) '.$sort.' LIMIT '.ROWSPERPAGE.' OFFSET '.(($page-1) * ROWSPERPAGE);
+    $query = 'SELECT * FROM weblog GROUP BY site ORDER BY UNIX_TIMESTAMP(log_time) '.$sort.' LIMIT '.ROWSPERPAGE.' OFFSET '.(($page-1) * ROWSPERPAGE);
   }
   elseif ($view == 'time') {                               //Time View
     echo '<h6>Sorted by Time last seen</h6>'.PHP_EOL;
-    $rows = count_rows('SELECT COUNT(*) FROM lightyaccess');
+    $rows = count_rows('SELECT COUNT(*) FROM weblog');
     if ((($page-1) * ROWSPERPAGE) > $rows) $page = 1;
     
-    $query = 'SELECT * FROM lightyaccess ORDER BY UNIX_TIMESTAMP(log_time) '.$sort.' LIMIT '.ROWSPERPAGE.' OFFSET '.(($page-1) * ROWSPERPAGE);
+    $query = 'SELECT * FROM weblog ORDER BY UNIX_TIMESTAMP(log_time) '.$sort.' LIMIT '.ROWSPERPAGE.' OFFSET '.(($page-1) * ROWSPERPAGE);
   }  
       
   if(!$result = $db->query($query)){
@@ -334,9 +334,9 @@ function show_visualisation() {
   echo '</ul></div>'.PHP_EOL;
   
   
-  $total = count_rows('SELECT COUNT(*) FROM lightyaccess WHERE log_time >= (NOW() - INTERVAL '.$last.' '.$unit.')');
+  $total = count_rows('SELECT COUNT(*) FROM weblog WHERE log_time >= (NOW() - INTERVAL '.$last.' '.$unit.')');
   
-  $query = 'SELECT site, COUNT(*) AS count FROM lightyaccess WHERE log_time >= (NOW() - INTERVAL '.$last.' '.$unit.') GROUP BY site ORDER BY count DESC LIMIT 20';
+  $query = 'SELECT site, COUNT(*) AS count FROM weblog WHERE log_time >= (NOW() - INTERVAL '.$last.' '.$unit.') GROUP BY site ORDER BY count DESC LIMIT 20';
   
   if(!$result = $db->query($query)){
     die('There was an error running the query'.$db->error);
