@@ -37,33 +37,33 @@ $FILTERLIST = array('all' => 'All Requests',
                     'blocked' => 'Blocked Only',
                     'local' => 'Local Only');
 
-$VIEWLIST = array('livegroup', 'livetime', 'historicgroup', 'historictime');
+$GROUPLIST = array('name' => 'Site Name',
+                   'time' => 'Time');
 
-$COMMONSITESLIST = array('cloudfront.net',
-                         'googleusercontent.com',
-                         'googlevideo.com',
-                         'cedexis-radar.net',
-                         'gvt1.com',
-                         'deviantart.net',
-                         'deviantart.com',
-                         'ampproject.net',
-                         'steamcontent.com',
-                         'userstorage.mega.co.nz',
-                         'tumblr.com');
-//CommonSites referres to websites that have a lot of subdomains which aren't necessarily relivent. In order to improve user experience we'll replace the subdomain of these sites with "*"
+$TIMELIST = array('1 HOUR' => '1 Hour',
+                  '4 HOUR' => '4 Hours',
+                  '12 HOUR' => '12 Hours',
+                  '1 DAY' => '1 Day',
+                  '7 DAY' => '7 Days',
+                  '30 DAY' => '30 Days');
+
+$VIEWLIST = array('name', 'time');
+
 
 /************************************************
 *Global Variables                               *
 ************************************************/
 $page = 1;
 $filter = DEF_FILTER;
-$view = 'livegroup';
+$view = 'name';
+$searchbox = '';
+$searchtime = '1 DAY';
 $sort = 'DESC';
 $sys = DEF_SYSTEM;
 
 $datestart = DEF_SDATE;
 $dateend = DEF_EDATE;
-$sqltable = 'dnslog';
+
 
 /************************************************
 *Arrays                                         *
@@ -81,10 +81,10 @@ $CommonSites = array();                          //Merge Common sites list with 
  *  Return:
  *    SQL Query string
  */
-function add_datestr() {
-  global $sqltable, $filter, $sys, $datestart, $dateend;
+/*function add_datestr() {
+  global $filter, $sys, $datestart, $dateend;
   
-  if ($sqltable == 'dnslog') return '';
+  if ( == 'dnslog') return '';
   
   $searchstr = ' WHERE ';
   if (($filter != DEF_FILTER) || ($sys != DEF_SYSTEM)) $searchstr = ' AND ';
@@ -93,7 +93,7 @@ function add_datestr() {
   
   return $searchstr;
 }
-
+*/
 
 /********************************************************************
  *  Add Filter Vars to SQL Search
@@ -184,25 +184,35 @@ function count_rows_save($query) {
  *    None
  */
 function draw_filterbox() {
-  global $FILTERLIST, $syslist, $filter, $page, $sqltable, $sort, $sys, $view;
+  global $FILTERLIST, $syslist, $filter, $page, $searchbox, $searchtime, $sort, $sys, $view;
+  global $GROUPLIST, $TIMELIST;
   global $datestart, $dateend;
   
-  $hidden_date_vars = '';
   $line = '';
-  
-  if ($sqltable == 'historic') {
-    $hidden_date_vars = '<input type="hidden" name="datestart" value="'.$datestart.'"><input type="hidden" name="dateend" value="'.$dateend.'">'.PHP_EOL;
-  }
   
   echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>DNS Queries</h5>'.PHP_EOL;
-  echo '<div class="row"><div class="col-half">'.PHP_EOL;
-  echo '<form method="get">'.PHP_EOL;
-  echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
-  echo '<input type="hidden" name="view" value="'.$view.'">'.PHP_EOL;
-  echo '<input type="hidden" name="filter" value="'.$filter.'">'.PHP_EOL;
-  echo '<input type="hidden" name="sort" value="'.strtolower($sort).'">'.PHP_EOL;
-  echo $hidden_date_vars;
+  echo '<form method="post">'.PHP_EOL;
+  
+  echo '<div class="row">'.PHP_EOL;                        //Start Row TODO mobile view
+  echo '<div class="dnsqueries-filterlarge">'.PHP_EOL;     //Start Search Box
+  if ($searchbox != '') {
+    echo '<input type="text" name="s" value="'.$searchbox.'">'.PHP_EOL;
+  }
+  else {
+    echo '<input type="text" class="full" name="s" placeholder="search">'.PHP_EOL;
+  }
+  echo '</div>'.PHP_EOL;                                   //End Search Box
+  
+  echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Search Time
+  echo '<span class="filter">Time:</span><select name="searchtime" onchange="submit()">';
+  echo '<option value="'.$searchtime.'">'.$TIMELIST[$searchtime].'</option>'.PHP_EOL;
+  foreach ($TIMELIST as $key => $line) {
+    if ($key != $searchtime) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
+  }
+  echo '</select></div>'.PHP_EOL;                          //End Search Time
+  
+  echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start System List
   echo '<span class="filter">System:</span><select name="sys" onchange="submit()">';
     
   if ($sys == DEF_SYSTEM) {
@@ -215,75 +225,28 @@ function draw_filterbox() {
   foreach ($syslist as $line) {
     if ($line != $sys) echo '<option value="'.$line.'">'.$line.'</option>'.PHP_EOL;
   }
-  echo '</select></form>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
+  echo '</select></div>'.PHP_EOL;                          //End System List
   
-  echo '<div class="col-half">'.PHP_EOL;
-  echo '<form method="get">'.PHP_EOL;
-  echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
-  echo '<input type="hidden" name="view" value="'.$view.'">'.PHP_EOL;
-  echo '<input type="hidden" name="sort" value="'.strtolower($sort).'">'.PHP_EOL;
-  echo '<input type="hidden" name="sys" value="'.$sys.'">'.PHP_EOL;
-  echo $hidden_date_vars;
+  echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Filter List
   echo '<span class="filter">Filter:</span><select name="filter" onchange="submit()">';
   echo '<option value="'.$filter.'">'.$FILTERLIST[$filter].'</option>'.PHP_EOL;
   foreach ($FILTERLIST as $key => $line) {
     if ($key != $filter) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
   }
-  echo '</select></form>'.PHP_EOL;
-  echo '</div></div>'.PHP_EOL;
+  echo '</select></div>'.PHP_EOL;                          //End Filter List
   
-  if ($sqltable == 'historic') {
-    echo '<div class="row">'.PHP_EOL;
-    echo '<form method="get">'.PHP_EOL;
-    echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
-    echo '<input type="hidden" name="view" value="'.$view.'">'.PHP_EOL;
-    echo '<input type="hidden" name="sort" value="'.strtolower($sort).'">'.PHP_EOL;
-    echo '<input type="hidden" name="filter" value="'.$filter.'">'.PHP_EOL;
-    echo '<input type="hidden" name="sys" value="'.$sys.'">'.PHP_EOL;
-    echo '<div class="col-half">'.PHP_EOL;
-    echo '<span class="filter">Start Date: </span><input name="datestart" type="date" value="'.$datestart.'" onchange="submit()"/>'.PHP_EOL;
-    echo '</div>'.PHP_EOL;
-    echo '<div class="col-half">'.PHP_EOL;
-    echo '<span class="filter">End Date: </span><input name="dateend" type="date" value="'.$dateend.'" onchange="submit()"/>'.PHP_EOL;
-    echo '</div>'.PHP_EOL;
-    echo '</form>'.PHP_EOL;
-    echo '</div>'.PHP_EOL;
+  echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Group List
+  echo '<span class="filter">Group By:</span><select name="filter" onchange="submit()">';
+  echo '<option value="'.$view.'">'.$GROUPLIST[$view].'</option>'.PHP_EOL;
+  foreach ($GROUPLIST as $key => $line) {
+    if ($key != $view) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
   }
+  echo '</select></div>'.PHP_EOL;                          //End Group List
+  
+  echo '</div>'.PHP_EOL;                                   //End Row
+  echo '</form>'.PHP_EOL;
   
   echo '</div>'.PHP_EOL;
-}
-
-
-/********************************************************************
- *  Draw View Buttons
- *    [Today][Historic][Group][Time]
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function draw_viewbuttons() {
-  global $sqltable, $view;
-    
-  echo '<div class="pag-nav float-right"><ul>'.PHP_EOL;
-  if ($sqltable == 'dnslog') {
-    echo '<li class="active"><a class="pag-wide" href="?view=livegroup">Today</a></li>'.PHP_EOL;
-    echo '<li><a class="pag-wide" href="?view=historicgroup">Historic</a></li>'.PHP_EOL;
-  }
-  else {
-    echo '<li><a class="pag-wide" href="?view=livegroup">Today</a></li>'.PHP_EOL;
-    echo '<li class="active"><a class="pag-wide" href="?view=historicgroup">Historic</a></li>'.PHP_EOL;
-  }  
-  if (($view == 'livetime') || ($view == 'historictime')) {
-    echo '<li><a class="pag-wide" href="?view='.$sqltable.'group">Group</a></li>'.PHP_EOL;
-    echo '<li class="active"><a class="pag-wide" href="?view='.$sqltable.'time">Time</a></li>'.PHP_EOL;    
-  }
-  elseif (($view == 'livegroup') || ($view == 'historicgroup')) {
-    echo '<li class="active pag-wide"><a class="pag-wide" href="?view='.$sqltable.'group">Group</a></li>'.PHP_EOL;
-    echo '<li><a class="pag-wide" href="?view='.$sqltable.'time">Time</a></li>'.PHP_EOL;    
-  }
-  echo '</ul></div>'.PHP_EOL; 
 }
 
 
@@ -384,7 +347,7 @@ function search_systems() {
  *    false when nothing found, true on success
  */
 function show_group_view() {
-  global $db, $sqltable, $page, $sort, $filter, $sys, $view, $Config, $TLDBlockList;
+  global $db, $page, $sort, $filter, $sys, $view, $Config, $TLDBlockList;
   global $datestart, $dateend;
   
   $i = (($page - 1) * ROWSPERPAGE) + 1;
@@ -397,12 +360,12 @@ function show_group_view() {
   
   $linkstr = "&amp;filter=$filter&amp;sys=$sys"; //Default link string
   
-  if ($sqltable == 'historic') {                 //Add date search to link in histroic view
+  /*if ( == 'historic') {                 //Add date search to link in histroic view
     $linkstr .= "&amp;datestart=$datestart&amp;dateend=$dateend";
-  }
+  }*/
   
-  $rows = count_rows_save("SELECT COUNT(DISTINCT dns_request) FROM $sqltable " .add_filterstr().add_datestr());
-  $query = "SELECT sys, dns_request, dns_result, COUNT(*) AS count FROM $sqltable" .add_filterstr().add_datestr()." GROUP BY dns_request ORDER BY count $sort LIMIT ".ROWSPERPAGE." OFFSET ".(($page-1) * ROWSPERPAGE);
+  $rows = count_rows_save("SELECT COUNT(DISTINCT dns_request) FROM dnslog " .add_filterstr());
+  $query = "SELECT sys, dns_request, dns_result, COUNT(*) AS count FROM dnslog" .add_filterstr()." GROUP BY dns_request ORDER BY count $sort LIMIT ".ROWSPERPAGE." OFFSET ".(($page-1) * ROWSPERPAGE);
   
   if(!$result = $db->query($query)){
     die('There was an error running the query'.$db->error);
@@ -417,8 +380,7 @@ function show_group_view() {
   if ((($page-1) * ROWSPERPAGE) > $rows) $page = 1;
   
   echo '<div class="sys-group">'.PHP_EOL;
-  pagination($rows, 'view='.$view.'&amp;sort='.strtolower($sort).$linkstr);
-  draw_viewbuttons();
+  pagination($rows, 'view='.$view.'&amp;sort='.strtolower($sort).$linkstr);  
   
   echo '<table id="query-group-table">'.PHP_EOL;
   
@@ -506,11 +468,11 @@ function show_time_view() {
     $pagination_link = "view=$view&amp;sort=".strtolower($sort)."&amp;filter=$filter&amp;sys=$sys";
   }
   else {    
-    $rows = count_rows_save("SELECT COUNT(*) FROM historic".add_filterstr().add_datestr());
+    $rows = count_rows_save("SELECT COUNT(*) FROM dnslog".add_filterstr());
     if ((($page-1) * ROWSPERPAGE) > $rows) {
       $page = 1;
     }
-    $query = "SELECT *, DATE_FORMAT(log_time, '%Y-%m-%d %H:%i:%s') AS formatted_time FROM historic".add_filterstr().add_datestr(). " ORDER BY UNIX_TIMESTAMP(log_time) $sort LIMIT ".ROWSPERPAGE." OFFSET ".(($page-1) * ROWSPERPAGE);
+    $query = "SELECT *, DATE_FORMAT(log_time, '%Y-%m-%d %H:%i:%s') AS formatted_time FROM dnslog".add_filterstr(). " ORDER BY UNIX_TIMESTAMP(log_time) $sort LIMIT ".ROWSPERPAGE." OFFSET ".(($page-1) * ROWSPERPAGE);
     $pagination_link = "view=$view&amp;sort=".strtolower($sort)."&amp;filter=$filter&amp;sys=$sys&amp;datestart=$datestart&amp;dateend=$dateend";
   }
   
@@ -526,8 +488,7 @@ function show_time_view() {
   
   echo '<div class="sys-group">'.PHP_EOL;
   pagination($rows, $pagination_link);
-  draw_viewbuttons();
-  
+    
   echo '<table id="query-time-table">'.PHP_EOL;
   echo '<tr><th>Time<a class="blue" href="?'.htmlspecialchars('page='.$page.'&view='.$view.'&sort=desc&filter='.$filter.'&sys='.$sys.'&datestart='.$datestart.'&dateend='.$dateend).'">&#x25BE;</a><a class="blue" href="?'.htmlspecialchars('page='.$page.'&view='.$view.'&sort=asc&filter='.$filter.'&sys='.$sys.'&datestart='.$datestart.'&dateend='.$dateend).'">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
   
@@ -605,7 +566,6 @@ if (isset($_GET['sys'])) {
 
 if (isset($_GET['view'])) {  
   if (in_array($_GET['view'], $VIEWLIST)) $view = $_GET['view'];
-  if (($view == 'historicgroup') || ($view == 'historictime')) $sqltable = 'historic';
 }
 
 if (isset($_GET['datestart'])) {                 //Filter for yyyy-mm-dd
@@ -615,29 +575,24 @@ if (isset($_GET['dateend'])) {                   //Filter for yyyy-mm-dd
   if (preg_match(REGEX_DATE, $_GET['dateend']) > 0) $dateend = $_GET['dateend'];  
 }
 
-if ($sqltable == 'historic') {                   //Check to see if dates are valid
+/*if ($== 'historic') {                   //Check to see if dates are valid
   if (strtotime($dateend) > time()) $dateend = DEF_EDATE;
   if (strtotime($datestart) > strtotime($dateend)) {
     $datestart = DEF_SDATE;
     $dateend = DEF_EDATE;
   }
 }
-
+*/
 
 draw_filterbox();                                //Draw filters
 
-if ($view == 'livetime') {
+if ($view == 'time') {
   show_time_view();
 }
-elseif ($view == 'livegroup') {
+elseif ($view == 'name') {
   show_group_view();
 }
-elseif ($view == 'historictime') {
-  show_time_view();
-}
-elseif ($view == 'historicgroup') {
-  show_group_view();
-}
+
 
 $db->close();
 
