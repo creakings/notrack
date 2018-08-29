@@ -33,9 +33,9 @@ DEFINE('DEF_SDATE', date("Y-m-d", time() - 172800));  //Start Date of Historic -
 DEFINE('DEF_EDATE', date("Y-m-d", time() - 86400));   //End Date of Historic   -1d
 
 $FILTERLIST = array('all' => 'All Requests',
-                    'allowed' => 'Allowed Only',
-                    'blocked' => 'Blocked Only',
-                    'local' => 'Local Only');
+                    'a' => 'Allowed Only',
+                    'b' => 'Blocked Only',
+                    'l' => 'Local Only');
 
 $GROUPLIST = array('name' => 'Site Name',
                    'time' => 'Time');
@@ -111,37 +111,16 @@ function add_filterstr() {
   $searchstr .= "log_time >= DATE_SUB(NOW(), INTERVAL $searchtime) ";
   
   if ($searchbox != '') {
-    $searchstr .= "AND dns_request LIKE '%$searchbox%' ";
+    $searchstr .= "AND dns_request LIKE '$searchbox%' ";
   }
-  return $searchstr;
-  
-  if (($filter == DEF_FILTER) && ($sys == DEF_SYSTEM)) {   //Nothing to add
-    return '';
-  }
-  
+
   if ($sys != DEF_SYSTEM) {
-    $searchstr .= "sys = '$sys'";
+    $searchstr .= "AND sys = '$sys'";
   }
   if ($filter != DEF_FILTER) {
-    if ($sys != DEF_SYSTEM) {
-      $searchstr .= " AND dns_result=";
-    }    
-    else {
-      $searchstr .= " dns_result=";
-    }    
-    
-    switch($filter) {
-      case 'allowed':
-        $searchstr .= "'a'";
-        break;
-      case 'blocked':
-        $searchstr .= "'b'";
-        break;
-      case 'local':
-        $searchstr .= "'l'";
-        break;
-    }
+    $searchstr .= " AND dns_result = '$filter'";
   }
+
   return $searchstr;
 }
 
@@ -380,7 +359,9 @@ function show_group_view() {
   
   if ($result->num_rows == 0) {                 //Leave if nothing found
     $result->free();
-    echo 'Nothing Found';
+    echo '<div class="sys-group">'.PHP_EOL;
+    echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
+    echo '</div>'.PHP_EOL;
     return false;
   }
   
