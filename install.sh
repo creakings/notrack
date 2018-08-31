@@ -93,24 +93,6 @@ service_restart() {
 
 
 #######################################
-# Check if file exists
-# Globals:
-#   None
-# Arguments:
-#   $1 File Path
-#   $2 Exit Code
-# Returns:
-#   Exit Code
-#######################################
-check_file_exists() {
-  if [ ! -e "$1" ]; then
-    echo "Error. File $1 is missing :-( Aborting."
-    exit "$2" 
-  fi
-}
-
-
-#######################################
 # Draw prompt menu
 #   1. Clear Screen
 #   2. Draw menu
@@ -213,6 +195,24 @@ function backup_configs() {
 }
 
 
+#######################################
+# Check if file exists
+# Globals:
+#   None
+# Arguments:
+#   $1 File Path
+#   $2 Exit Code
+# Returns:
+#   Exit Code
+#######################################
+check_file_exists() {
+  if [ ! -e "$1" ]; then
+    echo "Error. File $1 is missing :-( Aborting."
+    exit "$2" 
+  fi
+}
+
+
 #--------------------------------------------------------------------
 # Copy Scripts
 #   Copy notrack script files to /usr/local/sbin
@@ -259,6 +259,25 @@ function copy_scripts() {
 
 
 #--------------------------------------------------------------------
+# Create File
+# Checks if a file exists and creates it
+#
+# Globals:
+#   None
+# Arguments:
+#   #$1 File to create
+# Returns:
+#   None
+#--------------------------------------------------------------------
+function create_file() {
+  if [ ! -e "$1" ]; then                         #Does file already exist?
+    echo "Creating file: $1"
+    sudo touch "$1"                              #If not then create it
+    sudo chmod 664 "$1"                          #RW RW R permissions
+  fi
+}
+
+#--------------------------------------------------------------------
 # Create Folder
 #   Creates a folder if it doesn't exist
 # Globals:
@@ -287,7 +306,7 @@ function create_folder {
 # Returns:
 #   None
 #--------------------------------------------------------------------
-function delete_file() {  
+function delete_file() {
   if [ -e "$1" ]; then                           #Does file exist?
     echo "Deleting file $1"
     sudo rm "$1"                                 #If yes then delete it
@@ -654,6 +673,9 @@ function setup_dnsmasq() {
   echo "Configuring Dnsmasq"
   
   create_folder "/etc/dnsmasq.d"                 #Issue #94 dnsmasq folder not created
+  create_file "/var/log/notrack.log"             #File where DNS logs are stored until parsed in MariaDB table dnslogs by ntrk-parse
+  create_file "/etc/localhosts.list"             #File for user to add DNS entries for their network
+  create_file "/etc/dnsmasq.d/servers.conf"
   
   #Copy config files modified for NoTrack
   echo "Copying Dnsmasq config files from $INSTALL_LOCATION to /etc/conf"
@@ -661,13 +683,14 @@ function setup_dnsmasq() {
   sudo cp "$INSTALL_LOCATION/conf/dnsmasq.conf" /etc/dnsmasq.conf
   
   #Finish configuration of dnsmasq config
-  echo "Setting DNS Servers in /etc/dnsmasq.conf"
-  sudo sed -i "s/server=changeme1/server=$DNS_SERVER_1/" /etc/dnsmasq.conf
-  sudo sed -i "s/server=changeme2/server=$DNS_SERVER_2/" /etc/dnsmasq.conf
   sudo sed -i "s/interface=eth0/interface=$NETWORK_DEVICE/" /etc/dnsmasq.conf
-  echo "Creating file /etc/localhosts.list for Local Hosts"
   
-  sudo touch /etc/localhosts.list                #File for user to add DNS entries for their network
+  echo "Setting DNS Servers"
+  echo "server=$DNS_SERVER_1" | sudo tee -a /etc/dnsmasq.d/servers.conf
+  echo "server=$DNS_SERVER_2" | sudo tee -a /etc/dnsmasq.d/servers.conf
+
+  echo "Setting up your /etc/localhosts.list for Local Hosts"
+  
   
   if [ -e /etc/sysconfig/network ]; then         #Set first entry for localhosts
     hostname=$(grep "HOSTNAME" /etc/sysconfig/network | cut -d "=" -f 2 | tr -d [[:space:]])
@@ -681,9 +704,6 @@ function setup_dnsmasq() {
     echo "Writing first entry for this system: $IP_ADDRESS - $hostname"
     echo -e "$IP_ADDRESS\t$hostname" | sudo tee -a /etc/localhosts.list 
   fi
-
-  sudo touch /var/log/notrack.log                #Create log file for Dnsmasq
-  sudo chmod 664 /var/log/notrack.log            #Set permissions for log file
 
   if [[ "$SETUP_DHCP" == true ]]; then           #Optional DHCP Setup
     config_dnsmasq_dhcp_logging
@@ -854,7 +874,10 @@ function setup_mariadb() {
 function setup_notrack() {
   #Setup Tracker list downloader
   echo "Setting up NoTrack block list downloader"
-     
+  
+  create_folder "/etc/notrack"
+  create_file "/etc/notrack/notrack.conf"        #Create Config file
+  
   echo "Creating daily cron job in /etc/cron.daily/"
   if [ -e /etc/cron.daily/notrack ]; then        #Remove old symlink
     echo "Removing old file: /etc/cron.daily/notrack"
@@ -862,15 +885,7 @@ function setup_notrack() {
   fi
   #Create cron daily job with a symlink to notrack script
   sudo ln -s /usr/local/sbin/notrack /etc/cron.daily/notrack
-    
-  create_folder "/etc/notrack"
-    
-  if [ -e /etc/notrack/notrack.conf ]; then      #Remove old config file
-    echo "Removing old file: /etc/notrack/notrack.conf"
-    sudo rm /etc/notrack/notrack.conf
-  fi
-  echo "Creating NoTrack config file: /etc/notrack/notrack.conf"
-  sudo touch /etc/notrack/notrack.conf           #Create Config file
+
   echo "Writing initial config"
   echo "IPVersion = $IP_VERSION" | sudo tee /etc/notrack/notrack.conf
   echo "NetDev = $NETWORK_DEVICE" | sudo tee -a /etc/notrack/notrack.conf
