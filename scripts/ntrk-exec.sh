@@ -230,7 +230,7 @@ function addvalue() {
 #   5: If nothing in dhcp.conf file, then create default values
 #
 # Globals:
-#   USER, PASSWORD, DBNAME
+#   USER, PASSWORD, DBNAME, DHCP_CONFIG
 # Arguments:
 #   None
 # Returns:
@@ -278,7 +278,7 @@ function read_dhcp() {
   unset IFS
   
   if [[ $dhcp_enabled == false ]]; then                    #Add default values if DHCP is disabled
-    addvalue "dhcp" "dhcp_enabled" "" "#"                  #Set dhcp_enabled to false
+    addvalue "dhcp" "dhcp_enabled" "0" "#"                 #Set dhcp_enabled to false
     
     #Extract IP from command ip route
     #Regex: default via (IPv4 or IPv6 address)
@@ -303,6 +303,7 @@ function read_dhcp() {
     
     addvalue "dhcp" "lease_time" "24h" "0"
     addvalue "dhcp" "gateway_ip" "$gateway_ip" "0"
+    addvalue "dhcp" "authoritative" "0" "0"
   fi
   
 }
@@ -386,8 +387,83 @@ function parsing_time() {
     fi
   else
     echo "Error: Value for ParsingTime not found in $FILE_CONFIG"
-  fi  
+  fi
 }
+
+
+#--------------------------------------------------------------------
+# Write Dhcp Config
+#   1: Create /etc/dnsmasq.d/dhcp.conf if doesn't exist
+#   2: Create config table if doesn't exist
+#
+# Globals:
+#   USER, PASSWORD, DBNAME, DHCP_CONFIG
+# Arguments:
+#   None
+# Returns:
+#   None
+
+#--------------------------------------------------------------------
+function write_dhcp() {
+  local option_name=""
+  local option_value=""
+  local option_enabled=""
+  
+  local dhcp_enabled=""
+  local start_ip=""
+  local end_ip=""
+  local gateway_ip=""
+  local authoritative=""
+  local lease_time=""
+
+  create_file "$DHCP_CONFIG"
+  mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "CREATE TABLE IF NOT EXISTS config (config_id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, config_type TINYTEXT, option_name TINYTEXT, option_value TEXT, option_enabled BOOLEAN);"
+  
+  cat /dev/null > $DHCP_CONFIG
+  
+  while IFS=$'\t\n' read -r option_name option_value option_enabled
+  do
+    #echo "$option_name, $option_value, $option_enabled"   #Uncomment for debugging
+    if [[ $option_name == "dhcp-host" ]]; then
+      #Look for Mac address, IP
+      if [[ $option_value =~ ^([0-9a-f:]{17}),([0-9a-f:\.]+) ]]; then
+        echo "dhcp-host=${BASH_REMATCH[1]},${BASH_REMATCH[2]}" >> $DHCP_CONFIG
+      #Or Name, Mac address, IP
+      elif [[ $option_value =~ ^([^,]+),([0-9a-f:]{17}),([0-9a-f:\.]+) ]]; then
+        echo "#${BASH_REMATCH[1]}" >> $DHCP_CONFIG
+        echo "dhcp-host=${BASH_REMATCH[2]},${BASH_REMATCH[3]}" >> $DHCP_CONFIG
+      fi
+    fi
+    #Load up other values
+    case "$option_name" in
+      dhcp_enabled) dhcp_enabled="$option_enabled" ;;
+      start_ip) start_ip="$option_value" ;;
+      end_ip) end_ip="$option_value" ;;
+      gateway_ip) gateway_ip="$option_value" ;;
+      authoritative) authoritative="$option_enabled" ;;
+      lease_time) lease_time="$option_value" ;;
+    esac
+
+  done< <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "SELECT option_name, option_value, option_enabled FROM config WHERE config_type = 'dhcp'") 
+  
+  if [[ $dhcp_enabled == "1" ]]; then
+    echo "dhcp-option=3,$gateway_ip" >> $DHCP_CONFIG
+    echo "dhcp-range=$start_ip,$end_ip,$lease_time" >> $DHCP_CONFIG
+  else
+    echo "#dhcp-option=3,$gateway_ip" >> $DHCP_CONFIG
+    echo "#dhcp-range=$start_ip,$end_ip,$lease_time" >> $DHCP_CONFIG
+  fi
+  
+  if [[ $authoritative == "1" ]]; then
+    echo "dhcp_authoritative" >> $DHCP_CONFIG
+  else
+    echo "#dhcp_authoritative" >> $DHCP_CONFIG
+  fi
+  
+  # TODO Restart Dnsmasq
+  unset IFS
+}
+
 
 #--------------------------------------------------------------------
 # Write Dnsmasq Config
@@ -447,13 +523,6 @@ function upgrade_notrack() {
 
 
 #Main----------------------------------------------------------------
-
-if [[ $(whoami) == "www-data" ]]; then           #Check if launced from web server without root user   DEPRECATED
-  echo "Error. ntrk-exec needs to be run as root"
-  echo "run 'notrack --upgrade' to set permissions in sudoers file"
-  exit 2
-fi
-
 if [[ "$(id -u)" != "0" ]]; then                 #Check if running as root
   echo "Error this script must be run as root"
   exit 2
@@ -528,7 +597,7 @@ if [ "$1" ]; then                         #Have any arguments been given
       --shutdown)
         shutdown now  > /dev/null &
       ;;      
-      --run-notrack)        
+      --run-notrack)
         /usr/local/sbin/notrack > /dev/null &
       ;;
       --save-conf)
@@ -539,7 +608,9 @@ if [ "$1" ]; then                         #Have any arguments been given
       ;;
       --write)
         if [[ $2 == "'dnsmasq'" ]]; then
-          write_dnsmasq 
+          write_dnsmasq
+        elif [[ $2 == "'dhcp'" ]]; then
+          write_dhcp
         fi
       ;;
       (--) shift; break;;
