@@ -21,6 +21,7 @@ readonly FILE_CONFIG="/etc/notrack/notrack.conf"
 readonly FILE_EXEC="/tmp/ntrk-exec.txt"
 readonly TEMP_CONFIG="/tmp/notrack.conf"
 readonly DNSMASQ_CONF="/etc/dnsmasq.conf"
+readonly DHCP_CONFIG="/etc/dnsmasq.d/dhcp.conf"
 
 readonly USER="ntrk"
 readonly PASSWORD="ntrkpass"
@@ -55,6 +56,25 @@ function block_message() {
   sudo chmod -R 775 /var/www/html/sink
 }
 
+
+#--------------------------------------------------------------------
+# Create File
+# Checks if a file exists and creates it
+#
+# Globals:
+#   None
+# Arguments:
+#   #$1 File to create
+# Returns:
+#   None
+#--------------------------------------------------------------------
+function create_file() {
+  if [ ! -e "$1" ]; then                         #Does file already exist?
+    echo "Creating file: $1"
+    sudo touch "$1"                              #If not then create it
+    sudo chmod 664 "$1"                          #RW RW R permissions
+  fi
+}
 
 #--------------------------------------------------------------------
 # Copy Black list
@@ -185,27 +205,29 @@ delete_history() {
 #   1: type
 #   2: option_name
 #   3: option_value
-#   4: option_enabled
+#   4: option_enabled (# = false, 1 = true)
 # Returns:
 #   None
 #--------------------------------------------------------------------
 function addvalue() {
   local enabled=1
     
-  if [[ $4 == "#" ]]; then
-    enabled=0  
+  if [[ $4 == "#" ]] || [[ $4 == "0" ]]; then
+    enabled=0
   fi
   
-  #echo "'$1','$2','$3','$enabled'"
-  mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "INSERT INTO config (config_id, config_type, option_name, option_value, option_enabled) VALUES ('NULL', '$1', '$2', '$3', '$enabled');"  
+  echo "'$1','$2','$3','$enabled'"
+  mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "INSERT INTO config (config_id, config_type, option_name, option_value, option_enabled) VALUES ('NULL', '$1', '$2', '$3', '$enabled');"
 }
 
 
 #--------------------------------------------------------------------
-# Read Dnsmasq Config for DHCP values
-#   1: Create config table (if necessary)
-#   2: Delete any old values in config table
-#   3: Read through dnsmasq.conf
+# Read Dnsmasq DHCP Config
+#   1: Create /etc/dnsmasq.d/dhcp.conf if doesn't exist
+#   2: Create config table if doesn't exist
+#   3: Delete any old values in config table
+#   4: Read through /etc/dnsmasq.d/dhcp.conf
+#   5: If nothing in dhcp.conf file, then create default values
 #
 # Globals:
 #   USER, PASSWORD, DBNAME
@@ -218,8 +240,10 @@ function read_dhcp() {
   local dhcp_enabled=false
   local line=""
   local previous_line=""
+  local gateway_ip=""  
   
-  mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "CREATE TABLE IF NOT EXISTS config (config_id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, config_type TINYTEXT, option_name TINYTEXT, option_value TEXT, option_enabled BOOLEAN);"  
+  create_file "$DHCP_CONFIG"
+  mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "CREATE TABLE IF NOT EXISTS config (config_id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, config_type TINYTEXT, option_name TINYTEXT, option_value TEXT, option_enabled BOOLEAN);"
   
   mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "DELETE FROM config WHERE config_type = 'dhcp';"
   
@@ -227,12 +251,12 @@ function read_dhcp() {
   do
     if [[ $line =~ ^dhcp-range\=([^,]+),([^,]+),(.+)$ ]]; then
       dhcp_enabled=true
-      addvalue "dhcp" "dhcp_enabled" "" ""
-      addvalue "dhcp" "start_ip" "${BASH_REMATCH[1]}" ""
-      addvalue "dhcp" "end_ip" "${BASH_REMATCH[2]}" ""
-      addvalue "dhcp" "lease_time" "${BASH_REMATCH[3]}" ""
+      addvalue "dhcp" "dhcp_enabled" "" "1"
+      addvalue "dhcp" "start_ip" "${BASH_REMATCH[1]}" "1"
+      addvalue "dhcp" "end_ip" "${BASH_REMATCH[2]}" "1"
+      addvalue "dhcp" "lease_time" "${BASH_REMATCH[3]}" "1"
     elif [[ $line =~ ^dhcp-option\=3,(.+)$ ]]; then
-      addvalue "dhcp" "router_ip" "${BASH_REMATCH[1]}" ""
+      addvalue "dhcp" "gateway_ip" "${BASH_REMATCH[1]}" "1"
     elif [[ $line =~ ^(#?)([^\=]+)\=?(.*)$ ]]; then
       case "${BASH_REMATCH[2]}" in
         dhcp-authoritative|log-dhcp)
@@ -250,16 +274,37 @@ function read_dhcp() {
       esac
       previous_line="$line"
     fi
-  done < "$DNSMASQ_CONF" 
-  
-  if [[ $dhcp_enabled == false ]]; then          #Add default values if DHCP is disabled
-    addvalue "dhcp" "dhcp_enabled" "" "#"
-    addvalue "dhcp" "start_ip" "192.168.0.50" ""
-    addvalue "dhcp" "end_ip" "192.168.0.150" ""
-    addvalue "dhcp" "lease_time" "12h" ""
-    addvalue "dhcp" "router_ip" "192.168.0.254" ""
-  fi
+  done < "$DHCP_CONFIG" 
   unset IFS
+  
+  if [[ $dhcp_enabled == false ]]; then                    #Add default values if DHCP is disabled
+    addvalue "dhcp" "dhcp_enabled" "" "#"                  #Set dhcp_enabled to false
+    
+    #Extract IP from command ip route
+    #Regex: default via (IPv4 or IPv6 address)
+    
+    gateway_ip=$(ip route | grep -oP 'default[[:space:]]via[[:space:]]\K([0-9a-f:\.]+)')
+    
+    #Is IP address IPv4? - Extract (Group1: 0-999).(Group2: 0-999).(Group3: 0-999)
+    if [[ $gateway_ip =~ ^([[:digit:]]{1,3})\.([[:digit:]]{1,3})\.([[:digit:]]{1,3})\. ]]; then
+      addvalue "dhcp" "start_ip" "${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.64" "0"
+      addvalue "dhcp" "end_ip" "${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.254" "0"
+      
+    #Is IP address IPv6? - Don't know, just use it as is
+    elif [[ $gateway_ip =~ ^[0-9a-f:] ]]; then             # TODO No idea about IPv6
+      addvalue "dhcp" "start_ip" "$gateway_ip:00FF" "0"
+      addvalue "dhcp" "end_ip" "$gateway_ip:FFFF" "0"
+      
+    #IP version not known, use 192.168.0 as template
+    else
+      addvalue "dhcp" "start_ip" "192.168.0.50" "0"
+      addvalue "dhcp" "end_ip" "192.168.0.150" "0"
+    fi
+    
+    addvalue "dhcp" "lease_time" "24h" "0"
+    addvalue "dhcp" "gateway_ip" "$gateway_ip" "0"
+  fi
+  
 }
 
 
@@ -372,7 +417,7 @@ function write_dnsmasq() {
 function update_config() {
   if [ -e "/tmp/notrack.conf" ]; then
     chown root:root "$TEMP_CONFIG"
-    chmod 644 /tmp/notrack.conf      
+    chmod 644 /tmp/notrack.conf
     echo "Copying $TEMP_CONFIG to $FILE_CONFIG"
     mv "$TEMP_CONFIG" "$FILE_CONFIG"
     echo
@@ -495,7 +540,7 @@ if [ "$1" ]; then                         #Have any arguments been given
       --write)
         if [[ $2 == "'dnsmasq'" ]]; then
           write_dnsmasq 
-        fi         
+        fi
       ;;
       (--) shift; break;;
       (-*) echo "$0: error - unrecognized option $1" 1>&2; exit 6;;
