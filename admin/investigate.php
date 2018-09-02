@@ -430,8 +430,8 @@ function show_whoiserror() {
   echo '<p>Error: No WhoIs API key set. In order to use this feature you will need to add a valid JsonWhois API key to NoTrack config</p>'.PHP_EOL;
   echo '<p>Instructions:</p>'.PHP_EOL;
   echo '<ol>'.PHP_EOL;
-  echo '<li>Sign up to <a href="https://jsonwhois.com/">JsonWhois</a></li>'.PHP_EOL;
-  echo '<li> Add your API key to NoTrack <a href="./config.php?v=general">config</a></li>'.PHP_EOL;
+  echo '<li>Sign up to <a href="https://jsonwhois.com/">JsonWhois.com</a></li>'.PHP_EOL;
+  echo '<li> Add your API key to NoTrack <a href="./config.php?v=general">Config</a></li>'.PHP_EOL;
   echo '</ol>'.PHP_EOL;
   echo '</div></div>'.PHP_EOL;
 }
