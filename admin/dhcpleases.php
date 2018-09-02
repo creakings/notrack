@@ -42,10 +42,7 @@ function load_dhcp() {
   if (table_exists('config')) {
     if (count_rows("SELECT COUNT(*) FROM config WHERE config_type = 'dhcp'") == 0) {
       exec(NTRK_EXEC.'--read dhcp');
-    }    
-    if (count_rows("SELECT COUNT(*) FROM config WHERE config_type = 'dnsmasq'") == 0) {
-      exec(NTRK_EXEC.'--read dnsmasq');
-    }    
+    }
   }
   else {
     exec(NTRK_EXEC.'--read dhcp');
