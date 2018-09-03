@@ -391,13 +391,41 @@ function parsing_time() {
 }
 
 
-#--------------------------------------------------------------------
-# Write Dhcp Config
-#   1: Create /etc/dnsmasq.d/dhcp.conf if doesn't exist
-#   2: Create config table if doesn't exist
+#######################################
+# Restart service
+#    with either systemd or sysvinit or runit
 #
 # Globals:
-#   USER, PASSWORD, DBNAME, DHCP_CONFIG
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+service_restart() {
+  if [[ -n $1 ]]; then
+    echo "Restarting $1"
+    if [ "$(command -v systemctl)" ]; then       #systemd
+      sudo systemctl restart "$1"
+    elif [ "$(command -v service)" ]; then       #sysvinit
+      sudo service "$1" restart
+    elif [ "$(command -v sv)" ]; then            #runit
+      sudo sv restart "$1"
+    else
+      error_exit "Unable to restart services. Unknown service supervisor" "21"
+    fi
+  fi
+}
+
+#--------------------------------------------------------------------
+# Write Dhcp Config
+#   1: Check dhcp.conf exists in /tmp
+#   2: Change ownership and permissions
+#   3: Copy to /etc/dnsmasq.d/dhcp.conf
+#   4: Restart Dnsmasq TODO
+#
+# Globals:
+#   DHCP_CONFIG
 # Arguments:
 #   None
 # Returns:
@@ -405,63 +433,16 @@ function parsing_time() {
 
 #--------------------------------------------------------------------
 function write_dhcp() {
-  local option_name=""
-  local option_value=""
-  local option_enabled=""
+  local dhcp_temp="/tmp/dhcp.conf"
   
-  local dhcp_enabled=""
-  local start_ip=""
-  local end_ip=""
-  local gateway_ip=""
-  local authoritative=""
-  local lease_time=""
-
-  create_file "$DHCP_CONFIG"
-  mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "CREATE TABLE IF NOT EXISTS config (config_id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, config_type TINYTEXT, option_name TINYTEXT, option_value TEXT, option_enabled BOOLEAN);"
-  
-  cat /dev/null > $DHCP_CONFIG
-  
-  while IFS=$'\t\n' read -r option_name option_value option_enabled
-  do
-    #echo "$option_name, $option_value, $option_enabled"   #Uncomment for debugging
-    if [[ $option_name == "dhcp-host" ]]; then
-      #Look for Mac address, IP
-      if [[ $option_value =~ ^([0-9a-f:]{17}),([0-9a-f:\.]+) ]]; then
-        echo "dhcp-host=${BASH_REMATCH[1]},${BASH_REMATCH[2]}" >> $DHCP_CONFIG
-      #Or Name, Mac address, IP
-      elif [[ $option_value =~ ^([^,]+),([0-9a-f:]{17}),([0-9a-f:\.]+) ]]; then
-        echo "#${BASH_REMATCH[1]}" >> $DHCP_CONFIG
-        echo "dhcp-host=${BASH_REMATCH[2]},${BASH_REMATCH[3]}" >> $DHCP_CONFIG
-      fi
-    fi
-    #Load up other values
-    case "$option_name" in
-      dhcp_enabled) dhcp_enabled="$option_enabled" ;;
-      start_ip) start_ip="$option_value" ;;
-      end_ip) end_ip="$option_value" ;;
-      gateway_ip) gateway_ip="$option_value" ;;
-      authoritative) authoritative="$option_enabled" ;;
-      lease_time) lease_time="$option_value" ;;
-    esac
-
-  done< <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "SELECT option_name, option_value, option_enabled FROM config WHERE config_type = 'dhcp'") 
-  
-  if [[ $dhcp_enabled == "1" ]]; then
-    echo "dhcp-option=3,$gateway_ip" >> $DHCP_CONFIG
-    echo "dhcp-range=$start_ip,$end_ip,$lease_time" >> $DHCP_CONFIG
-  else
-    echo "#dhcp-option=3,$gateway_ip" >> $DHCP_CONFIG
-    echo "#dhcp-range=$start_ip,$end_ip,$lease_time" >> $DHCP_CONFIG
+  if [ -e "$dhcp_temp" ]; then
+    chown root:root "$dhcp_temp"
+    chmod 644 "$dhcp_temp"
+    echo "Copying $dhcp_temp to $DHCP_CONFIG"
+    mv "$dhcp_temp" "$DHCP_CONFIG"
+    echo
+    service_restart dnsmasq
   fi
-  
-  if [[ $authoritative == "1" ]]; then
-    echo "dhcp_authoritative" >> $DHCP_CONFIG
-  else
-    echo "#dhcp_authoritative" >> $DHCP_CONFIG
-  fi
-  
-  # TODO Restart Dnsmasq
-  unset IFS
 }
 
 

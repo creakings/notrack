@@ -263,7 +263,23 @@ function is_active_class($currentview, $item) {
   
   return '';
 }
- 
+
+
+/********************************************************************
+ *  Is Commented
+ *    Used in config files to check if Regex group 1 (start of line) is a # comment
+ *  Params:
+ *    value
+ *  Return:
+ *    false if value is #, or true for nothing
+ */
+ function is_commented($value) {
+  if ($value == '#') {
+    return false;
+  }
+  
+  return true;
+}
 
 /********************************************************************
  *  Pagination
