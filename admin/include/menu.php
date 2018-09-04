@@ -14,7 +14,7 @@ function draw_sidemenu() {
   echo '<li><span><a href="../admin/queries.php"><img src="./svg/smenu_queries.svg" alt="" title="DNS Queries">DNS Queries</a></span></li>'.PHP_EOL;
   echo '<li><span><a href="../admin/investigate.php"><img src="./svg/smenu_investigate.svg" alt="" title="Investigate">Investigate</a></span></li>'.PHP_EOL;
   echo '<li><span><a href="../admin/blocked.php"><img src="./svg/smenu_blocked.svg" alt="" title="Sites Blocked">Sites Blocked</a></span></li>'.PHP_EOL;
-  echo '<li><span><a href="../admin/dhcpleases.php"><img src="./svg/smenu_dhcp.svg" alt="" title="Network">Network</a></span></li>'.PHP_EOL;
+  echo '<li><span><a href="../admin/dhcp.php"><img src="./svg/smenu_dhcp.svg" alt="" title="Network">Network</a></span></li>'.PHP_EOL;
   echo '<li><span><a href="../admin/config.php"><img src="./svg/smenu_config.svg" alt="" title="Config">Config</a></span></li>'.PHP_EOL;
   echo '<li><span><a href="../admin/help.php"><img src="./svg/smenu_help.svg" alt="" title="Help">Help</a></span></li>'.PHP_EOL;
   

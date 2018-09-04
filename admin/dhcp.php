@@ -219,10 +219,12 @@ function update_dhcp() {
     fwrite($fh, '#dhcp-authoritative'.PHP_EOL);
   }
   
+  fwrite($fh, PHP_EOL);                                    //Bug fix to prevent #dhcp-authoritative being used as a host name
+  
   if (isset($_POST['static'])) {                           //Need to split textbox into seperate lines
-    $hosts = explode(PHP_EOL, strip_tags($_POST['static'])); #Prevent XSS
+    $hosts = explode(PHP_EOL, strip_tags($_POST['static'])); //Prevent XSS and write into an array
     
-    foreach($hosts as $host) {                   //Read each line
+    foreach($hosts as $host) {                             //Read each line of $hosts array
       //Check for Name,MAC,IP or MAC,IP
       //Add record if it is valid
       if (preg_match('/^([^,]+),([a-f\d]{2}:[a-f\d]{2}:[a-f\d]{2}:[a-f\d]{2}:[a-f\d]{2}:[a-f\d]{2}),([a-f\d:\.]+)/', $host, $matches) > 0) {
@@ -283,6 +285,8 @@ load_dhcp();
 
 if (isset($_POST['update'])) {
   update_dhcp();
+  $DHCPConfig['static_hosts'] = '';
+  load_dhcp();
 }
 
 show_dhcp();
