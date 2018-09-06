@@ -431,7 +431,7 @@ function update_config_record($config_type, $option_name, $option_value, $option
 function update_dhcp() {
   global $db;
   
-  
+  //DEPRECATED need to move to dhcp.php
   $hosts = array();
   $matches = array();
   $host = '';
@@ -589,7 +589,7 @@ if (isset($_GET['action'])) {
     case 'white':
       load_customlist('white', $FileWhiteList);
       update_custom_list('WhiteList', 'white');
-      break;    
+      break;
   }
 }
 
@@ -609,11 +609,7 @@ if (isset($_GET['v'])) {                         //What view to show?
       load_customlist('white', $FileWhiteList);
       show_custom_list('white');
       break;
-    case 'dhcp':
-      load_dhcp();
-      show_dhcp();
-      break;
-    case 'full':      
+    case 'full':
       show_full_blocklist();
       break;
     case 'advanced':

@@ -140,19 +140,18 @@ function show_dhcp() {
   echo '<form method="POST">'.PHP_EOL;
   echo '<input type="hidden" name="update" value="1">';
   
-  draw_systable('<strike>DHCP</strike> Work in progress');
+  draw_systable('DHCP Config');
   draw_sysrow('Enabled', '<input type="checkbox" name="enabled" '.is_checked($DHCPConfig['dhcp_enabled']).'>');
-  draw_sysrow('Gateway IP', '<input type="text" name="gateway_ip" value="'.$DHCPConfig['gateway_ip'].'"><p>Usually the IP address of your Router</p>');
+  draw_sysrow('Authoritative', '<input type="checkbox" name="authoritative"'.is_checked($DHCPConfig['dhcp_authoritative']).'>Authoritative mode will barge in and take over the lease for any client which broadcasts on the network. Avoids long timeouts when a machine wakes up on a new network.');
+  draw_sysrow('Gateway IP <img class="btn" src="./svg/button_help.svg" alt="help" title="Usually the IP address of your Router">', '<input type="text" name="gateway_ip" value="'.$DHCPConfig['gateway_ip'].'">');
   draw_sysrow('Range - Start IP', '<input type="text" name="start_ip" value="'.$DHCPConfig['start_ip'].'">');
   draw_sysrow('Range - End IP', '<input type="text" name="end_ip" value="'.$DHCPConfig['end_ip'].'">');
   draw_sysrow('Lease Time', '<input type="text" name="lease_time" value="'.$DHCPConfig['lease_time'].'">');  //TODO Beautify
-  draw_sysrow('Authoritative', '<input type="checkbox" name="authoritative"'.is_checked($DHCPConfig['dhcp_authoritative']).'><p>Set the DHCP server to authoritative mode. In this mode it will barge in and take over the lease for any client which broadcasts on the network. This avoids long timeouts
-  when a machine wakes up on a new network. http://www.isc.org/files/auth.html</p>');
-  echo '<tr><td>Static Hosts:</td><td><p><code>System.name,MAC Address,IP to allocate</code><br>e.g. <code>nas.local,11:22:33:aa:bb:cc,192.168.0.5</code></p>';
+  echo '<tr><td>Static Hosts:</td><td><p class="light"><code>System.name,MAC Address,IP to allocate</code><br><code>e.g. nas.local,11:22:33:aa:bb:cc,192.168.0.5</code></p>';
   echo '<textarea rows="10" name="static">'.$DHCPConfig['static_hosts'].'</textarea></td></tr>'.PHP_EOL;
   echo '<tr><td colspan="2"><div class="centered"><input type="submit" class="button-blue" value="Save Changes">&nbsp;<input type="reset" class="button-blue" value="Reset"></div></td></tr>'.PHP_EOL;
   echo '</table></div>'.PHP_EOL;
-  echo '</div></form>'.PHP_EOL;
+  echo '</form>'.PHP_EOL;
 }
 /********************************************************************
  *  Update DHCP
@@ -237,39 +236,39 @@ function update_dhcp() {
     }
   }
   fclose($fh);                                             //Close Temp Conf
-  exec(NTRK_EXEC.'--write dhcp');
+  exec(NTRK_EXEC.'--write dhcp');                          //Run ntrk-exec to copy Temp conf to /etc/dnsmasq.d/dhcp.conf then restart dnsmasq
 }
 
-
+/********************************************************************/
 draw_topmenu('Network');
 draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;
 
-echo '<div class="sys-group"><div class="sys-title">'.PHP_EOL;
+echo '<div class="sys-group">'.PHP_EOL;
 echo '<h5>DHCP Leases</h5>'.PHP_EOL;
-echo '</div>'.PHP_EOL;
-echo '<div class="sys-items">'.PHP_EOL;
 
 //Is DHCP Active?
 if (file_exists('/var/lib/misc/dnsmasq.leases')) {
-  $FileHandle= fopen('/var/lib/misc/dnsmasq.leases', 'r') or die('Error unable to open /var/lib/misc/dnsmasq.leases');
+  $fh= fopen('/var/lib/misc/dnsmasq.leases', 'r') or die('Error unable to open /var/lib/misc/dnsmasq.leases');
 
   echo '<table id="dhcp-table">'.PHP_EOL;
   echo '<tr><th>IP Allocated</th><th>Device Name</th><th>MAC Address</th><th>Valid Until</th>'.PHP_EOL;
   
-  while (!feof($FileHandle)) {
-    $Line = trim(fgets($FileHandle));            //Read Line of LogFile
-    if ($Line != '') {                           //Sometimes a blank line appears in log file
-      $Seg = explode(' ', $Line);
+  while (!feof($fh)) {
+    $line = trim(fgets($fh));            //Read Line of LogFile
+    if ($line != '') {                           //Sometimes a blank line appears in log file
+      $Seg = explode(' ', $line);
       //0 - Time Requested in Unix Time
       //1 - MAC Address
       //2 - IP Allocated
       //3 - Device Name
       //4 - '*' or MAC address
       echo '<tr><td>'.$Seg[2].'</td><td>'.$Seg[3].'</td><td>'.$Seg[1].'</td><td>'.date("d M Y \- H:i:s", $Seg[0]).'</td></tr>'.PHP_EOL;
-    }    
+    }
   }
   echo '</table>'.PHP_EOL;
+  
+  fclose($fh);
 }
 
 //No, display tutorial on how to set it up.
@@ -279,7 +278,7 @@ else {
   echo '<iframe width="640" height="360" src="https://www.youtube.com/embed/a5dUJ0SlGP0" frameborder="0" allowfullscreen></iframe>'.PHP_EOL;  
 }
 
-echo '</div></div>';
+echo '</div>';
 
 load_dhcp();
 

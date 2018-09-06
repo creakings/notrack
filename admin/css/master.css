@@ -35,7 +35,7 @@ img.btn {
   height: 1em;
   width: 1em;  
 }
-img.full {  
+img.full {
   width: 100%;
 }
 p {
@@ -91,12 +91,12 @@ h4 img {
   margin: 3rem 1rem 0 0;
 }
 h5 {
-  font-size: 1.6em;
+  font-size: 1.5em;
   font-weight: 400;
   text-align: left;
   margin: 0 0.5em 0.5em 0;
   padding: 0.2em 0.5em;
-  border-bottom: 2px solid #21BBFF;  
+  border-bottom: 2px solid #21BBFF;
 }
 h6 {
   font-size: 1.3em;
@@ -120,7 +120,7 @@ pre {
   background-color: #F7F7F7;
   border: 1px solid #B3B3B3;
   border-radius: 3px;
-  width: 80%;
+  width: 90%;
   margin: 0.5em auto;
   padding: 0.5em;
   overflow: auto;
@@ -243,31 +243,22 @@ textarea {
 }
 .sys-group {
   background-color: #F7F7F7;
-  border: 1px solid #B3B3B3;  
+  border: 1px solid #B3B3B3;
   border-radius: 3px;
-  width: 80%;
+  width: 90%;
   margin: 0.9em auto;
   padding: 0.5em;
   display: table;
   box-shadow: 2px 2px 4px rgba(0, 0, 0, .5);
 }
-.sys-title {
-  width: 20%;
-  float: left;
-  display: inline-block;
-}
-.sys-items {
-  width: 80%;
-  float: left;  
-}
-@media only screen and (max-width:1200px), only screen and (max-device-width:1200px) {
+/*@media only screen and (max-width:1200px), only screen and (max-device-width:1200px) {
   .sys-group {width: 90%;}
   .sys-title, .sys-items {width: 100%;}  
   h5 {
     margin: 0 0 0.5em 0;
   	padding: 0.2em 0.2em 0.2em 1em;
   }
-}
+}*/
 @media only screen and (max-width:640px), only screen and (max-device-width:640px) {
   .sys-group {width: 96%;}
 }

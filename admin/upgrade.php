@@ -26,9 +26,8 @@ draw_sidemenu();
 
 echo '<div id="main">'.PHP_EOL;
 
-if (isset($_POST['doupgrade'])) {    //Check if we are running upgrade or displaying status
-  echo '<div class="sys-group">'.PHP_EOL;
-  echo '<h5>NoTrack Upgrade</h5></div>'.PHP_EOL;
+if (isset($_POST['doupgrade'])) {    //Check if we are running upgrade or displaying status  
+  echo '<h5>NoTrack Upgrade</h5>'.PHP_EOL;
     
   echo '<pre>';
   passthru(NTRK_EXEC.'--upgrade');
@@ -37,7 +36,7 @@ if (isset($_POST['doupgrade'])) {    //Check if we are running upgrade or displa
   echo '<div class="sys-group">'.PHP_EOL;
   echo '<div class="centered">'.PHP_EOL;         //Center div for button
   echo '<button class="button-blue" onclick="window.location=\'./\'">Back</button>'.PHP_EOL;    
-  echo '</div></div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
   $mem->flush();                                 //Delete config from Memcache
   sleep(1);
 }
@@ -50,7 +49,7 @@ else {                                           //Just displaying status
     draw_sysrow('Status', 'Running the latest version v'.VERSION);
     draw_sysrow('Force Upgrade', 'Force upgrade to Development version of NoTrack<br><input type="submit" class="button-danger" value="Upgrade">');
     echo '</table>'.PHP_EOL;
-    echo '</div></div>'.PHP_EOL;
+    echo '</div><'.PHP_EOL;
     echo '</form>'.PHP_EOL;
   }
   else {
@@ -58,7 +57,7 @@ else {                                           //Just displaying status
     draw_sysrow('Status', 'Running version v'.VERSION.'<br>Latest version available: v'.$Config['LatestVersion']);
     draw_sysrow('Commence Upgrade', '<input type="submit" class="button-blue" value="Upgrade">');
     echo '</table>'.PHP_EOL;
-    echo '</div></div>'.PHP_EOL;
+    echo '</div>'.PHP_EOL;
     echo '</form>'.PHP_EOL;
   }
    

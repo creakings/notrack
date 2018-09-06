@@ -234,7 +234,7 @@ function show_advanced() {
   draw_sysrow('Suppress Domains <img class="btn" src="./svg/button_help.svg" alt="help" title="Group together certain domains on the Stats page">', '<textarea rows="5" name="suppress">'.str_replace(',', PHP_EOL, $Config['Suppress']).'</textarea>');
   echo '<tr><td colspan="2"><div class="centered"><input type="submit" class="button-grey" value="Save Changes"></div></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;
-  echo '</div></div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
 }
 
@@ -256,19 +256,19 @@ function show_blocklists() {
   draw_blocklist_row('bl_notrack', 'NoTrack List', 'NoTrack Block List contains mixture of Tracking and Advertising sites');
   draw_blocklist_row('bl_notrack_malware', 'NoTrack Malware', 'NoTrack Malware List contains malicious and dodgy sites that aren&rsquo;t really considered tracking or advertising');
   draw_blocklist_row('bl_tld', 'Top Level Domains', 'Whole country and generic top level domains');
-  echo '</table></div></div>'.PHP_EOL;
+  echo '</table></div>'.PHP_EOL;
   
   //Advert Blocking
   draw_systable('Advert Blocking');
   draw_blocklist_row('bl_easylist', 'EasyList', 'EasyList without element hiding rules‎ <a href="https://forums.lanik.us/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_pglyoyo', 'Peter Lowe&rsquo;s Ad server list‎', 'Some of this list is already in NoTrack <a href="https://pgl.yoyo.org/adservers/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>'); 
-  echo '</table></div></div>'.PHP_EOL;
+  draw_blocklist_row('bl_pglyoyo', 'Peter Lowe&rsquo;s Ad server list‎', 'Some of this list is already in NoTrack <a href="https://pgl.yoyo.org/adservers/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+  echo '</table></div>'.PHP_EOL;
   
   //Privacy
   draw_systable('Privacy');
   draw_blocklist_row('bl_easyprivacy', 'EasyPrivacy', 'Supplementary list from AdBlock Plus <a href="https://forums.lanik.us/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
   draw_blocklist_row('bl_fbenhanced', 'Fanboy&rsquo;s Enhanced Tracking List', 'Blocks common tracking scripts <a href="https://www.fanboy.co.nz/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  echo '</table></div></div>'.PHP_EOL;
+  echo '</table></div>'.PHP_EOL;
   
   //Malware
   draw_systable('Malware');
@@ -281,10 +281,9 @@ function show_blocklists() {
   draw_blocklist_row('bl_spam404', 'Spam404', '<a href="http://www.spam404.com/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
   draw_blocklist_row('bl_swissransom', 'Swiss Security - Ransomware Tracker', 'Protects against downloads of several variants of Ransomware, including Cryptowall and TeslaCrypt <a href="https://ransomwaretracker.abuse.ch/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
   draw_blocklist_row('bl_swisszeus', 'Swiss Security - ZeuS Tracker', 'Protects systems infected with ZeuS malware from accessing Command & Control servers <a href="https://zeustracker.abuse.ch/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  echo '</table></div></div>'.PHP_EOL;
+  echo '</table></div>'.PHP_EOL;
   
-  //Crypto Coin
-  draw_systable('Crypto Coin Mining');
+  draw_systable('Crypto Coin Mining');                     //Start Crypto Coin
     
   draw_blocklist_row('bl_cbl_all', 'Coin Blocker Lists - All', 'This list contains all crypto mining domains - A list for administrators to prevent mining in networks. <a href="https://gitlab.com/ZeroDot1/CoinBlockerLists" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
   
@@ -292,13 +291,13 @@ function show_blocklists() {
   
   draw_blocklist_row('bl_cbl_browser', 'Coin Blocker Lists - Browser', 'This list contains all browser mining domains - A list to prevent browser mining only. <a href="https://gitlab.com/ZeroDot1/CoinBlockerLists" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');    
   
-  echo '</table></div></div>'.PHP_EOL;                     //End Crypto Coin
+  echo '</table></div>'.PHP_EOL;                           //End Crypto Coin
   
   //Social
   draw_systable('Social');
   draw_blocklist_row('bl_fbannoyance', 'Fanboy&rsquo;s Annoyance List', 'Block Pop-Ups and other annoyances. <a href="https://www.fanboy.co.nz/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
   draw_blocklist_row('bl_fbsocial', 'Fanboy&rsquo;s Social Blocking List', 'Block social content, widgets, scripts and icons. <a href="https://www.fanboy.co.nz" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  echo '</table></div></div>'.PHP_EOL;
+  echo '</table></div>'.PHP_EOL;
   
   //Multipurpose
   draw_systable('Multipurpose');
@@ -306,7 +305,7 @@ function show_blocklists() {
   draw_blocklist_row('bl_hphosts', 'hpHosts', 'Inefficient list <a href="http://hosts-file.net" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
   //draw_blocklist_row('bl_securemecca', 'Secure Mecca', 'Mixture of Adult, Gambling and Advertising sites <a href="http://securemecca.com/" target="_blank">(securemecca.com)</a>');
   draw_blocklist_row('bl_winhelp2002', 'MVPS Hosts‎', 'Very inefficient list <a href="http://winhelp2002.mvps.org/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  echo '</table></div></div>'.PHP_EOL;
+  echo '</table></div>'.PHP_EOL;
   
   //Region Specific
   draw_systable('Region Specific');
@@ -335,7 +334,7 @@ function show_blocklists() {
   draw_blocklist_row('bl_spaeasy', 'SPA EasyList', 'España EasyList (Spain) <a href="https://forums.lanik.us/viewforum.php?f=103" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
   draw_blocklist_row('bl_svneasy', 'SVN EasyList', 'Slovenska lista (Slovenia) <a href="https://github.com/betterwebleon/slovenian-list" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
   
-  echo '</table></div></div>'.PHP_EOL;
+  echo '</table></div>'.PHP_EOL;
   
   draw_systable('Custom Block Lists');
   draw_sysrow('Custom', '<p>Use either Downloadable or Localy stored Block Lists</p><textarea rows="5" name="bl_custom">'.str_replace(',', PHP_EOL,$Config['bl_custom']).'</textarea>');
@@ -343,7 +342,7 @@ function show_blocklists() {
   echo '</table><br>'.PHP_EOL;
   
   echo '<div class="centered"><input type="submit" class="button-grey" value="Save Changes"></div>'.PHP_EOL;
-  echo '</div></div></form>'.PHP_EOL;
+  echo '</div></form>'.PHP_EOL;
   
   return null;
 }
@@ -402,13 +401,13 @@ function show_custom_list($view) {
   echo '<tr><td>'.$i.'</td><td><input type="text" class="ninty" name="site'.$i.'" placeholder="site.com"></td><td>';   //Add new site row
   echo '<input type="text" class="ninty" name="comment'.$i.'" placeholder="comment"></td>';
   echo '<td><button class="button-grey" onclick="addSite('.$i.')">Save</button></td></tr>';                            //End add new site row
-        
+
   echo '</table>'.PHP_EOL;                                 //End custom list table
-  
+
   echo '<div class="centered"><br>'.PHP_EOL;  
   echo '<a href="?v='.$view.'&amp;action='.$view.'&amp;do=update" class="button-blue">Update Blocklists</a>&nbsp;&nbsp;';
   echo '<a href="./include/downloadlist.php?v='.$view.'" class="button-grey">Download List</a>';
-  echo '</div></div>'.PHP_EOL;  
+  echo '</div></div>'.PHP_EOL;
 }
 
 
@@ -437,10 +436,8 @@ function show_domain_list() {
   $flag_image = '';  
   $flag_filename = '';
 
-  echo '<div class="sys-group"><div class="sys-title">'.PHP_EOL;
-  echo '<h5>Domain Blocking</h5>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
-  echo '<div class="sys-items">'.PHP_EOL;
+  echo '<div class="sys-group">'.PHP_EOL;
+  echo '<h5>Domain Blocking</h5>'.PHP_EOL;  
   echo '<span class="key key-red">High</span>'.PHP_EOL;
   echo '<p>High risk domains are home to a high percentage of malicious sites compared to legitimate sites. Often they are cheap / free to buy and are not well policed.<br>'.PHP_EOL;
   echo 'High risk domains are automatically blocked, unless you specifically untick them.</p>'.PHP_EOL;
@@ -458,12 +455,12 @@ function show_domain_list() {
   echo '<p>These domains are not open to the public, therefore extremely unlikely to contain malicious sites.</p>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
 
-  echo '</div></div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
 
   //Tables
   echo '<div class="sys-group">'.PHP_EOL;
-  if ($listsize == 0) {                          //Is List blank?
-    echo 'No sites found in Block List'.PHP_EOL; //Yes, display error, then leave
+  if ($listsize == 0) {                                    //Is List blank?
+    echo '<h4><img src=./svg/emoji_sad.svg>No sites found in Block List</h4>'.PHP_EOL;
     echo '</div>';
     return;
   }
@@ -552,7 +549,9 @@ function show_full_blocklist() {
   $query = 'SELECT * FROM blocklist '.add_searches().'ORDER BY id LIMIT '.ROWSPERPAGE.' OFFSET '.(($page-1) * ROWSPERPAGE);
   
   if(!$result = $db->query($query)){                       //Run the Query
-    die('There was an error running the query'.$db->error);
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo 'show_full_blocklist: '.$db->error;
+    echo '</div>'.PHP_EOL;
   }
   
   draw_blradioform();                                      //Block List selector form
@@ -568,7 +567,9 @@ function show_full_blocklist() {
   
   if ($result->num_rows == 0) {                            //Leave if nothing found
     $result->free();
-    echo 'No sites found in Block List';
+    echo '<div class="sys-group">'.PHP_EOL;
+    echo '<h4><img src=./svg/emoji_sad.svg>No sites found in Block List</h4>'.PHP_EOL;
+    echo '</div>'.PHP_EOL;
     return false;
   }
   
@@ -652,7 +653,7 @@ function show_general() {
   draw_sysrow('Free Memory', $freemem[3].' MB');
   draw_sysrow('Uptime', $Uptime);
   draw_sysrow('NoTrack Version', VERSION); 
-  echo '</table></div></div>'.PHP_EOL;
+  echo '</table></div>'.PHP_EOL;
   
   draw_systable('Dnsmasq');
   if ($pid_dnsmasq[0] != null) draw_sysrow('Status','Dnsmasq is running');
@@ -663,7 +664,7 @@ function show_general() {
   draw_sysrow('Memory Used', $pid_dnsmasq[3].' MB');
   draw_sysrow('Historical Logs', count_rows('SELECT COUNT(DISTINCT(DATE(log_time))) FROM historic').' Days');
   draw_sysrow('Delete All History', '<button class="button-danger" onclick="confirmLogDelete();">Purge</button>');
-  echo '</table></div></div>'.PHP_EOL;
+  echo '</table></div>'.PHP_EOL;
 
   
   //Web Server
@@ -678,7 +679,7 @@ function show_general() {
   draw_sysrow('Memory Used', $pid_lighttpd[3].' MB');
   if ($Config['BlockMessage'] == 'pixel') draw_sysrow('Block Message', '<input type="radio" name="block" value="pixel" checked onclick="document.blockmsg.submit()">1x1 Blank Pixel (default)<br><input type="radio" name="block" value="message" onclick="document.blockmsg.submit()">Message - Blocked by NoTrack<br>');
   else draw_sysrow('Block Message', '<input type="radio" name="block" value="pixel" onclick="document.blockmsg.submit()">1x1 Blank Pixel (default)<br><input type="radio" name="block" value="messge" checked onclick="document.blockmsg.submit()">Message - Blocked by NoTrack<br>');  
-  echo '</table></div></div></form>'.PHP_EOL;
+  echo '</table></div></form>'.PHP_EOL;
 
   
   //Stats
@@ -706,7 +707,7 @@ function show_general() {
   }
   echo '</select></td></tr>'.PHP_EOL;
   draw_sysrow('JsonWhois API <a href="https://jsonwhois.com/"><img class="btn" src="./svg/button_help.svg"></a>', '<input type="text" name="whoisapi" class="input-conf" value="'.$Config['whoisapi'].'">');
-  echo '</table></div></div></form>'.PHP_EOL;    //End Stats
+  echo '</table></div></form>'.PHP_EOL;                    //End Stats
   
   return null;
 }
@@ -727,7 +728,6 @@ function show_menu() {
   echo '<a href="../admin/config.php?v=status"><div class="conf-nav"><img src="./svg/menu_status.svg"><span>Back-end Status</span></div></a>'.PHP_EOL;
   echo '<a href="../admin/security.php"><div class="conf-nav"><img src="./svg/menu_security.svg"><span>Security</span></div></a>'.PHP_EOL;
   echo '<a href="../admin/upgrade.php"><div class="conf-nav"><img src="./svg/menu_upgrade.svg"><span>Upgrade</span></div></a>'.PHP_EOL;
-  echo '<a href="../admin/config.php?v=dhcp"><div class="conf-nav"><img src="./svg/menu_config.svg"><span>Work in progress</span></div></a>'.PHP_EOL;
   echo '<a href="../admin/config.php?v=dnsmasq"><div class="conf-nav"><img src="./svg/menu_config.svg"><span>Work in progress</span></div></a>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
   

@@ -294,17 +294,20 @@ function get_whoisdata($site, $apikey) {
   $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
   
   if ($status == 400) {                                    //Bad request domain doesn't exist
-    echo '<div class="sys-group"><div class="sys-title">'.PHP_EOL;
-    echo '<h5>Domain Information</h5></div>'.PHP_EOL;
+    echo '<div class="sys-group">'.PHP_EOL;
+    echo '<h5>Domain Information</h5>'.PHP_EOL;
     echo '<div class="sys-items">'.PHP_EOL;
     echo $site.' does not exist'.PHP_EOL;
-    echo '</div></div>'.PHP_EOL;
+    echo '</div>'.PHP_EOL;
     curl_close($ch);
     return false;
   }
   
   if ($status >= 300) {                                    //Other HTTP Error
-    echo "Error: call to URL $url failed with status $status, response $json_response";
+    echo '<div class="sys-group">'.PHP_EOL;
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo "Call to URL $url failed with status $status, response $json_response";
+    echo '</div>'.PHP_EOL;
     curl_close($ch);
     return false;
   }
@@ -375,11 +378,10 @@ function show_whoisdata() {
   
   //TODO give user a chance to reload data
   if (isset($whois_record['error'])) {
-    echo '<div class="sys-group"><div class="sys-title">'.PHP_EOL;
-    echo '<h5>Domain Information</h5></div>'.PHP_EOL;
-    echo '<div class="sys-items">'.PHP_EOL;
+    echo '<div class="sys-group">'.PHP_EOL;
+    echo '<h5>Domain Information</h5>'.PHP_EOL;    
     echo $whois_record['error'].PHP_EOL;
-    echo '</div></div>'.PHP_EOL;
+    echo '</div>'.PHP_EOL;
     return null;
   }
   
@@ -395,7 +397,7 @@ function show_whoisdata() {
   if (isset($whois_record['nameservers'][2])) draw_sysrow('', $whois_record['nameservers']['2']['name']);
   if (isset($whois_record['nameservers'][3])) draw_sysrow('', $whois_record['nameservers']['3']['name']);
   draw_sysrow('Last Retrieved', $whois_date);
-  echo '</table></div></div>'.PHP_EOL;
+  echo '</table></div>'.PHP_EOL;
   
   if (isset($whois_record['registrant_contacts'][0])) {
     draw_systable('Registrant Contact');
@@ -409,7 +411,7 @@ function show_whoisdata() {
     if (isset($whois_record['registrant_contacts'][0]['phone'])) draw_sysrow('Phone', $whois_record['registrant_contacts']['0']['phone']);
     if (isset($whois_record['registrant_contacts'][0]['fax'])) draw_sysrow('Fax', $whois_record['registrant_contacts']['0']['fax']);
     if (isset($whois_record['registrant_contacts'][0]['email'])) draw_sysrow('Email', strtolower($whois_record['registrant_contacts']['0']['email']));
-    echo '</table></div></div>'.PHP_EOL;
+    echo '</table></div>'.PHP_EOL;
   }
   
   //print_r($whois_record);
@@ -424,16 +426,15 @@ function show_whoisdata() {
  *    None
  */
 function show_whoiserror() {
-  echo '<div class="sys-group"><div class="sys-title">'.PHP_EOL;
-  echo '<h5>Domain Information</h5></div>'.PHP_EOL;
-  echo '<div class="sys-items">'.PHP_EOL;
+  echo '<div class="sys-group">'.PHP_EOL;
+  echo '<h5>Domain Information</h5>'.PHP_EOL;  
   echo '<p>Error: No WhoIs API key set. In order to use this feature you will need to add a valid JsonWhois API key to NoTrack config</p>'.PHP_EOL;
   echo '<p>Instructions:</p>'.PHP_EOL;
   echo '<ol>'.PHP_EOL;
   echo '<li>Sign up to <a href="https://jsonwhois.com/">JsonWhois.com</a></li>'.PHP_EOL;
   echo '<li> Add your API key to NoTrack <a href="./config.php?v=general">Config</a></li>'.PHP_EOL;
   echo '</ol>'.PHP_EOL;
-  echo '</div></div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
 }
 
 /********************************************************************

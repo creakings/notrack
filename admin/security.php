@@ -213,9 +213,8 @@ elseif ((isset($_POST['username']) && (isset($_POST['password'])))) {
   }  
 }
 
-echo '<div class="sys-group"><div class="sys-title">'.PHP_EOL;
-echo '<h5>Security&nbsp;<a href="./help.php?p=security"><img class="btn" src="./svg/button_help.svg" alt="help"></a></h5></div>'.PHP_EOL;
-echo '<div class="sys-items">'.PHP_EOL;
+echo '<div class="sys-group">'.PHP_EOL;
+echo '<h5>Security&nbsp;<a href="./help.php?p=security"><img class="btn" src="./svg/button_help.svg" alt="help"></a></h5>'.PHP_EOL;
 
 if (is_password_protection_enabled()) {
   change_password_form();
@@ -228,17 +227,17 @@ if ($show_button_on) {
   echo '<form method="post"><input type="hidden" name="enable_password"><input type="submit" class="button-blue" value="Turn on password protection"></form>'.PHP_EOL;
 }
 
-if ($show_password_input_form) { 
+if ($show_password_input_form) {
   new_password_input_form();
 }
 
-      
+
 if ($message != '') {
   echo '<br>'.PHP_EOL;
   echo '<h3>'.$message.'</h3>'.PHP_EOL;
 }
   
-echo '</div></div>'.PHP_EOL;
+echo '</div>'.PHP_EOL;
 echo '</div>'.PHP_EOL;
 ?>
 
@@ -246,7 +245,7 @@ echo '</div>'.PHP_EOL;
 function checkPassword() {
   if (document.getElementById('password').value == document.getElementById('confirm_password').value) {
     document.getElementById('confirm_password').style.background='#00BB00';
-  } 
+  }
   else {
     document.getElementById('confirm_password').style.background='#B1244A';
   }

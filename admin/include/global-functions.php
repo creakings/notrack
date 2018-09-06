@@ -10,9 +10,9 @@
  *    None
  */ 
 function draw_systable($title) {
-  echo '<div class="sys-group"><div class="sys-title">'.PHP_EOL;
-  echo '<h5>'.$title.'</h5></div>'.PHP_EOL;
-  echo '<div class="sys-items"><table class="sys-table">'.PHP_EOL;
+  echo '<div class="sys-group">'.PHP_EOL;
+  echo '<h5>'.$title.'</h5>'.PHP_EOL;
+  echo '<table class="sys-table">'.PHP_EOL;
   
   return null;
 }

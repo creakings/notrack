@@ -159,12 +159,12 @@ function get_useragent($user_agent) {
         case 'OPR': $ua[1] = 'opera'; break;
         case 'Vivaldi': $ua[1] = 'vivaldi'; break;
       }
-    }    
+    }
   }
   //Subsequent regex statements are too dificult to implement above
   elseif(preg_match('/^Python\-urllib\/\d\.\d\d?/', $user_agent, $matches) > 0) {
     $ua = array('unknown', 'python');
-  }    
+  }
   
   return $ua;
 }
@@ -231,18 +231,20 @@ function show_accesstable() {
     echo '<h6>Sorted by Time last seen</h6>'.PHP_EOL;
     $rows = count_rows('SELECT COUNT(*) FROM weblog');
     if ((($page-1) * ROWSPERPAGE) > $rows) $page = 1;
-    
+
     $query = 'SELECT * FROM weblog ORDER BY UNIX_TIMESTAMP(log_time) '.$sort.' LIMIT '.ROWSPERPAGE.' OFFSET '.(($page-1) * ROWSPERPAGE);
-  }  
-      
+  }
+
   if(!$result = $db->query($query)){
-    die('There was an error running the query'.$db->error);
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo 'show_accesstable: '.$db->error;
+    echo '</div>'.PHP_EOL;
+    die();
   }
   
-    
   if ($result->num_rows == 0) {                            //Leave if nothing found
     $result->free();
-    echo 'No sites found in Access List'.PHP_EOL;
+    echo '<h4><img src=./svg/emoji_sad.svg>No Results Found</h4>'.PHP_EOL;
     echo '</div>';
     return false;
   }
@@ -339,12 +341,15 @@ function show_visualisation() {
   $query = 'SELECT site, COUNT(*) AS count FROM weblog WHERE log_time >= (NOW() - INTERVAL '.$last.' '.$unit.') GROUP BY site ORDER BY count DESC LIMIT 20';
   
   if(!$result = $db->query($query)){
-    die('There was an error running the query'.$db->error);
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo 'show_visualisation: '.$db->error;
+    echo '</div>'.PHP_EOL;
+    die();
   }
   
   if ($result->num_rows == 0) {                            //Leave if nothing found
     $result->free();
-    echo 'No sites found in Access List'.PHP_EOL;
+    echo '<h4><img src=./svg/emoji_sad.svg>No Results Found</h4>'.PHP_EOL;
     echo '</div>';
     return false;
   }
