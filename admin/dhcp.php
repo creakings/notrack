@@ -141,13 +141,13 @@ function show_dhcp() {
   echo '<input type="hidden" name="update" value="1">';
   
   draw_systable('DHCP Config');
-  draw_sysrow('Enabled', '<input type="checkbox" name="enabled" '.is_checked($DHCPConfig['dhcp_enabled']).'>');
-  draw_sysrow('Authoritative', '<input type="checkbox" name="authoritative"'.is_checked($DHCPConfig['dhcp_authoritative']).'>Authoritative mode will barge in and take over the lease for any client which broadcasts on the network. Avoids long timeouts when a machine wakes up on a new network.');
-  draw_sysrow('Gateway IP <img class="btn" src="./svg/button_help.svg" alt="help" title="Usually the IP address of your Router">', '<input type="text" name="gateway_ip" value="'.$DHCPConfig['gateway_ip'].'">');
-  draw_sysrow('Range - Start IP', '<input type="text" name="start_ip" value="'.$DHCPConfig['start_ip'].'">');
-  draw_sysrow('Range - End IP', '<input type="text" name="end_ip" value="'.$DHCPConfig['end_ip'].'">');
-  draw_sysrow('Lease Time', '<input type="text" name="lease_time" value="'.$DHCPConfig['lease_time'].'">');  //TODO Beautify
-  echo '<tr><td>Static Hosts:</td><td><p class="light"><code>System.name,MAC Address,IP to allocate</code><br><code>e.g. nas.local,11:22:33:aa:bb:cc,192.168.0.5</code></p>';
+  draw_sysrow('Enabled', '<input type="checkbox" name="enabled" id="enabledBox" '.is_checked($DHCPConfig['dhcp_enabled']).'>');
+  echo '<tr id="confRow1"><td>Authoritative:</td><td><input type="checkbox" name="authoritative"'.is_checked($DHCPConfig['dhcp_authoritative']).'>Authoritative mode will barge in and take over the lease for any client which broadcasts on the network. Avoids long timeouts when a machine wakes up on a new network.</td></tr>'.PHP_EOL;
+  echo '<tr id="confRow2"><td>Gateway IP: <img class="btn" src="./svg/button_help.svg" alt="help" title="Usually the IP address of your Router"></td><td><input type="text" name="gateway_ip" value="'.$DHCPConfig['gateway_ip'].'"></td></tr>'.PHP_EOL;
+  echo '<tr id="confRow3"><td>Range - Start IP:</td><td><input type="text" name="start_ip" value="'.$DHCPConfig['start_ip'].'"></td></tr>'.PHP_EOL;
+  echo '<tr id="confRow4"><td>Range - End IP:</td><td><input type="text" name="end_ip" value="'.$DHCPConfig['end_ip'].'"></td></tr>'.PHP_EOL;
+  echo '<tr id="confRow5"><td>Lease Time:</td><td><input type="text" name="lease_time" value="'.$DHCPConfig['lease_time'].'"></td></tr>'.PHP_EOL; //TODO Beautify
+  echo '<tr id="confRow6"><td>Static Hosts:</td><td><p class="light"><code>System.name,MAC Address,IP to allocate</code><br><code>e.g. nas.local,11:22:33:aa:bb:cc,192.168.0.5</code></p>';
   echo '<textarea rows="10" name="static">'.$DHCPConfig['static_hosts'].'</textarea></td></tr>'.PHP_EOL;
   echo '<tr><td colspan="2"><div class="centered"><input type="submit" class="button-blue" value="Save Changes">&nbsp;<input type="reset" class="button-blue" value="Reset"></div></td></tr>'.PHP_EOL;
   echo '</table></div>'.PHP_EOL;
@@ -273,9 +273,8 @@ if (file_exists('/var/lib/misc/dnsmasq.leases')) {
 
 //No, display tutorial on how to set it up.
 else {
-  echo '<p>DHCP is not currently being handled by NoTrack.</p>'.PHP_EOL;
-  echo '<p>In order to enable it, you need to edit Dnsmasq config file.<br>See this video tutorial: <a href="https://www.youtube.com/watch?v=a5dUJ0SlGP0">DHCP Server Setup with Dnsmasq</a></p><br>'.PHP_EOL;
-  echo '<iframe width="640" height="360" src="https://www.youtube.com/embed/a5dUJ0SlGP0" frameborder="0" allowfullscreen></iframe>'.PHP_EOL;  
+  echo '<p>DHCP is not currently handled by NoTrack.<br>'.PHP_EOL;
+  echo '<p>Enable it in the Config below:-'.PHP_EOL;
 }
 
 echo '</div>';
@@ -292,5 +291,41 @@ show_dhcp();
 
 ?>
 </div>
+<script>
+//-------------------------------------------------------------------
+function hideRows() {
+  document.getElementById('confRow1').style.display = 'none';
+  document.getElementById('confRow2').style.display = 'none';
+  document.getElementById('confRow3').style.display = 'none';
+  document.getElementById('confRow4').style.display = 'none';
+  document.getElementById('confRow5').style.display = 'none';
+  document.getElementById('confRow6').style.display = 'none';
+}
+//-------------------------------------------------------------------
+function showRows() {
+  document.getElementById('confRow1').style.display = '';
+  document.getElementById('confRow2').style.display = '';
+  document.getElementById('confRow3').style.display = '';
+  document.getElementById('confRow4').style.display = '';
+  document.getElementById('confRow5').style.display = '';
+  document.getElementById('confRow6').style.display = '';
+}
+//-------------------------------------------------------------------
+const checkbox = document.getElementById('enabledBox')
+
+checkbox.addEventListener('change', (event) => {
+  if (event.target.checked) {
+    showRows();
+  } else {
+    hideRows();
+  }
+})
+
+window.onload = function() {
+  if (! enabledBox.checked) {
+    hideRows();
+  }
+};
+</script>
 </body>
 </html>
