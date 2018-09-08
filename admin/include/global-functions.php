@@ -524,7 +524,7 @@ function load_config() {
  *  Return:
  *    None
  */
-function linechart($values1, $values2, $xlabels) {  
+function linechart($values1, $values2, $xlabels) {
   $max_value = 0;
   $ymax = 0;
   $xstep = 0;
@@ -564,7 +564,7 @@ function linechart($values1, $values2, $xlabels) {
   
   
   for ($i = 0; $i < $numvalues; $i += 2) {                 //Draw X Axis labels skipping every other value
-    echo '<text x="'.(55+($i * $xstep)).'" y="898" class="axistext">'.$xlabels[$i].':00</text>'.PHP_EOL;
+    echo '<text x="'.(60+($i * $xstep)).'" y="896" class="axistext">'.$xlabels[$i].'</text>'.PHP_EOL;
   }  
   
   for ($i = 2; $i < 24; $i += 2) {                         //Verticle Grid lines
@@ -572,9 +572,24 @@ function linechart($values1, $values2, $xlabels) {
   }
   
   draw_graphline($values1, $xstep, $ymax, '#008CD1');
-  draw_circles($values1, $xstep, $ymax, '#008CD1');
   draw_graphline($values2, $xstep, $ymax, '#B1244A');
-  draw_circles($values2, $xstep, $ymax, '#B1244A');
+
+  //Draw circles over line points in order to smooth the apperance
+  for ($i = 1; $i < $numvalues; $i++) {
+    $x = 100 + (($i) * $xstep);
+    $y = 850 - (($values1[$i] / $ymax) * 850);             //$values1[] (Allowed)
+    echo '<g>'.PHP_EOL;
+    echo '  <title>'.$xlabels[$i].' '.$values1[$i].' Allowed</title>'.PHP_EOL;
+    echo '  <circle cx="'.$x.'" cy="'.(850-($values1[$i]/$ymax)*850).'" r="10px" fill="#008CD1" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" title="'.$x.'"/>'.PHP_EOL;
+    echo '</g>'.PHP_EOL;
+
+    echo '<g>'.PHP_EOL;
+  $y = 850 - (($values2[$i] / $ymax) * 850);               //$values2[] (Blocked)
+    echo '  <title>'.$xlabels[$i].' '.$values2[$i].' Blocked</title>'.PHP_EOL;
+    echo '  <circle cx="'.$x.'" cy="'.(850-($values2[$i]/$ymax)*850).'" r="10px" fill="#B1244A" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" />'.PHP_EOL;
+    echo '</g>'.PHP_EOL;
+  }
+
 
   echo '<path class="axisline" d="M100,0 V850 H2000 " />'; //X and Y Axis line
   echo '</svg>'.PHP_EOL;                                   //End SVG
@@ -629,7 +644,7 @@ function draw_circles($values, $xstep, $ymax, $colour) {
     if ($values[$i] > 0) {
       $x = 100 + (($i) * $xstep);
       $y = 850 - (($values[$i] / $ymax) * 850);    
-    
+      echo '<title>Test</title>';
       echo '<circle cx="'.$x.'" cy="'.(850-($values[$i]/$ymax)*850).'" r="10px" fill="'.$colour.'" fill-opacity="1" stroke="#EAEEEE" stroke-width="5px" />'.PHP_EOL;
     }    
   }  
