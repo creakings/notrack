@@ -70,14 +70,14 @@ h1 {
   margin: 0.5em;
 }
 h4 {                                                       /*Font for Error*/
-  font-size: 3rem;
+  font-size: 2.2rem;
   font-weight: normal;
   color: #444;
   text-align: center;
 }
 h4 img {
-  width: 5rem;
-  margin: 3rem 1rem 0 0;
+  width: 3rem;
+  margin: 1rem 1rem 0 0;
 }
 h5 {
   font-size: 1.5em;
