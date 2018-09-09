@@ -68,7 +68,7 @@ function draw_topmenu($currentpage='') {
     echo '<a href="./"><span id="menu-top-logo" class="logo"><b>No</b>Track <small>v'.VERSION.'</small></span></a>'.PHP_EOL;
   }
   else {                                                   //$currentpage set, display that next to NoTrack logo
-    echo '<a href="./"><span id="menu-top-logo" class="logo"><b>No</b>Track <small> - '.$currentpage.'</small></span></a>'.PHP_EOL;
+    echo '<a href="./"><span id="menu-top-logo" class="logo"><span class="mobile-hide"><b>No</b>Track - </span><small> '.$currentpage.'</small></span></a>'.PHP_EOL;
   }
   
   if (is_password_protection_enabled()) {                  //Show Logout button if there is a password

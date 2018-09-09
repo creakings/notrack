@@ -118,6 +118,7 @@ function home_queries() {
   }  
 
   echo '<a href="./queries.php"><div class="home-nav"><h2>DNS Queries</h2><hr><span>' . number_format(floatval($total)) . '<br>Today'.PHP_EOL;
+  //echo '<span class="mobile-hide">'.PHP_EOL;
   echo '<svg width="20em" height="3em" overflow="visible">'.PHP_EOL;
   echo '<text x="0" y="2em" style="font-family: Arial; font-size: 0.58em; fill:'.$CHARTCOLOURS[0].'">'.number_format($allowed).'% Allowed</text>'.PHP_EOL;
   echo '<text x="6.4em" y="2em" style="font-family: Arial; font-size: 0.58em; fill:'.$CHARTCOLOURS[1].'">'.number_format($blocked).'% Blocked</text>'.PHP_EOL;
@@ -125,7 +126,10 @@ function home_queries() {
     $local = floatval(($local/$total)*100);
     echo '<text x="0" y="3.3em" style="font-family: Arial; font-size: 0.58em; fill:'.$CHARTCOLOURS[2].'">'.number_format($local).'% Local</text>'.PHP_EOL;
   }
-  echo '</svg></span>';
+  echo '</svg>'.PHP_EOL;
+  //echo '</span>'.PHP_EOL;
+  echo '</span>'.PHP_EOL;
+  
   
   echo '<div class="chart-box">'.PHP_EOL;
   echo '<svg width="100%" height="90%" viewbox="0 0 200 200">'.PHP_EOL;

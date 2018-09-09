@@ -1,4 +1,4 @@
- @charset "utf-8";
+@charset "utf-8";
 /*Home Nav**********************************************************/
 .home-nav-container {
   padding: 1em 7%;
@@ -9,7 +9,7 @@
 /*   box-shadow: 1px 1px 3px rgb(136, 136, 136); */
   text-align:center;
   padding: 0 2% 2% 2%;
-  margin: 1em 1% 2% 1%;
+  margin: 0 1% 2.2% 1%;
   border-left: 7px solid #21BBFF;
   border-radius: 2px;
   width: 26%;
@@ -64,31 +64,17 @@
 }
 @media only screen and (max-width:1200px), only screen and (max-device-width:1200px) {  /*Windowed view for Home Nav*/
   .home-nav-container {
-    padding: 1em 4%;
-  }   
+    padding: 1em 2%;
+  }
   .home-nav {
     width: 42%;
-    margin: 0 1.2% 2% 1.2%;
+    margin: 0 1.2% 2.2% 1.2%;
   }
 }
 @media only screen and (max-width:480px), only screen and (max-device-width:480px) {   /*Mobile view for Home Nav*/
-  .home-nav-container {
-    padding: 1em 1%;
-    width: 90%;
-    margin: 0 auto;
-  }
   .home-nav {
-    width: 93%;    
-    margin: 1.5em 0;
-    height: 19rem;
-  }
-  .home-nav span {
-    width: 55%;
-  }
-  .chart-box, .icon-box {
-    width: 28%;
-    max-width: 14rem;
-    margin-right: 5%;
+    width: 42%;
+    margin: 0 1.2% 3% 1.2%;
   }
 }
 

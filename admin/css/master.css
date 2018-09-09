@@ -33,7 +33,7 @@ img {
 }
 img.btn {
   height: 1em;
-  width: 1em;  
+  width: 1em;
 }
 img.full {
   width: 100%;
@@ -54,17 +54,6 @@ p.light {
   font-size: 0.8rem;
   color: grey;
 }
-span.filter {
-  width: 5rem;
-  margin-right: 0.3em;
-  text-align: right;
-  display: inline-block;
-}
-span.blradiolist {
-  width: 17rem;
-  line-height: 1.5em;
-  display: inline-block;
-}
 .pointer {
   cursor: pointer;
 }
@@ -80,7 +69,7 @@ h1 {
   letter-spacing: 0.1rem;
   margin: 0.5em;
 }
-h4 {                                                       /*Error*/
+h4 {                                                       /*Font for Error*/
   font-size: 3rem;
   font-weight: normal;
   color: #444;
@@ -108,9 +97,9 @@ h6 {
   h1 {
     font-size: 3em;
     letter-spacing: 0.2rem;
-    margin: 0 0 2rem 0; 
-    padding: 0.5rem;  
-  } 
+    margin: 0 0 2rem 0;
+    padding: 0.5rem;
+  }
 }
 ul, ol {
   margin: 0;
@@ -161,7 +150,7 @@ select.input-conf {
   width: 24.4em;
 }
 select, input[type="date"], input[type="number"] {
-  width: calc(100% - 6.2rem);
+  width: calc(100% - 5.6rem);
   height: 1.9rem;
   font-size: 1.1rem;
   color: #00000A;
@@ -262,7 +251,7 @@ textarea {
 @media only screen and (max-width:640px), only screen and (max-device-width:640px) {
   .sys-group {width: 96%;}
 }
-.col-half {
+/*.col-half { DEPRECATED only element left is on login page, covered by login.css
   width: 45%;
   padding: 0.5em;
   float: left;
@@ -271,7 +260,7 @@ textarea {
   .col-half {
     width: 100%;
   }
-}
+}*/
 /*Paginate / Sub Navigation*****************************************/
 .pag-nav {
   font-size: 0.9em;
@@ -281,9 +270,6 @@ textarea {
   padding: 0;
   list-style: none;
 }
-/*.pag-nav a:link, .pag-nav a:visited {
-  color: #00000A;  
-}*/
 .pag-nav a, .pag-nav span {
   display: inline-block;
   padding: 0.5em 0.8em;
@@ -293,7 +279,7 @@ textarea {
   border: 1px solid #262626;
   border-radius: 4px;
   float: left;
-  margin-right: 1px;  
+  margin-right: 1px;
 }
 .pag-nav li.active {
   background: linear-gradient(to bottom, #21BBFF, #007db4);          /* HSL 141, 255, 144 > 140, 255, 90*/
@@ -310,12 +296,12 @@ a.pag-exwide {
   text-align: center;
 }
 /*Tables************************************************************/
-table {  
+table {
   border-spacing: 0;
-  table-layout: fixed;  
+  table-layout: fixed;
   width: 100%;
 }
-td, th {  
+td, th {
   padding: 0.5em 0.6em;
   border-bottom: 1px solid #b3b3b3;
 }
@@ -401,7 +387,7 @@ tr.cyan {
 
 #query-group-table td:nth-child(1), #query-group-table th:nth-child(1) {
   width: 11%;
-  text-align: center;  
+  text-align: center;
 }
 #query-group-table td:nth-child(2), #query-group-table th:nth-child(2) {
   width: 57%;
@@ -637,11 +623,11 @@ span.logo {
 }
 #pause {
   float: right;
-  padding: 0.3rem 0.5rem;
+  padding: 0.35rem 0.5rem;
   margin: 0.3em 0.5em;
   background-color: rgba(1, 73, 77, 0.98);
   border-radius: 4px;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
 }
 #dropbutton {
   display: inline-block;
@@ -687,32 +673,32 @@ span.timer {
 }
 
 /*Mobile Adjustments for Menu***************************************/
-@media only screen and (max-width:480px), only screen and (max-device-width:480px) {  
+@media only screen and (max-width:480px), only screen and (max-device-width:480px) {
   /*Mobile view for Menu*/
   #main {
     margin: 5.4rem 0 0 0rem;
   }
   #menu-top {
     height: 4.8rem;
-    font-size: 2rem;
+    font-size: 1.8rem;
   }
   #menu-top img {
     width: 4rem;
     height: 4rem;
   }
   #menu-top span {
-    font-size: 2.6rem;
+    font-size: 2.4rem;
   }
   span.menu-top-item, span.logo {
     line-height: 4.7rem;
   }
-  span.pbutton, #dropbutton {
-    font-size: 2.1rem;
+  span #dropbutton {
+    font-size: 1.8rem;
     padding: 0 1rem;
   }
   #pause-menu {
-    font-size: 2rem;
-  }  
+    font-size: 1.8rem;
+  }
 }
 
 /*Print Adjustments for menu****************************************/
@@ -841,6 +827,15 @@ span.timer {
   width: 18%;
   float: left;
 }
+@media only screen and (max-width:1200px), only screen and (max-device-width:1200px) {
+  .dnsqueries-filterlarge {
+    width: 97%;
+  }
+  .dnsqueries-filtermedium {
+    width: 24%;
+  }
+}
+
 /*Extra colours*****************************************************/
 span.blue, a.blue {
   color: #008CD1;
@@ -873,4 +868,15 @@ span.mobile-show {display: none;}
 @media only screen and (max-width:480px), only screen and (max-device-width:480px) {
   span.mobile-hide {display: none;}
   span.mobile-show {display: inline-block;}
+}
+span.filter {
+  width: 5rem;
+  margin-right: 0.3em;
+  text-align: right;
+  display: inline-block;
+}
+span.blradiolist {
+  width: 17rem;
+  line-height: 1.5em;
+  display: inline-block;
 }
