@@ -28,15 +28,6 @@ echo '<div id="main">'.PHP_EOL;
 /************************************************
 *Constants                                      *
 ************************************************/
-DEFINE('DEF_FILTER', 'all');
-DEFINE('DEF_SYSTEM', 'all');
-DEFINE('DEF_SDATE', date("Y-m-d", time() - 172800));  //Start Date of Historic -2d
-DEFINE('DEF_EDATE', date("Y-m-d", time() - 86400));   //End Date of Historic   -1d
-
-$FILTERLIST = array('all' => 'All Requests',
-                    'allowed' => 'Allowed Only',
-                    'blocked' => 'Blocked Only',
-                    'local' => 'Local Only');
 
 
 /************************************************
@@ -51,14 +42,11 @@ $whois_record = '';
 /************************************************
 *Arrays                                         *
 ************************************************/
-$syslist = array();
-$TLDBlockList = array();
 
 
 /********************************************************************
  *  Create Who Is Table
- *    Run sql query to create whois table
- *    TODO Causes unknown error - Should be fixed now removing error check
+ *    Run sql query to create whois table 
  *  Params:
  *    None
  *  Return:
@@ -66,9 +54,9 @@ $TLDBlockList = array();
  */
 function create_whoistable() {
   global $db;
-    
+
   $query = "CREATE TABLE whois (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, save_time DATETIME, site TINYTEXT, record MEDIUMTEXT)";
-  
+
   $db->query($query);
 }
 
@@ -152,33 +140,6 @@ function search_blockreason($site) {
   return '';                                     //Don't know at this point    
 }
 
-/********************************************************************
- *  Search Systems
- *  
- *  1. Find unique sys values in table
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function search_systems() {
-  global $db, $mem, $syslist;
-  
-  $syslist = $mem->get('syslist');
-  
-  if (empty($syslist)) {
-    if (! $result = $db->query("SELECT DISTINCT sys FROM live ORDER BY sys")) {
-      die('search_systems(): There was an error running the query'.$db->error);
-    }
-    while($row = $result->fetch_assoc()) {                 //Read each row of results
-      $syslist[] = $row['sys'];                            //Add row value to $syslist
-    }
-    $result->free();
-    $mem->set('syslist', $syslist, 0, 600);                //Save for 10 Mins
-  }    
-}
-
 
 /********************************************************************
  *  Show Time View
@@ -190,7 +151,7 @@ function search_systems() {
  *    false when nothing found, true on success
  */
 function show_time_view() {
-  global $db, $datetime, $site, $sys, $Config, $TLDBlockList;
+  global $db, $datetime, $site, $sys, $Config;
     
   $rows = 0;
   $row_class = '';
@@ -198,20 +159,25 @@ function show_time_view() {
   $action = '';
   $blockreason = '';
   
-  $query = "SELECT *, DATE_FORMAT(log_time, '%H:%i:%s') AS formatted_time FROM live WHERE sys = '$sys' AND log_time > SUBTIME('$datetime', '00:00:05') AND log_time < ADDTIME('$datetime', '00:00:03') ORDER BY UNIX_TIMESTAMP(log_time)";
+  $query = "SELECT *, DATE_FORMAT(log_time, '%H:%i:%s') AS formatted_time FROM dnslog WHERE sys = '$sys' AND log_time > SUBTIME('$datetime', '00:00:05') AND log_time < ADDTIME('$datetime', '00:00:03') ORDER BY UNIX_TIMESTAMP(log_time)";
   
-    
+  echo '<div class="sys-group">'.PHP_EOL;
+  
   if(!$result = $db->query($query)){
-    die('There was an error running the query'.$db->error);
-  }
-  
-  if ($result->num_rows == 0) {                  //Leave if nothing found
-    $result->free();
-    echo "Nothing found for the selected dates";
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo 'show_time_view: '.$db->error;
+    echo '</div>'.PHP_EOL;
     return false;
   }
   
-  echo '<div class="sys-group">'.PHP_EOL;
+  if ($result->num_rows == 0) {                  //Leave if nothing found
+    echo '<h4><img src=./svg/emoji_sad.svg>No results found for selected time</h4>'.PHP_EOL;
+    echo '</div>'.PHP_EOL;
+    $result->free();
+    return false;
+  }
+  
+  
   //draw_viewbuttons();
   
   echo '<table id="query-time-table">'.PHP_EOL;
@@ -486,15 +452,15 @@ function trafficgraph() {
 
 $db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);  //Open MariaDB connection
 
-search_systems();                                          //Need to find out systems are on live table
-
 if (isset($_GET['sys'])) {                                 //Any system set?
-  if (in_array($_GET['sys'], $syslist)) $sys = $_GET['sys'];
+  if (filter_var($_GET['sys'], FILTER_VALIDATE_IP)) {
+    $sys = $_GET['sys'];                                   //Just check for valid IP rather than if system is in dnslog
+  }
 }
 
 if (isset($_GET['datetime'])) {                            //Filter for hh:mm:ss
-  if (preg_match(REGEX_TIME, $_GET['datetime']) > 0) {
-    $datetime = date('Y-m-d ').$_GET['datetime'];
+  if (preg_match(REGEX_DATETIME, $_GET['datetime']) > 0) {
+    $datetime = $_GET['datetime'];
   }
 }
 
@@ -509,7 +475,7 @@ if (!table_exists('whois')) {                              //Does whois sql tabl
   sleep(2);                                                //Delay to wait for MariaDB to create the table
 }
 
-if ($Config['whoisapi'] == '') {                           //Has user set an API key?              
+if ($Config['whoisapi'] == '') {                           //Has user set an API key?
   show_whoiserror();                                       //No - Don't go any further
   $db->close();
   exit;
