@@ -116,14 +116,14 @@ if [ "$(command -v git)" ]; then                                     #Utilise Gi
     echo "Moving $INSTALL_LOCATION folder to $INSTALL_LOCATION-old"
     mv "$INSTALL_LOCATION" "$INSTALL_LOCATION-old"
     echo "Cloning NoTrack to $INSTALL_LOCATION with Git"
-    git clone --depth=1 https://github.com/quidsup/notrack.git "$INSTALL_LOCATION"
+    git clone --depth=1 https://gitlab.com/quidsup/notrack.git "$INSTALL_LOCATION"
   fi
 else                                                                 #Git not installed, fallback to wget
-  echo "Downloading latest version of NoTrack from https://gitlab.com/quidsup/notrack/archive/master.zip"
-  wget -O /tmp/notrack-master.zip https://gitlab.com/quidsup/notrack/archive/master.zip
+  echo "Downloading latest version of NoTrack from https://gitlab.com/quidsup/notrack/-/archive/master/notrack-master.zip"
+  wget -O /tmp/notrack-master.zip https://gitlab.com/quidsup/notrack/-/archive/master/notrack-master.zip
   if [ ! -e /tmp/notrack-master.zip ]; then                          #Check to see if download was successful
     #Abort we can't go any further without any code from git
-    echo "Error Download from github has failed"
+    echo "Error Download from gitlab has failed"
     exit 23
   fi
   

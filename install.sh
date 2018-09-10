@@ -347,7 +347,7 @@ function download_with_wget() {
     echo "NoTrack folder exists. Skipping download"
   else
     echo "Downloading latest version of NoTrack from Gitlab"
-    wget https://gitlab.com/quidsup/notrack/archive/master.zip -O /tmp/notrack-master.zip
+    wget https://gitlab.com/quidsup/notrack/-/archive/master/notrack-master.zip -O /tmp/notrack-master.zip
     if [ ! -e /tmp/notrack-master.zip ]; then    #Check to see if download was successful
       #Abort we can't go any further without any code from git
       error_exit "Error Download from Gitlab has failed" "23"
