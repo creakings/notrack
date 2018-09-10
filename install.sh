@@ -28,7 +28,7 @@ readonly DNSMASQ_CONF_PATH="/etc/dnsmasq.conf"
 ##############################################################################
 # Environment variables
 ##############################################################################
-readonly VERSION="0.8.10"
+readonly VERSION="0.9.0"
 
 SUDO_REQUIRED=false                              #true if installing to /opt
 REBOOT_REQUIRED=false
@@ -43,10 +43,6 @@ BROADCAST_ADDRESS=""
 NETMASK_ADDRESS=""
 NETWORK_START_ADDRESS=""
 
-SETUP_DHCP=false
-DHCP_RANGE_START=""
-DHCP_RANGE_END=""
-DHCP_LEASE_TIME=""
 
 #######################################
 # Exit script with exit code
@@ -140,7 +136,7 @@ menu() {
     echo "$choice"
     if [[ $choice =~ ^[0-9]+$ ]]; then           #Has the user chosen 0-9
       if [[ $choice -ge 1 ]] && [[ $choice -lt $menu_size ]]; then
-        return "$choice"        
+        return "$choice"
       fi
     elif [[ $choice ==  "A" ]]; then             #Up
       if [ $highlight -le 1 ]; then              #Loop around list
@@ -705,15 +701,6 @@ function setup_dnsmasq() {
     echo -e "$IP_ADDRESS\t$hostname" | sudo tee -a /etc/localhosts.list 
   fi
 
-  if [[ "$SETUP_DHCP" == true ]]; then           #Optional DHCP Setup
-    config_dnsmasq_dhcp_logging
-    config_dnsmasq_dhcp_authoritative_mode
-
-    if [[ "$IP_VERSION" == "$IP_V4" ]]; then
-      setup_dnsmasq_dhcp_ipv4
-    fi
-  fi
-
   echo "Setup of Dnsmasq complete"
   echo "========================================================="
   echo
@@ -899,7 +886,7 @@ function setup_notrack() {
 
 
 #FirewallD-----------------------------------------------------------
-Setup_FirewallD() {
+setup_firewalld() {
   #Configure FirewallD to Work With Dnsmasq
   echo "Creating Firewall Rules Using FirewallD"
   
@@ -1500,196 +1487,9 @@ prompt_setup_static_ip_address(){
     3)
       error_exit "Aborting install" 1
     ;;
-  esac  
-}
-
-
-#######################################
-# Promt if to setup DHCP server
-# Globals:
-#   SETUP_DHCP
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-prompt_setup_dhcp(){
-  menu "Setup NoTrack DHCP Server?\n\nThis would make any device connecting to your network using DHCP automatically protected by NoTrack" "Yes, setup NoTrack DHCP" "No"
-
-  if [[ "$?" == 1 ]]; then
-    SETUP_DHCP=true
-  fi
-}
-
-
-
-#######################################
-# Configures dnsmasq dhcp server for ipv4
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-setup_dnsmasq_dhcp_ipv4(){
-  config_dnsmasq_dhcp_option_ipv4
-  config_dnsmasq_dhcp_range_ipv4
-}
-
-
-#######################################
-# Configures dnsmasq logging
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-config_dnsmasq_dhcp_logging(){
-  #Logging is currently enabled by default
-  echo "Configuring Dnsmasq logging"
-  echo
-}
-
-
-#######################################
-# Configures dnsmasq dhcp authoritative mode
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-config_dnsmasq_dhcp_authoritative_mode(){
-  echo "Configuring authoritative mode"
-  sudo sed -i "s/#dhcp-authoritative/dhcp-authoritative/" $DNSMASQ_CONF_PATH
-  echo
-}
-
-
-#######################################
-# Configures dnsmasq option for ipv4
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-config_dnsmasq_dhcp_option_ipv4(){
-  echo "Configuring Dnsmasq internet gateway"
-  sudo sed -i "s/#dhcp-option-replace-token-ipv4/dhcp-option=3,$GATEWAY_ADDRESS/" $DNSMASQ_CONF_PATH
-  echo
-}
-
-
-#######################################
-# Configures dnsmasq dhcp range for ipv4
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-config_dnsmasq_dhcp_range_ipv4(){
-  echo "Configuring Dnsmasq dhcp range"
-  sudo sed -i "s/#dhcp-range-replace-token-ipv4/dhcp-range=$DHCP_RANGE_START,$DHCP_RANGE_END,$DHCP_LEASE_TIME/" $DNSMASQ_CONF_PATH
-  echo
-}
-
-
-#######################################
-# Gets a default dhcp range start address
-# Globals:
-#   None
-# Arguments:
-#   Ip address
-#   Netmask
-# Returns:
-#   None
-#######################################
-get_dhcp_range_start_address(){
-  IFS=. read -r i1 i2 i3 i4 <<< "$1"
-  IFS=. read -r m1 m2 m3 m4 <<< "$2"
-  DHCP_RANGE_START="$((i1 & m1)).$((i2 & m2)).$((i3 & m3)).1"
-}
-
-
-#######################################
-# Prompts for dhcp range start address
-# Globals:
-#   DHCP_RANGE_START
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-prompt_dhcp_range_start_address(){
-  clear
-  read -p "Enter DHCP range start address: " -i $DHCP_RANGE_START -e DHCP_RANGE_START
-}
-
-
-#######################################
-# Gets a default dhcp range end address
-# Globals:
-#   None
-# Arguments:
-#   Ip address
-#   Netmask
-# Returns:
-#   None
-#######################################
-get_dhcp_range_end_address(){
-  IFS=. read -r i1 i2 i3 i4 <<< "$1"
-  IFS=. read -r m1 m2 m3 m4 <<< "$2"
-  DHCP_RANGE_END="$((i1 & m1)).$((i2 & m2)).$((i3 & m3)).254"
-}
-
-
-#######################################
-# Prompts for dhcp range end address
-# Globals:
-#   DHCP_RANGE_END
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-prompt_dhcp_range_end_address(){
-  clear
-  read -p "Enter DHCP range end address: " -i $DHCP_RANGE_END -e DHCP_RANGE_END
-}
-
-
-#######################################
-# Prompts for dhcp lease time
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-prompt_dhcp_lease(){
-  menu "DHCP lease time" "6h" "12h" "24h"
-
-  case "$?" in
-    1) 
-      DHCP_LEASE_TIME="6h"
-    ;;
-    2) 
-      DHCP_LEASE_TIME="12h"
-    ;;
-    3)
-      DHCP_LEASE_TIME="24h"
-    ;;  
   esac
 }
+
 
 
 #######################################
@@ -1737,6 +1537,10 @@ function show_finish() {
   echo
   echo -e "\t\u2022 Create HTTPS Certificate"
   echo -e "\t    bash $INSTALL_LOCATION/create-ssl-cert.sh"
+  echo
+  echo -e "\t\u2022 Enable DHCP"
+  echo -e "\t    http://$(hostname)/dhcp"
+  echo
   echo
   echo "========================================================="
   echo
@@ -1820,30 +1624,6 @@ if [[ $DNS_SERVER_1 == "" ]]; then
 fi
 
 
-# DHCP setup only for IPv4 for now
-if [[ $IP_VERSION == $IP_V4 ]]; then
-  prompt_setup_dhcp
-fi
-
-if [[ "$SETUP_DHCP" == true ]]; then
-  if [[ -z "$NETMASK_ADDRESS" ]]; then
-    get_netmask_address $NETWORK_DEVICE
-  fi
-
-  if [[ -z "$GATEWAY_ADDRESS" ]]; then
-    get_gateway_address
-    prompt_gateway_address
-  fi
-
-  get_dhcp_range_start_address $IP_ADDRESS $NETMASK_ADDRESS
-  prompt_dhcp_range_start_address
-
-  get_dhcp_range_end_address $IP_ADDRESS $NETMASK_ADDRESS
-  prompt_dhcp_range_end_address
-
-  prompt_dhcp_lease
-fi
-
 clear
 echo "Installing to: $INSTALL_LOCATION"          #Final report before Installing
 echo "Network Device set to: $NETWORK_DEVICE"
@@ -1851,12 +1631,6 @@ echo "IP version set to: $IP_VERSION"
 echo "System IP address $IP_ADDRESS"
 echo "Primary DNS server set to: $DNS_SERVER_1"
 echo "Secondary DNS server set to: $DNS_SERVER_2"
-
-if [[ "$SETUP_DHCP" == true ]]; then
-  echo "DHCP range start: $DHCP_RANGE_START"
-  echo "DHCP range end: $DHCP_RANGE_END"
-  echo "DHCP lease time: $DHCP_LEASE_TIME"
-fi
 echo 
 
 seconds=$((8))
@@ -1888,7 +1662,7 @@ setup_mariadb
 setup_notrack
 
 if [ "$(command -v firewall-cmd)" ]; then        #Check FirewallD exists
-  Setup_FirewallD
+  setup_firewalld
 fi
 
 service_restart dnsmasq
