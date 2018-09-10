@@ -1,1 +1,3 @@
-nginx
+fix gitlab path on wget
+point link on update.php to gitlab changelog
+review lighty config
