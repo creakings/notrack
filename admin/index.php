@@ -77,13 +77,16 @@ function home_network() {
   }
   else {                                                   //DHCP Disabled
     echo '<a href="./dhcp.php"><div class="home-nav"><h2>Network</h2><hr><span>DHCP Disabled</span><div class="icon-box"><img class="full" src="./svg/home_dhcp.svg" alt=""></div></div></a>'.PHP_EOL;
-  }  
+  }
 }
 
 
 /********************************************************************
  *  DNS Queries Box
- *
+ *    1. Query dnslog table for Total, Blocked, and Local results
+ *    2. Calculate allowed queries
+ *    3. Show icon if no DNS queries have been made
+ *    4. Otherwise draw a piechart of the results
  *  Params:
  *    None
  *  Return:
@@ -97,47 +100,40 @@ function home_queries() {
   $blocked = 0;
   $local = 0;
   $chartdata = array();
+  $lables = array('Allowed', 'Blocked', 'Local');
   
   $total = count_rows(QRY_DNSLOG);
   $local = count_rows(QRY_DNSLOG." AND dns_result = 'l'");
   $blocked = count_rows(QRY_DNSLOG." AND dns_result = 'b'");
   $allowed = $total - $blocked - $local;
-  
-  if ($local == 0) {
+
+  if ($local == 0) {                                       //Build array of chartdata, we may not need to include $local
     $chartdata = array($allowed, $blocked);
   }
-  else {
+  else {                                                   //Local is necessary
     $chartdata = array($allowed, $blocked, $local);
   }
-  if ($allowed > 0) {
-    $allowed = floatval(($allowed/$total)*100);
-  }
 
-  if ($blocked > 0) {
-    $blocked = floatval(($blocked/$total)*100);
-  }  
-
-  echo '<a href="./queries.php"><div class="home-nav"><h2>DNS Queries</h2><hr><span>' . number_format(floatval($total)) . '<br>Today'.PHP_EOL;
-  //echo '<span class="mobile-hide">'.PHP_EOL;
-  echo '<svg width="20em" height="3em" overflow="visible">'.PHP_EOL;
-  echo '<text x="0" y="2em" style="font-family: Arial; font-size: 0.58em; fill:'.$CHARTCOLOURS[0].'">'.number_format($allowed).'% Allowed</text>'.PHP_EOL;
-  echo '<text x="6.4em" y="2em" style="font-family: Arial; font-size: 0.58em; fill:'.$CHARTCOLOURS[1].'">'.number_format($blocked).'% Blocked</text>'.PHP_EOL;
-  if ($local > 0) {
-    $local = floatval(($local/$total)*100);
-    echo '<text x="0" y="3.3em" style="font-family: Arial; font-size: 0.58em; fill:'.$CHARTCOLOURS[2].'">'.number_format($local).'% Local</text>'.PHP_EOL;
-  }
-  echo '</svg>'.PHP_EOL;
-  //echo '</span>'.PHP_EOL;
+  //Start Drawing Queries Box
+  echo '<a href="./queries.php"><div class="home-nav"><h2>DNS Queries</h2><hr>'.PHP_EOL;
+  echo '<span>' . number_format(floatval($total)) . '<br>Today'.PHP_EOL;
   echo '</span>'.PHP_EOL;
+
+  if ($total == 0) {                                       //Alternative if no DNS queries have been made
+    echo '<div class="icon-box"><img src="./svg/home_queries.svg" alt=""></div>'.PHP_EOL;
+    echo '</div></a>'.PHP_EOL;
+    return null;
+  }
   
-  
-  echo '<div class="chart-box">'.PHP_EOL;
+  //1 or more queries made, draw a piechart
+  echo '<div class="chart-box">'.PHP_EOL;                  //Start Pie Chart
   echo '<svg width="100%" height="90%" viewbox="0 0 200 200">'.PHP_EOL;
-  echo piechart($chartdata, 100, 100, 98, $CHARTCOLOURS);
-  echo '<circle cx="100" cy="100" r="30" stroke="#202020" stroke-width="2" fill="#eaf1f1" />'.PHP_EOL;  //Small overlay circle
+  piechart($lables, $chartdata, 100, 100, 98, $CHARTCOLOURS);
+  echo '<circle cx="100" cy="100" r="26" stroke="#202020" stroke-width="2" fill="#eaf1f1" />'.PHP_EOL;  //Small overlay circle
   echo '</svg>'.PHP_EOL;
-  //<img src="./svg/home_queries.svg" srcset="./svg/home_queries.svg" alt="">
-  echo '</div></div></a>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;                                   //End Pie Chart
+
+  echo '</div></a>'.PHP_EOL;                               //End Queries Box
 }
 
 

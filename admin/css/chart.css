@@ -5,6 +5,11 @@
   width: 95%;
   max-width: 85em;
 }
+.piechart-container {
+  margin: 2.5rem auto;
+  width: 95%;
+  max-width: 85em;
+}
 .axistext {
   font-family: Arial;
   font-size: 30px;

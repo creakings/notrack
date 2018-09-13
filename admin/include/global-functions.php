@@ -65,8 +65,8 @@ function ensure_active_session() {
 
 
 function is_active_session() {
-  $session_duration = 1800;    
-  if (isset($_SESSION['session_start'])) {    
+  $session_duration = 1800;
+  if (isset($_SESSION['session_start'])) {
     if ((time() - $_SESSION['session_start']) < $session_duration) {
       return true;
     }
@@ -149,7 +149,7 @@ function count_rows($query) {
  */
 function extract_domain($url) {
   preg_match(REGEX_DOMAIN, $url, $matches);
-  
+
   return $matches[0];
 }
 
@@ -186,7 +186,7 @@ function filter_integer($value, $min, $max, $defaultvalue=0) {
       return intval($value);
     }
   }
-  
+
   return $defaultvalue;
 }
 
@@ -305,7 +305,6 @@ function pagination($totalrows, $linktext) {
   if ($totalrows > ROWSPERPAGE) {                     //Is Pagination needed?
     $numpages = ceil($totalrows / ROWSPERPAGE);       //Calculate List Size
     
-    //<div class="sys-group">
     echo '<div class="float-left pag-nav"><ul>'.PHP_EOL;
   
     if ($page == 1) {                            // [ ] [1]
@@ -334,8 +333,8 @@ function pagination($totalrows, $linktext) {
       }
       else {
         $endloop = $numpages;                    // [1] [x-2] [x-1] [y] [L]
-      }      
-    }    
+      }
+    }
     
     for ($i = $startloop; $i < $endloop; $i++) { //Loop to draw 3 buttons
       if ($i == $page) {
@@ -353,10 +352,9 @@ function pagination($totalrows, $linktext) {
     else {                                       // [Final] [>]
       echo '<li><a href="?page='.$numpages.'&amp;'.$linktext.'">'.$numpages.'</a></li>'.PHP_EOL;
       echo '<li><a href="?page='.($page+1).'&amp;'.$linktext.'">&#x00BB;</a></li>'.PHP_EOL;
-    }	
+    }
     
-  echo '</ul></div>'.PHP_EOL;
-  //</div>
+  echo '</ul></div>'.PHP_EOL;  
   }
 }
 
@@ -471,7 +469,7 @@ function load_config() {
             break;
           case 'ParsingTime':
             $Config['ParsingTime'] = filter_integer($splitline[1], 1, 60, 7);
-            break;            
+            break;
           default:
             if (array_key_exists($splitline[0], $Config)) {
               $Config[$splitline[0]] = strip_tags($splitline[1]);
@@ -485,12 +483,12 @@ function load_config() {
   }
   
   //Set SearchUrl if User hasn't configured a custom string via notrack.conf
-  if ($Config['SearchUrl'] == '') {      
+  if ($Config['SearchUrl'] == '') {
     if (array_key_exists($Config['Search'], $SEARCHENGINELIST)) {
       $Config['SearchUrl'] = $SEARCHENGINELIST[$Config['Search']];
-    } 
+    }
     else {
-      $Config['SearchUrl'] = $SEARCHENGINELIST['DuckDuckGo'];       
+      $Config['SearchUrl'] = $SEARCHENGINELIST['DuckDuckGo'];
     }
   }
    
@@ -500,7 +498,7 @@ function load_config() {
       $Config['WhoIsUrl'] = $WHOISLIST[$Config['WhoIs']];
     } 
     else {
-      $Config['WhoIsUrl'] = $WHOISLIST['Who.is'];       
+      $Config['WhoIsUrl'] = $WHOISLIST['Who.is'];
     }
   }
   
@@ -621,7 +619,7 @@ function draw_graphline($values, $xstep, $ymax, $colour) {
     $path .= "L $x $y";
   }
   $path .= 'V850 " stroke="'.$colour.'" stroke-width="5px" fill="'.$colour.'" fill-opacity="0.15" />'.PHP_EOL;
-  echo $path;  
+  echo $path;
 }
 
 
@@ -646,67 +644,75 @@ function draw_circles($values, $xstep, $ymax, $colour) {
       $y = 850 - (($values[$i] / $ymax) * 850);    
       echo '<title>Test</title>';
       echo '<circle cx="'.$x.'" cy="'.(850-($values[$i]/$ymax)*850).'" r="10px" fill="'.$colour.'" fill-opacity="1" stroke="#EAEEEE" stroke-width="5px" />'.PHP_EOL;
-    }    
-  }  
+    }
+  }
 }
 
 /********************************************************************
  *  Draw Pie Chart
  *    Credit to Branko: http://www.tekstadventure.nl/branko/blog/2008/04/php-generator-for-svg-pie-charts
+ *    Modified by quidsup to write label values and percentages
  *  Params:
- *    aray of values, the centre coordinates x and y, radius of the piechart, colours
+ *    array of labels, array of values, the centre coordinates x and y, radius of the piechart, colours
  *  Return:
- *    svg data for path nodes
+ *    true on success, false on failure
  */
-function piechart($data, $cx, $cy, $radius, $colours) {
-  $chartelem = "";
-  $sum = 0;
+function piechart($labels, $data, $cx, $cy, $radius, $colours) {
+  $chartelem = '';
+  $total = 0;
 
   $max = count($data);
   
-  if (max($data) == 0) return;                             //Prevent divide by zero warning
+  if (max($data) == 0) return false;                       //Prevent divide by zero warning
 
   foreach ($data as $key=>$val) {
-    $sum += $val;
+    $total += $val;
   }
-  $deg = $sum/360;                               // one degree
-  $jung = $sum/2;                                // necessary to test for arc type
+  $deg = $total/360;                                       //one degree
+  $jung = $total/2;                                        //necessary to test for arc type
 
   //Data for grid, circle, and slices
-  $dx = $radius;                                 // Starting point:  
-  $dy = 0;                                       // first slice starts in the East
+  $dx = $radius;                                           //Starting point:
+  $dy = 0;                                                 //first slice starts in the East
   $oldangle = 0;
 
-  for ($i = 0; $i<$max; $i++) {                  // Loop through the slices
-    $angle = $oldangle + $data[$i]/$deg;         // cumulative angle
-    $x = cos(deg2rad($angle)) * $radius;         // x of arc's end point
-    $y = sin(deg2rad($angle)) * $radius;         // y of arc's end point
+  for ($i = 0; $i<$max; $i++) {                            //Loop through the slices
+    $chartelem = '';
+    $angle = $oldangle + $data[$i]/$deg;                   //cumulative angle
+    $x = cos(deg2rad($angle)) * $radius;                   //x of arc's end point
+    $y = sin(deg2rad($angle)) * $radius;                   //y of arc's end point
 
     $colour = $colours[$i];
 
-    if ($data[$i] > $jung) {                     // arc spans more than 180 degrees
+    if ($data[$i] > $jung) {                               //Does arc spans more than 180 degrees
       $laf = 1;
     }
     else {
       $laf = 0;
     }
 
-    $ax = $cx + $x;                              // absolute $x
-    $ay = $cy + $y;                              // absolute $y
-    $adx = $cx + $dx;                            // absolute $dx
-    $ady = $cy + $dy;                            // absolute $dy
-    $chartelem .= "<path d=\"M$cx,$cy ";         // move cursor to center
-    $chartelem .= " L$adx,$ady ";                // draw line away away from cursor
-    $chartelem .= " A$radius,$radius 0 $laf,1 $ax,$ay "; // draw arc
-    $chartelem .= " z\" ";                       // z = close path
+    $ax = $cx + $x;                                        //absolute $x
+    $ay = $cy + $y;                                        //absolute $y
+    $adx = $cx + $dx;                                      //absolute $dx
+    $ady = $cy + $dy;                                      //absolute $dy
+    $chartelem .= "  <path d=\"M$cx,$cy ";                 //move cursor to center
+    $chartelem .= " L$adx,$ady ";                          //draw line away away from cursor
+    $chartelem .= " A$radius,$radius 0 $laf,1 $ax,$ay ";   //draw arc
+    $chartelem .= " z\" ";                                 //z = close path
     $chartelem .= " fill=\"$colour\" stroke=\"#202020\" stroke-width=\"2\" ";
     $chartelem .= " fill-opacity=\"0.95\" stroke-linejoin=\"round\" />";
     $chartelem .= PHP_EOL;
-    $dx = $x;      // old end points become new starting point
-    $dy = $y;      // id.
+
+    echo '<g>'.PHP_EOL;                                    //Start svg group
+    echo $chartelem;                                       //Write chart element
+    echo '  <title>'.$labels[$i].': '.number_format(($data[$i] / $total) * 100, 1).'%</title>'.PHP_EOL;
+    echo '</g>'.PHP_EOL;                                   //End svg group
+
+    $dx = $x;                                              //old end points become new starting point
+    $dy = $y;                                              //id.
     $oldangle = $angle;
   }
-  
-  return $chartelem; 
+
+  return true;
 }
 ?>

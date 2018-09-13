@@ -9,11 +9,12 @@ ensure_active_session();
 <html>
 <head>
   <meta charset="UTF-8">
-  <link href="./css/master.css" rel="stylesheet" type="text/css">  
+  <link href="./css/master.css" rel="stylesheet" type="text/css">
+  <link href="./css/chart.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/menu.js"></script>
   <script src="./include/queries.js"></script>
-  <title>NoTrack - Sites Blocked</title>  
+  <title>NoTrack - Sites Blocked</title>
 </head>
 
 <body>
@@ -369,17 +370,18 @@ function show_visualisation() {
   
   $numsites = count($site_names);
   
+  echo '<div class="piechart-container">'.PHP_EOL;
   echo '<svg width="100%" height="90%" viewbox="0 0 1500 1100">'.PHP_EOL;
-  echo piechart($site_count, 500, 540, 490, $CHARTCOLOURS);
-  echo '<circle cx="500" cy="540" r="120" stroke="#00000A" stroke-width="2" fill="#f7f7f7" />'.PHP_EOL;
+  piechart($site_names, $site_count, 500, 540, 490, $CHARTCOLOURS);
+  echo '<circle cx="500" cy="540" r="90" stroke="#00000A" stroke-width="2" fill="#f7f7f7" />'.PHP_EOL;   //Small overlay circle
   
   for ($i = 0; $i < $numsites; $i++) {
     echo '<rect x="1015" y="'.(($i*43)+90).'" rx="5" ry="5" width="38" height="38" style="fill:'.$CHARTCOLOURS[$i].'; stroke:#00000A; stroke-width=3" />';
-    echo '<text x="1063" y="'.(($i*43)+118).'" style="font-family: Arial; font-size: 26px; fill:#00000A">'.$site_names[$i].': '.number_format(floatval($site_count[$i])).'</text>'.PHP_EOL;
+    echo '<text x="1063" y="'.(($i*43)+118).'" style="font-family: Arial; font-size: 22px; fill:#00000A">'.$site_names[$i].': '.number_format(floatval($site_count[$i])).'</text>'.PHP_EOL;
   }
   
   echo '</svg>'.PHP_EOL;
-    
+  echo '</div>'.PHP_EOL;                                   //End piechart-container
   echo '</div>'.PHP_EOL;                                   //End Sys-group div
   
   $result->free();
