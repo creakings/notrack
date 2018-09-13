@@ -78,95 +78,58 @@ function draw_subnav() {
  *    UserAgent String
  *  Return:
  *    OS and Browser
- 
-1st Capturing Group (Mozilla|Dalvik|Opera)
-2nd Capturing Group (Linux|X11|Android|Windows|compatible|iPad|iPhone|Macintosh|IE 11\.0)
-3rd Capturing Group (MSIE|Android|Windows)?
-Non-capturing group (?:KHTML|Gecko|AppleWebKit)?
-4th Capturing Group (Firefox|Iceweasel|PaleMoon|SeaMonkey|\(KHTML\,\slike\sGecko\)\s)?
-5th Capturing Group (Chrome|Version|min|brave)?
-6th Capturing Group (Mobile|Safari)?
-7th Capturing Group (Edge|OPR|Vivaldi)?
  */
 function get_useragent($user_agent) {
   $matches = array();
   $ua = array('unknown', 'unknown');
-  $pattern = '/^(Mozilla|Dalvik|Opera)\/\d\.\d\.?\d?\s\((Linux|X11|Android|Windows|compatible|iPad|iPhone|Macintosh|IE 11\.0).\s?(MSIE|Android|Windows)?[^\)]+\)\s?(?:KHTML|Gecko|AppleWebKit)?[\/\d\.\+]*\s?(Firefox|Iceweasel|PaleMoon|SeaMonkey|\(KHTML\,\slike\sGecko\)\s)?(Chrome|Version|min|brave)?[\/\d\.\s]*(Mobile|Safari)?[\/\d\.\s]*(Edge|OPR|Vivaldi)?/';
   
-  if (preg_match($pattern, $user_agent, $matches) > 0) {
-    switch($matches[1]) {                        //Usually Mozilla
-      case 'Dalvik': $ua[1] = 'android'; break;  //Android apps
-      case 'Opera': $ua[1] = 'opera'; break;     //Opera prior to Blink
-    }    
+  //Find OS
   
-    switch($matches[2]) {                        //Most OS's or IE 11
-      case 'Linux':
-      case 'X11':
-        $ua[0] = 'linux';
-        break;
-      case 'Android':
-        $ua[0] = 'android';
-        break;
-      case 'Windows':
-      case 'compatible':
-        $ua[0] = 'windows';
-        break;
-      case 'iPad':
-      case 'iPhone':
-      case 'Macintosh':
-        $ua[0] = 'apple';
-        break;
-      case 'IE 11.0':
-        $ua[0] = 'windows';
-        $ua[1] = 'internet-explorer';
-        break;
+  //Android
+  if (preg_match('/^(Mozilla|Dalvik)\/\d\.\d\.?\d?\s\(Linux;\s(U;\s)?Android/', $user_agent, $matches) > 0) {
+    $ua[0] = 'android';
+  }
+  //Windows
+  elseif (preg_match('/^Mozilla\/\d\.\d\s\((compatible\s)?(MSIE\s\d\.\d;\s)?Windows\sNT\s(\d\d?)\./', $user_agent, $matches) > 0) {
+    $ua[0] = 'windows';
+    if (strpos($user_agent, 'Edge') !== false) { 
+      $ua[1] = 'edge';
+      return $ua;
     }
-   
-    if (isset($matches[3])) {                    //Android or IE
-      switch($matches[3]) {
-        case 'MSIE': $ua[1] = 'internet-explorer'; break;
-        case 'Android': $ua[0] = 'android'; break;
-        case 'Windows': $ua[0] = 'windows'; break;
-      }      
-    }
-    
-    if (isset($matches[4])) {                    //Gecko rendered Mozilla browsers
-      switch($matches[4]) {
-        case 'Firefox': $ua[1] = 'firefox'; break;
-        case '(KHTML, like Gecko):': $ua[1] = 'chrome'; break;
-        case 'Iceweasel': $ua[1] = 'iceweasel'; break;
-        case 'PaleMoon': $ua[1] = 'palemoon'; break;
-        case 'SeaMonkey': $ua[1] = 'seamonkey'; break;
-      }
-    }
-    
-    if (isset($matches[5])) {
-      switch($matches[5]) {
-        case 'Chrome': $ua[1] = 'chrome'; break;
-        case 'min': $ua[1] = 'min'; break;
-        case 'brave': $ua[1] = 'brave'; break;
-      }
-    }
-    
-    if (isset($matches[6])) {                    //Safari or Safari compliant
-      if ($matches[5] == 'Version') {            //Backtrack to Group5 to check if actually Safari
-        $ua[1] = 'safari';
-      }
-    }
-    
-    if (isset($matches[7])) {
-      switch($matches[7]) {
-        case 'Edge': $ua[1] = 'edge'; break;
-        case 'OPR': $ua[1] = 'opera'; break;
-        case 'Vivaldi': $ua[1] = 'vivaldi'; break;
-      }
+    elseif (strpos($user_agent, 'Trident') !== false) {
+      $ua[1] = 'internet-explorer';
+      return $ua;
     }
   }
-  //Subsequent regex statements are too dificult to implement above
+  //Apple
+  elseif (preg_match('/^Mozilla\/\d\.\d\s\(iPad|iPhone|Macintosh/', $user_agent, $matches) > 0) {
+    $ua[0] = 'apple';
+    if (strpos($user_agent, 'Safari') !== false) {         //TODO Confirm this
+      $ua[1] = 'Safari';
+      return $ua;
+    }
+  }
+  //Linux
+  elseif (preg_match('/^Mozilla\/\d\.\d\s\((X11|Wayland);/', $user_agent, $matches) > 0) {
+    $ua[0] = 'linux';
+  }
+  //Python
   elseif(preg_match('/^Python\-urllib\/\d\.\d\d?/', $user_agent, $matches) > 0) {
     $ua = array('unknown', 'python');
   }
   
+  //Try and find agent
+  if (strpos($user_agent, 'Firefox') !== false) $ua[1] = 'firefox';
+  elseif (strpos($user_agent, 'Chromium') !== false) $ua[1] = 'chromium';
+  elseif (strpos($user_agent, 'min') !== false) $ua[1] = 'min';
+  elseif (strpos($user_agent, 'brave') !== false) $ua[1] = 'brave';
+  elseif (strpos($user_agent, 'Vivaldi') !== false) $ua[1] = 'vivaldi';
+  elseif (strpos($user_agent, 'Chrome') !== false) $ua[1] = 'chrome';
+  elseif (strpos($user_agent, 'OPR') !== false) $ua[1] = 'opera';  //TODO Confirm
+  elseif (strpos($user_agent, 'Iceweasel') !== false) $ua[1] = 'iceweasel';
+  elseif (strpos($user_agent, 'SeaMonkey') !== false) $ua[1] = 'seamonkey';
+  elseif (strpos($user_agent, 'Iceweasel') !== false) $ua[1] = 'iceweasel';
+
   return $ua;
 }
 
@@ -192,11 +155,11 @@ function highlight_url($url) {
   $full = array();
   $domain = array();
     
-  if (preg_match('/^(https?:\/\/|ftp:\/\/)?(?:www\.)?([^\/]+)?(.*)$/', $url, $full) > 0) {    
-    if (preg_match('/([\w\d\-\_]+)\.(co\.|com\.|gov\.|org\.)?([\w\d\-\_]+)$/', $full[2], $domain) > 0) {      
+  if (preg_match('/^(https?:\/\/|ftp:\/\/)?(?:www\.)?([^\/]+)?(.*)$/', $url, $full) > 0) {
+    if (preg_match('/([\w\d\-\_]+)\.(co\.|com\.|gov\.|org\.)?([\w\d\-\_]+)$/', $full[2], $domain) > 0) {
       $highlighted = '<span class="gray">'.$full[1].substr($full[2], 0, 0 -strlen($domain[0])).'</span>'.$domain[0].'<span class="gray">'.$full[3].'</span>';
     }
-  }  
+  }
   return $highlighted;
 }
 
@@ -262,30 +225,11 @@ function show_accesstable() {
     else {
       $http_method = '<span class="violet">POST</span>';
     }
-    
-        
-    //Temporary situation until v0.8.3
-    if (array_key_exists('referrer', $row)) {
-      $referrer = $row['referrer'];
-    }
-    else {
-      $referrer = '';
-    }
-    
-    if (array_key_exists('user_agent', $row)) {
-      $user_agent = $row['user_agent'];
-    }
-    else {
-      $user_agent = '';
-    }
-    
-    if (array_key_exists('remote_host', $row)) {
-      $remote_host = $row['remote_host'];
-    }
-    else {
-      $remote_host = '';
-    }
-        
+
+    $referrer = $row['referrer'];
+    $user_agent = $row['user_agent'];
+    $remote_host = $row['remote_host'];
+
     $user_agent_array = get_useragent($user_agent);        //Get OS and Browser from UserAgent
     
     //Build up the table row
