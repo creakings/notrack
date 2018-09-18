@@ -74,6 +74,9 @@ function draw_subnav() {
 /********************************************************************
  *  Get User Agent 
  *    Identifies OS and Browser
+ *    1. Find OS using various regex matches
+ *    2. Find Browser using strpos matches (its very difficult to use regex due to the various locations in UA string browser might appear)
+ *    TODO: Microsoft Update
  *  Params:
  *    UserAgent String
  *  Return:
@@ -85,23 +88,34 @@ function get_useragent($user_agent) {
   
   //Find OS
   
-  //Android
+  //Android----------------------------
+  //  •Group 1 - Mozilla or Dalvik
+  //  •Group 2 - U (optional)
   if (preg_match('/^(Mozilla|Dalvik)\/\d\.\d\.?\d?\s\(Linux;\s(U;\s)?Android/', $user_agent, $matches) > 0) {
     $ua[0] = 'android';
   }
-  //Windows
-  elseif (preg_match('/^Mozilla\/\d\.\d\s\((compatible\s)?(MSIE\s\d\.\d;\s)?Windows\sNT\s(\d\d?)\./', $user_agent, $matches) > 0) {
+  //Windows----------------------------
+  //  •Group 1 - compatible;
+  //  •Group 2 - MSIE version
+  //  •Group 3 - NT Kernel version
+  elseif (preg_match('/^Mozilla\/\d\.\d\s\((compatible;\s)?(MSIE\s\d\.\d;\s)?Windows\sNT\s(\d\d?)\./', $user_agent, $matches) > 0) {
     $ua[0] = 'windows';
-    if (strpos($user_agent, 'Edge') !== false) { 
+    if (isset($matches[2])) {                              //Internet Explorer old versions are in Group 2
+      if (substr($matches[2], 0, 4) == 'MSIE') {
+        $ua[1] = 'internet-explorer';
+        return $ua;
+      }
+    }
+    if (strpos($user_agent, 'Edge') !== false) {           //No group 2 will mean Edge or IE 11
       $ua[1] = 'edge';
       return $ua;
     }
-    elseif (strpos($user_agent, 'Trident') !== false) {
+    elseif (strpos($user_agent, 'Trident') !== false) {    //Trident = IE unless Edge is specifically mentioned
       $ua[1] = 'internet-explorer';
       return $ua;
     }
   }
-  //Apple
+  //Apple------------------------------
   elseif (preg_match('/^Mozilla\/\d\.\d\s\(iPad|iPhone|Macintosh/', $user_agent, $matches) > 0) {
     $ua[0] = 'apple';
     if (strpos($user_agent, 'Safari') !== false) {         //TODO Confirm this
@@ -109,13 +123,26 @@ function get_useragent($user_agent) {
       return $ua;
     }
   }
-  //Linux
+  //Linux------------------------------
+  //  •Group1 - X11 or Wayland
   elseif (preg_match('/^Mozilla\/\d\.\d\s\((X11|Wayland);/', $user_agent, $matches) > 0) {
     $ua[0] = 'linux';
   }
-  //Python
+  //Microsoft Metadata retrieval-------
+  elseif (preg_match('/^MICROSOFT_DEVICE_METADATA_RETRIEVAL_CLIENT$/', $user_agent, $matches) > 0) {
+    $ua[0] = 'windows';
+    $ua[1] = 'microsoft';
+    return $ua;
+  }
+  //Python-----------------------------
   elseif(preg_match('/^Python\-urllib\/\d\.\d\d?/', $user_agent, $matches) > 0) {
     $ua = array('unknown', 'python');
+  }
+  //Avast Antivirus--------------------
+  elseif (preg_match('/^avast!\s/', $user_agent, $matches) > 0) {
+    $ua[0] = 'windows';
+    $ua[1] = 'avast';
+    return $ua;
   }
   
   //Try and find agent
@@ -235,6 +262,7 @@ function show_accesstable() {
     //Build up the table row
     $table_row = '<tr><td>'.$row['log_time'].'</td><td>'.$http_method.'</td>';
     
+    //DEBUG $table_row .='<td title="'.$user_agent.'"><div class="centered"><img src="./images/useragent/'.$user_agent_array[0].'.png" alt=""><img src="./images/useragent/'.$user_agent_array[1].'.png" alt="">'.$user_agent.'</div></td>';
     $table_row .='<td title="'.$user_agent.'"><div class="centered"><img src="./images/useragent/'.$user_agent_array[0].'.png" alt=""><img src="./images/useragent/'.$user_agent_array[1].'.png" alt=""></div></td>';
     
     $table_row .= '<td>'.highlight_url(htmlentities($row['site'].$row['uri_path'])).'<br>Referrer: '.highlight_url(htmlentities($referrer)).'<br>Requested By: '.$remote_host.'</td></tr>';
