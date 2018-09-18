@@ -563,7 +563,7 @@ function linechart($values1, $values2, $xlabels) {
   
   for ($i = 0; $i < $numvalues; $i += 2) {                 //Draw X Axis labels skipping every other value
     echo '<text x="'.(60+($i * $xstep)).'" y="896" class="axistext">'.$xlabels[$i].'</text>'.PHP_EOL;
-  }  
+  }
   
   for ($i = 2; $i < 24; $i += 2) {                         //Verticle Grid lines
     echo '<path class="gridline" d="M'.(100+($i*$xstep)).',2 V850" />'.PHP_EOL;
@@ -574,18 +574,23 @@ function linechart($values1, $values2, $xlabels) {
 
   //Draw circles over line points in order to smooth the apperance
   for ($i = 1; $i < $numvalues; $i++) {
-    $x = 100 + (($i) * $xstep);
-    $y = 850 - (($values1[$i] / $ymax) * 850);             //$values1[] (Allowed)
-    echo '<g>'.PHP_EOL;
-    echo '  <title>'.$xlabels[$i].' '.$values1[$i].' Allowed</title>'.PHP_EOL;
-    echo '  <circle cx="'.$x.'" cy="'.(850-($values1[$i]/$ymax)*850).'" r="10px" fill="#008CD1" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" title="'.$x.'"/>'.PHP_EOL;
-    echo '</g>'.PHP_EOL;
+    $x = 100 + (($i) * $xstep);                            //Calculate X position
 
-    echo '<g>'.PHP_EOL;
-  $y = 850 - (($values2[$i] / $ymax) * 850);               //$values2[] (Blocked)
-    echo '  <title>'.$xlabels[$i].' '.$values2[$i].' Blocked</title>'.PHP_EOL;
-    echo '  <circle cx="'.$x.'" cy="'.(850-($values2[$i]/$ymax)*850).'" r="10px" fill="#B1244A" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" />'.PHP_EOL;
-    echo '</g>'.PHP_EOL;
+    if ($values1[$i] > 0) {                                //$values1[] (Allowed)
+      $y = 850 - (($values1[$i] / $ymax) * 850);           //Calculate Y position of $values1
+      echo '<g>'.PHP_EOL;
+      echo '  <title>'.$xlabels[$i].' '.$values1[$i].' Allowed</title>'.PHP_EOL;
+      echo '  <circle cx="'.$x.'" cy="'.(850-($values1[$i]/$ymax)*850).'" r="10px" fill="#008CD1" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" title="'.$x.'"/>'.PHP_EOL;
+      echo '</g>'.PHP_EOL;
+    }
+
+    if ($values2[$i] > 0) {                                //$values1[] (Blocked)
+      $y = 850 - (($values2[$i] / $ymax) * 850);           //Calculate Y position of $values2
+      echo '<g>'.PHP_EOL;
+      echo '  <title>'.$xlabels[$i].' '.$values2[$i].' Blocked</title>'.PHP_EOL;
+      echo '  <circle cx="'.$x.'" cy="'.(850-($values2[$i]/$ymax)*850).'" r="10px" fill="#B1244A" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" />'.PHP_EOL;
+      echo '</g>'.PHP_EOL;
+    }
   }
 
 
