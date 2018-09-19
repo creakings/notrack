@@ -75,8 +75,7 @@ function draw_subnav() {
  *  Get User Agent 
  *    Identifies OS and Browser
  *    1. Find OS using various regex matches
- *    2. Find Browser using strpos matches (its very difficult to use regex due to the various locations in UA string browser might appear)
- *    TODO: Microsoft Update
+ *    2. Find Browser string using regex to match with corresponding image file
  *  Params:
  *    UserAgent String
  *  Return:
@@ -130,14 +129,12 @@ function get_useragent($user_agent) {
   }
   //Microsoft Metadata retrieval-------
   elseif (preg_match('/^MICROSOFT_DEVICE_METADATA_RETRIEVAL_CLIENT$/', $user_agent, $matches) > 0) {
-    $ua[0] = 'windows';
-    $ua[1] = 'microsoft';
+    $ua = array('windows', 'microsoft');
     return $ua;
   }
   //Microsoft Windows Update-----------
   elseif (preg_match('/^Windows\-Update\-Agent\/\d/', $user_agent, $matches) > 0) {
-    $ua[0] = 'windows';
-    $ua[1] = 'upgrade';
+    $ua = array('windows', 'upgrade');
     return $ua;
   }
   //Python-----------------------------
@@ -146,22 +143,20 @@ function get_useragent($user_agent) {
   }
   //Avast Antivirus--------------------
   elseif (preg_match('/^avast!\s/', $user_agent, $matches) > 0) {
-    $ua[0] = 'windows';
-    $ua[1] = 'avast';
+    $ua = array('windows', 'avast');
     return $ua;
   }
   
-  //Try and find agent
-  if (strpos($user_agent, 'Firefox') !== false) $ua[1] = 'firefox';
-  elseif (strpos($user_agent, 'Chromium') !== false) $ua[1] = 'chromium';
-  elseif (strpos($user_agent, 'min') !== false) $ua[1] = 'min';
-  elseif (strpos($user_agent, 'brave') !== false) $ua[1] = 'brave';
-  elseif (strpos($user_agent, 'Vivaldi') !== false) $ua[1] = 'vivaldi';
-  elseif (strpos($user_agent, 'Chrome') !== false) $ua[1] = 'chrome';
-  elseif (strpos($user_agent, 'OPR') !== false) $ua[1] = 'opera';  //TODO Confirm
-  elseif (strpos($user_agent, 'Iceweasel') !== false) $ua[1] = 'iceweasel';
-  elseif (strpos($user_agent, 'SeaMonkey') !== false) $ua[1] = 'seamonkey';
-  elseif (strpos($user_agent, 'Iceweasel') !== false) $ua[1] = 'iceweasel';
+  //Try and find agent-----------------
+  if (preg_match('/(Firefox|Chromium|OPR|Epiphany|Brave|Colibri|Midori|Min|Vivaldi)\/(\d[\d\.]\d?)/', $user_agent, $matches) > 0) {
+    $ua[1] = strtolower($matches[1]);
+  }
+  //Many browsers contain Chrome as a user agent, so we need to search for Chrome after the above regex
+  elseif (preg_match('/(Chrome)\/(\d\d\d?)/', $user_agent, $matches) > 0) {
+    $ua[1] = strtolower($matches[1]);
+  }
+
+  //TODO SeaMonkey, Palemoon, and Waterfox are included with Firefox in UA string
 
   return $ua;
 }
