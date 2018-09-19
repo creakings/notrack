@@ -134,6 +134,12 @@ function get_useragent($user_agent) {
     $ua[1] = 'microsoft';
     return $ua;
   }
+  //Microsoft Windows Update-----------
+  elseif (preg_match('/^Windows\-Update\-Agent\/\d/', $user_agent, $matches) > 0) {
+    $ua[0] = 'windows';
+    $ua[1] = 'upgrade';
+    return $ua;
+  }
   //Python-----------------------------
   elseif(preg_match('/^Python\-urllib\/\d\.\d\d?/', $user_agent, $matches) > 0) {
     $ua = array('unknown', 'python');
