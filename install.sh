@@ -283,7 +283,7 @@ function create_file() {
 # Returns:
 #   None
 #--------------------------------------------------------------------
-function create_folder {
+function create_folder() {
   if [ ! -d "$1" ]; then                         #Does folder exist?
     echo "Creating folder: $1"                   #Tell user folder being created
     sudo mkdir "$1"                              #Create folder
