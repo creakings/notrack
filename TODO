@@ -1,3 +1,8 @@
-fix gitlab path on wget
 point link on update.php to gitlab changelog
 review lighty config
+
+On queries.php:
+Improve IP Search - add CIDR range
+
+On blocked.php
+Expand number of user agents
