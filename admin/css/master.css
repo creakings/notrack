@@ -227,6 +227,11 @@ textarea {
 .row {
   width:100%;
 }
+.row:after {
+    content: "";
+    display: table;
+    clear: both;
+}
 .centered {
   text-align:center;
 }
@@ -773,8 +778,6 @@ span.timer {
   width: 12rem;
   padding: 0.5rem 0;
 }
-/*#stats-box input[type="submit"] {background-color: #008CD1;}
-#stats-box input[type="submit"]:hover {background-color: #007298;}*/
 #stats-box span {
   margin: 1em 0.5em 1em 0.5em;
   display: block;
