@@ -68,8 +68,52 @@ $dateend = DEF_EDATE;
 /************************************************
 *Arrays                                         *
 ************************************************/
-$syslist = array();
+//$syslist = array(); DEPRECATED
 $TLDBlockList = array();
+
+/********************************************************************
+ *  Format DNS Search String
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    SQL Query string for DNS Request
+ */
+function get_dnssearch($urlsearch) {
+  $sqlsearch = '';
+  $url = '';
+  
+  $url = preg_replace('/\*/', '', $urlsearch);
+  
+  if (preg_match('/^\*[\w\d\.\-_]+\*$/', $urlsearch) > 0) {
+    $sqlsearch = "AND dns_request LIKE '%$url%' ";
+    //echo '1';
+  }
+  elseif (preg_match('/^\*[\w\d\.\-_]+\.[\w\d\-]+$/', $urlsearch) > 0) {
+    $sqlsearch = "AND dns_request LIKE '%$url' ";
+    //echo '2';
+  }
+  elseif (preg_match('/^[\w\d\.\-_]+\*$/', $urlsearch) > 0) {
+    $sqlsearch = "AND dns_request LIKE '$url%' ";
+    //echo '3';
+  }
+  elseif (preg_match('/^[\w\d\.\-_]+\.[\w\d\-]+$/', $urlsearch) > 0) {
+    $sqlsearch = "AND dns_request = '$url' ";
+    //echo '4';
+  }
+  elseif (preg_match('/^\*$/', $urlsearch) > 0) {          //* Only = all grouped requests
+    $sqlsearch = "AND dns_request LIKE '*%' ";
+    //echo '5';
+  }
+  else {
+    $sqlsearch = "AND dns_request LIKE '%$url%' ";
+    //echo '6';
+  }
+
+  
+  return $sqlsearch;
+}
+
 
 
 /********************************************************************
@@ -88,7 +132,7 @@ function add_filterstr() {
   $searchstr .= "log_time >= DATE_SUB(NOW(), INTERVAL $searchtime) ";
   
   if ($searchbox != '') {
-    $searchstr .= "AND dns_request LIKE '$searchbox%' ";
+    $searchstr .= get_dnssearch($searchbox);
   }
 
   if ($sys != DEF_SYSTEM) {
@@ -98,6 +142,7 @@ function add_filterstr() {
     $searchstr .= " AND dns_result = '$filter'";
   }
 
+  //DEBUG echo $searchstr;
   return $searchstr;
 }
 
@@ -162,13 +207,22 @@ function draw_filterbox() {
   echo '<div class="row">'.PHP_EOL;                        //Start Row TODO mobile view
   echo '<div class="dnsqueries-filterlarge">'.PHP_EOL;     //Start Search Box
   if ($searchbox != '') {
-    echo '<input type="text" class="full" name="searchbox" value="'.$searchbox.'">'.PHP_EOL;
+    echo '<input type="text" class="full" name="searchbox" value="'.$searchbox.'" placeholder="Search">'.PHP_EOL;
   }
   else {
-    echo '<input type="text" class="full" name="searchbox" placeholder="search">'.PHP_EOL;
+    echo '<input type="text" class="full" name="searchbox" placeholder="Search">'.PHP_EOL;
   }
   echo '</div>'.PHP_EOL;                                   //End Search Box
-  
+
+  echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start System List
+  if ($sys == DEF_SYSTEM) {
+    echo '<input type="text" class="full" name="sys" placeholder="IP Address">'.PHP_EOL;
+  }
+  else {
+    echo '<input type="text" class="full" name="sys" value="'.$sys.'" placeholder="IP Address">'.PHP_EOL;
+  }
+  echo '</div>'.PHP_EOL;                                   //End System List
+
   echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Search Time
   echo '<span class="filter">Time:</span><select name="searchtime" onchange="submit()">';
   echo '<option value="'.$searchtime.'">'.$TIMELIST[$searchtime].'</option>'.PHP_EOL;
@@ -176,22 +230,7 @@ function draw_filterbox() {
     if ($key != $searchtime) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
   }
   echo '</select></div>'.PHP_EOL;                          //End Search Time
-  
-  echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start System List
-  echo '<span class="filter">System:</span><select name="sys" onchange="submit()">';
-    
-  if ($sys == DEF_SYSTEM) {
-    echo '<option value="all">All</option>'.PHP_EOL;
-  }
-  else {
-    echo '<option value="1">'.$sys.'</option>'.PHP_EOL;
-    echo '<option value="all">All</option>'.PHP_EOL;
-  }
-  foreach ($syslist as $line) {
-    if ($line != $sys) echo '<option value="'.$line.'">'.$line.'</option>'.PHP_EOL;
-  }
-  echo '</select></div>'.PHP_EOL;                          //End System List
-  
+
   echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Filter List
   echo '<span class="filter">Filter:</span><select name="filter" onchange="submit()">';
   echo '<option value="'.$filter.'">'.$FILTERLIST[$filter].'</option>'.PHP_EOL;
@@ -199,7 +238,7 @@ function draw_filterbox() {
     if ($key != $filter) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
   }
   echo '</select></div>'.PHP_EOL;                          //End Filter List
-  
+
   echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Group List
   echo '<span class="groupby">Group By:</span><select name="groupby" onchange="submit()">';
   echo '<option value="'.$groupby.'">'.$GROUPLIST[$groupby].'</option>'.PHP_EOL;
@@ -207,10 +246,13 @@ function draw_filterbox() {
     if ($key != $groupby) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
   }
   echo '</select></div>'.PHP_EOL;                          //End Group List
-  
   echo '</div>'.PHP_EOL;                                   //End Row
+
+  echo '<div class="row">'.PHP_EOL;                        //Start Row for submit button
+  echo '<input type="submit" class="button-blue" value="Search">';
+  echo '</div>'.PHP_EOL;                                   //End Row for submit
+
   echo '</form>'.PHP_EOL;
-  
   echo '</div>'.PHP_EOL;                                   //End Div Group
 
 }
@@ -271,12 +313,12 @@ function search_blockreason($site) {
     }
   }
   
-  return '';                                     //Don't know at this point    
+  return '';                                     //Don't know at this point
 }
 
-//Need to ammend for historic view TODO
+
 /********************************************************************
- *  Search Systems
+ *  Search Systems DEPRECATED
  * TODO limit results for past day or search time
  *  1. Find unique sys values in table
  *
@@ -485,7 +527,7 @@ function show_time_view() {
       else {
         $blockreason = '<p class="small">Blocked by '.get_blocklistname($blockreason).'</p>';
         $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, false)"></span>';
-      }    
+      }
     }
     elseif ($row['dns_result'] == 'L') {         //Local
       $row_class = ' class="local"';
@@ -513,7 +555,7 @@ function show_time_view() {
 
 $db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
 
-search_systems();                                          //Need to find out systems on live table
+//search_systems();                                          //Need to find out systems on live table DEPRECATED
 
 if (isset($_GET['page'])) {
   $page = filter_integer($_GET['page'], 1, PHP_INT_MAX, 1);
@@ -528,7 +570,10 @@ if (isset($_GET['sort'])) {
 }
 
 if (isset($_GET['sys'])) {
-  if (in_array($_GET['sys'], $syslist)) $sys = $_GET['sys'];
+  //if (in_array($_GET['sys'], $syslist)) $sys = $_GET['sys'];
+  if (filter_var($_GET['sys'], FILTER_VALIDATE_IP)) {
+    $sys = $_GET['sys'];
+  }
 }
 
 if (isset($_GET['groupby'])) {
@@ -540,7 +585,7 @@ if (isset($_GET['searchtime'])) {
 }
 
 if (isset($_GET['searchbox'])) {
-  $searchbox = $_GET['searchbox']; //TODO Sanitize
+  $searchbox = preg_replace(REGEX_URLSEARCH, '', $_GET['searchbox']);
 }
 
 draw_filterbox();                                          //Draw filters

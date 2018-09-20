@@ -31,6 +31,7 @@ define('NOTRACK_LIST', '/etc/dnsmasq.d/notrack.list');
 //define('REGEX_TIME', '/([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/'); DEPRECATED
 define('REGEX_DATETIME', '/^2[0-1][0-9][0-9]\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])\s([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/');
 define('REGEX_DOMAIN', '/[\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-\_]+$/');
+define('REGEX_URLSEARCH', '/[^\w\d\.\_\-\*]/');    //Valid leters for URL search
 
 $Config=array();
 
