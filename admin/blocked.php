@@ -157,7 +157,7 @@ function get_useragent($user_agent) {
   }
 
   //TODO SeaMonkey, Palemoon, and Waterfox are included with Firefox in UA string
-
+  //TODO add Spotify Spotify/105800573 Win32/0 (PC laptop) Spotify/8.4.9 Android/25 (Nexus 5X)
   return $ua;
 }
 
