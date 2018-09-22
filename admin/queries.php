@@ -59,7 +59,7 @@ $groupby = 'name';
 $searchbox = '';
 $searchtime = '1 DAY';
 $sort = 'DESC';
-$sys = DEF_SYSTEM;
+$sysip = DEF_SYSTEM;
 
 $datestart = DEF_SDATE;
 $dateend = DEF_EDATE;
@@ -68,7 +68,7 @@ $dateend = DEF_EDATE;
 /************************************************
 *Arrays                                         *
 ************************************************/
-//$syslist = array(); DEPRECATED
+//$sysiplist = array(); DEPRECATED
 $TLDBlockList = array();
 
 /********************************************************************
@@ -115,6 +115,40 @@ function get_dnssearch($urlsearch) {
 }
 
 
+function cidr($cidr) {
+
+  list($ip, $mask) = explode('/', $cidr);
+
+  $maskBinStr =str_repeat("1", $mask ) . str_repeat("0", 32-$mask );          //net mask binary string
+  $inverseMaskBinStr = str_repeat("0", $mask ) . str_repeat("1",  32-$mask ); //inverse mask
+  
+  $ipLong = ip2long( $ip );
+  $ipMaskLong = bindec( $maskBinStr );
+  $inverseIpMaskLong = bindec( $inverseMaskBinStr );
+  $netWork = $ipLong & $ipMaskLong; 
+
+  $start = long2ip($netWork); 
+  $end = long2ip(($netWork | $inverseIpMaskLong));
+   //echo "start $start end $end";
+  return array($start, $end);
+}
+
+function get_ipsearch($ipsearch) {
+  $sqlsearch = '';
+  $ipstart = 0;
+  $ipend = 0;
+
+  //Crude form of regex to check for IP and CIDR notation
+  if (preg_match('/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}/', $ipsearch) > 0) {
+    list($ipstart, $ipend) = cidr($ipsearch);
+    
+    $sqlsearch = " AND INET_ATON(sys) BETWEEN INET_ATON('$ipstart') AND INET_ATON('$ipend') ";
+  }
+  else {
+    $sqlsearch = " AND sys = '$ipsearch' ";
+  }
+  return $sqlsearch;
+}
 
 /********************************************************************
  *  Add Filter Vars to SQL Search
@@ -125,24 +159,24 @@ function get_dnssearch($urlsearch) {
  *    SQL Query string
  */
 function add_filterstr() {
-  global $searchbox, $searchtime, $filter, $sys;
-  
+  global $searchbox, $searchtime, $filter, $sysip;
   $searchstr = " WHERE ";
-  
+
   $searchstr .= "log_time >= DATE_SUB(NOW(), INTERVAL $searchtime) ";
   
   if ($searchbox != '') {
     $searchstr .= get_dnssearch($searchbox);
   }
 
-  if ($sys != DEF_SYSTEM) {
-    $searchstr .= "AND sys = '$sys'";
+  if ($sysip != DEF_SYSTEM) {
+    //$searchstr .= "AND sys = '$sysip'";
+    $searchstr .= get_ipsearch($sysip);
   }
   if ($filter != DEF_FILTER) {
     $searchstr .= " AND dns_result = '$filter'";
   }
 
-  //DEBUG echo $searchstr;
+  //echo $searchstr;                                       //Uncomment to debug sql query
   return $searchstr;
 }
 
@@ -176,7 +210,7 @@ function count_rows_save($query) {
   }
   
   $rows = $result->fetch_row()[0];               //Extract value from array
-  $result->free();    
+  $result->free();
   $mem->set('oldquery', $query, 0, 600);         //Save for 10 Mins
       
   return $rows;
@@ -192,7 +226,7 @@ function count_rows_save($query) {
  *    None
  */
 function draw_filterbox() {
-  global $FILTERLIST, $syslist, $filter, $page, $searchbox, $searchtime, $sort, $sys, $groupby;
+  global $FILTERLIST, $sysiplist, $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby;
   global $GROUPLIST, $TIMELIST;
   global $datestart, $dateend;
   
@@ -215,11 +249,11 @@ function draw_filterbox() {
   echo '</div>'.PHP_EOL;                                   //End Search Box
 
   echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start System List
-  if ($sys == DEF_SYSTEM) {
-    echo '<input type="text" class="full" name="sys" placeholder="IP Address">'.PHP_EOL;
+  if ($sysip == DEF_SYSTEM) {
+    echo '<input type="text" class="full" name="sysip" placeholder="IP Address">'.PHP_EOL;
   }
   else {
-    echo '<input type="text" class="full" name="sys" value="'.$sys.'" placeholder="IP Address">'.PHP_EOL;
+    echo '<input type="text" class="full" name="sysip" value="'.$sysip.'" placeholder="IP Address">'.PHP_EOL;
   }
   echo '</div>'.PHP_EOL;                                   //End System List
 
@@ -327,23 +361,23 @@ function search_blockreason($site) {
  *  Return:
  *    None
  */
-function search_systems() {
-  global $db, $mem, $syslist;
+/*function search_systems() {
+  global $db, $mem, $sysiplist;
   
-  $syslist = $mem->get('syslist');
+  $sysiplist = $mem->get('syslist');
   
-  if (empty($syslist)) {
+  if (empty($sysiplist)) {
     if (! $result = $db->query("SELECT DISTINCT sys FROM dnslog ORDER BY sys")) {
       die('There was an error running the query'.$db->error);
     }
     while($row = $result->fetch_assoc()) {       //Read each row of results
-      $syslist[] = $row['sys'];                  //Add row value to $syslist
+      $sysiplist[] = $row['sys'];                  //Add row value to $sysiplist
     }
     $result->free();
-    $mem->set('syslist', $syslist, 0, 600);      //Save for 10 Mins
+    $mem->set('syslist', $sysiplist, 0, 600);      //Save for 10 Mins
   }    
 }
-
+*/
 
 /********************************************************************
  *  Show Group View
@@ -356,7 +390,7 @@ function search_systems() {
  */
 function show_group_view() {
   global $db, $Config, $TLDBlockList;
-  global $page, $sort, $filter, $sys, $groupby, $searchbox, $searchtime;
+  global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
   
   $i = 0;
   $rows = 0;
@@ -366,9 +400,9 @@ function show_group_view() {
   $query = '';
   $site_cell = '';
   
-  $sortlink = "?page=$page&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sys&amp;filter=$filter&amp;groupby=$groupby&amp;";
+  $sortlink = "?page=$page&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby&amp;";
   
-  $paginationlink = "&amp;sort=$sort&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sys&amp;filter=$filter&amp;groupby=$groupby";
+  $paginationlink = "&amp;sort=$sort&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby";
 
   $rows = count_rows_save("SELECT COUNT(DISTINCT dns_request) FROM dnslog ".add_filterstr());
   
@@ -461,7 +495,7 @@ function show_group_view() {
  */
 function show_time_view() {
   global $db, $Config, $TLDBlockList;
-  global $page, $sort, $filter, $sys, $groupby, $searchbox, $searchtime;
+  global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
   
   $rows = 0;
   $row_class = '';
@@ -472,9 +506,9 @@ function show_time_view() {
   $investigate = '';
   $site_cell = '';
   
-  $sortlink = "?page=$page&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sys&amp;filter=$filter&amp;groupby=$groupby&amp;";
+  $sortlink = "?page=$page&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby&amp;";
   
-  $paginationlink = "&amp;sort=$sort&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sys&amp;filter=$filter&amp;groupby=$groupby";
+  $paginationlink = "&amp;sort=$sort&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby";
   
   $rows = count_rows_save('SELECT COUNT(*) FROM dnslog'.add_filterstr());
   if ((($page-1) * ROWSPERPAGE) > $rows) {
@@ -553,6 +587,8 @@ function show_time_view() {
 
 //Main---------------------------------------------------------------
 
+
+
 $db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
 
 //search_systems();                                          //Need to find out systems on live table DEPRECATED
@@ -569,11 +605,14 @@ if (isset($_GET['sort'])) {
   if ($_GET['sort'] == 'ASC') $sort = 'ASC';
 }
 
-if (isset($_GET['sys'])) {
-  //if (in_array($_GET['sys'], $syslist)) $sys = $_GET['sys'];
-  if (filter_var($_GET['sys'], FILTER_VALIDATE_IP)) {
-    $sys = $_GET['sys'];
-  }
+if (isset($_GET['sysip'])) {
+  //if (in_array($_GET['sysip'], $sysiplist)) $sysip = $_GET['sysip'];
+  /*if (filter_var($_GET['sysip'], FILTER_VALIDATE_IP)) { TODO only IPv6
+    $sysip = $_GET['sysip'];
+  }*/
+  //TODO error checking
+  $sysip = $_GET['sysip'];
+  
 }
 
 if (isset($_GET['groupby'])) {
