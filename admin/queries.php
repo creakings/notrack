@@ -607,11 +607,13 @@ if (isset($_GET['sort'])) {
 
 if (isset($_GET['sysip'])) {
   //if (in_array($_GET['sysip'], $sysiplist)) $sysip = $_GET['sysip'];
-  /*if (filter_var($_GET['sysip'], FILTER_VALIDATE_IP)) { TODO only IPv6
+  if (filter_var($_GET['sysip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
     $sysip = $_GET['sysip'];
-  }*/
-  //TODO error checking
-  $sysip = $_GET['sysip'];
+  }
+  elseif (preg_match('/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(\/\d{1,2})?/', $_GET['sysip']) > 0) {
+  //TODO improve ranges
+    $sysip = $_GET['sysip'];
+  }
   
 }
 
