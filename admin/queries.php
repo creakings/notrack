@@ -71,13 +71,71 @@ $dateend = DEF_EDATE;
 //$sysiplist = array(); DEPRECATED
 $TLDBlockList = array();
 
+
 /********************************************************************
- *  Format DNS Search String
+ *  Get CIDR Range
+ *    Returns Start and End IP of a given IP/CIDR range
  *
  *  Params:
- *    None
+ *    IP/CIDR - e.g. 192.168.0.0/24
  *  Return:
- *    SQL Query string for DNS Request
+ *    Array of Start and End IP range
+ */
+function cidr($cidr) {
+  list($ip, $mask) = explode('/', $cidr);
+
+  $maskBinStr =str_repeat("1", $mask ) . str_repeat("0", 32-$mask );          //net mask binary string
+  $inverseMaskBinStr = str_repeat("0", $mask ) . str_repeat("1",  32-$mask ); //inverse mask
+
+  $ipLong = ip2long( $ip );
+  $ipMaskLong = bindec( $maskBinStr );
+  $inverseIpMaskLong = bindec( $inverseMaskBinStr );
+  $netWork = $ipLong & $ipMaskLong; 
+
+  $start = long2ip($netWork); 
+  $end = long2ip(($netWork | $inverseIpMaskLong));
+
+  //echo "start $start end $end";                          //Uncomment to Debug
+  return array($start, $end);
+}
+
+
+/********************************************************************
+ *  Get DNS Search
+ *    Checks for various combinations of allowable searches for IP address
+ *    1. IP/CIDR
+ *    2. IPv4 / IPv6
+ *
+ *  Params:
+ *    sysip GET paramater
+ *  Return:
+ *    Trimmed input if valid
+ *    Otherwise return DEF_SYSTEM
+ */
+function filter_ipaddress($value) {
+  $userinput = trim($value);
+
+  if (preg_match(REGEX_IPCIDR, $userinput) > 0) {          //Check if valid IP/CIDR
+    return $userinput;
+  }
+
+  else {
+    if (filter_var($userinput, FILTER_VALIDATE_IP)) {      //Or single IPv4 / IPv6
+      return $userinput;
+    }
+  }
+
+  return DEF_SYSTEM;
+}
+
+/********************************************************************
+ *  Get DNS Search
+ *    Returns formatted SQL query for searching dns_request from dnsqueries table based on various search inputs
+ *
+ *  Params:
+ *    Users search
+ *  Return:
+ *    SQL Search string for DNS Request
  */
 function get_dnssearch($urlsearch) {
   $sqlsearch = '';
@@ -115,33 +173,22 @@ function get_dnssearch($urlsearch) {
 }
 
 
-function cidr($cidr) {
-
-  list($ip, $mask) = explode('/', $cidr);
-
-  $maskBinStr =str_repeat("1", $mask ) . str_repeat("0", 32-$mask );          //net mask binary string
-  $inverseMaskBinStr = str_repeat("0", $mask ) . str_repeat("1",  32-$mask ); //inverse mask
-  
-  $ipLong = ip2long( $ip );
-  $ipMaskLong = bindec( $maskBinStr );
-  $inverseIpMaskLong = bindec( $inverseMaskBinStr );
-  $netWork = $ipLong & $ipMaskLong; 
-
-  $start = long2ip($netWork); 
-  $end = long2ip(($netWork | $inverseIpMaskLong));
-   //echo "start $start end $end";
-  return array($start, $end);
-}
-
+/********************************************************************
+ *  Get IP Search
+ *    Returns formatted SQL query for searching sys (IP) from dnsqueries table based on various search inputs
+ *
+ *  Params:
+ *    User search string
+ *  Return:
+ *    SQL Search string
+ */
 function get_ipsearch($ipsearch) {
   $sqlsearch = '';
   $ipstart = 0;
   $ipend = 0;
 
-  //Crude form of regex to check for IP and CIDR notation
-  if (preg_match('/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}/', $ipsearch) > 0) {
+  if (preg_match(REGEX_IPCIDR, $ipsearch) > 0) {
     list($ipstart, $ipend) = cidr($ipsearch);
-    
     $sqlsearch = " AND INET_ATON(sys) BETWEEN INET_ATON('$ipstart') AND INET_ATON('$ipend') ";
   }
   else {
@@ -149,6 +196,7 @@ function get_ipsearch($ipsearch) {
   }
   return $sqlsearch;
 }
+
 
 /********************************************************************
  *  Add Filter Vars to SQL Search
@@ -182,11 +230,10 @@ function add_filterstr() {
 
 
 /********************************************************************
- *  Count rows in table and save result to memcache
- *  
- *  1. Attempt to load value from Memcache
- *  2. Check if same query is being run
- *  3. If that fails then run query
+ *  Count rows in table and save result to memcache COULD THIS BE DEPRECATED?
+ *    1. Attempt to load value from Memcache
+ *    2. Check if same query is being run
+ *    3. If that fails then run query
  *
  *  Params:
  *    Query String
@@ -241,19 +288,19 @@ function draw_filterbox() {
   echo '<div class="row">'.PHP_EOL;                        //Start Row TODO mobile view
   echo '<div class="dnsqueries-filterlarge">'.PHP_EOL;     //Start Search Box
   if ($searchbox != '') {
-    echo '<input type="text" class="full" name="searchbox" value="'.$searchbox.'" placeholder="Search">'.PHP_EOL;
+    echo '<input type="text" class="full" name="searchbox" value="'.$searchbox.'" placeholder="site.com">'.PHP_EOL;
   }
   else {
-    echo '<input type="text" class="full" name="searchbox" placeholder="Search">'.PHP_EOL;
+    echo '<input type="text" class="full" name="searchbox" placeholder="site.com">'.PHP_EOL;
   }
   echo '</div>'.PHP_EOL;                                   //End Search Box
 
   echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start System List
   if ($sysip == DEF_SYSTEM) {
-    echo '<input type="text" class="full" name="sysip" placeholder="IP Address">'.PHP_EOL;
+    echo '<input type="text" class="full" name="sysip" placeholder="192.168.0.1/24">'.PHP_EOL;
   }
   else {
-    echo '<input type="text" class="full" name="sysip" value="'.$sysip.'" placeholder="IP Address">'.PHP_EOL;
+    echo '<input type="text" class="full" name="sysip" value="'.$sysip.'" placeholder="192.168.0.1/24">'.PHP_EOL;
   }
   echo '</div>'.PHP_EOL;                                   //End System List
 
@@ -350,34 +397,6 @@ function search_blockreason($site) {
   return '';                                     //Don't know at this point
 }
 
-
-/********************************************************************
- *  Search Systems DEPRECATED
- * TODO limit results for past day or search time
- *  1. Find unique sys values in table
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-/*function search_systems() {
-  global $db, $mem, $sysiplist;
-  
-  $sysiplist = $mem->get('syslist');
-  
-  if (empty($sysiplist)) {
-    if (! $result = $db->query("SELECT DISTINCT sys FROM dnslog ORDER BY sys")) {
-      die('There was an error running the query'.$db->error);
-    }
-    while($row = $result->fetch_assoc()) {       //Read each row of results
-      $sysiplist[] = $row['sys'];                  //Add row value to $sysiplist
-    }
-    $result->free();
-    $mem->set('syslist', $sysiplist, 0, 600);      //Save for 10 Mins
-  }    
-}
-*/
 
 /********************************************************************
  *  Show Group View
@@ -586,12 +605,7 @@ function show_time_view() {
 }
 
 //Main---------------------------------------------------------------
-
-
-
 $db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
-
-//search_systems();                                          //Need to find out systems on live table DEPRECATED
 
 if (isset($_GET['page'])) {
   $page = filter_integer($_GET['page'], 1, PHP_INT_MAX, 1);
@@ -605,17 +619,10 @@ if (isset($_GET['sort'])) {
   if ($_GET['sort'] == 'ASC') $sort = 'ASC';
 }
 
-if (isset($_GET['sysip'])) {
-  //if (in_array($_GET['sysip'], $sysiplist)) $sysip = $_GET['sysip'];
-  if (filter_var($_GET['sysip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-    $sysip = $_GET['sysip'];
-  }
-  elseif (preg_match('/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(\/\d{1,2})?/', $_GET['sysip']) > 0) {
-  //TODO improve ranges
-    $sysip = $_GET['sysip'];
-  }
-  
+if (isset($_GET['sysip'])) {                               //sysip uses custom function to verify valid search
+  $sysip = filter_ipaddress($_GET['sysip']);
 }
+
 
 if (isset($_GET['groupby'])) {
   if (array_key_exists($_GET['groupby'], $GROUPLIST)) $groupby = $_GET['groupby'];
@@ -625,7 +632,7 @@ if (isset($_GET['searchtime'])) {
   if (array_key_exists($_GET['searchtime'], $TIMELIST)) $searchtime = $_GET['searchtime'];
 }
 
-if (isset($_GET['searchbox'])) {
+if (isset($_GET['searchbox'])) {                           //searchbox uses preg_replace to remove invalid characters
   $searchbox = preg_replace(REGEX_URLSEARCH, '', $_GET['searchbox']);
 }
 
