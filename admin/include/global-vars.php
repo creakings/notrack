@@ -31,6 +31,15 @@ define('NOTRACK_LIST', '/etc/dnsmasq.d/notrack.list');
 //define('REGEX_TIME', '/([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/'); DEPRECATED
 define('REGEX_DATETIME', '/^2[0-1][0-9][0-9]\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])\s([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/');
 define('REGEX_DOMAIN', '/[\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-\_]+$/');
+
+//IPCIDR = Check for valid IP/CIDR - e.g. 192.168.0.1/24
+//         Reject leading zeros - e.g. 10.00.00.009/02
+//Group 1 - First three octets with following zero - (222.) * 3 - 250-255, 200-249, 100-199, 10-99, 0-9
+//Group 2 - Fourth octets
+//Forward slash /
+//Group 3 - CIDR notation 30-32, 10/20-19/29, 0-9
+define('REGEX_IPCIDR', '/^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/(3[0-2]|[1-2][0-9]|[0-9])$/');
+
 define('REGEX_URLSEARCH', '/[^\w\d\.\_\-\*]/');    //Valid leters for URL search
 
 $Config=array();
