@@ -161,31 +161,33 @@ function load_csv($filename, $listname) {
  *  Return:
  *    true on completion
  */
-function load_customlist($listname, $filename) { 
+function load_customlist($listname, $filename) {
   global $list, $mem;
-    
-  $list = $mem->get($listname);
-  
-  if (empty($list)) {
+
+  $list = $mem->get($listname);                            //Attempt to load list from Memcache
+
+  if (empty($list)) {                                      //If nothing, then read appropriate file
     $fh = fopen($filename, 'r') or die('Error unable to open '.$filename);
     while (!feof($fh)) {
-      $Line = trim(fgets($fh));
-      
-      if (filter_url($Line)) {
-        $seg = explode('#', $Line);
-        if ($seg[0] == '') {
+      $line = trim(fgets($fh));                            //Read and trim line of file
+
+      if (filter_url($line)) {                             //Is there a URL in the line?
+        $seg = explode('#', $line);                        //Split line by comment 
+        $seg[] = '';                                       //Add a blank string to segment to prevent undefined offset error when user has no comment
+
+        if ($seg[0] == '') {                               //Is the whole like commented? (site disabled)
           $list[] = array(trim($seg[1]), $seg[2], false);
         }
-        else {
+        else {                                             //Otherwise site is enabled
           $list[] = array(trim($seg[0]), $seg[1], true);
-        }        
+        }
       }
-    }  
-    fclose($fh);  
-    $mem->set($listname, $list, 0, 60);
+    }
+    fclose($fh);                                           //Close file
+    $mem->set($listname, $list, 0, 60);                    //Save array to Memcache
   }
-  
-  return true;  
+
+  return true;
 }
 
 
