@@ -266,7 +266,8 @@ function count_rows_save($query) {
 
 /********************************************************************
  *  Draw Filter Box
- *  
+ *    Reset form is dealt with by queries.js function resetQueriesForm()
+ *    Show current value first in <select>, and then read through respective array to output values
  *  Params:
  *    None
  *  Return:
@@ -288,24 +289,24 @@ function draw_filterbox() {
   echo '<div class="row">'.PHP_EOL;                        //Start Row TODO mobile view
   echo '<div class="dnsqueries-filterlarge">'.PHP_EOL;     //Start Search Box
   if ($searchbox != '') {
-    echo '<input type="text" class="full" name="searchbox" value="'.$searchbox.'" placeholder="site.com">'.PHP_EOL;
+    echo '<input type="text" name="searchbox" id="filtersearch" class="full" value="'.$searchbox.'" placeholder="site.com">'.PHP_EOL;
   }
   else {
-    echo '<input type="text" class="full" name="searchbox" placeholder="site.com">'.PHP_EOL;
+    echo '<input type="text" name="searchbox" id="filtersearch" class="full" placeholder="site.com">'.PHP_EOL;
   }
   echo '</div>'.PHP_EOL;                                   //End Search Box
 
   echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start System List
   if ($sysip == DEF_SYSTEM) {
-    echo '<input type="text" class="full" name="sysip" placeholder="192.168.0.1/24">'.PHP_EOL;
+    echo '<input type="text" name="sysip" id="filtersys" class="full" placeholder="192.168.0.1/24">'.PHP_EOL;
   }
   else {
-    echo '<input type="text" class="full" name="sysip" value="'.$sysip.'" placeholder="192.168.0.1/24">'.PHP_EOL;
+    echo '<input type="text" name="sysip" id="filtersys" class="full" value="'.$sysip.'" placeholder="192.168.0.1/24">'.PHP_EOL;
   }
   echo '</div>'.PHP_EOL;                                   //End System List
 
   echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Search Time
-  echo '<select name="searchtime" class="offset" onchange="submit()">';
+  echo '<select name="searchtime" id="filtertime" class="offset" onchange="submit()">';
   echo '<option value="'.$searchtime.'">'.$TIMELIST[$searchtime].'</option>'.PHP_EOL;
   foreach ($TIMELIST as $key => $line) {
     if ($key != $searchtime) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
@@ -313,7 +314,7 @@ function draw_filterbox() {
   echo '</select></div>'.PHP_EOL;                          //End Search Time
 
   echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Filter List
-  echo '<select name="filter" class="offset" onchange="submit()">';
+  echo '<select name="filter" id="filtertype" class="offset" onchange="submit()">';
   echo '<option value="'.$filter.'">'.$FILTERLIST[$filter].'</option>'.PHP_EOL;
   foreach ($FILTERLIST as $key => $line) {
     if ($key != $filter) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
@@ -321,7 +322,7 @@ function draw_filterbox() {
   echo '</select></div>'.PHP_EOL;                          //End Filter List
 
   echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Group List
-  echo '<select name="groupby" class="offset" title="Group By" onchange="submit()">';
+  echo '<select name="groupby" id="filtergroup" class="offset" title="Group By" onchange="submit()">';
   echo '<option value="'.$groupby.'">'.$GROUPLIST[$groupby].'</option>'.PHP_EOL;
   foreach ($GROUPLIST as $key => $line) {
     if ($key != $groupby) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
@@ -330,7 +331,8 @@ function draw_filterbox() {
   echo '</div>'.PHP_EOL;                                   //End Row
 
   echo '<div class="row">'.PHP_EOL;                        //Start Row for submit button
-  echo '<input type="submit" class="button-blue" value="Search">';
+  echo '<input type="submit" class="button-blue" value="Search">&nbsp;&nbsp;';
+  echo '<button type="button" class="button-grey" onclick="resetQueriesForm()">Reset</button>';
   echo '</div>'.PHP_EOL;                                   //End Row for submit
 
   echo '</form>'.PHP_EOL;

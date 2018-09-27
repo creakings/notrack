@@ -1,4 +1,22 @@
 //Supporting JavaScript for NoTrack queries.php
+//TODO Requires cleanup and fix naming convention
+/********************************************************************
+ *  Reset queries form
+ *    Reset elements in queries form to their default values
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function resetQueriesForm() {
+  document.getElementById("filtersearch").value = "";
+  document.getElementById("filtersys").value = "";
+  document.getElementById("filtertime").value = "1 DAY";
+  document.getElementById("filtertype").value = "all";
+  document.getElementById("filtergroup").value = "name";
+}
+
+
 function ValidateIPaddress(ipaddress) {
  if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipaddress)) {
     return true;
