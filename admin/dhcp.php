@@ -149,7 +149,7 @@ function show_dhcp() {
   echo '<tr id="confRow5"><td>Lease Time:</td><td><input type="text" name="lease_time" value="'.$DHCPConfig['lease_time'].'"></td></tr>'.PHP_EOL; //TODO Beautify
   echo '<tr id="confRow6"><td>Static Hosts:</td><td><p class="light"><code>System.name,MAC Address,IP to allocate</code><br><code>e.g. nas.local,11:22:33:aa:bb:cc,192.168.0.5</code></p>';
   echo '<textarea rows="10" name="static">'.$DHCPConfig['static_hosts'].'</textarea></td></tr>'.PHP_EOL;
-  echo '<tr><td colspan="2"><div class="centered"><input type="submit" class="button-blue" value="Save Changes">&nbsp;<input type="reset" class="button-blue" value="Reset"></div></td></tr>'.PHP_EOL;
+  echo '<tr><td>&nbsp;</td><td><input type="submit" class="button-blue" value="Save Changes">&nbsp;&nbsp;<input type="reset" class="button-grey" value="Reset"></td></tr>'.PHP_EOL;
   echo '</table></div>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
 }

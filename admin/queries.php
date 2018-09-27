@@ -305,7 +305,7 @@ function draw_filterbox() {
   echo '</div>'.PHP_EOL;                                   //End System List
 
   echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Search Time
-  echo '<span class="filter">Time:</span><select name="searchtime" onchange="submit()">';
+  echo '<select name="searchtime" class="offset" onchange="submit()">';
   echo '<option value="'.$searchtime.'">'.$TIMELIST[$searchtime].'</option>'.PHP_EOL;
   foreach ($TIMELIST as $key => $line) {
     if ($key != $searchtime) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
@@ -313,7 +313,7 @@ function draw_filterbox() {
   echo '</select></div>'.PHP_EOL;                          //End Search Time
 
   echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Filter List
-  echo '<span class="filter">Filter:</span><select name="filter" onchange="submit()">';
+  echo '<select name="filter" class="offset" onchange="submit()">';
   echo '<option value="'.$filter.'">'.$FILTERLIST[$filter].'</option>'.PHP_EOL;
   foreach ($FILTERLIST as $key => $line) {
     if ($key != $filter) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
@@ -321,7 +321,7 @@ function draw_filterbox() {
   echo '</select></div>'.PHP_EOL;                          //End Filter List
 
   echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Group List
-  echo '<span class="groupby">Group By:</span><select name="groupby" onchange="submit()">';
+  echo '<select name="groupby" class="offset" title="Group By" onchange="submit()">';
   echo '<option value="'.$groupby.'">'.$GROUPLIST[$groupby].'</option>'.PHP_EOL;
   foreach ($GROUPLIST as $key => $line) {
     if ($key != $groupby) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;

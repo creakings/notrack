@@ -230,12 +230,14 @@ function show_advanced() {
   echo '<form action="?v=advanced" method="post">'.PHP_EOL;
   echo '<input type="hidden" name="action" value="advanced">';
   draw_systable('Advanced Settings');
-  draw_sysrow('DNS Log Parsing Interval', '<input type="number" name="parsing" min="1" max="60" value="'.$Config['ParsingTime'].'" title="Time between updates in Minutes">');
+  draw_sysrow('DNS Log Parsing Interval', '<input type="number" class="fixed10" name="parsing" min="1" max="60" value="'.$Config['ParsingTime'].'" title="Time between updates in Minutes">');
   draw_sysrow('Suppress Domains <img class="btn" src="./svg/button_help.svg" alt="help" title="Group together certain domains on the Stats page">', '<textarea rows="5" name="suppress">'.str_replace(',', PHP_EOL, $Config['Suppress']).'</textarea>');
-  echo '<tr><td colspan="2"><div class="centered"><input type="submit" class="button-grey" value="Save Changes"></div></td></tr>'.PHP_EOL;
+  echo '<tr><td>&nbsp;</td><td><input type="submit" class="button-blue" value="Save Changes"></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
+  
+  //TODO Add reset
 }
 
 
@@ -339,9 +341,10 @@ function show_blocklists() {
   draw_systable('Custom Block Lists');
   draw_sysrow('Custom', '<p>Use either Downloadable or Localy stored Block Lists</p><textarea rows="5" name="bl_custom">'.str_replace(',', PHP_EOL,$Config['bl_custom']).'</textarea>');
   
+  echo '<tr><td>&nbsp;</td><td><input type="submit" class="button-blue" value="Save Changes"></td></tr>'.PHP_EOL;
   echo '</table><br>'.PHP_EOL;
   
-  echo '<div class="centered"><input type="submit" class="button-grey" value="Save Changes"></div>'.PHP_EOL;
+  
   echo '</div></form>'.PHP_EOL;
   
   return null;
@@ -510,7 +513,7 @@ function show_domain_list() {
 
   echo '</table>'.PHP_EOL;                                 //End TLD table
   echo '<div class="centered"><br>'.PHP_EOL;
-  echo '<input type="submit" class="button-grey" value="Save Changes">'.PHP_EOL;
+  echo '<input type="submit" class="button-blue" value="Save Changes">'.PHP_EOL;
   echo '</div>'.PHP_EOL;
   echo '</form></div>'.PHP_EOL;                            //End Form
 

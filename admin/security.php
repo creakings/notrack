@@ -94,7 +94,7 @@ function new_password_input_form() {
   draw_sysrow('NoTrack Password', '<input type="password" name="password" id="password" placeholder="Password" onkeyup="checkPassword();" required><p><i>Authentication password</i></p>');
   draw_sysrow('Confirm Password', '<input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" onkeyup="checkPassword();">');
   
-  draw_sysrow('Delay', '<input type="number" class="input-conf" name="delay" min="5" max="2400" value="'.$Config['Delay'].'"><p><i>Delay in seconds between attempts</i></p>');
+  draw_sysrow('Delay', '<input type="number" class="fixed10" name="delay" min="5" max="2400" value="'.$Config['Delay'].'"><p><i>Delay in seconds between attempts</i></p>');
   echo '<tr><td colspan="2"><div class="centered"><input type="submit" class="button-blue" value="Save Changes"></div></td></tr>';
   echo '</table></form>'.PHP_EOL;
 }

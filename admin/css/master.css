@@ -144,25 +144,32 @@ input[type="text"].full {
   width: 96%;
 }
 input[type="text"].input-conf, input[type="number"].input-conf {
-  width: 24em;
-}
-select.input-conf {
-  width: 24.4em;
+  width: 24rem;
 }
 select, input[type="date"], input[type="number"] {
-  width: calc(100% - 5.6rem);
-  height: 1.9rem;
+  width: 98%;/*calc(96% - 1rem);*/
+  height: 2rem;
   font-size: 1.1rem;
   color: #00000A;
   background-color: #FAFAFA;
   border: 2px solid #21BBFF;
   border-radius: 4px;
   box-shadow: 0 0 3px #21BBFF;
-  margin: 0.2rem 0.1rem;
-  padding-left: 0.1rem;
+  margin: 0.2rem 0rem;
+  padding-left: 0.2rem;
+}
+select.input-conf {
+  width: 24.6rem;
+}
+select.offset {
+  width: 92%;
+  margin: 0.2rem 0.7rem;
+}
+input[type="number"].fixed10 {
+  width: 10em;
 }
 textarea {
-  width: 98%;
+  width: 26.4rem;
   font-size: 1.1em;
   color: #00000A;
   background-color: #FAFAFA;
@@ -774,9 +781,13 @@ span.timer {
   padding-bottom: 0.5em;
   z-index: 1003;
 }
-#stats-box a, #stats-box input[type="submit"] {
+#stats-box input[type="submit"] {
   width: 12rem;
   padding: 0.5rem 0;
+}
+#stats-box a {
+  width: 12rem;
+  padding: 0.7rem 0;
 }
 #stats-box span {
   margin: 1em 0.5em 1em 0.5em;
@@ -832,7 +843,7 @@ span.timer {
 }
 @media only screen and (max-width:1200px), only screen and (max-device-width:1200px) {
   .dnsqueries-filterlarge {
-    width: 97%;
+    width: 98%;
   }
   .dnsqueries-filtermedium {
     width: 24%;
