@@ -1634,6 +1634,7 @@ if [[ $DNS_SERVER_1 == "" ]]; then
   prompt_dns_server $IP_VERSION
 fi
 
+get_hostname
 
 clear
 echo "Installing to: $INSTALL_LOCATION"          #Final report before Installing
