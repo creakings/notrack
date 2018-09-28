@@ -42,6 +42,7 @@ DNS_SERVER_2=""
 BROADCAST_ADDRESS=""
 NETMASK_ADDRESS=""
 NETWORK_START_ADDRESS=""
+hostname="notrack.local"
 
 
 #######################################
@@ -367,6 +368,27 @@ function download_with_wget() {
 
 
 #--------------------------------------------------------------------
+# Get hostname
+#   Attempt to find hostname of system
+# Globals:
+#   hostname
+# Arguments:
+#   None
+# Returns:
+#   None
+#--------------------------------------------------------------------
+function get_hostname() {
+  if [ -e /etc/sysconfig/network ]; then         #Set first entry for localhosts
+    hostname=$(grep "HOSTNAME" /etc/sysconfig/network | cut -d "=" -f 2 | tr -d [[:space:]])
+  elif [ -e /etc/hostname ]; then
+    hostname=$(cat /etc/hostname)
+  else
+    echo "get_hostname() WARNING: Unable to find hostname"
+  fi
+}
+
+
+#--------------------------------------------------------------------
 # Install Packages
 #   Works out what type of package manager is in use
 #   Call appropriate function depending on package manager
@@ -664,8 +686,6 @@ function install_xbps() {
 #   None
 #--------------------------------------------------------------------
 function setup_dnsmasq() {
-  local hostname=""
-  
   echo "Configuring Dnsmasq"
   
   create_folder "/etc/dnsmasq.d"                 #Issue #94 dnsmasq folder not created
@@ -687,19 +707,9 @@ function setup_dnsmasq() {
 
   echo "Setting up your /etc/localhosts.list for Local Hosts"
   
-  
-  if [ -e /etc/sysconfig/network ]; then         #Set first entry for localhosts
-    hostname=$(grep "HOSTNAME" /etc/sysconfig/network | cut -d "=" -f 2 | tr -d [[:space:]])
-  elif [ -e /etc/hostname ]; then
-    hostname=$(cat /etc/hostname)
-  else
-    echo "setup_dnsmasq() WARNING: Unable to find hostname"
-  fi
+  echo "Writing first entry for this system: $IP_ADDRESS - $hostname"
+  echo -e "$IP_ADDRESS\t$hostname" | sudo tee -a /etc/localhosts.list 
 
-  if [[ $hostname != "" ]]; then
-    echo "Writing first entry for this system: $IP_ADDRESS - $hostname"
-    echo -e "$IP_ADDRESS\t$hostname" | sudo tee -a /etc/localhosts.list 
-  fi
 
   echo "Setup of Dnsmasq complete"
   echo "========================================================="
@@ -751,6 +761,7 @@ setup_lighttpd() {
   check_file_exists "$INSTALL_LOCATION/conf/lighttpd.conf" 24
   sudo cp "$INSTALL_LOCATION/conf/lighttpd.conf" /etc/lighttpd/lighttpd.conf
   sudo sed -i "s/changeme/$group/" /etc/lighttpd/lighttpd.conf
+  sudo sed -i "s/hostname/$hostname/" /etc/lighttpd/lighttpd.conf
     
   create_folder "/var/www"                       #/var/www/html should be created by lighty
   create_folder "/var/www/html"
@@ -1519,7 +1530,7 @@ function show_welcome() {
 #######################################
 # Finish Screen
 # Globals:
-#   INSTALL_LOCATION
+#   INSTALL_LOCATION, REBOOT_REQUIRED, hostname
 # Arguments:
 #   None
 # Returns:
