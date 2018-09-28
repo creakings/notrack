@@ -1640,11 +1640,11 @@ clear
 echo "Installing to: $INSTALL_LOCATION"          #Final report before Installing
 echo "Network Device set to: $NETWORK_DEVICE"
 echo "IP version set to: $IP_VERSION"
-echo "System IP address $IP_ADDRESS"
+echo "IP address: $IP_ADDRESS"
+echo "Hostname: $hostname"
 echo "Primary DNS server set to: $DNS_SERVER_1"
 echo "Secondary DNS server set to: $DNS_SERVER_2"
-echo "Hostname: $hostname"
-echo 
+echo
 
 seconds=$((8))
 while [ $seconds -gt 0 ]; do
