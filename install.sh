@@ -760,8 +760,8 @@ setup_lighttpd() {
   #Copy Config and change user name
   check_file_exists "$INSTALL_LOCATION/conf/lighttpd.conf" 24
   sudo cp "$INSTALL_LOCATION/conf/lighttpd.conf" /etc/lighttpd/lighttpd.conf
-  sudo sed -i "s/changeme/$group/" /etc/lighttpd/lighttpd.conf
-  sudo sed -i "s/hostname/$hostname/" /etc/lighttpd/lighttpd.conf
+  sudo sed -i "s/changegroup/$group/" /etc/lighttpd/lighttpd.conf
+  sudo sed -i "s/changehost/$hostname/" /etc/lighttpd/lighttpd.conf
     
   create_folder "/var/www"                       #/var/www/html should be created by lighty
   create_folder "/var/www/html"
@@ -1643,6 +1643,7 @@ echo "IP version set to: $IP_VERSION"
 echo "System IP address $IP_ADDRESS"
 echo "Primary DNS server set to: $DNS_SERVER_1"
 echo "Secondary DNS server set to: $DNS_SERVER_2"
+echo "Hostname: $hostname"
 echo 
 
 seconds=$((8))
