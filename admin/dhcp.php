@@ -240,7 +240,7 @@ function update_dhcp() {
 }
 
 /********************************************************************/
-draw_topmenu('Network');
+draw_topmenu('DHCP');
 draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;
 
