@@ -67,7 +67,7 @@ else {                                           //Just displaying status
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
-    curl_setopt($ch, CURLOPT_URL,'https://raw.githubusercontent.com/quidsup/notrack/master/changelog.txt');
+    curl_setopt($ch, CURLOPT_URL,'https://gitlab.com/quidsup/notrack/raw/master/changelog.txt');
     $data = curl_exec($ch);                      //Download Changelog
     curl_close($ch);                             //Close curl
     echo '<pre>'.PHP_EOL;
