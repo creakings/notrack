@@ -17,6 +17,7 @@ readonly FILE_CONFIG="/etc/notrack/notrack.conf"
 INSTALL_LOCATION=""
 USERNAME=""
 
+
 #--------------------------------------------------------------------
 # Copy File
 #   Checks if Source file exists, then copies it to Destination
@@ -24,18 +25,18 @@ USERNAME=""
 # Globals:
 #   INSTALL_LOCATION
 # Arguments:
-#  $1 = Source
-#  $2 = Destination
+#   $1: Source
+#   $2: Destination
 # Returns:
 #   None
 #--------------------------------------------------------------------
-function copy_file() {  
-  if [ -e "$INSTALL_LOCATION/$1" ]; then
+function copy_file() {
+  if [ -e "$INSTALL_LOCATION/$1" ]; then                   #Does file exist?
     cp "$INSTALL_LOCATION/$1" "$2"
     echo "Copying $1 to $2"
   else
-    echo "WARNING: Unable to find file $1"
-  fi 
+    echo "WARNING: Unable to find file $1 :-("             #Display a warning if file doesn't exist
+  fi
 }
 
 
@@ -47,13 +48,13 @@ function copy_file() {
 # Globals:
 #   None
 # Arguments:
-#  $1 = Error Message
-#  $2 = Exit Code
+#   $1: Error Message
+#   $2: Exit Code
 # Returns:
 #   None
 #--------------------------------------------------------------------
 function rename_file() {
-  if [ -e "$1" ]; then
+  if [ -e "$1" ]; then                                     #Does file exist?
     mv "$1" "$2"
     chmod 755 "$2"
   else
@@ -63,37 +64,56 @@ function rename_file() {
 
 
 #--------------------------------------------------------------------
+# Find NoTrack
+#   Find where NoTrack is installed
+#   1. Check users home folders
+#   2. Check /opt/notrack
+#   3. Check /root
+#
+# Globals:
+#   INSTALL_LOCATION, USERNAME
+# Arguments:
+#   None
+# Returns:
+#   None
+#--------------------------------------------------------------------
+function find_notrack {
+  for homefolder in /home/*; do                                  #Try and find notrack folder in /home/users
+    if [ -d "$homefolder/notrack" ]; then 
+      INSTALL_LOCATION="$homefolder/notrack"
+      USERNAME=$(grep "$homefolder" /etc/passwd | cut -d : -f1)  #Get username from /etc/passwd by home folder name
+      break
+    fi
+  done
+
+  if [[ $INSTALL_LOCATION == "" ]]; then                         #Not in /home, look elsewhere
+    if [ -d "/opt/notrack" ]; then
+      INSTALL_LOCATION="/opt/notrack"
+      USERNAME="root"
+    elif [ -d "/root/notrack" ]; then
+      INSTALL_LOCATION="/root/notrack"
+      USERNAME="root"
+    elif [ -d "/notrack" ]; then
+      INSTALL_LOCATION="/notrack"
+      USERNAME="root"
+    else
+      echo "Error Unable to find NoTrack folder :-("
+      echo "Aborting"
+      exit 22
+    fi
+  fi
+
+}
+
+#--------------------------------------------------------------------
 if [[ "$(id -u)" != "0" ]]; then
   echo "Root access is required to carry out upgrade of NoTrack"
+  echo "Usage: sudo ntrk-upgrade"
   exit 21
 fi
 
 echo "Upgrading NoTrack"
-
-for homefolder in /home/*; do                                        #Try and find notrack folder in /home/users
-  if [ -d "$homefolder/notrack" ]; then 
-    INSTALL_LOCATION="$homefolder/notrack"
-    USERNAME=$(grep "$homefolder" /etc/passwd | cut -d : -f1)        #Get username from /etc/passwd by home folder name
-    break
-  fi
-done
-
-if [[ $INSTALL_LOCATION == "" ]]; then                               #Not in /home, look elsewhere
-  if [ -d "/opt/notrack" ]; then
-    INSTALL_LOCATION="/opt/notrack"
-    USERNAME="root"
-  elif [ -d "/root/notrack" ]; then
-    INSTALL_LOCATION="/root/notrack"
-    USERNAME="root"
-  elif [ -d "/notrack" ]; then
-    INSTALL_LOCATION="/notrack"
-    USERNAME="root"
-  else
-    echo "Error Unable to find NoTrack folder :-("
-    echo "Aborting"
-    exit 22
-  fi
-fi
+find_notrack
 
 echo "Install Location $INSTALL_LOCATION"
 echo "Username: $USERNAME"
@@ -102,6 +122,7 @@ echo
 #Alt command for sudoless systems
 #su -c "cd /home/$USERNAME/$PROJECT ; svn update" -m "$USERNAME" 
 
+#Switch to different user to carry out upgrade
 sudo -u $USERNAME bash << ROOTLESS
 if [ "$(command -v git)" ]; then                                     #Utilise Git if its installed
   echo "Pulling latest updates of NoTrack using Git"
@@ -151,6 +172,7 @@ if [ $? == 23 ]; then                                                #Code hasn'
 fi
 
 echo
+echo "Copying updated scripts"
 copy_file "scripts/notrack.sh" "/usr/local/sbin/"                    #NoTrack.sh
 rename_file "/usr/local/sbin/notrack.sh" "/usr/local/sbin/notrack"
 
@@ -168,11 +190,11 @@ rename_file "/usr/local/sbin/ntrk-parse.sh" "/usr/local/sbin/ntrk-parse"
 echo "Finished copying scripts"
 echo
 
-sudocheck=$(grep www-data /etc/sudoers)                              #Check sudo permissions for lighty possibly DEPRECATED
-if [[ $sudocheck == "" ]]; then
-  echo "Adding NoPassword permissions for www-data to execute script /usr/local/sbin/ntrk-exec as root"
-  echo -e "www-data\tALL=(ALL:ALL) NOPASSWD: /usr/local/sbin/ntrk-exec" | tee -a /etc/sudoers
-fi
+#sudocheck=$(grep www-data /etc/sudoers)                              #Check sudo permissions for lighty possibly DEPRECATED
+#if [[ $sudocheck == "" ]]; then
+  #echo "Adding NoPassword permissions for www-data to execute script /usr/local/sbin/ntrk-exec as root"
+  #echo -e "www-data\tALL=(ALL:ALL) NOPASSWD: /usr/local/sbin/ntrk-exec" | tee -a /etc/sudoers
+#fi
 
 if [ -e "$FILE_CONFIG" ]; then                                       #Remove Latestversion number from Config file
   echo "Removing version number from Config file"
@@ -183,4 +205,5 @@ fi
 
 #mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "DROP TABLE IF EXISTS live,historic,lightyaccess;"
 
-echo "NoTrack update complete :-)"
+echo "NoTrack upgrade complete :-)"
+echo
