@@ -507,13 +507,13 @@ function trim_weblog() {
 
 #--------------------------------------------------------------------
 #Main
-if [ "$1" ]; then                                #Have any arguments been given
+if [ "$1" ]; then                                          #Have any arguments been given?
   if ! options="$(getopt -o achv -l age,delete-dnslog,delete-weblog,help,version -- "$@")"; then
     # something went wrong, getopt will put out an error message for us
     exit 6
   fi
 
-  set -- $options
+  eval set -- "$options"
 
   while [ $# -gt 0 ]
   do
@@ -535,11 +535,11 @@ if [ "$1" ]; then                                #Have any arguments been given
         show_help
         exit 0
       ;;
-      -v|--version) 
+      -v|--version)
         show_version
         exit 0
       ;;
-      (--) 
+      (--)
         shift
         break
       ;;
@@ -553,7 +553,7 @@ if [ "$1" ]; then                                #Have any arguments been given
     esac
     shift
   done
-fi
+fi                                                         #End reviewing getopt arguments
 
 if [[ $CURRENT_DAY =~ ^0([0-9])$ ]]; then                  #Trim leading zero from single digit date
   CURRENT_DAY="${BASH_REMATCH[1]}"
