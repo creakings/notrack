@@ -481,33 +481,37 @@ function pause_blocking() {
 
 #Main----------------------------------------------------------------
 
-if [ "$1" ]; then                         #Have any arguments been given
+if [ "$1" ]; then                                          #Have any arguments been given?
   if ! options=$(getopt -o hdsp: -l help,stop,start,status,pause: -- "$@"); then
     # something went wrong, getopt will put out an error message for us
     exit 1
   fi
 
-  set -- $options
+  eval set -- "$options"
 
   while [ $# -gt 0 ]
   do
     case $1 in
       -h|--help)
         show_help
+        shift
         ;;
       -d|--stop)
         disable_blocking
+        shift
         ;;
       -s|--start)
         enable_blocking
+        shift
         ;;
       -p|--pause)
-        pause_time=$(sed "s/'//g" <<< "$2")      #Remove single quotes from $2
+        pause_time="${2//\'/}"                             #Remove any quotes from the following argument and assign to pause_time
         pause_blocking
         shift
         ;;
       --status)
         show_status
+        shift
         ;;
       (--) shift; break;;
       (-*) echo "$0: error - unrecognized option $1" 1>&2; exit 6;;
@@ -515,7 +519,7 @@ if [ "$1" ]; then                         #Have any arguments been given
     esac
     shift
   done
-else                                             #No commands passed
+else                                                       #No commands passed
   echo "Checking status of NoTrack"
   #No instructions given by user, the following will happen based on the result of get_status
   #a. Status Nothing - Pause for 15 Minutes
