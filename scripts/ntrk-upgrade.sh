@@ -147,7 +147,7 @@ else                                                                 #Git not in
     echo "Error Download from gitlab has failed"
     exit 23
   fi
-  
+
   if [ -d "$INSTALL_LOCATION" ]; then                                #Check if NoTrack folder exists  
     if [ -d "$INSTALL_LOCATION-old" ]; then                          #Delete NoTrack-old folder if it exists
       echo "Removing old NoTrack folder"
@@ -156,7 +156,7 @@ else                                                                 #Git not in
     echo "Moving $INSTALL_LOCATION folder to $INSTALL_LOCATION-old"
     mv "$INSTALL_LOCATION" "$INSTALL_LOCATION-old"
   fi
- 
+
   echo "Unzipping notrack-master.zip"
   unzip -oq /tmp/notrack-master.zip -d /tmp
   echo "Copying folder across to $INSTALL_LOCATION"
