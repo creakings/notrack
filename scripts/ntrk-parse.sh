@@ -421,7 +421,15 @@ function show_logage() {
 }
 
 #--------------------------------------------------------------------
-#Show Help
+# Show Help
+#
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#--------------------------------------------------------------------
 function show_help() {
   echo "NoTrack DNS Log Parser"
   echo "Usage: sudo ntrk-parse"
