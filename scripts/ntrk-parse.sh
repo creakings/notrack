@@ -492,7 +492,7 @@ function simplify_url() {
 # Returns:
 #   None
 #--------------------------------------------------------------------
-function trim_weblog() {
+function trim_dnslog() {
   mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "DELETE FROM dnslog WHERE log_time < NOW() - INTERVAL $MAXLOGDAYS DAY;"
 }
 
