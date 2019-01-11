@@ -371,7 +371,6 @@ function show_custom_list($view) {
   echo '<input type="hidden" name="v" value="'.$view.'">';
   echo '<input type="text" name="s" id="searchbox" value="'.$searchbox.'">&nbsp;&nbsp;';
   echo '<input type="submit" class="button-blue" value="Search">'.PHP_EOL;
-  echo '<a name="top" href="#bottom" class="button-grey">Go to Bottom</a>';
   echo '</form>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
   
@@ -412,8 +411,7 @@ function show_custom_list($view) {
 
   echo '<div class="centered"><br>'.PHP_EOL;  
   echo '<a href="?v='.$view.'&amp;action='.$view.'&amp;do=update" class="button-blue">Update Blocklists</a>&nbsp;&nbsp;';
-  echo '<a href="./include/downloadlist.php?v='.$view.'" class="button-grey">Download List</a>&nbsp;&nbsp;';
-  echo '<a name="bottom" href="#top" class="button-grey">Go to Top</a>';
+  echo '<a href="./include/downloadlist.php?v='.$view.'" class="button-grey">Download List</a>';
   echo '</div></div>'.PHP_EOL;
 }
 
@@ -431,17 +429,18 @@ function show_custom_list($view) {
  */
 function show_domain_list() {
   global $list, $FileTLDBlackList, $FileTLDWhiteList;
-    
+  
+  $first_cell = '';
+  $flag_image = '';
+  $flag_filename = '';
+
   $KeyBlack = array_flip(load_list($FileTLDBlackList, 'TLDBlackList'));
   $KeyWhite = array_flip(load_list($FileTLDWhiteList, 'TLDWhiteList'));
   $listsize = count($list);
-  
+
   if ($list[$listsize-1][0] == '') {             //Last line is sometimes blank
     array_splice($list, $listsize-1);            //Cut last line out
   }
-
-  $flag_image = '';  
-  $flag_filename = '';
 
   echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Domain Blocking</h5>'.PHP_EOL;  
@@ -487,11 +486,12 @@ function show_domain_list() {
       continue;                                            //Jump to end of loop
     }
 
-    switch ($site[2]) {                                    //Row colour based on risk
-      case 1: echo '<tr class="invalid">'; break;
-      case 2: echo '<tr class="orange">'; break;
-      case 3: echo '<tr>'; break;                //Use default colour for low risk
-      case 5: echo '<tr class="green">'; break;
+    echo '<tr>';                                           //Start Row
+    switch ($site[2]) {                                    //Row colour based on risk      
+      case 1: $first_cell = '<td class="red">'; break;
+      case 2: $first_cell = '<td class="orange">'; break;
+      case 3: $first_cell = '<td>'; break;                //Use default colour for low risk
+      case 5: $first_cell = '<td class="green">'; break;
     }
 
     //Flag names are seperated by underscore and converted to ASCII, dropping any UTF-8 Characters
@@ -508,10 +508,10 @@ function show_domain_list() {
 
     //(Risk 1 & NOT in White List) OR (in Black List)
     if ((($site[2] == 1) && (! array_key_exists($site[0], $KeyWhite))) || (array_key_exists($site[0], $KeyBlack))) {
-      echo '<td><b>'.$site[0].'</b></td><td><b>'.$flag_image.$site[1].'</b></td><td>'.$site[3].'</td><td><input type="checkbox" name="'.substr($site[0], 1).'" checked="checked"></td></tr>'.PHP_EOL;
+      echo $first_cell.'<b>'.$site[0].'</b></td><td><b>'.$flag_image.$site[1].'</b></td><td>'.$site[3].'</td><td><input type="checkbox" name="'.substr($site[0], 1).'" checked="checked"></td></tr>'.PHP_EOL;
     }
     else {
-      echo '<td>'.$site[0].'</td><td>'.$flag_image.$site[1].'</td><td>'.$site[3].'</td><td><input type="checkbox" name="'.substr($site[0], 1).'"></td></tr>'.PHP_EOL;
+      echo $first_cell.$site[0].'</td><td>'.$flag_image.$site[1].'</td><td>'.$site[3].'</td><td><input type="checkbox" name="'.substr($site[0], 1).'"></td></tr>'.PHP_EOL;
     }
   }
 

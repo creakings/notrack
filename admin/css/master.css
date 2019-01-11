@@ -338,16 +338,18 @@ tr.local {
 tr.dark {
   background-color: #999;
 }
-tr.orange {
-  background-color: #FFA704;
-}
-tr.green {
-  background-color: #43FF62;
-}
 tr.cyan {
   background-color: #55FFFF;
 }
-
+td.red {
+  background-color: #EE202B;
+}
+td.orange {
+  background-color: #FFA704;
+}
+td.green {
+  background-color: #06c36b;
+}
 #access-table td:nth-child(1), #access-table th:nth-child(1) {
   width: 15%;
   text-align: center;
@@ -455,8 +457,17 @@ tr.cyan {
   width: 17%;  
   text-align: center;
 }
+/*Top Level Domain Table*/
+.tld-table {
+  border-spacing: 0 2px;
+}
+.tld-table td {
+  padding: 0.4em 0.6em;
+}
 .tld-table td:nth-child(1) {
-  width: 12%;  
+  width: 12%;
+  border-radius: 2px;
+  padding-left: 1em;
 }
 .tld-table td:nth-child(2) {
   width: 32%;
@@ -468,6 +479,7 @@ tr.cyan {
   width: 12%;
   text-align: center;
 }
+
 .sys-table td:nth-child(1) {
   width: 25%;
   text-align: right;
@@ -499,7 +511,7 @@ span.key {
 }
 span.key-red {background-color: #EE202B;}
 span.key-orange {background-color: #FFA704;}
-span.key-green {background-color: #43FF62;}
+span.key-green {background-color: #06c36b;}
 
 /*Side Menu*********************************************************/
 #main {
