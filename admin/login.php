@@ -91,6 +91,7 @@ if (isset($_POST['password'])) {
   <meta charset="UTF-8">
   <link href="./css/login.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="./favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NoTrack Login</title>
 </head>
 
@@ -112,7 +113,7 @@ if ($message != '') {                            //Any Message to show?
 <div class="col-half">
 <div id="login-box">
 <form method="post" name="Login_Form">
-<div class="centered"><input name="username" type="text" placeholder="Username"></div>
+<div class="centered"><input name="username" type="text" placeholder="Username" autofocus></div>
 <div class="centered"><input name="password" type="password" placeholder="Password" required></div>
 <div class="centered"><input type="submit" value="Login"></div>
 </form>
