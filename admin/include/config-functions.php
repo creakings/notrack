@@ -371,6 +371,7 @@ function show_custom_list($view) {
   echo '<input type="hidden" name="v" value="'.$view.'">';
   echo '<input type="text" name="s" id="searchbox" value="'.$searchbox.'">&nbsp;&nbsp;';
   echo '<input type="submit" class="button-blue" value="Search">'.PHP_EOL;
+  echo '<a name="top" href="#bottom" class="button-grey">Go to Bottom</a>';
   echo '</form>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
   
@@ -411,7 +412,8 @@ function show_custom_list($view) {
 
   echo '<div class="centered"><br>'.PHP_EOL;  
   echo '<a href="?v='.$view.'&amp;action='.$view.'&amp;do=update" class="button-blue">Update Blocklists</a>&nbsp;&nbsp;';
-  echo '<a href="./include/downloadlist.php?v='.$view.'" class="button-grey">Download List</a>';
+  echo '<a href="./include/downloadlist.php?v='.$view.'" class="button-grey">Download List</a>&nbsp;&nbsp;';
+  echo '<a name="bottom" href="#top" class="button-grey">Go to Top</a>';
   echo '</div></div>'.PHP_EOL;
 }
 
