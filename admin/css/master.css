@@ -341,6 +341,9 @@ tr.dark {
 tr.cyan {
   background-color: #55FFFF;
 }
+tr.gray {
+  color: Grey;
+}
 td.red {
   background-color: #EE202B;
 }
@@ -450,11 +453,11 @@ td.green {
   width: 34%;
 }
 #dhcp-table td:nth-child(3), #dhcp-table th:nth-child(3) {
-  width: 22%;  
+  width: 22%;
   text-align: center;
 }
 #dhcp-table td:nth-child(4), #dhcp-table th:nth-child(4) {
-  width: 17%;  
+  width: 17%;
   text-align: center;
 }
 /*Top Level Domain Table*/
