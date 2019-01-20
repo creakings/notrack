@@ -24,6 +24,7 @@ define('DIR_TMP', '/tmp/');
 define('ACCESSLOG', '/var/log/ntrk-admin.log');
 define('CONFIGFILE', '/etc/notrack/notrack.conf');
 define('CONFIGTEMP', '/tmp/notrack.conf');
+define('DNSLOG', '/var/log/notrack.log');
 define('TLD_FILE', './include/tld.csv');
 define('NTRK_EXEC', 'sudo /usr/local/sbin/ntrk-exec ');
 define('NOTRACK_LIST', '/etc/dnsmasq.d/notrack.list');

@@ -11,7 +11,6 @@ header('Content-Type: application/json; charset=UTF-8');
 ************************************************/
 $response = array();
 
-
 /********************************************************************
  *  Enable NoTrack
  *    Enable or Disable NoTrack Blocking
@@ -138,6 +137,37 @@ function api_shutdown() {
   exit(0);
 }
 
+/********************************************************************
+ *  API Load DNS
+ *    Load DNS Log file
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function api_load_dns() {
+  global $response;
+  
+  $line = '';
+  $linenum = 1;
+  
+
+  if (! file_exists(DNSLOG)) {
+    $response['error'] = DNSLOG. 'not found';
+    return;
+  }
+
+  $fh = fopen(DNSLOG, 'r') or die('Error unable to open '.DNSLOG);
+  while (!feof($fh)) {
+    $line = trim(fgets($fh));                            //Read and trim line of file
+
+    $response[$linenum] = $line;
+    $linenum++;
+  }
+  fclose($fh);                                           //Close file
+  
+}
+
 
 //Main---------------------------------------------------------------
 
@@ -162,5 +192,11 @@ if (isset($_POST['operation'])) {
   }
 }
 
+elseif (isset($_POST['livedns'])) {
+  api_load_dns();
+}
+else {
+  $response['error'] = 'Nothing specified';
+}
 echo json_encode($response);
 ?>
