@@ -36,91 +36,159 @@ echo '</div>';
 ?>
 
 <script>
-var displaylist = new Map();
-var timepoint = 0;
+const MAX_LINES = 25;
+var displayList = [];
+var mainQueue = new Map();
+var timePoint = 0;
 
-function readLogArray(data) {
-  var line = "";
-  var dedup_answer = "";
-  var url = "";
-  
-  var matches = [];
-  var querylist = new Map();
-  var systemlist = new Map();
-  var dns_result = "";
-  var currentYear = new Date().getFullYear();
-  var log_time = 0;
-  
-  var regexp = /(\w{3}\s\s?\d{1,2}\s\d{2}\:\d{2}\:\d{2})\sdnsmasq\[\d{1,6}\]\:\s(query|reply|config|\/etc\/localhosts\.list)(\[[A]{1,4}\])?\s([A-Za-z0-9\.\-]+)\s(is|to|from)\s(.*)$/;
-  
-  //TODO hasOwnProperty error condition in data for file not found
-  for (var key in data) {
-    line = data[key];
-    
-    
-    //div.innerHTML = data[key] + "<br>" + div.innerHTML;
-    matches = regexp.exec(line);
-    if (matches != null) {
-      url = matches[4];
-      //div.innerHTML = matches[3] + "<br>" + div.innerHTML;      
-      console.log(matches[1]);
-      log_time = Date.parse(currentYear + " " + matches[1]);
-      if ((matches[2] == "query") && (log_time > timepoint)) {
-        if (matches[3] == "[A]") { //             #Only IPv4 to prevent double query entries
-          querylist.set(url, log_time);
-          systemlist.set(url, matches[6]);                 //Add IP to system array
-        }
-      }
-      else if ((url != dedup_answer) && (log_time > timepoint)) { //             #Simplify processing of multiple IP addresses returned
-        dedup_answer = url;                                 //Deduplicate answer
-        if (querylist.has(url)) {                 //#Does answer match a query?
-          if (matches[2] == "reply") dns_result="A";    //#Allowed
-          else if (matches[2] == "config") dns_result="B"; //#Blocked
-          else if (matches[2] == "/etc/localhosts.list") dns_result="L";
-          
-          if (! displaylist.has(log_time+"-"+url)) {
-            displaylist.set(log_time+"-"+url, systemlist.get(url) + dns_result);
-          }
-          //simplify_url "$url"                              #Simplify with commonsites
-          //TODO simpleurl
-          //div.innerHTML = url + " - " + dns_result + "<br>" + div.innerHTML;
-          //if [[ $simpleurl != "" ]]; then                  #Add row into SQL Table
-//            echo "INSERT INTO dnslog (id,log_time,sys,dns_request,dns_result) VALUES ('null','${querylist[$url]}', '${systemlist[$url]}', '$simpleurl', '$dns_result')" | mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME"
-          //fi
 
-          querylist.delete(url); //                            #Delete value from querylist
-          systemlist.delete(url); //                          #Delete value from system list
-        }
-      }    
-    }
-    
-  }
-  
+/********************************************************************
+ *  Get Time
+ *    Return formatted time: hh:mm:ss
+ *  Params:
+ *    UNIX Time
+ *  Return:
+ *    Formatted string of time
+ */
+function getTime(t)
+{
+  var dt = new Date(parseInt(t));
+  var hr = dt.getHours();
+  var m = "0" + dt.getMinutes();
+  var s = "0" + dt.getSeconds();
+  return hr+ ':' + m.substr(-2) + ':' + s.substr(-2);
 }
 
-function displayLogArray() {
+
+/********************************************************************
+ *  Move Main Queue to Display List
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function moveMainQueue() {
+  var i = 0;
   var matches = [];
 
-  var regexpkey = /^(\d+)\-(.+)$/
-  var div = document.getElementById("main");
-  
-  for (var [key, value] of displaylist.entries()) {
+  var regexpkey = /^(\d+)\-(.+)$/                          //Regex to split Key to Time - Request
+
+  for (var [key, value] of mainQueue.entries()) {
     matches = regexpkey.exec(key);
     if (matches != null) {
-      timepoint = matches[1];
-      div.innerHTML = key + value + "<br>" + div.innerHTML;
-      displaylist.delete(key);
+      displayList.push([matches[1], matches[2], value]);   //Add key, value to displayList
+      mainQueue.delete(key);                               //Delete key from mainQueue
+      timePoint = matches[1];                              //Advance position of DNS_LOG on
+      i++;
+      if (displayList.length > MAX_LINES) displayList.shift();
+      if (i > MAX_LINES) break;
     }
   }
-  
 }
 
 
-setInterval(function(){
+/********************************************************************
+ *  Read Log Data
+ *    Parse JSON output from DNS_LOG into mainQueue
+ *    DNS_LOG gets new data added to the end of file, but is flushed after ntrk-parse is run
+ *    Track progress point with timePoint
+ *
+ *  Params:
+ *    JSON Data
+ *  Return:
+ *    None
+ */
+function readLogData(data) {
+  var currentYear = new Date().getFullYear();
+  var dedupAnswer = "";
+  var dnsRequest = "";
+  var dnsResult = "";
+  var line = "";
+  var logTime = 0;
+  var matches = [];
+  var queryList = new Map();
+  var systemList = new Map();
+
+  var regexp = /(\w{3}\s\s?\d{1,2}\s\d{2}\:\d{2}\:\d{2})\sdnsmasq\[\d{1,6}\]\:\s(query|reply|config|\/etc\/localhosts\.list)(\[[A]{1,4}\])?\s([A-Za-z0-9\.\-]+)\s(is|to|from)\s(.*)$/;
+
+  //TODO hasOwnProperty error condition in data for file not found
+  
+  for (var key in data) {
+    line = data[key];                                      //Get log line
+    matches = regexp.exec(line);                           //Run regexp to get matches
+
+    if (matches != null) {
+      dnsRequest = matches[4];
+      logTime = Date.parse(currentYear + " " + matches[1]);//Get UNIX time of log entry
+      if ((matches[2] == "query") && (logTime > timePoint)) {
+        if (matches[3] == "[A]") {                         //Only IPv4 to prevent double query entries
+          queryList.set(dnsRequest, logTime);              //Log DNS Reqest
+          systemList.set(dnsRequest, matches[6]);          //Add Corresponding IP to systemList
+        }
+      }
+      else if ((dnsRequest != dedupAnswer) && (logTime > timePoint)) { 
+        dedupAnswer = dnsRequest;                          //Prevent repeat processing of Answer
+        if (queryList.has(dnsRequest)) {                   //Does Answer match a Query?
+          if (matches[2] == "reply") dnsResult="A";        //Allowed
+          else if (matches[2] == "config") dnsResult="B";  //Blocked
+          else if (matches[2] == "/etc/localhosts.list") dnsResult="L"; //Local
+
+          //Check if entry exists for Time + Request (assume same request is not made more than once per second)
+          if (! mainQueue.has(logTime+"-"+dnsRequest)) {
+            //Key = Time + Request, Value = System + Result
+            mainQueue.set(logTime+"-"+dnsRequest, systemList.get(dnsRequest) + dnsResult);
+          }
+
+          queryList.delete(dnsRequest);                    //Delete value from queryList
+          systemList.delete(dnsRequest);                   //Delete value from system list
+        }
+      }
+    }
+  }
+}
+
+
+/********************************************************************
+ *  Simplfy Domain
+ *    Drop www. from beginning of DNS Request
+ *
+ *  Params:
+ *    DNS Reqest
+ *  Return:
+ *    Formatted DNS Reqest
+ */
+function simplfyDomain(site) {
+  if (/^(www\.)/.test(site)) return site.substr(4);
+  return site;
+}
+
+
+/********************************************************************
+ *  Display Queue
+ *    TODO Beautify
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function displayQueue() {
+  var queuesize = displayList.length;
+  var div = document.getElementById("main");
+
+  div.innerHTML = "";
+  for (i = queuesize - 1; i > 0; i--) {                    //Start with latest first
+    div.innerHTML = div.innerHTML + getTime(displayList[i][0]) + "-" + simplfyDomain(displayList[i][1]) + "-" + displayList[i][2] + "<br>";
+  }
+}
+
+
+function loadApi() {
   var xmlhttp = new XMLHttpRequest();
   var url = "./include/api.php";
   var params = "livedns=1";
-    
+
   xmlhttp.open("POST", url, true);
   xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
   /*xmlhttp.onload = function () {
@@ -130,13 +198,31 @@ setInterval(function(){
   xmlhttp.onreadystatechange = function() {
     if(this.readyState == 4 && this.status == 200) {
       var apiResponse = JSON.parse(this.responseText);
-      readLogArray(apiResponse);
-      displayLogArray();
-      //console.log(this.responseText);
+      readLogData(apiResponse);
     }
   }
   xmlhttp.send(params);
-}, 3000);
+}
+
+/********************************************************************
+ *  Timer
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+setInterval(function() { 
+  var throttleApiRequest = 0;
+
+  if (throttleApiRequest == 0) loadApi();
+  moveMainQueue();
+  displayQueue();
+
+  throttleApiRequest++
+  if (throttleApiRequest > 4) throttleApiRequest = 0;      //Throttle loading of DNS_LOG
+
+}, 1000);
 
 </script>
 </body>
