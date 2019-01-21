@@ -152,12 +152,12 @@ function api_load_dns() {
   $linenum = 1;
   
 
-  if (! file_exists(DNSLOG)) {
-    $response['error'] = DNSLOG. 'not found';
+  if (! file_exists(DNS_LOG)) {
+    $response['error'] = DNS_LOG. 'not found';
     return;
   }
 
-  $fh = fopen(DNSLOG, 'r') or die('Error unable to open '.DNSLOG);
+  $fh = fopen(DNS_LOG, 'r') or die('Error unable to open '.DNS_LOG);
   while (!feof($fh)) {
     $line = trim(fgets($fh));                            //Read and trim line of file
 
