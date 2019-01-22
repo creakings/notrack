@@ -36,7 +36,7 @@ echo '</div>';
 ?>
 
 <script>
-const MAX_LINES = 25;
+const MAX_LINES = 30;
 var displayList = [];
 var mainQueue = new Map();
 var timePoint = 0;
@@ -70,10 +70,22 @@ function getTime(t)
  */
 function moveMainQueue() {
   var i = 0;
+  var mainQueueSize = mainQueue.size;
+  var target = MAX_LINES;
   var matches = [];
 
   var regexpkey = /^(\d+)\-(.+)$/                          //Regex to split Key to Time - Request
 
+  if (mainQueueSize == 0) return;
+  else if (mainQueueSize < 5) target = 1;                  //Throttle adding of new requests to displayList
+  else if (mainQueueSize < 10) target = 2;
+  else if (mainQueueSize < 15) target = 3;
+  else if (mainQueueSize < 20) target = 4;
+  else if (mainQueueSize < 30) target = 8;
+  else if (mainQueueSize < 40) target = 12;
+  
+  if (displayList.length < 10) target = 10;                //If nothingmuch in displayList then add more requests
+  
   for (var [key, value] of mainQueue.entries()) {
     matches = regexpkey.exec(key);
     if (matches != null) {
@@ -82,7 +94,7 @@ function moveMainQueue() {
       timePoint = matches[1];                              //Advance position of DNS_LOG on
       i++;
       if (displayList.length > MAX_LINES) displayList.shift();
-      if (i > MAX_LINES) break;
+      if (i > target) break;
     }
   }
 }
@@ -177,13 +189,22 @@ function displayQueue() {
   var queuesize = displayList.length;
   var div = document.getElementById("main");
 
-  div.innerHTML = "";
+  div.innerHTML = "backlog:"+mainQueue.size+"<br>";
   for (i = queuesize - 1; i > 0; i--) {                    //Start with latest first
     div.innerHTML = div.innerHTML + getTime(displayList[i][0]) + "-" + simplfyDomain(displayList[i][1]) + "-" + displayList[i][2] + "<br>";
   }
 }
 
 
+/********************************************************************
+ *  Load API
+ *    Send requst to NoTrack API requesting the contents of DNS_LOG
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
 function loadApi() {
   var xmlhttp = new XMLHttpRequest();
   var url = "./include/api.php";
@@ -222,7 +243,7 @@ setInterval(function() {
   throttleApiRequest++
   if (throttleApiRequest > 4) throttleApiRequest = 0;      //Throttle loading of DNS_LOG
 
-}, 1000);
+}, 2000);
 
 </script>
 </body>
