@@ -1,7 +1,4 @@
 <?php
-/*
-In progres live view of DNS blocklist
-*/
 require('./include/global-vars.php');
 require('./include/global-functions.php');
 require('./include/menu.php');
@@ -30,7 +27,6 @@ echo '<div id="main">'.PHP_EOL;
 echo '<div id="temp"></div>'.PHP_EOL;
 echo '<div class="sys-group">'.PHP_EOL;
 echo '<table id="livetable">'.PHP_EOL;
-//echo '<tr><td></td><td></td><td></td></tr>'.PHP_EOL;
 echo '</table>'.PHP_EOL;
 echo '</div>'.PHP_EOL;
 echo '</div>'.PHP_EOL;
@@ -219,7 +215,6 @@ function displayQueue() {
 
   div.innerHTML = "backlog:"+mainQueue.size+"<br>";
   for (i = queuesize - 1; i > 0; i--) {                    //Start with latest first
-    //div.innerHTML = div.innerHTML + getTime(displayList[i][0]) + "-" + simplifyDomain(displayList[i][1]) + "-" + displayList[i][2] + "<br>";
     if (displayList[i][3] == "A") liveTable.rows[currentRow].className = "";
     else if (displayList[i][3] == "B") liveTable.rows[currentRow].className = "blocked";
     else if (displayList[i][3] == "L") liveTable.rows[currentRow].className = "local";
