@@ -27,21 +27,45 @@ ensure_active_session();
 draw_topmenu('Development of Live');
 draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;
-
-/************************************************
-*Constants                                      *
-************************************************/
-
-echo '</div>';
+echo '<div id="temp"></div>'.PHP_EOL;
+echo '<div class="sys-group">'.PHP_EOL;
+echo '<table id="livetable">'.PHP_EOL;
+//echo '<tr><td></td><td></td><td></td></tr>'.PHP_EOL;
+echo '</table>'.PHP_EOL;
+echo '</div>'.PHP_EOL;
+echo '</div>'.PHP_EOL;
 ?>
 
 <script>
-const MAX_LINES = 30;
+const MAX_LINES = 27;
+var throttleApiRequest = 0;
+var timePoint = 0;                                         //Unix time position in log file
 var displayList = [];
 var mainQueue = new Map();
-var timePoint = 0;
 
 
+drawTable();
+loadApi();
+moveMainQueue();
+displayQueue();
+/********************************************************************
+ *  Draw Table
+ *    
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function drawTable() {
+  var liveTable = document.getElementById("livetable");
+  for (var i = 0; i < MAX_LINES - 1; i++) {
+    var row = liveTable.insertRow(i);
+    row.insertCell(0);
+    row.insertCell(1);
+    row.insertCell(2);
+    liveTable.rows[i].cells[0].innerHTML = "&nbsp;";
+  }
+}
 /********************************************************************
  *  Get Time
  *    Return formatted time: hh:mm:ss
@@ -71,30 +95,33 @@ function getTime(t)
 function moveMainQueue() {
   var i = 0;
   var mainQueueSize = mainQueue.size;
-  var target = MAX_LINES;
+  var target = MAX_LINES - 4;
   var matches = [];
 
-  var regexpkey = /^(\d+)\-(.+)$/                          //Regex to split Key to Time - Request
+  var regexpKey = /^(\d+)\-(.+)$/                          //Regex to split Key to Time - Request
 
   if (mainQueueSize == 0) return;
-  else if (mainQueueSize < 5) target = 1;                  //Throttle adding of new requests to displayList
-  else if (mainQueueSize < 10) target = 2;
-  else if (mainQueueSize < 15) target = 3;
+  else if (mainQueueSize < 8) target = 1;                  //Throttle adding of new requests to displayList
+  else if (mainQueueSize < 15) target = 2;
   else if (mainQueueSize < 20) target = 4;
-  else if (mainQueueSize < 30) target = 8;
-  else if (mainQueueSize < 40) target = 12;
+  else if (mainQueueSize < 40) target = 6;
+  else if (mainQueueSize < 60) target = 8;
+  else if (mainQueueSize < 80) target = 10;
+  else if (mainQueueSize < 100) target = 14;
   
-  if (displayList.length < 10) target = 10;                //If nothingmuch in displayList then add more requests
+  if (displayList.length < 10) target = 10;                //If nothing much in displayList then add more requests
   
   for (var [key, value] of mainQueue.entries()) {
-    matches = regexpkey.exec(key);
+    matches = regexpKey.exec(key);
     if (matches != null) {
-      displayList.push([matches[1], matches[2], value]);   //Add key, value to displayList
+      //Add key, value, system, result to displayList
+      displayList.push([matches[1], matches[2], value.substr(0, value.length-1), value.substr(-1)]);
+
       mainQueue.delete(key);                               //Delete key from mainQueue
       timePoint = matches[1];                              //Advance position of DNS_LOG on
       i++;
       if (displayList.length > MAX_LINES) displayList.shift();
-      if (i > target) break;
+      if (i >= target) break;
     }
   }
 }
@@ -170,15 +197,14 @@ function readLogData(data) {
  *  Return:
  *    Formatted DNS Reqest
  */
-function simplfyDomain(site) {
+function simplifyDomain(site) {
   if (/^(www\.)/.test(site)) return site.substr(4);
   return site;
 }
 
 
 /********************************************************************
- *  Display Queue
- *    TODO Beautify
+ *  Display Queue 
  *
  *  Params:
  *    None
@@ -187,11 +213,20 @@ function simplfyDomain(site) {
  */
 function displayQueue() {
   var queuesize = displayList.length;
-  var div = document.getElementById("main");
+  var div = document.getElementById("temp");
+  var liveTable = document.getElementById("livetable");
+  var currentRow = 0;
 
   div.innerHTML = "backlog:"+mainQueue.size+"<br>";
   for (i = queuesize - 1; i > 0; i--) {                    //Start with latest first
-    div.innerHTML = div.innerHTML + getTime(displayList[i][0]) + "-" + simplfyDomain(displayList[i][1]) + "-" + displayList[i][2] + "<br>";
+    //div.innerHTML = div.innerHTML + getTime(displayList[i][0]) + "-" + simplifyDomain(displayList[i][1]) + "-" + displayList[i][2] + "<br>";
+    if (displayList[i][3] == "A") liveTable.rows[currentRow].className = "";
+    else if (displayList[i][3] == "B") liveTable.rows[currentRow].className = "blocked";
+    else if (displayList[i][3] == "L") liveTable.rows[currentRow].className = "local";
+    liveTable.rows[currentRow].cells[0].innerHTML = getTime(displayList[i][0]);
+    liveTable.rows[currentRow].cells[1].innerHTML = simplifyDomain(displayList[i][1]);
+    liveTable.rows[currentRow].cells[2].innerHTML = displayList[i][2];
+    currentRow++;
   }
 }
 
@@ -234,16 +269,17 @@ function loadApi() {
  *    None
  */
 setInterval(function() { 
-  var throttleApiRequest = 0;
-
-  if (throttleApiRequest == 0) loadApi();
+  if (throttleApiRequest >= 4) {                          //Throttle loading of DNS_LOG
+    loadApi();
+    throttleApiRequest = 0;
+  }
   moveMainQueue();
   displayQueue();
 
   throttleApiRequest++
-  if (throttleApiRequest > 4) throttleApiRequest = 0;      //Throttle loading of DNS_LOG
 
-}, 2000);
+}, 1500);
+
 
 </script>
 </body>

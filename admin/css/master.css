@@ -402,6 +402,17 @@ td.green {
   text-align: center; 
 }
 
+#livetable td:nth-child(1) {
+  width: 12%;
+  text-align: center;
+}
+#livetable td:nth-child(2) {
+  width: 66%;
+}
+#livetable td:nth-child(3) {
+  width: 19%;
+}
+
 #query-group-table td:nth-child(1), #query-group-table th:nth-child(1) {
   width: 11%;
   text-align: center;
@@ -440,7 +451,7 @@ td.green {
   width: 1em;
 }
 
-#access-table td, #query-group-table td, #query-time-table td {
+#access-table td, #query-group-table td, #query-time-table, #livetable td {
   overflow: auto;  /*Can't use overflow in config table in Chrome*/
 }
 
