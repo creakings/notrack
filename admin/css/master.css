@@ -326,13 +326,13 @@ tr {
 tr:hover {
   filter: brightness(90%);
 }
-tr.blocked {
+tr.blocked, td.blocked {
   background-color: #EB5D66;
 }
 tr.invalid {
   background-color: #EE202B;
 }
-tr.local {
+tr.local, td.local {
   background-color: #93A0FF;
 }
 tr.dark {
@@ -631,7 +631,7 @@ span.key-green {background-color: #06c36b;}
   height: 3.4rem;
   position: fixed;
   top: 0;
-  left: 0;  
+  left: 0;
   z-index: 100;
 }
 #menu-top img {
@@ -749,6 +749,26 @@ span.timer {
   }
 }
 
+/*Lower Top Menu****************************************************/
+#menu-lower {
+  width: 100%;
+  height: 2.4rem;
+  background-color: rgba(0, 110, 116, 0.95);
+  margin-top: -0.6rem;
+  padding: 0.2rem 0 0 1rem;
+}
+#menu-lower img {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 4px;
+  float: left;
+  background-color: rgba(1, 64, 66, 0.98);
+  margin: 0 0.3rem
+}
+#menu-lower img:hover {
+  filter: opacity(80%);
+  background-color: rgba(1, 38, 40, 0.98);
+}
 /*Config Navigation*************************************************/
 .conf-nav {
   width: 27%;

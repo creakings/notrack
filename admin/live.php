@@ -16,15 +16,22 @@ ensure_active_session();
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/config.js"></script>
   <script src="./include/menu.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=0.5">
+  <!--TODO Sort mobile view out    -->
   <title>NoTrack - Live</title>
 </head>
 
 <body>
 <?php
-draw_topmenu('Development of Live');
+draw_topmenu('Live');
 draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;
+echo '<div id="menu-lower">'.PHP_EOL;
+echo '<img src="./svg/lmenu_pause.svg" id="pausequeueimg" class="pointer" onclick="pauseQueue()">';
+echo '<img src="./svg/lmenu_clear.svg" id="clearqueueimg" class="pointer" onclick="clearQueue()">';
 echo '<div id="temp"></div>'.PHP_EOL;
+echo '</div>'.PHP_EOL;
+
 echo '<div class="sys-group">'.PHP_EOL;
 echo '<table id="livetable">'.PHP_EOL;
 echo '</table>'.PHP_EOL;
@@ -34,11 +41,11 @@ echo '</div>'.PHP_EOL;
 
 <script>
 const MAX_LINES = 27;
-var throttleApiRequest = 0;
+var paused = false;
+var throttleApiRequest = 0;                                //Int used to reduce number of requests for DNS_LOG to be read
 var timePoint = 0;                                         //Unix time position in log file
-var displayList = [];
-var mainQueue = new Map();
-
+var displayList = [];                                      //Requests displayed on livetable
+var mainQueue = new Map();                                 //Requests read from DNS_LOG waiting to be moved to displayList
 
 drawTable();
 loadApi();
@@ -46,7 +53,7 @@ moveMainQueue();
 displayQueue();
 /********************************************************************
  *  Draw Table
- *    
+ *
  *  Params:
  *    None
  *  Return:
@@ -82,6 +89,11 @@ function getTime(t)
 
 /********************************************************************
  *  Move Main Queue to Display List
+ *    1. Calculate how much of the mainQueue to move to displayList
+ *    2. Split Time-Request from mainQueue key
+ *    3. Split System-Result from mainQueue value
+ *    4. Add the 4 items as an array to displayList
+ *    5. Advance on the timePoint
  *
  *  Params:
  *    None
@@ -91,21 +103,19 @@ function getTime(t)
 function moveMainQueue() {
   var i = 0;
   var mainQueueSize = mainQueue.size;
-  var target = MAX_LINES - 4;
+  var target = 0;
   var matches = [];
 
   var regexpKey = /^(\d+)\-(.+)$/                          //Regex to split Key to Time - Request
 
-  if (mainQueueSize == 0) return;
-  else if (mainQueueSize < 8) target = 1;                  //Throttle adding of new requests to displayList
-  else if (mainQueueSize < 15) target = 2;
-  else if (mainQueueSize < 20) target = 4;
-  else if (mainQueueSize < 40) target = 6;
-  else if (mainQueueSize < 60) target = 8;
-  else if (mainQueueSize < 80) target = 10;
-  else if (mainQueueSize < 100) target = 14;
+  if (paused) return;
   
+  if (mainQueueSize == 0) return;
+  target = Math.ceil((mainQueueSize / MAX_LINES) * 3.5);   //Target is based on a percentage of the mainQueueSize
+  if (target > MAX_LINES * 0.75) target = Math.ceil(MAX_LINES * 0.75);  //No more than 75% to be moved
   if (displayList.length < 10) target = 10;                //If nothing much in displayList then add more requests
+  
+  //console.log(target);                                   //Uncomment for debugging
   
   for (var [key, value] of mainQueue.entries()) {
     matches = regexpKey.exec(key);
@@ -119,6 +129,53 @@ function moveMainQueue() {
       if (displayList.length > MAX_LINES) displayList.shift();
       if (i >= target) break;
     }
+  }
+}
+
+
+/********************************************************************
+ * Clear Queue
+ *    Activated when user clicks Clear button
+ *    1. Delete all values from displayList and mainQueue
+ *    2. Clear all values from liveTable
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function clearQueue() {
+  var liveTable = document.getElementById("livetable");
+
+  displayList.splice(0,displayList.length);
+  mainQueue.clear();
+
+  //Remove all values from the table
+  for (var i = 0; i < MAX_LINES - 1; i++) {
+    liveTable.rows[i].cells[0].innerHTML = "&nbsp;";
+    liveTable.rows[i].cells[1].innerHTML = "&nbsp;";
+    liveTable.rows[i].cells[2].innerHTML = "&nbsp;";
+    liveTable.rows[i].cells[1].className = "";
+  }
+}
+
+/********************************************************************
+ * Pause Queue
+ *    Activated when user clicks Pause / Play button
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function pauseQueue() {
+  var pauseQueueImg = document.getElementById("pausequeueimg");
+  paused = !paused;
+
+  if (paused) {
+    pauseQueueImg.src = "./svg/lmenu_play.svg";
+  }
+  else {
+    pauseQueueImg.src = "./svg/lmenu_pause.svg";
   }
 }
 
@@ -215,9 +272,9 @@ function displayQueue() {
 
   div.innerHTML = "backlog:"+mainQueue.size+"<br>";
   for (i = queuesize - 1; i > 0; i--) {                    //Start with latest first
-    if (displayList[i][3] == "A") liveTable.rows[currentRow].className = "";
-    else if (displayList[i][3] == "B") liveTable.rows[currentRow].className = "blocked";
-    else if (displayList[i][3] == "L") liveTable.rows[currentRow].className = "local";
+    if (displayList[i][3] == "A") liveTable.rows[currentRow].cells[1].className = "";
+    else if (displayList[i][3] == "B") liveTable.rows[currentRow].cells[1].className = "blocked";
+    else if (displayList[i][3] == "L") liveTable.rows[currentRow].cells[1].className = "local";
     liveTable.rows[currentRow].cells[0].innerHTML = getTime(displayList[i][0]);
     liveTable.rows[currentRow].cells[1].innerHTML = simplifyDomain(displayList[i][1]);
     liveTable.rows[currentRow].cells[2].innerHTML = displayList[i][2];
@@ -273,7 +330,7 @@ setInterval(function() {
 
   throttleApiRequest++
 
-}, 1500);
+}, 2000);
 
 
 </script>
