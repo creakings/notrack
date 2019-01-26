@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<!-- Generator: Adobe Illustrator 19.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
 
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -9,65 +9,102 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   id="Layer_1"
+   x="0px"
+   y="0px"
+   viewBox="0 0 60 60"
+   xml:space="preserve"
+   sodipodi:docname="menu_sites.svg"
    width="60"
    height="60"
-   viewBox="0 0 60.000003 60"
-   id="svg2"
-   version="1.1"
-   inkscape:version="0.48.4 r9939"
-   sodipodi:docname="menu_black.svg">
-  <defs
-     id="defs4" />
-  <sodipodi:namedview
-     id="base"
-     pagecolor="#ffffff"
-     bordercolor="#666666"
-     borderopacity="1.0"
-     inkscape:pageopacity="0.0"
-     inkscape:pageshadow="2"
-     inkscape:zoom="11.2"
-     inkscape:cx="29.482549"
-     inkscape:cy="32.204057"
-     inkscape:document-units="px"
-     inkscape:current-layer="layer1"
-     showgrid="false"
-     inkscape:window-width="1856"
-     inkscape:window-height="1080"
-     inkscape:window-x="64"
-     inkscape:window-y="0"
-     inkscape:window-maximized="1"
-     inkscape:snap-global="false"
-     inkscape:object-paths="true"
-     inkscape:object-nodes="false"
-     units="px" />
-  <metadata
-     id="metadata7">
-    <rdf:RDF>
-      <cc:Work
-         rdf:about="">
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
-      </cc:Work>
-    </rdf:RDF>
-  </metadata>
-  <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(0,-992.3622)">
-    <path
-       style="color:#000000;fill:#008cd1;fill-opacity:1;fill-rule:evenodd;stroke:#008cd1;stroke-width:1;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
-       d="m 53.97203,1046.8985 -23.607829,-20.9921 -23.2570311,21.4205 c -2.6462219,1.4101 -5.225377,-2.0287 -3.409265,-3.5355 l 26.7374751,-24.7487 26.674341,24.4962 c 2.46348,2.1352 -1.533639,4.5804 -3.137691,3.3596 z"
-       id="path2989"
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="ccccccc" />
-    <path
-       sodipodi:nodetypes="ccccccc"
-       inkscape:connector-curvature="0"
-       id="path2991"
-       d="M 53.719491,997.45392 30.111662,1018.446 6.8546317,997.02552 c -2.6462219,-1.4101 -5.225377,2.02864 -3.409265,3.53548 l 26.7374743,24.7487 26.674341,-24.4962 c 2.46348,-2.13524 -1.533639,-4.58038 -3.137691,-3.35958 z"
-       style="color:#000000;fill:#008cd1;fill-opacity:1;fill-rule:evenodd;stroke:#008cd1;stroke-width:1;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
-  </g>
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"><metadata
+   id="metadata41"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><defs
+   id="defs39" /><sodipodi:namedview
+   pagecolor="#ffffff"
+   bordercolor="#666666"
+   borderopacity="1"
+   objecttolerance="10"
+   gridtolerance="10"
+   guidetolerance="10"
+   inkscape:pageopacity="0"
+   inkscape:pageshadow="2"
+   inkscape:window-width="1864"
+   inkscape:window-height="1064"
+   id="namedview37"
+   showgrid="false"
+   inkscape:zoom="0.97319588"
+   inkscape:cx="-14.702015"
+   inkscape:cy="50.777978"
+   inkscape:window-x="1976"
+   inkscape:window-y="0"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="Layer_1" />
+<path
+   style="fill:#008cdf;fill-opacity:0.94117647;stroke:none;stroke-width:0.34614608;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+   inkscape:connector-curvature="0"
+   id="path2"
+   d="m 46.005234,10.151771 c -0.85908,0 -1.674057,0.190034 -2.40741,0.527963 -0.497483,-2.6805686 -2.851667,-4.7172603 -5.674243,-4.7172603 -0.886672,0 -1.726933,0.2013486 -2.478411,0.5601739 -0.622518,-2.5157027 -2.897964,-4.386605 -5.60324,-4.386605 -2.705275,0 -4.980721,1.8710178 -5.60324,4.386605 -0.751363,-0.3587098 -1.591739,-0.5601739 -2.478411,-0.5601739 -3.183016,0 -5.772609,2.589592 -5.772609,5.7726083 v 14.110795 c -0.707606,-0.310105 -1.488293,-0.483398 -2.309043,-0.483398 -3.183016,0 -5.7726081,2.589592 -5.7726081,5.772607 v 11.871023 c 0,8.339457 6.7846621,15.124234 15.1242331,15.124234 h 13.623356 c 8.339456,0 15.124233,-6.784777 15.124233,-15.124234 V 15.92438 c 0,-3.183132 -2.589592,-5.772609 -5.772607,-5.772609 z m 2.309042,32.854338 c 0,6.429647 -5.231022,11.660669 -11.660668,11.660669 H 23.030252 c -6.429646,0 -11.660668,-5.231022 -11.660668,-11.660669 V 31.135086 c 0,-1.273206 1.035837,-2.309042 2.309043,-2.309042 1.273207,0 2.309043,1.035836 2.309043,2.309042 v 9.236174 h 3.463565 V 11.735082 c 0,-1.273206 1.035837,-2.3090434 2.309044,-2.3090434 1.273206,0 2.309043,1.0358374 2.309043,2.3090434 v 18.245484 h 3.463565 V 7.9086508 c 0,-1.2732064 1.035837,-2.3090433 2.309043,-2.3090433 1.273207,0 2.309044,1.0358369 2.309044,2.3090433 V 29.980566 h 3.463565 V 11.735082 c 0,-1.273206 1.035836,-2.3090434 2.309042,-2.3090434 1.273207,0 2.309044,1.0358374 2.309044,2.3090434 V 29.980566 H 43.69619 V 15.924265 c 0,-1.273207 1.035837,-2.309044 2.309044,-2.309044 1.273206,0 2.309042,1.035837 2.309042,2.309044 z" />
+<g
+   id="g6"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g8"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g10"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g12"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g14"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g16"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g18"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g20"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g22"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g24"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g26"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g28"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g30"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g32"
+   transform="translate(0,-425)">
+</g>
+<g
+   id="g34"
+   transform="translate(0,-425)">
+</g>
 </svg>
