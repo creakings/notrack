@@ -230,7 +230,7 @@ textarea {
   width: 4em;
   height: 4em;
   border-radius: 50%;
-  z-index: 200;
+  z-index: 300;
   display: none;
   background-color: #b1244a;
   box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.5);
@@ -556,70 +556,64 @@ span.key-green {
 }
 
 #menu-side {
-  background: linear-gradient(to right, rgba(0, 11, 12, 0.9) 3rem, rgba(0, 15, 16, 0.89) 3rem);
-  position: fixed;
-  left: 0;
+  width: 14rem;
   top: 3.4rem;
   bottom: 0;
-  display: block;
-  height: auto;
-  width: 14rem;
-  padding: 0;
+  left: 0;
   margin: 0;
+  padding: 0.2rem 0 0 0;
+  background: linear-gradient(to right, rgba(0, 11, 12, 0.9) 3rem, rgba(0, 15, 16, 0.89) 3rem);
+  color: #f7f7f7;
+  position: fixed;
+  display: block;  
   transition-delay: 0s;
   transition-duration: 0.5s;
   transition-property: all;
   transition-timing-function: line;
   z-index: 200;
   overflow: hidden;
-  color: #f7f7f7;
 }
 #menu-side:hover{
   position: fixed;
   width: 14rem;
 }
-#menu-side ul {
-  padding: 0.8rem 0 0 0; */
-}
-#menu-side li {
-  display: block;
-  width: 100%;
-  padding: 0.2em 0;
-}
-
 #menu-side a {
+  width: 100%;
+  height: 2.2rem;
+  line-height: 2.2rem;
+  margin: 0.2rem 0;
+  padding: 0.1rem;
   color: #f7f7f7;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: row;
+}
+#menu-side a:hover {
+  background: rgba(0, 10, 10, 0.95);
 }
 #menu-side img {
   width: 2rem;
   height: 2rem;
   margin: 0 0.7rem 0 0.2rem;
-}
-#menu-side div > img {
-  width: 1.5rem;
-  height: 1.5rem;
-  margin: 0 1.1rem 0 0.7rem;
+  display: inline-flex;
 }
 #menu-side div {
   white-space: nowrap;
   font-size: 0.8rem;
   padding: 0;
 }
-#menu-side span {
-  display: inline-block;
-  white-space: nowrap;
-  font-size: 1.1em;
-  margin-left: 0.2em;
+#menu-side div > img {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0 1.1rem 0 0.7rem;
 }
 #menu-side-status {
   margin-top: 1em;
   font-size: 0.9rem;
 }
-#menu-side li:hover {
-  background: rgba(0, 10, 10, 0.95);
-}
 #menu-side-bottom {
-  margin-top: 4rem;
+  display: inline-block;
+  margin-top: 2rem;
 }
 
 @media only screen and (max-width:1000px), only screen and (max-device-width:1000px) {

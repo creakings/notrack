@@ -9,17 +9,15 @@
  */
 function draw_sidemenu() {
   echo '<nav><div id="menu-side">'.PHP_EOL;
-  echo '<ul>'.PHP_EOL;
-  echo '<li><span><a href="../admin/"><img src="./svg/smenu_dashboard.svg" alt="" title="Dashboard">Dashboard</a></span></li>'.PHP_EOL;
-  echo '<li><span><a href="../admin/queries.php"><img src="./svg/smenu_queries.svg" alt="" title="DNS Queries">DNS Queries</a></span></li>'.PHP_EOL;
-  echo '<li><span><a href="../admin/investigate.php"><img src="./svg/smenu_investigate.svg" alt="" title="Investigate">Investigate</a></span></li>'.PHP_EOL;
-  echo '<li><span><a href="../admin/blocked.php"><img src="./svg/smenu_blocked.svg" alt="" title="Sites Blocked">Sites Blocked</a></span></li>'.PHP_EOL;
-  echo '<li><span><a href="../admin/dhcp.php"><img src="./svg/smenu_dhcp.svg" alt="" title="DHCP">DHCP</a></span></li>'.PHP_EOL;
-  echo '<li><span><a href="../admin/live.php"><img src="./svg/smenu_live.svg" alt="" title="Live">Live</a></span></li>'.PHP_EOL;
-  echo '<li><span><a href="../admin/config.php"><img src="./svg/smenu_config.svg" alt="" title="Config">Config</a></span></li>'.PHP_EOL;
-  echo '<li><span><a href="../admin/help.php"><img src="./svg/smenu_help.svg" alt="" title="Help">Help</a></span></li>'.PHP_EOL;
-  
-  echo '</ul>'.PHP_EOL;
+  echo '<a href="../admin/"><img src="./svg/smenu_dashboard.svg" alt="" title="Dashboard">Dashboard</a>'.PHP_EOL;
+  echo '<a href="../admin/queries.php"><img src="./svg/smenu_queries.svg" alt="" title="DNS Queries">DNS Queries</a>'.PHP_EOL;
+  echo '<a href="../admin/investigate.php"><img src="./svg/smenu_investigate.svg" alt="" title="Investigate">Investigate</a>'.PHP_EOL;
+  echo '<a href="../admin/blocked.php"><img src="./svg/smenu_blocked.svg" alt="" title="Sites Blocked">Sites Blocked</a>'.PHP_EOL;
+  echo '<a href="../admin/dhcp.php"><img src="./svg/smenu_dhcp.svg" alt="" title="DHCP">DHCP</a>'.PHP_EOL;
+  echo '<a href="../admin/live.php"><img src="./svg/smenu_live.svg" alt="" title="Live">Live</a>'.PHP_EOL;
+  echo '<a href="../admin/config.php"><img src="./svg/smenu_config.svg" alt="" title="Config">Config</a>'.PHP_EOL;
+  echo '<a href="../admin/help.php"><img src="./svg/smenu_help.svg" alt="" title="Help">Help</a>'.PHP_EOL;
+
   sidemenu_sysstatus();
   
   echo '<span id="menu-side-bottom"><a href="https://quidsup.net/donate" target="_blank"><img src="./svg/smenu_don.svg" alt="Donate" title="Donate"></a></span>'.PHP_EOL;
@@ -38,13 +36,11 @@ function draw_sidemenu() {
  */
 function draw_helpmenu() {
   echo '<nav><div id="menu-side">'.PHP_EOL;
-  echo '<ul>'.PHP_EOL;
-  echo '<li><span><a href="../admin/"><img src="./svg/smenu_dashboard.svg" alt="" title="Dashboard">Dashboard</a></span></li>'.PHP_EOL;
-  echo '<li><span><a href="../admin/help.php"><img src="./svg/smenu_help.svg" alt="">Help</a></span></li>'.PHP_EOL;
-  echo '<li><span><a href="../admin/help.php?p=security">Security</a></span></li>'.PHP_EOL;
-  echo '<li><span><a href="../admin/help.php?p=position" title="Where To Position NoTrack Device">Positioning Device</a></span></li>'.PHP_EOL;
+  echo '<a href="../admin/"><img src="./svg/smenu_dashboard.svg" alt="" title="Dashboard">Dashboard</a>'.PHP_EOL;
+  echo '<a href="../admin/help.php"><img src="./svg/smenu_help.svg" alt="">Help</a>'.PHP_EOL;
+  echo '<a href="../admin/help.php?p=security">Security</a>'.PHP_EOL;
+  echo '<a href="../admin/help.php?p=position" title="Where To Position NoTrack Device">Positioning Device</a>'.PHP_EOL;
   
-  echo '</ul>'.PHP_EOL;
   echo '</div></nav>'.PHP_EOL;
   echo PHP_EOL;
 }
