@@ -215,7 +215,7 @@ textarea {
 }
 .button-grey:hover,
 .button-small:hover {
-  background-color: #B2B2B2;
+  background-color: #b2b2b2;
 }
 .button-blue {background-color: #008cd1;}
 .button-blue:hover {background-color: #007298;}
@@ -233,58 +233,63 @@ textarea {
   z-index: 200;
   display: none;
   background-color: #b1244a;
-  box-shadow: 2px 4px 6px rgba(0, 0, 0, .5);
+  box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.5);
 }
 .button-scroll img {
   width: 100%;
 }
 .button-scroll:active {
   bottom: 1.1em;
-  box-shadow: 2px 2px 6px rgba(0, 0, 0, .5);
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
 }
-.row {
+.row {                                                     /*TODO Remove from queries.php*/
   width:100%;
 }
 .row:after {
-    content: "";
-    display: table;
-    clear: both;
+  content: "";
+  display: table;
+  clear: both;
 }
 .centered {
   text-align:center;
 }
 .sys-group {
-  background-color: #f7f7f7;
-  border: 1px solid #B3B3B3;
-  border-radius: 3px;
   width: 90%;
   margin: 0.9em auto;
   padding: 0.5em;
+  border: 1px solid #b2b2b2;
+  border-radius: 2px;
+  background-color: #f7f7f7;
   display: table;
-  box-shadow: 2px 2px 4px rgba(0, 0, 0, .5);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 @media only screen and (max-width:640px), only screen and (max-device-width:640px) {
   .sys-group {width: 96%;}
 }
-/*Paginate / Sub Navigation*****************************************/
+
+
+/* ==========================================================================
+   Paginate / Sub Navigation
+   ========================================================================== */
 .pag-nav {
-  font-size: 0.9em;
   padding: 0 0.9em 0.4em;
+  font-size: 0.9em;
 }
 .pag-nav ul {
   padding: 0;
   list-style: none;
 }
-.pag-nav a, .pag-nav span {
+.pag-nav a,
+.pag-nav span {
   display: inline-block;
   padding: 0.5em 0.8em;
 }
 .pag-nav li {
-  background: linear-gradient(to bottom, #efefef, #c0c0c0);          /* HSL 0, 0, 239 > 0, 0, 192*/
+  margin-right: 1px;
   border: 1px solid #262626;
   border-radius: 4px;
-  float: left;
-  margin-right: 1px;
+  background: linear-gradient(to bottom, #efefef, #c0c0c0);          /* HSL 0, 0, 239 > 0, 0, 192*/  
+  float: left;  
 }
 .pag-nav li.active {
   background: linear-gradient(to bottom, #21bbff, #007db4);          /* HSL 141, 255, 144 > 140, 255, 90*/
@@ -292,23 +297,23 @@ textarea {
 .pag-nav li:hover:not(.active) {
   background: linear-gradient(to bottom, #c8c8c8, #8a8a8a);          /* HSL: 0, 0, 200 > 0, 0, 138*/
 }
-a.pag-wide {                                                         /*Wide link buttons */
-  width: 5em;
-  text-align: center;
-}
-a.pag-exwide {
+a.pag-exwide {                                                       /*Wide button on blocked.php*/
   width: 7em;
   text-align: center;
 }
+
+
 /* ==========================================================================
    Tables
    ========================================================================== */
+
 table {
   border-spacing: 0;
   table-layout: fixed;
   width: 100%;
 }
-td, th {
+td,
+th {
   padding: 0.5em 0.6em;
   border-bottom: 1px solid #b3b3b3;
 }
@@ -316,38 +321,45 @@ th {
   color: #666;
 }
 tr {
-  background-color: #FBFBFB;
+  background-color: #fbfbfb;
 }
 tr:hover {
   filter: brightness(90%);
 }
-tr.blocked, td.blocked {
-  background-color: #EB5D66;
+tr.blocked,
+td.blocked {
+  background-color: #eb5d66;
 }
-tr.invalid {
-  background-color: #EE202B;
+tr.invalid,
+td.red,
+span.key-red {
+  background-color: #ee202b;
 }
-tr.local, td.local {
-  background-color: #93A0FF;
+tr.local,
+td.local {
+  background-color: #93a0ff;
 }
 tr.dark {
   background-color: #999;
 }
 tr.cyan {
-  background-color: #55FFFF;
+  background-color: #55ffff;
 }
 tr.gray {
   color: Grey;
 }
-td.red {
-  background-color: #EE202B;
+td.orange,
+span.key-orange {
+  background-color: #ffa704;
 }
-td.orange {
-  background-color: #FFA704;
-}
-td.green {
+td.green,
+span.key-green {
   background-color: #06c36b;
 }
+
+
+/* Access Table on blocked.php
+   ========================================================================== */
 #access-table td:nth-child(1), #access-table th:nth-child(1) {
   width: 15%;
   text-align: center;
@@ -368,6 +380,9 @@ td.green {
   padding: 0 0.2rem;
 }
 
+
+/* Block Table on config-functions.php
+   ========================================================================== */
 #block-table td:nth-child(1), #block-table th:nth-child(1) {
   width: 8%;
   text-align: center;
@@ -382,6 +397,9 @@ td.green {
   width: 35%;
 }
 
+
+/* Cfg Custom Table on config-functions.php
+   ========================================================================== */
 #cfg-custom-table td:nth-child(1), #cfg-custom-table th:nth-child(1) {
   width: 8%;
   text-align: center;
@@ -397,6 +415,9 @@ td.green {
   text-align: center;
 }
 
+
+/* Live Table on live.pph
+   ========================================================================== */
 #livetable td:nth-child(1) {
   width: 12%;
   text-align: center;
@@ -408,6 +429,9 @@ td.green {
   width: 19%;
 }
 
+
+/* Query Tables on queries.php
+   ========================================================================== */
 #query-group-table td:nth-child(1), #query-group-table th:nth-child(1) {
   width: 11%;
   text-align: center;
@@ -446,11 +470,9 @@ td.green {
   width: 1em;
 }
 
-#access-table td, #query-group-table td, #query-time-table, #livetable td {
-  overflow: auto;  /*Can't use overflow in config table in Chrome*/
-}
 
-
+/* DHCP Table on dhcp.php
+   ========================================================================== */
 #dhcp-table td:nth-child(1), #dhcp-table th:nth-child(1) {
   width: 21%;
   text-align: center;
@@ -466,7 +488,9 @@ td.green {
   width: 17%;
   text-align: center;
 }
-/* Top Level Domain Table
+
+
+/* Top Level Domain Tables on config-functions.php
    ========================================================================== */
 .tld-table {
   border-spacing: 0 2px;
@@ -490,6 +514,9 @@ td.green {
   text-align: center;
 }
 
+
+/* Sys Table on global-functions.php, config-functions.php, security.php
+   ========================================================================== */
 .sys-table td:nth-child(1) {
   width: 25%;
   text-align: right;
@@ -507,23 +534,22 @@ td.green {
 .sys-table a {
   font-size: 0.7em;
 }
-/*Key colours for Domain List***************************************/
-span.key {
-  width: 10em;
-  display: block;
-  text-align: center;
-  font-weight: bold;
-  font-size: 1.1em;
-  line-height: 1.5em;
-  border: 1px solid #00000a;
-  border-radius: 5px;
-  margin: 0 0 0.2em 1em;
-}
-span.key-red {background-color: #EE202B;}
-span.key-orange {background-color: #FFA704;}
-span.key-green {background-color: #06c36b;}
 
-/*Side Menu*********************************************************/
+
+/* Other table settings
+   ========================================================================== */
+#access-table td,
+#query-group-table td,
+#query-time-table td,
+#livetable td {
+  overflow: auto;  /*Can't use overflow in config table in Chrome*/
+}
+
+
+/* ==========================================================================
+   Side Menu
+   ========================================================================== */
+
 #main {
   margin: 4rem 0 0 14rem;
   transition: margin-left 0.5s;
@@ -620,14 +646,18 @@ span.key-green {background-color: #06c36b;}
   }
 }
 
-/*Top Menu**********************************************************/
+
+/* ==========================================================================
+   Top Menu
+   ========================================================================== */
+
 #menu-top {
   width: 100%;
-  background-color: rgba(1, 90, 95, 0.95);
   height: 3.4rem;
-  position: fixed;
   top: 0;
   left: 0;
+  background-color: rgba(1, 90, 95, 0.95);
+  position: fixed;
   z-index: 100;
 }
 #menu-top img {
@@ -645,7 +675,6 @@ span.menu-top-item {
   border-radius: 4px;
 }
 span.menu-top-item:hover {
-/*   background-color: #00326f; */
   background-color: rgba(1, 73, 77, 0.98);
 }
 span.logo {
@@ -666,7 +695,8 @@ span.logo {
 #dropbutton {
   display: inline-block;
 }
-span.pause-btn, #dropbutton {
+span.pause-btn,
+#dropbutton {
   padding: 0.2rem 0.4rem;
   border-radius: 2px;
 }
@@ -701,12 +731,13 @@ span.timer {
 }
 #pause-menu span {
   width: 11.2em;
-  display: block;
-  padding: 0.5rem 0 0.5rem 0.8rem;
   line-height: 1.1em;
+  padding: 0.5rem 0 0.5rem 0.8rem;
+  display: block;
 }
 
 /*Mobile Adjustments for Menu***************************************/
+/*TODO Deprecate*/
 @media only screen and (max-width:480px), only screen and (max-device-width:480px) {
   /*Mobile view for Menu*/
   #main {
@@ -723,7 +754,8 @@ span.timer {
   #menu-top span {
     font-size: 2.4rem;
   }
-  span.menu-top-item, span.logo {
+  span.menu-top-item,
+  span.logo {
     line-height: 4.7rem;
   }
   span #dropbutton {
@@ -735,9 +767,12 @@ span.timer {
   }
 }
 
-/*Print Adjustments for menu****************************************/
+
+/* Print adjustments for menu
+   ========================================================================== */
 @media only print {
-  nav, #menu-top {
+  nav,
+  #menu-top {
     display: none;
   }
   #main {
@@ -745,36 +780,45 @@ span.timer {
   }
 }
 
-/*Lower Top Menu****************************************************/
+
+/* ==========================================================================
+   Lower Top Menu
+   ========================================================================== */
+
 #menu-lower {
   width: 100%;
   height: 2.4rem;
-  background-color: rgba(0, 110, 116, 0.95);
   margin-top: -0.6rem;
   padding: 0.2rem 0 0 1rem;
+  background-color: rgba(0, 110, 116, 0.95);
 }
 #menu-lower img {
   width: 2.2rem;
   height: 2.2rem;
-  border-radius: 4px;
-  float: left;
-  background-color: rgba(1, 64, 66, 0.98);
   margin: 0 0.3rem;
+  border-radius: 4px;
+  background-color: rgba(1, 64, 66, 0.98);
   box-shadow: inset 0 0 8px #111;
+  float: left;
 }
 #menu-lower img:hover {
-  filter: opacity(80%);
   background-color: rgba(1, 38, 40, 0.98);
+  filter: opacity(80%);
 }
-/*Config Navigation*************************************************/
+
+
+/* ==========================================================================
+   Config Navigation
+   ========================================================================== */
+
 .conf-nav {
   width: 27%;
   height: 3rem;
-  padding: 0.4em 1em;
-  border-bottom: 1px solid #B3B3B3;
-  float: left;
   margin: 0.5rem 1.5%;
+  padding: 0.4em 1em;
   font-size: 1.1em;
+  border-bottom: 1px solid #b2b2b2;
+  float: left;
 }
 .conf-nav img {
   height: 100%;
@@ -795,28 +839,33 @@ span.timer {
     width: 91%;
   }
 }
-/*Top Menu Popups***************************************************/
+
+/* ==========================================================================
+   Popups for Top Menu
+   ========================================================================== */
 #fade {
-  display: none;
   position: absolute;
   top: 0;
-  left: 0;
+  left: 0;  
   width: 100%;
-  height: 100%;
+  height: 100%;    
   background-color: black;
   opacity: 0.80;
   filter: alpha(opacity=80);
   z-index:1000;
-}
-#dialog-box, #options-box, #stats-box {
-  position: absolute;
   display: none;
+}
+#dialog-box,
+#options-box,
+#stats-box {
+  position: absolute;  
   background-color: #F1F1F1;
   border: 2px solid #21bbff;
   border-radius: 5px;
   box-shadow: 1px 2px 6px #21bbff;
+  display: none;
 }
-/*Stats boxed used in DNS Queries for Report*/
+/*Stats boxed used in DNS Queries for Report domain*/
 #stats-box {
   width: 36em;
   height: auto;
@@ -846,15 +895,15 @@ span.timer {
   width: 8rem;
 }
 .dialog-bar {
-  font-size: 1.4em;
-  line-height: 1.9em;
-  background-color: #262626;
   width: 100%;
-  text-align: center;
-  color: #008cd1;
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
+  line-height: 1.6em;
   margin: -1px 0 1em 0;
+  font-size: 1.3em;
+  text-align: center;  
+  color: #008cd1;
+  background-color: #262626;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;  
 }
 #options-box {
   width: 24em;
@@ -869,13 +918,18 @@ span.timer {
 .close-button {
   position: absolute;
   right: 0.4em;
-  top: 0.4em;
+  top: 0.2em;
   cursor: pointer;
 }
 .close-button img {
-  width: 1.5em;
+  width: 1.45em;
 }
-/*DNS Queries*******************************************************/
+
+
+/* ==========================================================================
+   Filters on queries.php
+   ========================================================================== */
+
 .dnsqueries-filterlarge {
   width: 25%;
   float: left;
@@ -893,7 +947,11 @@ span.timer {
   }
 }
 
-/*Extra colours*****************************************************/
+
+/* ==========================================================================
+   Extra Colours
+   ========================================================================== */
+
 span.blue, a.blue {
   color: #008cd1;
 }
@@ -919,7 +977,12 @@ span.gray {
 span.darkgray, h3.darkgray {
   color: #202020;
 }
-/*Other Spans*******************************************************/
+
+
+/* ==========================================================================
+   Other Spans
+   ========================================================================== */
+
 span.mobile-hide {display: inline-block;}
 span.mobile-show {display: none;}
 @media only screen and (max-width:480px), only screen and (max-device-width:480px) {
@@ -936,4 +999,18 @@ span.blradiolist {
   width: 17rem;
   line-height: 1.5em;
   display: inline-block;
+}
+
+
+/* Key for config-functions TLD Blocking
+   ========================================================================== */
+span.key {
+  width: 10em;
+  line-height: 1.5rem;
+  margin: 0 0 0.2rem 1rem;
+  text-align: center;
+  font-weight: bold;
+  border: 1px solid #00000a;
+  border-radius: 4px;
+  display: block;
 }
