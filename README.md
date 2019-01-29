@@ -1,5 +1,5 @@
-NoTrack 0.9 not yet ready for use.  
-Use NoTrack 0.8.x from [GitHub](https://github.com/quidsup/notrack)  
+NoTrack 0.9 is still in development, but can be tested out.  
+Stable version of NoTrack 0.8.x can be found at [GitHub](https://github.com/quidsup/notrack)  
   
 To Install:  
 ```bash
