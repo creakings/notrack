@@ -1,4 +1,16 @@
 <?php
+//1. Draw initial page with PHP. Most of the functionality onwards is done clientside with javascript
+//2. Draw blank table cells up to MAX_LINES
+//3. Run a timer
+//4. Send POST request to API asking for contents of DNS_LOG file
+//5. Parse DNS_LOG (in a similar method to ntrk-parse bash script) into mainQueue map
+//5a. Key to mainQueue is time+dnsquery in order to track progress of DNS_LOG
+//5b. timePoint is also used to track progress
+//6. Move mainQueue to displayList on a number in a limited number of items based on size of mainQueue
+//7. displayQueue shows contents of displayList in table with cells coloured depending on if
+//   DNS request is allowed / blocked / local
+
+
 require('./include/global-vars.php');
 require('./include/global-functions.php');
 require('./include/menu.php');
