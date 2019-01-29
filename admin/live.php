@@ -40,6 +40,7 @@ echo '</div>'.PHP_EOL;
 ?>
 
 <script>
+
 const MAX_LINES = 27;
 var paused = false;
 var throttleApiRequest = 0;                                //Int used to reduce number of requests for DNS_LOG to be read
@@ -60,13 +61,13 @@ displayQueue();
  *    None
  */
 function drawTable() {
-  var liveTable = document.getElementById("livetable");
-  for (var i = 0; i < MAX_LINES - 1; i++) {
-    var row = liveTable.insertRow(i);
+  let liveTable = document.getElementById('livetable');
+  for (let i = 0; i < MAX_LINES - 1; i++) {
+    let row = liveTable.insertRow(i);
     row.insertCell(0);
     row.insertCell(1);
     row.insertCell(2);
-    liveTable.rows[i].cells[0].innerHTML = "&nbsp;";
+    liveTable.rows[i].cells[0].innerHTML = '&nbsp;';
   }
 }
 /********************************************************************
@@ -79,10 +80,10 @@ function drawTable() {
  */
 function getTime(t)
 {
-  var dt = new Date(parseInt(t));
-  var hr = dt.getHours();
-  var m = "0" + dt.getMinutes();
-  var s = "0" + dt.getSeconds();
+  let dt = new Date(parseInt(t));
+  let hr = dt.getHours();
+  let m = '0' + dt.getMinutes();
+  let s = '0' + dt.getSeconds();
   return hr+ ':' + m.substr(-2) + ':' + s.substr(-2);
 }
 
@@ -101,23 +102,23 @@ function getTime(t)
  *    None
  */
 function moveMainQueue() {
-  var i = 0;
-  var mainQueueSize = mainQueue.size;
-  var target = 0;
-  var matches = [];
+  let i = 0;
+  let mainQueueSize = mainQueue.size;
+  let target = 0;
+  let matches = [];
 
   var regexpKey = /^(\d+)\-(.+)$/                          //Regex to split Key to Time - Request
 
   if (paused) return;
-  
+
   if (mainQueueSize == 0) return;
   target = Math.ceil((mainQueueSize / MAX_LINES) * 3.5);   //Target is based on a percentage of the mainQueueSize
   if (target > MAX_LINES * 0.75) target = Math.ceil(MAX_LINES * 0.75);  //No more than 75% to be moved
   if (displayList.length < 10) target = 10;                //If nothing much in displayList then add more requests
-  
+
   //console.log(target);                                   //Uncomment for debugging
-  
-  for (var [key, value] of mainQueue.entries()) {
+
+  for (let [key, value] of mainQueue.entries()) {
     matches = regexpKey.exec(key);
     if (matches != null) {
       //Add key, value, system, result to displayList
@@ -145,17 +146,17 @@ function moveMainQueue() {
  *    None
  */
 function clearQueue() {
-  var liveTable = document.getElementById("livetable");
+  let liveTable = document.getElementById('livetable');
 
   displayList.splice(0,displayList.length);
   mainQueue.clear();
 
   //Remove all values from the table
-  for (var i = 0; i < MAX_LINES - 1; i++) {
-    liveTable.rows[i].cells[0].innerHTML = "&nbsp;";
-    liveTable.rows[i].cells[1].innerHTML = "&nbsp;";
-    liveTable.rows[i].cells[2].innerHTML = "&nbsp;";
-    liveTable.rows[i].cells[1].className = "";
+  for (let i = 0; i < MAX_LINES - 1; i++) {
+    liveTable.rows[i].cells[0].innerHTML = '&nbsp;';
+    liveTable.rows[i].cells[1].innerHTML = '&nbsp;';
+    liveTable.rows[i].cells[2].innerHTML = '&nbsp;';
+    liveTable.rows[i].cells[1].className = '';
   }
 }
 
@@ -168,14 +169,14 @@ function clearQueue() {
  *    None
  */
 function pauseQueue() {
-  var pauseQueueImg = document.getElementById("pausequeueimg");
+  let pauseQueueImg = document.getElementById('pausequeueimg');
   paused = !paused;
 
   if (paused) {
-    pauseQueueImg.src = "./svg/lmenu_play.svg";
+    pauseQueueImg.src = './svg/lmenu_play.svg';
   }
   else {
-    pauseQueueImg.src = "./svg/lmenu_pause.svg";
+    pauseQueueImg.src = './svg/lmenu_pause.svg';
   }
 }
 
@@ -192,44 +193,44 @@ function pauseQueue() {
  *    None
  */
 function readLogData(data) {
-  var currentYear = new Date().getFullYear();
-  var dedupAnswer = "";
-  var dnsRequest = "";
-  var dnsResult = "";
-  var line = "";
-  var logTime = 0;
-  var matches = [];
-  var queryList = new Map();
-  var systemList = new Map();
+  let currentYear = new Date().getFullYear();
+  let dedupAnswer = '';
+  let dnsRequest = '';
+  let dnsResult = '';
+  let line = '';
+  let logTime = 0;
+  let matches = [];
+  let queryList = new Map();
+  let systemList = new Map();
 
   var regexp = /(\w{3}\s\s?\d{1,2}\s\d{2}\:\d{2}\:\d{2})\sdnsmasq\[\d{1,6}\]\:\s(query|reply|config|\/etc\/localhosts\.list)(\[[A]{1,4}\])?\s([A-Za-z0-9\.\-]+)\s(is|to|from)\s(.*)$/;
 
   //TODO hasOwnProperty error condition in data for file not found
-  
+
   for (var key in data) {
     line = data[key];                                      //Get log line
     matches = regexp.exec(line);                           //Run regexp to get matches
 
     if (matches != null) {
       dnsRequest = matches[4];
-      logTime = Date.parse(currentYear + " " + matches[1]);//Get UNIX time of log entry
-      if ((matches[2] == "query") && (logTime > timePoint)) {
-        if (matches[3] == "[A]") {                         //Only IPv4 to prevent double query entries
+      logTime = Date.parse(currentYear + ' ' + matches[1]);//Get UNIX time of log entry
+      if ((matches[2] == 'query') && (logTime > timePoint)) {
+        if (matches[3] == '[A]') {                         //Only IPv4 to prevent double query entries
           queryList.set(dnsRequest, logTime);              //Log DNS Reqest
           systemList.set(dnsRequest, matches[6]);          //Add Corresponding IP to systemList
         }
       }
-      else if ((dnsRequest != dedupAnswer) && (logTime > timePoint)) { 
+      else if ((dnsRequest != dedupAnswer) && (logTime > timePoint)) {
         dedupAnswer = dnsRequest;                          //Prevent repeat processing of Answer
         if (queryList.has(dnsRequest)) {                   //Does Answer match a Query?
-          if (matches[2] == "reply") dnsResult="A";        //Allowed
-          else if (matches[2] == "config") dnsResult="B";  //Blocked
-          else if (matches[2] == "/etc/localhosts.list") dnsResult="L"; //Local
+          if (matches[2] == 'reply') dnsResult='A';        //Allowed
+          else if (matches[2] == 'config') dnsResult='B';  //Blocked
+          else if (matches[2] == '/etc/localhosts.list') dnsResult='L'; //Local
 
           //Check if entry exists for Time + Request (assume same request is not made more than once per second)
-          if (! mainQueue.has(logTime+"-"+dnsRequest)) {
+          if (! mainQueue.has(logTime+'-'+dnsRequest)) {
             //Key = Time + Request, Value = System + Result
-            mainQueue.set(logTime+"-"+dnsRequest, systemList.get(dnsRequest) + dnsResult);
+            mainQueue.set(logTime+'-'+dnsRequest, systemList.get(dnsRequest) + dnsResult);
           }
 
           queryList.delete(dnsRequest);                    //Delete value from queryList
@@ -257,7 +258,7 @@ function simplifyDomain(site) {
 
 
 /********************************************************************
- *  Display Queue 
+ *  Display Queue
  *
  *  Params:
  *    None
@@ -265,16 +266,23 @@ function simplifyDomain(site) {
  *    None
  */
 function displayQueue() {
-  var queuesize = displayList.length;
-  var div = document.getElementById("temp");
-  var liveTable = document.getElementById("livetable");
-  var currentRow = 0;
+  let queuesize = displayList.length;
+  let div = document.getElementById('temp');
+  let liveTable = document.getElementById('livetable');
+  let currentRow = 0;
 
-  div.innerHTML = "backlog:"+mainQueue.size+"<br>";
-  for (i = queuesize - 1; i > 0; i--) {                    //Start with latest first
-    if (displayList[i][3] == "A") liveTable.rows[currentRow].cells[1].className = "";
-    else if (displayList[i][3] == "B") liveTable.rows[currentRow].cells[1].className = "blocked";
-    else if (displayList[i][3] == "L") liveTable.rows[currentRow].cells[1].className = "local";
+  div.innerHTML = 'backlog:' + mainQueue.size + '<br>';
+  for (let i = queuesize - 1; i > 0; i--) {                //Start with latest first
+    if (displayList[i][3] == 'A') {
+      liveTable.rows[currentRow].cells[1].className = '';
+    }
+    else if (displayList[i][3] == 'B') {
+      liveTable.rows[currentRow].cells[1].className = 'blocked';
+    }
+    else if (displayList[i][3] == 'L') {
+      liveTable.rows[currentRow].cells[1].className = 'local';
+    }
+
     liveTable.rows[currentRow].cells[0].innerHTML = getTime(displayList[i][0]);
     liveTable.rows[currentRow].cells[1].innerHTML = simplifyDomain(displayList[i][1]);
     liveTable.rows[currentRow].cells[2].innerHTML = displayList[i][2];
@@ -293,19 +301,19 @@ function displayQueue() {
  *    None
  */
 function loadApi() {
-  var xmlhttp = new XMLHttpRequest();
-  var url = "./include/api.php";
-  var params = "livedns=1";
+  let xmlhttp = new XMLHttpRequest();
+  let url = './include/api.php';
+  let params = 'livedns=1';
 
-  xmlhttp.open("POST", url, true);
-  xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  xmlhttp.open('POST', url, true);
+  xmlhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
   /*xmlhttp.onload = function () {
     // do something to response
     console.log(this.responseText);
   };*/
   xmlhttp.onreadystatechange = function() {
     if(this.readyState == 4 && this.status == 200) {
-      var apiResponse = JSON.parse(this.responseText);
+      let apiResponse = JSON.parse(this.responseText);
       readLogData(apiResponse);
     }
   }
@@ -320,14 +328,16 @@ function loadApi() {
  *  Return:
  *    None
  */
-setInterval(function() { 
-  if (throttleApiRequest >= 4) {                          //Throttle loading of DNS_LOG
+setInterval(function() {
+  if (throttleApiRequest >= 4) {                           //Throttle loading of DNS_LOG
     loadApi();
     throttleApiRequest = 0;
   }
-  moveMainQueue();
-  displayQueue();
 
+  if (document.visibilityState == 'visible') {             //Only display if window is visible
+    moveMainQueue();
+    displayQueue();
+  }
   throttleApiRequest++
 
 }, 2000);
