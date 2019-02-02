@@ -405,7 +405,8 @@ function show_custom_list($view) {
   
   echo '<tr><td>'.$i.'</td><td><input type="text" class="ninty" name="site'.$i.'" placeholder="site.com"></td><td>';   //Add new site row
   echo '<input type="text" class="ninty" name="comment'.$i.'" placeholder="comment"></td>';
-  echo '<td><button class="button-grey" onclick="addSite('.$i.')">Save</button></td></tr>';                            //End add new site row
+  echo '<td><button class="button-small" onclick="addSite('.$i.')"><img src="./images/icon_save.png" class="btn" alt="-"></button></td></tr>';                            //End add new site row
+  
 
   echo '</table>'.PHP_EOL;                                 //End custom list table
 

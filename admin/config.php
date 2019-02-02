@@ -93,7 +93,8 @@ if (isset($_POST['action'])) {
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/config.js"></script>
   <script src="./include/menu.js"></script>
-  <title>NoTrack - Config</title>  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9">
+  <title>NoTrack - Config</title>
 </head>
 
 <body>

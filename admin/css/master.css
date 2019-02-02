@@ -7,7 +7,8 @@
  * Primary: #008cd1          *
  * Primary Light: #00a8f5    *
  * Secondary: #21bbff        *
- * Inverse: #b1244a          */
+ * Inverse: #b1244a          *
+ * Button Icon: #2c3033      */
 body {
   min-height: 95vh;                                        /*Fix for mobiles*/
   margin: 0;
@@ -32,6 +33,7 @@ img {
   border: none;
 }
 img.btn {
+  margin-top: 0.1rem;
   height: 1em;
   width: 1em;
 }
@@ -153,7 +155,8 @@ input[type="text"].full {
 }
 input[type="number"].input-conf,
 input[type="text"].input-conf {
-  width: 24rem;
+  width: 96%;
+  max-width: 24rem;
 }
 input[type="number"].fixed10 {
   width: 10em;
@@ -171,14 +174,16 @@ select {
   box-shadow: 0 0 3px #21bbff;
 }
 select.input-conf {
-  width: 24.6rem;
+  width: 98.5%;
+  max-width: 24.6rem;
 }
 select.offset {
   width: 92%;
   margin: 0.2rem 0.7rem;
 }
 textarea {
-  width: 26.4rem;
+  width: 96%;
+  max-width: 26.4rem;
   font-size: 1.1em;
   padding-left: 0.2em;
   color: #00000a;
