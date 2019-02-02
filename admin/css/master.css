@@ -5,6 +5,7 @@
  * Dark background: #262626  *
  * Light background: #f7f7f7 *
  * Primary: #008cd1          *
+ * Primary Light: #00a8f5    *
  * Secondary: #21bbff        *
  * Inverse: #b1244a          */
 body {
@@ -551,21 +552,21 @@ span.key-green {
    ========================================================================== */
 
 #main {
-  margin: 4rem 0 0 14rem;
+  margin: 3.8rem 0 0 14rem;
   transition: margin-left 0.5s;
 }
 
 #menu-side {
+  position: fixed;
   width: 14rem;
-  top: 3.4rem;
+  top: 3.2rem;
   bottom: 0;
   left: 0;
   margin: 0;
   padding: 0.2rem 0 0 0;
-  background: linear-gradient(to right, rgba(0, 11, 12, 0.9) 3rem, rgba(0, 15, 16, 0.89) 3rem);
+  background: linear-gradient(to right, rgba(0, 16, 17, 0.9) 3rem, rgba(0, 25, 26, 0.9) 3rem);
   color: #f7f7f7;
-  position: fixed;
-  display: block;  
+  display: block;
   transition-delay: 0s;
   transition-duration: 0.5s;
   transition-property: all;
@@ -574,7 +575,7 @@ span.key-green {
   overflow: hidden;
 }
 #menu-side:hover{
-  position: fixed;
+/*   position: fixed; */
   width: 14rem;
 }
 #menu-side a {
@@ -589,7 +590,7 @@ span.key-green {
   flex-direction: row;
 }
 #menu-side a:hover {
-  background: rgba(0, 10, 10, 0.95);
+  background-color: rgba(0, 45, 49, 0.95);
 }
 #menu-side img {
   width: 2rem;
@@ -619,7 +620,7 @@ span.key-green {
 @media only screen and (max-width:1000px), only screen and (max-device-width:1000px) {
   /*Half window view - Display side menu in icon-only form, allowing onmouseover (hover) to expand menu out to show text as well*/
   #main {
-    margin: 4rem 0 0 3rem;
+    margin: 3.8rem 0 0 3rem;
   }
   #menu-side {
     width: 3rem;
@@ -628,15 +629,10 @@ span.key-green {
 @media only screen and (max-width:480px), only screen and (max-device-width:480px) {
   /*Mobile view - Side menu is hidden and we rely on the hamburger button to show the menu*/
   #main {
-    margin: 5.4rem 0 0 0rem;
+    margin: 3.8rem 0 0 0rem;
   }
   #menu-side {
-    top: 4.7rem;
     width: 0em;
-    font-size: 1.2em;
-  }
-  #menu-side li {
-    margin: 0.2rem 0;
   }
 }
 
@@ -647,61 +643,75 @@ span.key-green {
 
 #menu-top {
   width: 100%;
-  height: 3.4rem;
+  height: 3.2rem;
   top: 0;
   left: 0;
-  background-color: rgba(1, 90, 95, 0.95);
+  background-color: rgba(1, 95, 100, 0.95);
   position: fixed;
   z-index: 100;
+  display: flex;
+  flex-wrap: nowrap
 }
 #menu-top img {
-  width: 2.6em;
-  height: 2.6rem;
-  margin: 0.2rem 0rem 0.3rem 0rem;
-  float: left;
+  width: 2.0rem;
+  height: 2.0rem;
+  padding: 0.5rem 0.4rem 0.3rem;
+  display: inline-flex;
+  border-radius: 4px;
+  background-color: rgba(1, 81, 85, 0.98);
+  box-shadow: inset 0 0 4px #00454a;
 }
 #menu-top span {
   color: #f7f7f7;
 }
-span.menu-top-item {
-  line-height: 3.3rem;
-  padding: 0.1rem 0.8rem 0 0.9rem;
+#menu-top span.hamburger {
+  height: 2.1rem;
+  margin: 0.2rem 0.1rem 0.2rem 0.2rem;
+  padding: 0.4rem 0.7rem 0.3rem;
+  font-size: 1.4rem;
   border-radius: 4px;
+  background-color: rgba(1, 81, 85, 0.98);
+  box-shadow: inset 0 0 4px #00454a;
 }
-span.menu-top-item:hover {
-  background-color: rgba(1, 73, 77, 0.98);
-}
-span.logo {
-  margin: 0 0.5em 0 0.1em;
+#menu-top span.logo {
+  margin: 0 1rem;
   font-size: 1.8rem;
-  line-height: 3.3rem;
-  padding: 0 0.5em;
+  line-height: 3.1rem;
   letter-spacing: 1px;
 }
-#pause {
-  float: right;
-  padding: 0.35rem 0.5rem;
-  margin: 0.3em 0.5em;
-  background-color: rgba(1, 73, 77, 0.98);
+#menu-top-group {
+  margin: 0.2rem 0.3rem 0.2rem auto;
+  height: 2.8rem;
+  display: inline;
+}
+#pause-group {
+  margin: 0.2rem 3rem;
+}
+#dropbutton {
+  height: 2.8rem;
+  display: inline;
+}
+#pause-menu {
+  position: absolute;
+/*   margin-left: -4rem; */
+  font-size: 1.1rem;
+  border: 1px solid #262626;
   border-radius: 4px;
-  font-size: 1.2rem;
+  background-color: rgba(1, 73, 77, 0.98);
+  z-index: 102;
+  opacity: 0;    /* use opacity to fake immediate toggle */
+  visibility: hidden;
+  transition: visibility 0.5s;
 }
-#dropbutton {
-  display: inline-block;
+#pause-menu span {
+  height: 2.2rem;
+  width: 11.2rem;
+  line-height: 2.2rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  display: block;
 }
-span.pause-btn,
-#dropbutton {
-  padding: 0.2rem 0.4rem;
-  border-radius: 2px;
-}
-span.pause-btn {
-  font-weight: bold;
-}
-span.timer {
-  margin-right: 0.2rem;
-  padding: 0 0.1rem;
-  line-height: 1.4rem;
-}
+
 #dropbutton:focus {
   pointer-events: none;  /* clicking on label should toggle the menu */
 }
@@ -710,58 +720,36 @@ span.timer {
   visibility: visible;
   pointer-events: auto;
 }
-#pause-menu {
-  position: absolute;
-  z-index: 102;
-  margin: 1em 0 0 -10em;
-  opacity: 0;    /* use opacity to fake immediate toggle */
-  visibility: hidden;
-  transition: visibility 0.5s;
-  border: 1px solid #262626;
-  border-radius: 5px;
-  background-color: rgba(1, 73, 77, 0.98);
-  font-size: 1.1rem;
-  font-weight: normal;
+#menu-top img:hover,
+#pause-menu span:hover {
+  box-shadow: inset 0 0 4px #00a8f5;
 }
-#pause-menu span {
-  width: 11.2em;
-  line-height: 1.1em;
-  padding: 0.5rem 0 0.5rem 0.8rem;
-  display: block;
+#menu-top img:active,
+#pause-menu span:active {
+  background-color: #008cd1;
+  box-shadow: inset 0 0 4px #00a8f5;
 }
 
-/*Mobile Adjustments for Menu***************************************/
-/*TODO Deprecate*/
+/* Mobile adjustments for menu
+   ========================================================================== */
+
 @media only screen and (max-width:480px), only screen and (max-device-width:480px) {
-  /*Mobile view for Menu*/
-  #main {
-    margin: 5.4rem 0 0 0rem;
+  #menu-top span.logo {
+    margin: 0 0.5em;
+    font-size: 1.4rem;
+/*   line-height: 3.1rem; */
+    letter-spacing: 0px;
   }
-  #menu-top {
-    height: 4.8rem;
-    font-size: 1.8rem;
+  #pause-group {
+    margin: 0.2rem 0.5rem;
   }
-  #menu-top img {
-    width: 4rem;
-    height: 4rem;
-  }
-  #menu-top span {
-    font-size: 2.4rem;
-  }
-  span.menu-top-item,
-  span.logo {
-    line-height: 4.7rem;
-  }
-  span #dropbutton {
-    font-size: 1.8rem;
-    padding: 0 1rem;
-  }
-  #pause-menu {
-    font-size: 1.8rem;
-  }
+  /*#menu-top img {
+    width: 2.0rem;
+    height: 2.0rem;
+    padding: 0.5rem 0.rem 0.3rem;
+    display: inline-flex;
+  }*/
 }
-
-
 /* Print adjustments for menu
    ========================================================================== */
 @media only print {
@@ -791,13 +779,16 @@ span.timer {
   height: 2.2rem;
   margin: 0 0.3rem;
   border-radius: 4px;
-  background-color: rgba(1, 64, 66, 0.98);
-  box-shadow: inset 0 0 8px #111;
+  background-color: rgba(1, 90, 96, 0.98);
+  box-shadow: inset 0 0 4px #222;
   float: left;
 }
 #menu-lower img:hover {
-  background-color: rgba(1, 38, 40, 0.98);
-  filter: opacity(80%);
+  box-shadow: inset 0 0 4px #00a8f5;
+}
+#menu-lower img:active {
+  background-color: rgba(1, 63, 65, 0.98);
+  box-shadow: inset 0 0 4px #00a8f5;
 }
 
 

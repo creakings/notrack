@@ -59,7 +59,7 @@ function draw_topmenu($currentpage='') {
   global $Config, $mem;
   
   echo '<div id="menu-top">'.PHP_EOL;
-  echo '<span class="menu-top-item float-left pointer mobile-show" onclick="openNav()">&#9776;</span>'.PHP_EOL;   //Hamburger menu to show #menu-side
+  echo '<span class="hamburger pointer mobile-show" onclick="openNav()">&#9776;</span>'.PHP_EOL;   //Hamburger menu to show #menu-side mobile-show
   
   if ($currentpage == '') {                                //Display version number when $currentpage has not been set
     echo '<a href="./"><span id="menu-top-logo" class="logo"><b>No</b>Track <small>v'.VERSION.'</small></span></a>'.PHP_EOL;
@@ -68,17 +68,6 @@ function draw_topmenu($currentpage='') {
     echo '<a href="./"><span id="menu-top-logo" class="logo"><span class="mobile-hide"><b>No</b>Track - </span><small> '.$currentpage.'</small></span></a>'.PHP_EOL;
   }
   
-  if (is_password_protection_enabled()) {                  //Show Logout button if there is a password
-    echo '<a href="../admin/logout.php"><span class="menu-top-item float-right"><img src="./svg/menu_logout.svg" alt=""><span class="mobile-hide">Logout</span></span></a>'.PHP_EOL;
-  }
-  echo '<span class="menu-top-item float-right pointer" onclick="showOptions()"><img src="./svg/menu_option.svg" alt=""><span class="mobile-hide">Options</span></span>'.PHP_EOL;
-  
-  if ($Config['status'] & STATUS_INCOGNITO) {              //Is Incognito set? Draw purple button and text
-    echo '<span class="menu-top-item float-right pointer" onclick="menuIncognito()"><img id="incognito-button" src="./svg/menu_incognito_active.svg" alt=""><span id="incognito-text" class="mobile-hide purple">Incognito</span></span>'.PHP_EOL;
-  }
-  else {                                                   //No, draw white button and text
-    echo '<span class="menu-top-item float-right pointer" onclick="menuIncognito()"><img id="incognito-button" src="./svg/menu_incognito.svg" alt=""><span id="incognito-text" class="mobile-hide">Incognito</span></span>'.PHP_EOL;
-  }
   
   //If Status = Paused AND UnpauseTime < Now plus a few seconds then force reload of Config
   if (($Config['status'] & STATUS_PAUSED) && ($Config['unpausetime'] < (time()+10))) {
@@ -86,31 +75,45 @@ function draw_topmenu($currentpage='') {
     load_config();
   }
 
-  echo '<div id="pause">'.PHP_EOL;
-  echo '<input type="hidden" name="pause-time" id="pause-time" value="">'.PHP_EOL;
+  echo '<div id="pause-group">'.PHP_EOL;
+  //echo '<input type="hidden" name="pause-time" id="pause-time" value="">'.PHP_EOL;
   if ($Config['status'] & STATUS_PAUSED) {
-    echo '<span id="pause-timer" class="timer" title="Paused until">'.date('H:i', $Config['unpausetime']).'</span>'.PHP_EOL;
-    echo '<span id="pause-button" class="pause-btn pointer" title="Enable Blocking" onclick="enableNoTrack()">&#9654;</span>'.PHP_EOL;
+    echo '<img id="pause-button" class="pointer" title="Resume Blocking" onclick="enableNoTrack()" src="./svg/tmenu_play.svg" alt="">'.PHP_EOL;
   }
   elseif ($Config['status'] & STATUS_DISABLED) {
-    echo '<span id="pause-timer" class="timer" title="NoTrack Disabled">----</span>'.PHP_EOL;
-    echo '<span id="pause-button" class="pause-btn pointer" title="Enable Blocking" onclick="enableNoTrack()">&#9654;</span>'.PHP_EOL;
+    echo '<img id="pause-button" class="pointer" title="Resume Blocking" onclick="enableNoTrack()" src="./svg/tmenu_play.svg" alt="">'.PHP_EOL;
   }
   else {
-    echo '<span id="pause-timer"></span>'.PHP_EOL;
-    echo '<span id="pause-button" class="pause-btn pointer" title="Disable Blocking" onclick="enableNoTrack()">&#8545;</span>'.PHP_EOL;
+    echo '<img id="pause-button" class="pointer" title="Disable Blocking" onclick="enableNoTrack()" src="./svg/tmenu_pause.svg" alt="">'.PHP_EOL;
   }
   
   //Dropdown menu for default pause times
-  echo '<div tabindex="1" id="dropbutton" title="Pause for..."><span class="pointer">&#x25BC;</span>'.PHP_EOL;
+  echo '<div tabindex="1" id="dropbutton" title="Pause for..."><img class="pointer" src="./svg/tmenu_dropdown.svg">'.PHP_EOL;
   echo '<div id="pause-menu">'.PHP_EOL;  
   echo '<span class="pointer" onclick="pauseNoTrack(5)">Pause for 5 minutes</span>'.PHP_EOL;
   echo '<span class="pointer" onclick="pauseNoTrack(15)">Pause for 15 minutes</span>'.PHP_EOL;
   echo '<span class="pointer" onclick="pauseNoTrack(30)">Pause for 30 minutes</span>'.PHP_EOL;
   echo '<span class="pointer" onclick="pauseNoTrack(60)">Pause for 1 Hour</span>'.PHP_EOL;
   echo '<span class="pointer" onclick="pauseNoTrack(120)">Pause for 2 Hours</span>'.PHP_EOL;
-  echo '</div></div>'.PHP_EOL;
-  echo '</div></div>'.PHP_EOL;
+  echo '</div></div></div>'.PHP_EOL;
+  
+  
+  echo '<div id="menu-top-group">';
+  if ($Config['status'] & STATUS_INCOGNITO) {              //Is Incognito set? Draw purple button and text
+    echo '<img id="incognito-button" class="pointer" title="Incognito" onclick="menuIncognito()" src="./svg/menu_incognito_active.svg" alt="">'.PHP_EOL;
+  }
+  else {                                                   //No, draw white button and text
+    echo '<img id="incognito-button" class="pointer" title="Incognito" onclick="menuIncognito()" src="./svg/menu_incognito.svg" alt="">'.PHP_EOL;
+  }
+  
+  if (is_password_protection_enabled()) {                  //Show Logout button if there is a password
+    echo '<a href="../admin/logout.php"><img title="Logout" src="./svg/menu_logout.svg" alt=""></a>'.PHP_EOL;
+  }
+
+  echo '<img class="pointer" title="Options" onclick="showOptions()" src="./svg/menu_option.svg" alt="">'.PHP_EOL;
+
+  echo '</div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
   //echo '</nav>'.PHP_EOL;
 
   
@@ -170,7 +173,7 @@ function sidemenu_sysstatus() {
     }
   }
   elseif ($Config['status'] & STATUS_PAUSED) {
-    echo '<div id="menu-side-blocking"><img src="./svg/status_yellow.svg" alt="">Blocking: Paused</div>'.PHP_EOL;
+    echo '<div id="menu-side-blocking"><img src="./svg/status_yellow.svg" alt="">Blocking: Paused - '.date('H:i', $Config['unpausetime']).'</div>'.PHP_EOL;
   }
   elseif ($Config['status'] & STATUS_DISABLED) {
     echo '<div id="menu-side-blocking"><img src="./svg/status_red.svg" alt="">Blocking: Disabled</div>'.PHP_EOL;

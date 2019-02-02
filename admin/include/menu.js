@@ -13,24 +13,23 @@ function changeStatus(newstatus) {
   const STATUS_PAUSED = 4;
   
   if (newstatus & STATUS_ENABLED) {
-    document.getElementById("pause-timer").textContent = "";
-    document.getElementById("pause-button").textContent = "\u2161";
+    document.getElementById("pause-button").src = './svg/tmenu_pause.svg';
     document.getElementById("pause-button").title = "Disable Blocking";
     document.getElementById("menu-side-blocking").innerHTML = "<img src='./svg/status_green.svg' alt=''>Blocking: Enabled";
   }
   
   else if (newstatus & STATUS_DISABLED) {
-    document.getElementById("pause-timer").textContent = "----";
-    document.getElementById("pause-button").textContent = "\u25b6";
+    document.getElementById("pause-button").src = './svg/tmenu_play.svg';
     document.getElementById("pause-button").title = "Enable Blocking";
     document.getElementById("menu-side-blocking").innerHTML = "<img src='./svg/status_red.svg' alt=''>Blocking: Disabled";
   }
   
   else if (newstatus & STATUS_PAUSED) {
-    document.getElementById("pause-button").textContent = "\u25b6";
+    document.getElementById("pause-button").src = './svg/tmenu_play.svg';
     document.getElementById("pause-button").title = "Enable Blocking";
-    document.getElementById("menu-side-blocking").innerHTML = "<img src='./svg/status_yellow.svg' alt=''>Blocking: Paused";
   }
+  //document.getElementById("pause-button").blur();
+  document.getElementById("dropbutton").blur();
 }
 
 /********************************************************************
@@ -61,12 +60,12 @@ function menuIncognito() {
       if (apiResponse["status"] & 8) {                     //Bitwise check for STATUS_INCOGNITO
         //Change incognito elements to purple colour
         document.getElementById("incognito-button").src = "./svg/menu_incognito_active.svg";
-        document.getElementById("incognito-text").classList.add("purple");
+        //document.getElementById("incognito-text").classList.add("purple");
       }
       else {
         //Turning incognito off, change incognito elements back to grey
         document.getElementById("incognito-button").src = "./svg/menu_incognito.svg";
-        document.getElementById("incognito-text").classList.remove("purple");
+        //document.getElementById("incognito-text").classList.remove("purple");
       }
     }
   }
@@ -128,7 +127,9 @@ function pauseNoTrack(mins) {
     if(this.readyState == 4 && this.status == 200) {
       var apiResponse = JSON.parse(this.responseText);
       changeStatus(apiResponse["status"]);
-      document.getElementById("pause-timer").textContent = apiResponse["unpausetime"];
+      document.getElementById("menu-side-blocking").innerHTML = "<img src='./svg/status_yellow.svg' alt=''>Blocking: Paused - " + apiResponse["unpausetime"];
+      //document.getElementById("pause-timer").textContent = apiResponse["unpausetime"];
+      //document.getElementById("pause-timer").title = "Paused Until";
     }
   }
   oReq.send(params);
