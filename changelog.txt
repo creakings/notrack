@@ -4,5 +4,7 @@ New search capabilities on DNS Queries page
 Improved user-agent recognition on Sites Blocked page #227
 Added ability to configure DHCP via Admin GUI
 No need to add /admin URL when accessing the Admin GUI #270
+New Live feature
+Improved mobile view
 *************************************************
 
