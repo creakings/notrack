@@ -16,6 +16,7 @@ ensure_active_session();
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/menu.js"></script>
   <script src="./include/queries.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=0.9">
   <title>NoTrack - Investigate</title>
 </head>
 
