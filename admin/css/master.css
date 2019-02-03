@@ -508,6 +508,7 @@ span.key-green {
   width: 12%;
   border-radius: 2px;
   padding-left: 1em;
+  text-align: center;
 }
 .tld-table td:nth-child(2) {
   width: 32%;
@@ -518,6 +519,10 @@ span.key-green {
 .tld-table td:nth-child(4) {
   width: 12%;
   text-align: center;
+}
+.tld-table img {
+  margin-right: 0.2rem;
+  width: 1.9rem;
 }
 
 
