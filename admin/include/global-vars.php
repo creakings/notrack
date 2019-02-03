@@ -25,7 +25,7 @@ define('ACCESSLOG', '/var/log/ntrk-admin.log');
 define('CONFIGFILE', '/etc/notrack/notrack.conf');
 define('CONFIGTEMP', '/tmp/notrack.conf');
 define('DNS_LOG', '/var/log/notrack.log');
-define('TLD_FILE', './include/tld.csv');
+define('TLD_FILE', '/admin/include/tld.csv');
 define('NTRK_EXEC', 'sudo /usr/local/sbin/ntrk-exec ');
 define('NOTRACK_LIST', '/etc/dnsmasq.d/notrack.list');
 //define('REGEX_DATE', '/^2[0-1][0-9][0-9]\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])$/');DEPRECATED

@@ -13,19 +13,19 @@ function changeStatus(newstatus) {
   const STATUS_PAUSED = 4;
   
   if (newstatus & STATUS_ENABLED) {
-    document.getElementById("pause-button").src = './svg/tmenu_pause.svg';
+    document.getElementById("pause-button").src = '/admin/svg/tmenu_pause.svg';
     document.getElementById("pause-button").title = "Disable Blocking";
-    document.getElementById("menu-side-blocking").innerHTML = "<img src='./svg/status_green.svg' alt=''>Blocking: Enabled";
+    document.getElementById("menu-side-blocking").innerHTML = "<img src='/admin/svg/status_green.svg' alt=''>Blocking: Enabled";
   }
   
   else if (newstatus & STATUS_DISABLED) {
-    document.getElementById("pause-button").src = './svg/tmenu_play.svg';
+    document.getElementById("pause-button").src = '/admin/svg/tmenu_play.svg';
     document.getElementById("pause-button").title = "Enable Blocking";
-    document.getElementById("menu-side-blocking").innerHTML = "<img src='./svg/status_red.svg' alt=''>Blocking: Disabled";
+    document.getElementById("menu-side-blocking").innerHTML = "<img src='/admin/svg/status_red.svg' alt=''>Blocking: Disabled";
   }
   
   else if (newstatus & STATUS_PAUSED) {
-    document.getElementById("pause-button").src = './svg/tmenu_play.svg';
+    document.getElementById("pause-button").src = '/admin/svg/tmenu_play.svg';
     document.getElementById("pause-button").title = "Enable Blocking";
   }
   //document.getElementById("pause-button").blur();
@@ -45,7 +45,7 @@ function changeStatus(newstatus) {
 
 function menuIncognito() {
   var oReq = new XMLHttpRequest();
-  var url = "./include/api.php";
+  var url = "/admin/include/api.php";
   var params = "operation=incognito";
   
   oReq.open("POST", url, true);
@@ -59,12 +59,12 @@ function menuIncognito() {
       var apiResponse = JSON.parse(this.responseText);
       if (apiResponse["status"] & 8) {                     //Bitwise check for STATUS_INCOGNITO
         //Change incognito elements to purple colour
-        document.getElementById("incognito-button").src = "./svg/menu_incognito_active.svg";
+        document.getElementById("incognito-button").src = "/admin/svg/menu_incognito_active.svg";
         //document.getElementById("incognito-text").classList.add("purple");
       }
       else {
         //Turning incognito off, change incognito elements back to grey
-        document.getElementById("incognito-button").src = "./svg/menu_incognito.svg";
+        document.getElementById("incognito-button").src = "/admin/svg/menu_incognito.svg";
         //document.getElementById("incognito-text").classList.remove("purple");
       }
     }
@@ -87,7 +87,7 @@ function menuIncognito() {
 
 function enableNoTrack() {
   var oReq = new XMLHttpRequest();
-  var url = "./include/api.php";
+  var url = "/admin/include/api.php";
   var params = "operation=enable";
   
   oReq.open("POST", url, true);
@@ -117,7 +117,7 @@ function enableNoTrack() {
 
 function pauseNoTrack(mins) {
   var oReq = new XMLHttpRequest();
-  var url = "./include/api.php";
+  var url = "/admin/include/api.php";
   var params = "operation=pause&mins="+mins;
   
   oReq.open("POST", url, true);
@@ -127,7 +127,7 @@ function pauseNoTrack(mins) {
     if(this.readyState == 4 && this.status == 200) {
       var apiResponse = JSON.parse(this.responseText);
       changeStatus(apiResponse["status"]);
-      document.getElementById("menu-side-blocking").innerHTML = "<img src='./svg/status_yellow.svg' alt=''>Blocking: Paused - " + apiResponse["unpausetime"];
+      document.getElementById("menu-side-blocking").innerHTML = "<img src='/admin/svg/status_yellow.svg' alt=''>Blocking: Paused - " + apiResponse["unpausetime"];
       //document.getElementById("pause-timer").textContent = apiResponse["unpausetime"];
       //document.getElementById("pause-timer").title = "Paused Until";
     }
@@ -147,7 +147,7 @@ function pauseNoTrack(mins) {
 
 function restartSystem() {
   var oReq = new XMLHttpRequest();
-  var url = "./include/api.php";
+  var url = "/admin/include/api.php";
   var params = "operation=restart";
   
   document.getElementById("options-box").style.display = "none";
@@ -176,7 +176,7 @@ function restartSystem() {
 
 function shutdownSystem() {
   var oReq = new XMLHttpRequest();
-  var url = "./include/api.php";
+  var url = "/admin/include/api.php";
   var params = "operation=shutdown";
   
   document.getElementById("options-box").style.display = "none";
@@ -205,7 +205,7 @@ function shutdownSystem() {
 
 function updateBlocklist() {
   var oReq = new XMLHttpRequest();
-  var url = "./include/api.php";
+  var url = "/admin/include/api.php";
   var params = "operation=updateblocklist";
   
   oReq.open("POST", url, true);

@@ -52,12 +52,12 @@ function ensure_active_session() {
     if (isset($_SESSION['session_start'])) {
       if (!is_active_session()) {
         $_SESSION['session_expired'] = true;
-        header('Location: ./login.php');
+        header('Location: /admin/login.php');
         exit;
       }
     }
     else {
-      header('Location: ./login.php');
+      header('Location: /admin/login.php');
       exit;
     }
   }
