@@ -1,0 +1,63 @@
+@charset "utf-8";
+/* ==========================================================================
+   Tabbed Items
+   ========================================================================== */
+
+#tabbed {
+  width: 100%;
+  margin-top: -0.6rem;
+  padding: 0.2rem 0 0 1rem;
+  background-color: rgba(0, 110, 116, 0.95);
+}
+#tabbed > input {
+  display: none;
+}
+#tabbed > label {
+  margin: 0.2rem 0 0.2rem 0.1rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #262626;
+  border-radius: 4px;
+  cursor: pointer;
+  background: linear-gradient(to bottom, #efefef, #c0c0c0);          /* HSL 0, 0, 239 > 0, 0, 192*/
+  display: inline-block;
+}
+#tabbed > label:nth-of-type(1) {
+  margin-left: 4.5%;
+}
+#tabbed > label:hover:not(checked) {
+  background: linear-gradient(to bottom, #c8c8c8, #8a8a8a);          /* HSL: 0, 0, 200 > 0, 0, 138*/
+}
+
+#tabbed > input:checked + label {
+  background: linear-gradient(to bottom, #21bbff, #007db4);          /* HSL 141, 255, 144 > 140, 255, 90*/
+}
+
+#tabs {
+  clear: both;
+}
+
+#tabs > div {
+  position: absolute;
+  opacity: 0;
+  transition: opacity .4s;
+  z-index: 0;
+}
+
+#tabbed input[type="submit"] {
+  display:block;
+  margin: 1.2rem auto 0.5rem;
+}
+
+#tab-nav-1:checked ~ #tabs > div:nth-of-type(1),
+#tab-nav-2:checked ~ #tabs > div:nth-of-type(2),
+#tab-nav-3:checked ~ #tabs > div:nth-of-type(3),
+#tab-nav-4:checked ~ #tabs > div:nth-of-type(4){
+  opacity: 1;
+  z-index: 1;
+}
+@media only screen and (max-width:480px), only screen and (max-device-width:480px) {
+  #tabbed > label:nth-of-type(1) {
+    margin-left: 0;
+  }
+}
+

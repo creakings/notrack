@@ -126,33 +126,6 @@ function draw_blradioform() {
 
 
 /********************************************************************
- *  Load CSV List
- *    Load TLD List CSV file into $list
- *  Params:
- *    listname - blacklist or whitelist, filename
- *  Return:
- *    true on completion
- */
-function load_csv($filename, $listname) {
-  global $list, $mem;
-    
-  $list = $mem->get($listname);
-  if (empty($list)) {
-    $fh = fopen($filename, 'r') or die('Error unable to open '.$filename);
-    while (!feof($fh)) {
-      $list[] = fgetcsv($fh);
-    }
-    
-    fclose($fh);
-    if (count($list) > 50) {                     //Only store decent size list in Memcache
-      $mem->set($listname, $list, 0, 600);       //10 Minutes
-    }
-  }
-  
-  return true;
-}
-
-/********************************************************************
  *  Load Custom Block List
  *    Loads a Black or White List from File into $list Array
  *    Saves $list into respective Memcache array  
@@ -191,34 +164,6 @@ function load_customlist($listname, $filename) {
 }
 
 
-/********************************************************************
- *  Load List
- *    Loads a a List from File and returns it in Array form
- *    Saves $list into respective Memcache array  
- *  Params:
- *    listname - blacklist or whitelist, filename
- *  Return:
- *    array of file
- */
-function load_list($filename, $listname) {
-  global $mem;
-  
-  $filearray = array();
-  
-  $filearray = $mem->get($listname);
-  if (empty($filearray)) {
-    if (file_exists($filename)) {                //Check if File Exists
-      $fh = fopen($filename, 'r') or die('Error unable to open '.$filename);
-      while (!feof($fh)) {
-        $filearray[] = trim(fgets($fh));
-      }
-      fclose($fh);
-      $mem->set($listname, $filearray, 0, 600);  //Change to 1800
-    }
-  }
-  
-  return $filearray;
-}
 /********************************************************************
  *  Show Advanced Page
  *
@@ -414,115 +359,6 @@ function show_custom_list($view) {
   echo '<a href="?v='.$view.'&amp;action='.$view.'&amp;do=update" class="button-blue">Update Blocklists</a>&nbsp;&nbsp;';
   echo '<a href="./include/downloadlist.php?v='.$view.'" class="button-grey">Download List</a>';
   echo '</div></div>'.PHP_EOL;
-}
-
-
-/********************************************************************
- *  Show Domain List
- *    1. Load Users Domain Black list and convert into associative array
- *    2. Load Users Domain White list and convert into associative array
- *    3. Display list
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function show_domain_list() {
-  global $list, $FileTLDBlackList, $FileTLDWhiteList;
-  
-  $first_cell = '';
-  $flag_image = '';
-  $flag_filename = '';
-
-  $KeyBlack = array_flip(load_list($FileTLDBlackList, 'TLDBlackList'));
-  $KeyWhite = array_flip(load_list($FileTLDWhiteList, 'TLDWhiteList'));
-  $listsize = count($list);
-
-  if ($list[$listsize-1][0] == '') {             //Last line is sometimes blank
-    array_splice($list, $listsize-1);            //Cut last line out
-  }
-
-  echo '<div class="sys-group">'.PHP_EOL;
-  echo '<h5>Domain Blocking</h5>'.PHP_EOL;  
-  echo '<span class="key key-red">High</span>'.PHP_EOL;
-  echo '<p>High risk domains are home to a high percentage of malicious sites compared to legitimate sites. Often they are cheap / free to buy and are not well policed.<br>'.PHP_EOL;
-  echo 'High risk domains are automatically blocked, unless you specifically untick them.</p>'.PHP_EOL;
-  echo '<br>'.PHP_EOL;
-
-  echo '<span class="key key-orange">Medium</span>'.PHP_EOL;
-  echo '<p>Medium risk domains are home to a significant number of malicious sites, but are outnumbered by legitimate sites. You may want to consider blocking these, unless you live in, or utilise the websites of the affected country.</p>'.PHP_EOL;  
-  echo '<br>'.PHP_EOL;
-
-  echo '<span class="key">Low</span>'.PHP_EOL;
-  echo '<p>Low risk may still house some malicious sites, but they are vastly outnumbered by legitimate sites.</p>'.PHP_EOL;
-  echo '<br>'.PHP_EOL;
-
-  echo '<span class="key key-green">Negligible</span>'.PHP_EOL;
-  echo '<p>These domains are not open to the public, therefore extremely unlikely to contain malicious sites.</p>'.PHP_EOL;
-  echo '<br>'.PHP_EOL;
-
-  echo '</div>'.PHP_EOL;
-
-  //Tables
-  echo '<div class="sys-group">'.PHP_EOL;
-  if ($listsize == 0) {                                    //Is List blank?
-    echo '<h4><img src=./svg/emoji_sad.svg>No sites found in Block List</h4>'.PHP_EOL;
-    echo '</div>';
-    return;
-  }
-
-  echo '<form name="tld" action="?" method="post">'.PHP_EOL;
-  echo '<input type="hidden" name="action" value="tld">'.PHP_EOL;
-
-  echo '<p><b>Old Generic Domains</b></p>'.PHP_EOL;
-  echo '<table class="tld-table">'.PHP_EOL;                //Start TLD Table
-
-  foreach ($list as $site) {
-    if ($site[2] == 0) {                                   //Zero means draw new table
-      echo '</table>'.PHP_EOL;                             //End current TLD table
-      echo '<br>'.PHP_EOL;
-      echo '<p><b>'.$site[1].'</b></p>'.PHP_EOL;           //Title of new TLD Table
-      echo '<table class="tld-table">'.PHP_EOL;            //Start new TLD Table
-      continue;                                            //Jump to end of loop
-    }
-
-    echo '<tr>';                                           //Start Row
-    switch ($site[2]) {                                    //Row colour based on risk      
-      case 1: $first_cell = '<td class="red">'; break;
-      case 2: $first_cell = '<td class="orange">'; break;
-      case 3: $first_cell = '<td>'; break;                //Use default colour for low risk
-      case 5: $first_cell = '<td class="green">'; break;
-    }
-
-    //Flag names are seperated by underscore and converted to ASCII, dropping any UTF-8 Characters
-    $flag_filename = iconv('UTF-8', 'ASCII//IGNORE', str_replace(' ', '_', $site[1])); 
-
-    //Does a Flag image exist?
-    if (file_exists('./images/flags/Flag_of_'.$flag_filename.'.png')) {
-      $flag_image = '<img src="./images/flags/Flag_of_'.$flag_filename.'.png" alt=""> ';
-    }
-    else {
-      $flag_image = '';
-      //$flag_image = iconv('UTF-8', 'ASCII//IGNORE', $flag_filename); Debugging UTF-8 filenames
-    }
-
-    //(Risk 1 & NOT in White List) OR (in Black List)
-    if ((($site[2] == 1) && (! array_key_exists($site[0], $KeyWhite))) || (array_key_exists($site[0], $KeyBlack))) {
-      echo $first_cell.'<b>'.$site[0].'</b></td><td><b>'.$flag_image.$site[1].'</b></td><td>'.$site[3].'</td><td><input type="checkbox" name="'.substr($site[0], 1).'" checked="checked"></td></tr>'.PHP_EOL;
-    }
-    else {
-      echo $first_cell.$site[0].'</td><td>'.$flag_image.$site[1].'</td><td>'.$site[3].'</td><td><input type="checkbox" name="'.substr($site[0], 1).'"></td></tr>'.PHP_EOL;
-    }
-  }
-
-  echo '</table>'.PHP_EOL;                                 //End TLD table
-  echo '<div class="centered"><br>'.PHP_EOL;
-  echo '<input type="submit" class="button-blue" value="Save Changes">'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
-  echo '</form></div>'.PHP_EOL;                            //End Form
-
-  return null;
 }
 
 
@@ -742,7 +578,7 @@ function show_menu() {
   echo '<div class="sys-group">'.PHP_EOL;        //Block lists
   echo '<h5>Block Lists</h5>'.PHP_EOL;
   echo '<a href="../admin/config.php?v=blocks"><div class="conf-nav"><img src="./svg/menu_blocklists.svg"><span>Select Block Lists</span></div></a>'.PHP_EOL;
-  echo '<a href="../admin/config.php?v=tld"><div class="conf-nav"><img src="./svg/menu_domain.svg"><span>Top Level Domains</span></div></a>'.PHP_EOL;
+  echo '<a href="../admin/config/tld.php"><div class="conf-nav"><img src="./svg/menu_domain.svg"><span>Top Level Domains</span></div></a>'.PHP_EOL;
   echo '<a href="../admin/config.php?v=black"><div class="conf-nav"><img src="./svg/menu_white.svg"><span>Custom Black List</span></div></a>'.PHP_EOL;
   echo '<a href="../admin/config.php?v=white"><div class="conf-nav"><img src="./svg/menu_black.svg"><span>Custom White List</span></div></a>'.PHP_EOL;
   echo '<a href="../admin/config.php?v=full"><div class="conf-nav"><img src="./svg/menu_sites.svg"><span>View Sites Blocked</span></div></a>'.PHP_EOL;
