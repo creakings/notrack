@@ -37,6 +37,9 @@
   opacity: 0;
   transition: opacity 0.4s;
   z-index: 0;
+  display: inline-block;
+  height: calc(100vh - 5.9rem);
+  overflow-y: auto;
 }
 #tabbed input[type="submit"] {
   display:block;
