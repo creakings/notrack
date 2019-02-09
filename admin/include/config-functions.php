@@ -507,6 +507,7 @@ function show_general() {
   //draw_sysrow('Cpu', $pid_dnsmasq[3]);
   draw_sysrow('Memory Used', $pid_dnsmasq[3].' MB');
   draw_sysrow('Historical Logs', count_rows('SELECT COUNT(DISTINCT(DATE(log_time))) FROM dnslog').' Days');
+  draw_sysrow('DNS Queries', number_format(count_rows('SELECT COUNT(*) FROM dnslog')));
   draw_sysrow('Delete All History', '<button class="button-danger" onclick="confirmLogDelete();">Purge</button>');
   echo '</table></div>'.PHP_EOL;
 
