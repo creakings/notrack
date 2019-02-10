@@ -27,8 +27,6 @@ draw_sidemenu();
 *Constants                                      *
 ************************************************/
 define('QRY_BLOCKLIST', 'SELECT COUNT(*) FROM blocklist');
-define('QRY_DNSLOG', 'SELECT COUNT(*) FROM dnslog WHERE log_time BETWEEN (CURDATE() - INTERVAL 2 DAY) AND NOW()');
-define('QRY_WEBLOG', 'SELECT COUNT(*) FROM weblog WHERE log_time BETWEEN (CURDATE() - INTERVAL 7 DAY) AND NOW()');
 
 $CHARTCOLOURS = array('#008CD1', '#B1244A', '#00AA00');
 
@@ -37,6 +35,12 @@ $CHARTCOLOURS = array('#008CD1', '#B1244A', '#00AA00');
 ************************************************/
 $db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
 
+$day_allowed = 0;
+$day_blocked = 0;
+$day_local = 0;
+$allowed_queries = array();
+$blocked_queries = array();
+$chart_labels = array();
 
 /********************************************************************
  *  Block List Box
@@ -52,10 +56,10 @@ function home_blocklist() {
   exec('pgrep notrack', $pids);
   if(empty($pids)) {
     $rows = count_rows(QRY_BLOCKLIST); 
-    echo '<a href="./config.php?v=full"><div class="home-nav"><h2>Block List</h2><hr><span>'.number_format(floatval($rows)).'<br>Domains</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></div></a>'.PHP_EOL;
+    echo '<a class="home-nav-item" href="./config.php?v=full"><span><h2>Block List</h2>'.number_format(floatval($rows)).'<br>Domains</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></a>'.PHP_EOL;
   }
   else {
-    echo '<a href="./config.php?v=full"><div class="home-nav"><h2>Block List</h2><hr><span>Processing</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></div></a>'.PHP_EOL;
+    echo '<a href="./config.php?v=full"><span><h2>Block List</h2>Processing</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></a>'.PHP_EOL;
   }
 }
 
@@ -73,10 +77,10 @@ function home_blocklist() {
  */
 function home_network() {
   if (file_exists('/var/lib/misc/dnsmasq.leases')) {       //DHCP Active
-    echo '<a href="./dhcp.php"><div class="home-nav"><h2>Network</h2><hr><span>'.number_format(floatval(exec('wc -l /var/lib/misc/dnsmasq.leases | cut -d\  -f 1'))).'<br>Systems</span><div class="icon-box"><img src="./svg/home_dhcp.svg" alt=""></div></div></a>'.PHP_EOL;
+    echo '<a href="./dhcp.php"><span><h2>Network</h2>'.number_format(floatval(exec('wc -l /var/lib/misc/dnsmasq.leases | cut -d\  -f 1'))).'<br>Systems</span><div class="icon-box"><img src="./svg/home_dhcp.svg" alt=""></div></a>'.PHP_EOL;
   }
   else {                                                   //DHCP Disabled
-    echo '<a href="./dhcp.php"><div class="home-nav"><h2>Network</h2><hr><span>DHCP Disabled</span><div class="icon-box"><img class="full" src="./svg/home_dhcp.svg" alt=""></div></div></a>'.PHP_EOL;
+    echo '<a class="home-bgred" href="./dhcp.php"><span><h2>Network</h2>DHCP Disabled</span><div class="icon-box"><img class="full" src="./svg/home_dhcp.svg" alt=""></div></a>'.PHP_EOL;
   }
 }
 
@@ -93,31 +97,23 @@ function home_network() {
  *    None
  */
 function home_queries() {
-  global $CHARTCOLOURS;
+  global $CHARTCOLOURS, $day_allowed, $day_blocked, $day_local;
 
   $total = 0;
-  $allowed = 0;
-  $blocked = 0;
-  $local = 0;
   $chartdata = array();
   $lables = array('Allowed', 'Blocked', 'Local');
   
-  $total = count_rows(QRY_DNSLOG);
-  $local = count_rows(QRY_DNSLOG." AND dns_result = 'l'");
-  $blocked = count_rows(QRY_DNSLOG." AND dns_result = 'b'");
-  $allowed = $total - $blocked - $local;
+  $total = $day_allowed + $day_blocked + $day_local;
 
-  if ($local == 0) {                                       //Build array of chartdata, we may not need to include $local
-    $chartdata = array($allowed, $blocked);
+  if ($day_local == 0) {                                   //Build array of chartdata, we may not need to include $local
+    $chartdata = array($day_allowed, $day_blocked);
   }
   else {                                                   //Local is necessary
-    $chartdata = array($allowed, $blocked, $local);
+    $chartdata = array($day_allowed, $day_blocked, $day_local);
   }
 
   //Start Drawing Queries Box
-  echo '<a href="./queries.php"><div class="home-nav"><h2>DNS Queries</h2><hr>'.PHP_EOL;
-  echo '<span>' . number_format(floatval($total)) . '<br>Today'.PHP_EOL;
-  echo '</span>'.PHP_EOL;
+  echo '<a href="./queries.php"><span><h2>DNS Queries</h2>' . number_format(floatval($total)) . '<br>Today</span>'.PHP_EOL;
 
   if ($total == 0) {                                       //Alternative if no DNS queries have been made
     echo '<div class="icon-box"><img src="./svg/home_queries.svg" alt=""></div>'.PHP_EOL;
@@ -133,14 +129,14 @@ function home_queries() {
   echo '</svg>'.PHP_EOL;
   echo '</div>'.PHP_EOL;                                   //End Pie Chart
 
-  echo '</div></a>'.PHP_EOL;                               //End Queries Box
+  echo '</a>'.PHP_EOL;                               //End Queries Box
 }
 
 
 /********************************************************************
  *  Status Box
- *    Check $Config for status
  *    Look at the file modified time for NoTrack file under /etc/dnsmasq
+ *    Override with Upgrade message if upgrade is available
  *  Params:
  *    None
  *  Return:
@@ -152,36 +148,8 @@ function home_status() {
   $currenttime = time();
   $date_bgcolour = '';
   $date_msg = '';
-  $date_submsg = '<h2>Block list is in date</h2>';
+  $date_submsg = '<p>Block list is in date</p>';
   $filemtime = 0;
-  $status_bgcolour = '';
-  $status_msg = '';
-  $status_submsg = '';
-  $upgrade_available = false;
-  
-  if ($Config['status'] & STATUS_PAUSED) {
-    $status_msg = '<h3 class="darkgray">Paused</h3>';
-    $status_bgcolour = ' home-bgyellow';
-    $date_msg = '<h2>---</h2>';
-    $date_submsg = '';
-  }
-  elseif ($Config['status'] & STATUS_DISABLED) {
-    $status_msg = '<h3 class="darkgray">Disabled</h3>';
-    $status_bgcolour = ' home-bgred';
-    $date_msg = '<h2>---</h2>';
-    $date_submsg = '';
-  }
-  else {
-    $status_msg = '<h3 class="green">Active</h3>';
-    
-    //Is an upgrade Needed?
-    if ((VERSION != $Config['LatestVersion']) && check_version($Config['LatestVersion'])) {
-      $upgrade_available = true;
-      $status_bgcolour = ' home-bggreen';
-      $status_msg = '<h3 class="darkgray">Upgrade</h3>';
-      $status_submsg = '<h2>New version available: v'.$Config['LatestVersion'].'</h2>';  
-    }    
-  }
   
   if (file_exists(NOTRACK_LIST)) {               //Does the notrack.list file exist?
     $filemtime = filemtime(NOTRACK_LIST);        //Get last modified time
@@ -192,17 +160,17 @@ function home_status() {
     elseif ($filemtime > $currenttime - 432000) {  //5 days onwards is getting stale
       $date_bgcolour = 'home-bgyellow';
       $date_msg = '<h3 class="darkgray">5 Days ago</h3>';
-      $date_submsg = '<h2>Block list is old</h2>';
+      $date_submsg = '<p>Block list is old</p>';
     }
     elseif ($filemtime > $currenttime - 518400) {
       $date_bgcolour = 'home-bgyellow';
       $date_msg = '<h3 class="darkgray">6 Days ago</h3>';
-      $date_submsg = '<h2>Block list is old</h2>';
+      $date_submsg = '<p>Block list is old</p>';
     }
     elseif ($filemtime > $currenttime - 1209600) {
       $date_bgcolour = 'home-bgred';
       $date_msg = '<h3 class="darkgray">Last Week</h3>';
-      $date_submsg = '<h2>Block list is old</h2>';
+      $date_submsg = '<p>Block list is old</p>';
     }
     else {                                       //Beyond 2 weeks is too old
       $date_bgcolour = 'home-bgred';
@@ -215,88 +183,119 @@ function home_status() {
       $status_msg = '<h3 class="darkgray">Block List Missing</h3>';
       $date_msg = '<h3 class="darkgray">Unknown</h3>';
       $date_bgcolour = 'home-bgred';
-      $status_bgcolour = 'home-bgred';
     }
   }
 
-  if ($upgrade_available) {
-    echo '<a href="./upgrade.php"><div class="home-nav'.$status_bgcolour.'"><h2>Status</h2><hr><br>'.$status_msg.$status_submsg.'</div></a>'.PHP_EOL;
+  if ((VERSION != $Config['LatestVersion']) && check_version($Config['LatestVersion'])) {
+    $date_msg = '<h3 class="darkgray">Upgrade</h3>';
+    $date_submsg = '<p>New version available: v'.$Config['LatestVersion'].'</p>';
+    
+    echo '<a class="home-bggreen" href="./upgrade.php"><span><h2>Status</h2>'.$date_msg.$date_submsg.'</span></a>'.PHP_EOL;
+    //TODO Image for upgrade
   }
   else {
-    echo '<div class="home-nav'.$status_bgcolour.'"><h2>Status</h2><hr><br>'.$status_msg.'</div>'.PHP_EOL;
+    echo '<div><h2>Last Updated</h2>'.$date_msg.$date_submsg.'</div>'.PHP_EOL;
   }
-  echo '<div class="home-nav"><h2>Last Updated</h2><hr><br>'.$date_msg.$date_submsg.'</div>'.PHP_EOL;
+
+  return null;
 }
 
 
 /********************************************************************
- *  Sites Blocked Box
+ *  Count Queries
+ *    1. Query time, system, dns_result for all results from passed 24 hours from dnslog
+ *    2. Use SQL rounding to round time to nearest 30 mins
+ *    3. Count by 30 min time blocks into associative array
+ *    4. Move values from associative array to daily count indexed array
  *
  *  Params:
  *    None
  *  Return:
  *    None
  */
-function home_sitesblocked() {
-  $rows = 0;
+function count_queries() {
+  global $db, $allowed_queries, $blocked_queries, $chart_labels;
+  global $day_allowed, $day_blocked, $day_local;
   
-  $rows = count_rows(QRY_WEBLOG);
+  $allowed_arr = array();
+  $blocked_arr = array();
+  $currenttime = 0;
+  $datestr = '';
 
-  echo '<a href="./blocked.php"><div class="home-nav"><h2>Sites Blocked</h2><hr><span>'.number_format(floatval($rows)).'<br>This Week</span><div class="icon-box"><img src="./svg/home_blocked.svg" alt=""></div></div></a>'.PHP_EOL;
-}
+  $currenttime = intval(time() - (time() % 1800)) + 3600;
+  /*if ($currenttime < time()+1800) {
+    echo intval($currenttime - time()).'offset<br>';
+    $currenttime += 1800;
+  }
+  else echo intval($currenttime - time())."not used<br>";*/
 
-
-/********************************************************************
- *  Traffic Graph
- *    1. Calculate what Unix time was 23 hours ago
- *    2. Build xlabels using just the hour component of date()
- *    3. Load allowed 'a' results from dnslog table for values per hour using 00 mins to 59 mins of each hour
- *    4. Load blocked 'b' results from dnslog table for values per hour
- *    5. Send data to linechart() function to draw the chart
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function trafficgraph() {
-  $allowed_values = array();
-  $blocked_values = array();
-  $xlabels = array();
-  $timestr1 = '';
-  $timestr2 = '';
-
-  $starttime = time() - 82800;                             //-23 Hours
-
-  for ($i = 0; $i < 24; $i++) {                            //Loop forward to +23 Hours
-    $xlabels[] = date('H:00', $starttime + ($i * 3600));
-    $timestr1 = date('Y-m-d H:00:00', $starttime + ($i * 3600));
-    $timestr2 = date('Y-m-d H:59:59', $starttime + ($i * 3600));
-
-    $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'a' AND log_time >= '$timestr1' AND log_time <= '$timestr2'");
-    $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_result = 'b' AND log_time >= '$timestr1' AND log_time <= '$timestr2'");
+  $starttime = date('Y-m-d H:00:00', $currenttime - 84600);
+  $endtime = date('Y-m-d H:59:59');
+  
+  $query = "SELECT SEC_TO_TIME((TIME_TO_SEC(log_time) DIV 1800) * 1800) AS round_time, sys, dns_result FROM dnslog WHERE log_time >= '$starttime' AND log_time <= '$endtime'";
+  
+  for ($i = $currenttime - 84600; $i <= $currenttime; $i+=1800) {
+    $datestr = date('H:i:00', $i);
+    $allowed_arr[$datestr] = 0;
+    $blocked_arr[$datestr] = 0;
+    $chart_labels[] = date('H:i', $i);
+  }
+  //print_r($allowed_arr);
+  
+  if(!$result = $db->query($query)){
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo 'show_time_view: '.$db->error;
+    echo '</div>'.PHP_EOL;
+    die();
+  }
+  
+  if ($result->num_rows == 0) {                  //Leave if nothing found
+    $result->free();
+    //echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
+    return false;
+  }
+  
+  while($row = $result->fetch_assoc()) {         //Read each row of results
+    if ($row['dns_result'] == 'A') {
+      $allowed_arr[$row['round_time']]++;
+      $day_allowed++;
+    }
+    elseif ($row['dns_result'] == 'B') {
+      $blocked_arr[$row['round_time']]++;
+      $day_blocked++;
+    }
+    elseif ($row['dns_result'] == 'L') {
+      $day_local++;
+    }
   }
 
-  /*print_r($allowed_values);                              //For debugging
-  echo '<br>';
-  print_r($blocked_values);*/
-  linechart($allowed_values, $blocked_values, $xlabels);   //Draw the line chart
-}  
+  $result->free();
+  
+  $allowed_queries = array_values($allowed_arr);
+  $blocked_queries = array_values($blocked_arr);
+  
+  return null;
+}
+
 
 
 //Main---------------------------------------------------------------
-echo '<div id="main">';
-echo '<div class="home-nav-container">';
 
+
+echo '<div id="main">';
+count_queries();
+echo '<div class="home-nav-container">';
 home_status();
 home_blocklist();
-home_sitesblocked();
 home_queries();
 home_network();
 
-trafficgraph();
+//home_sitesblocked();
 
-echo '</div>'.PHP_EOL;
+echo '</div>'.PHP_EOL;                                     //End home-nav-container
+linechart($allowed_queries, $blocked_queries, $chart_labels);
+
+
 
 $db->close();
 ?>

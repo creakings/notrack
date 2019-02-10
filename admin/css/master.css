@@ -42,10 +42,10 @@ img.full {
 }
 p {
   margin: 0 0 0.5em 0;
-  font-size: 1em;
+  font-size: 1rem;
 }
 p.indent {
-  margin: 0 0 1.2em 1.5em;
+  margin: 0 0 1.2rem 1.5em;
 }
 p.small {
   margin: 0.1em 0.5em 0em 1em;

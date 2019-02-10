@@ -538,7 +538,7 @@ function linechart($values1, $values2, $xlabels) {
   $values2[] = 0;                                          //Ensure line returns to 0
   $xlabels[] = $xlabels[$numvalues-1] + 1;                 //Increment xlables
   
-  $xstep = 1900 / 24;                                      //Calculate x axis increment
+  $xstep = 1900 / $numvalues;                              //Calculate x axis increment
   if ($max_value < 200) {                                  //Calculate y axis maximum
     $ymax = (ceil($max_value / 10) * 10) + 10;             //Change offset for low values
   }
@@ -550,23 +550,24 @@ function linechart($values1, $values2, $xlabels) {
   }
   
   echo '<div class="linechart-container">'.PHP_EOL;        //Start Chart container
-  echo '<svg width="100%" height="90%" viewbox="0 0 2000 910" class="shadow">'.PHP_EOL;
-  echo '<rect x="1" y="1" width="1998" height="908" rx="5" ry="5" fill-opacity="0.95" fill="#F7F7F7" stroke="#B3B3B3" stroke-width="2px" opacity="1" />'.PHP_EOL;
-    
-  for ($i = 0.25; $i < 1; $i += 0.25) {                    //Draw Y Axis lables and horizontal lines
-    echo '<path class="gridline" d="M100,'.($i*850).' H2000" />'.PHP_EOL;
-    echo '<text class="axistext" x="8" y="'.(18+($i*850)).'">'.formatnumber((1-$i)*$ymax).'</text>'.PHP_EOL;
+  echo '<h2>DNS Queries over past 24 hours</h2>';
+  echo '<svg width="100%" height="100%" viewbox="0 0 2000 760" class="shadow">'.PHP_EOL;
+  
+  //echo '<path x="1" y="1" width="1998" height="758" rx="5" ry="5" fill=none stroke="#B3B3B3" stroke-width="2px" opacity="1" />'.PHP_EOL;
+  //Axis line rectangle with rounded corners
+  echo '<rect class="axisline" paint-order="normal" width="1900" height="701" x="100" y="0" rx="5" ry="5" />'.PHP_EOL;
+  
+  for ($i = 0.25; $i < 1; $i += 0.25) {                    //Draw Y Axis lables and (horizontal lines)
+    echo '<path class="gridline" d="M100,'.($i*700).' H2000" />'.PHP_EOL;
+    echo '<text class="axistext" x="8" y="'.(18+($i*700)).'">'.formatnumber((1-$i)*$ymax).'</text>'.PHP_EOL;
   }
-  echo '<text x="8" y="855" class="axistext">0</text>';
+  echo '<text x="8" y="705" class="axistext">0</text>';
   echo '<text x="8" y="38" class="axistext">'.formatnumber($ymax).'</text>';
   
   
-  for ($i = 0; $i < $numvalues; $i += 2) {                 //Draw X Axis labels skipping every other value
-    echo '<text x="'.(60+($i * $xstep)).'" y="896" class="axistext">'.$xlabels[$i].'</text>'.PHP_EOL;
-  }
-  
-  for ($i = 2; $i < 24; $i += 2) {                         //Verticle Grid lines
-    echo '<path class="gridline" d="M'.(100+($i*$xstep)).',2 V850" />'.PHP_EOL;
+  for ($i = 0; $i < $numvalues; $i += 4) {                 //Draw X Axis and labels (vertical lines)
+    echo '<text x="'.(60+($i * $xstep)).'" y="746" class="axistext">'.$xlabels[$i].'</text>'.PHP_EOL;
+    echo '<path class="gridline" d="M'.(100+($i*$xstep)).',2 V700" />'.PHP_EOL;
   }
   
   draw_graphline($values1, $xstep, $ymax, '#008CD1');
@@ -577,24 +578,22 @@ function linechart($values1, $values2, $xlabels) {
     $x = 100 + (($i) * $xstep);                            //Calculate X position
 
     if ($values1[$i] > 0) {                                //$values1[] (Allowed)
-      $y = 850 - (($values1[$i] / $ymax) * 850);           //Calculate Y position of $values1
+      $y = 700 - (($values1[$i] / $ymax) * 700);           //Calculate Y position of $values1
       echo '<g>'.PHP_EOL;
       echo '  <title>'.$xlabels[$i].' '.$values1[$i].' Allowed</title>'.PHP_EOL;
-      echo '  <circle cx="'.$x.'" cy="'.(850-($values1[$i]/$ymax)*850).'" r="10px" fill="#008CD1" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" title="'.$x.'"/>'.PHP_EOL;
+      echo '  <circle cx="'.$x.'" cy="'.(700-($values1[$i]/$ymax)*700).'" r="10px" fill="#008CD1" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" title="'.$x.'"/>'.PHP_EOL;
       echo '</g>'.PHP_EOL;
     }
 
-    if ($values2[$i] > 0) {                                //$values1[] (Blocked)
-      $y = 850 - (($values2[$i] / $ymax) * 850);           //Calculate Y position of $values2
+    if ($values2[$i] > 0) {                                //$values2[] (Blocked)
+      $y = 700 - (($values2[$i] / $ymax) * 700);           //Calculate Y position of $values2
       echo '<g>'.PHP_EOL;
       echo '  <title>'.$xlabels[$i].' '.$values2[$i].' Blocked</title>'.PHP_EOL;
-      echo '  <circle cx="'.$x.'" cy="'.(850-($values2[$i]/$ymax)*850).'" r="10px" fill="#B1244A" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" />'.PHP_EOL;
+      echo '  <circle cx="'.$x.'" cy="'.(700-($values2[$i]/$ymax)*700).'" r="10px" fill="#B1244A" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" />'.PHP_EOL;
       echo '</g>'.PHP_EOL;
     }
   }
-
-
-  echo '<path class="axisline" d="M100,0 V850 H2000 " />'; //X and Y Axis line
+  
   echo '</svg>'.PHP_EOL;                                   //End SVG
   echo '</div>'.PHP_EOL;                                   //End Chart container
 
@@ -608,7 +607,7 @@ function linechart($values1, $values2, $xlabels) {
  *  Params:
  *    $values array, x step, y maximum value, line colour
  *  Return:
- *    svg path nodes with bezier curve points
+ *    None
  */
 
 function draw_graphline($values, $xstep, $ymax, $colour) {
@@ -617,13 +616,13 @@ function draw_graphline($values, $xstep, $ymax, $colour) {
   $y = 0;                                                  //Node Y
   $numvalues = count($values);
   
-  $path = "<path d=\"M 100,850 ";                          //Path start point
+  $path = "<path d=\"M 100,700 ";                          //Path start point
   for ($i = 1; $i < $numvalues; $i++) {
     $x = 100 + (($i) * $xstep);
-    $y = 850 - (($values[$i] / $ymax) * 850);
+    $y = 700 - (($values[$i] / $ymax) * 700);
     $path .= "L $x $y";
   }
-  $path .= 'V850 " stroke="'.$colour.'" stroke-width="5px" fill="'.$colour.'" fill-opacity="0.15" />'.PHP_EOL;
+  $path .= 'V700 " stroke="'.$colour.'" stroke-width="5px" fill="'.$colour.'" fill-opacity="0.15" />'.PHP_EOL;
   echo $path;
 }
 
@@ -646,9 +645,9 @@ function draw_circles($values, $xstep, $ymax, $colour) {
   for ($i = 1; $i < $numvalues; $i++) {
     if ($values[$i] > 0) {
       $x = 100 + (($i) * $xstep);
-      $y = 850 - (($values[$i] / $ymax) * 850);    
+      $y = 700 - (($values[$i] / $ymax) * 700);    
       echo '<title>Test</title>';
-      echo '<circle cx="'.$x.'" cy="'.(850-($values[$i]/$ymax)*850).'" r="10px" fill="'.$colour.'" fill-opacity="1" stroke="#EAEEEE" stroke-width="5px" />'.PHP_EOL;
+      echo '<circle cx="'.$x.'" cy="'.(700-($values[$i]/$ymax)*700).'" r="10px" fill="'.$colour.'" fill-opacity="1" stroke="#EAEEEE" stroke-width="5px" />'.PHP_EOL;
     }
   }
 }
