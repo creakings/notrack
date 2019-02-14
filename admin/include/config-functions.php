@@ -37,7 +37,7 @@ function add_searches() {
 function draw_blocklist_row($bl, $bl_name, $msg) {
   global $Config;
   //Txt File = Origniating download file
-  //TLD Is a special case, and the Txt file used is TLD_FILE
+  //TLD Is a special case, and the Txt file used is TLD_CSV
   
   $txtfile = false;
   $txtfilename = '';
@@ -51,7 +51,7 @@ function draw_blocklist_row($bl, $bl_name, $msg) {
   else {    
     $filename = strtolower(substr($bl, 3));
     if ($bl == 'bl_tld') {
-      $txtfilename = TLD_FILE;
+      $txtfilename = TLD_CSV;
     }
     else {
       $txtfilename = DIR_TMP.$filename.'.txt';

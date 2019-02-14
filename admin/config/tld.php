@@ -17,7 +17,6 @@ ensure_active_session();
 /************************************************
 *Constants                                      *
 ************************************************/
-define('TLD_CSV', '../include/tld.csv');
 define('DOMAIN_BLACKLIST', '/etc/notrack/domain-blacklist.txt');
 define('DOMAIN_WHITELIST', '/etc/notrack/domain-whitelist.txt');
 /************************************************
