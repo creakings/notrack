@@ -117,7 +117,7 @@ function home_queries() {
 
   if ($total == 0) {                                       //Alternative if no DNS queries have been made
     echo '<div class="icon-box"><img src="./svg/home_queries.svg" alt=""></div>'.PHP_EOL;
-    echo '</div></a>'.PHP_EOL;
+    echo '</a>'.PHP_EOL;
     return null;
   }
   
@@ -293,7 +293,9 @@ home_network();
 //home_sitesblocked();
 
 echo '</div>'.PHP_EOL;                                     //End home-nav-container
-linechart($allowed_queries, $blocked_queries, $chart_labels);
+if ($day_allowed + $day_blocked > 0) {
+  linechart($allowed_queries, $blocked_queries, $chart_labels);
+}
 
 
 
