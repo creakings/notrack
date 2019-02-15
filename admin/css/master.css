@@ -805,7 +805,15 @@ span.key-green {
   border-radius: 4px;
   background-color: rgba(1, 90, 96, 0.98);
   box-shadow: inset 0 0 4px #222;
+  display: inline;
   float: left;
+}
+#menu-lower input[type="text"] {
+  display: inline;
+  float: left;
+  margin-right: 1rem;
+  width: 16rem;
+  background-color: #eee;
 }
 #menu-lower img:hover {
   box-shadow: inset 0 0 4px #00a8f5;

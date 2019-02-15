@@ -39,6 +39,7 @@ draw_topmenu('Live');
 draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;
 echo '<div id="menu-lower">'.PHP_EOL;
+echo '<input type="text" id="ipaddressbox" value="" placeholder="127.0.0.1">';
 echo '<img src="./svg/lmenu_pause.svg" id="pausequeueimg" class="pointer" onclick="pauseQueue()">';
 echo '<img src="./svg/lmenu_clear.svg" id="clearqueueimg" class="pointer" onclick="clearQueue()">';
 echo '<div id="temp"></div>'.PHP_EOL;
@@ -99,6 +100,18 @@ function getTime(t)
   return hr+ ':' + m.substr(-2) + ':' + s.substr(-2);
 }
 
+/********************************************************************
+ *  Valid IP
+ *    Regex to check for Valid IPv4 or IPv6
+ *  Params:
+ *    String to check
+ *  Return:
+ *    True Valid IP
+ *    False Invalid IP
+ */
+function validIP(str) {
+  return /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?$/.test(str);
+}
 
 /********************************************************************
  *  Move Main Queue to Display List
@@ -118,30 +131,45 @@ function moveMainQueue() {
   let mainQueueSize = mainQueue.size;
   let target = 0;
   let matches = [];
-
+  let dnsRequest = "";
+  let sys = "";
+  let addEntry = true;
+  let searchIP = document.getElementById("ipaddressbox").value.trim();
+  let validSearchIP = validIP(searchIP);
+  
   var regexpKey = /^(\d+)\-(.+)$/                          //Regex to split Key to Time - Request
 
-  if (paused) return;
+  if (paused) return;                                      //Don't move the queue if user has paused
 
   if (mainQueueSize == 0) return;
   target = Math.ceil((mainQueueSize / MAX_LINES) * 3.5);   //Target is based on a percentage of the mainQueueSize
   if (target > MAX_LINES * 0.75) target = Math.ceil(MAX_LINES * 0.75);  //No more than 75% to be moved
   if (displayList.length < 10) target = 10;                //If nothing much in displayList then add more requests
 
-  //console.log(target);                                   //Uncomment for debugging
-
   for (let [key, value] of mainQueue.entries()) {
     matches = regexpKey.exec(key);
     if (matches != null) {
       //Add key, value, system, result to displayList
-      displayList.push([matches[1], matches[2], value.substr(0, value.length-1), value.substr(-1)]);
+      sys = value.substr(0, value.length-1);
+      dnsResult = value.substr(-1);
 
+      if (validSearchIP) {                                 //Are we looking for a specific IP?
+        (sys == searchIP) ? addEntry = true : addEntry = false;
+      }
+
+      if (addEntry) {
+        displayList.push([matches[1], matches[2], sys, dnsResult]);
+        i++;
+      }
+      /*else {
+        console.log(matches[2] + sys);                     //Uncomment for debugging search
+      }*/
       mainQueue.delete(key);                               //Delete key from mainQueue
       timePoint = matches[1];                              //Advance position of DNS_LOG on
-      i++;
-      if (displayList.length > MAX_LINES) displayList.shift();
+      if (displayList.length > MAX_LINES) displayList.shift(); //Delete trailing lines
       if (i >= target) break;
     }
+    addEntry = true;
   }
 }
 
@@ -352,7 +380,7 @@ setInterval(function() {
   }
   throttleApiRequest++
 
-}, 2000);
+}, 1800);
 
 
 </script>
