@@ -307,7 +307,7 @@ function process_dnslog() {
   echo "Processing log file"
     
   for line in "${logarray[@]}"; do
-    if [[ $line =~ ^[A-Z][a-z][a-z][[:space:]][[:space:]]?([0-9]{1,2})[[:space:]]([0-9]{2}\:[0-9]{2}\:[0-9]{2})[[:space:]]dnsmasq\[[0-9]{1,6}\]\:[[:space:]](query|reply|config|\/etc\/localhosts\.list)(\[[A]{1,4}\])?[[:space:]]([A-Za-z0-9\.\-]+)[[:space:]](is|to|from)[[:space:]](.*)$ ]]; then
+    if [[ $line =~ ^[A-Z][a-z][a-z][[:space:]][[:space:]]?([0-9]{1,2})[[:space:]]([0-9]{2}\:[0-9]{2}\:[0-9]{2})[[:space:]]dnsmasq\[[0-9]{1,6}\]\:[[:space:]](query|reply|config|cached|\/etc\/localhosts\.list)(\[[A]{1,4}\])?[[:space:]]([A-Za-z0-9\.\-]+)[[:space:]](is|to|from)[[:space:]](.*)$ ]]; then
       url="${BASH_REMATCH[5]}"
 
       if [[ ${BASH_REMATCH[3]} == "query" ]]; then
@@ -324,11 +324,12 @@ function process_dnslog() {
         if [ "${querylist[$url]}" ]; then                  #Does answer match a query?
           if [[ ${BASH_REMATCH[3]} == "reply" ]]; then dns_result="A"    #Allowed
           elif [[ ${BASH_REMATCH[3]} == "config" ]]; then dns_result="B" #Blocked
+          elif [[ ${BASH_REMATCH[3]} == "cached" ]]; then dns_result="A" #Allowed - Cached
           elif [[ ${BASH_REMATCH[3]} == "/etc/localhosts.list" ]]; then dns_result="L"
           fi
-          
+
           simplify_url "$url"                              #Simplify with commonsites
-          
+
           if [[ $simpleurl != "" ]]; then                  #Add row into SQL Table
             echo "INSERT INTO dnslog (id,log_time,sys,dns_request,dns_result) VALUES ('null','${querylist[$url]}', '${systemlist[$url]}', '$simpleurl', '$dns_result')" | mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME"
           fi
