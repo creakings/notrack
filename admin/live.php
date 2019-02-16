@@ -3,11 +3,11 @@
 //2. Draw blank table cells up to MAX_LINES
 //3. Run a timer
 //4. Send POST request to API asking for contents of DNS_LOG file
-//5. Parse DNS_LOG (in a similar method to ntrk-parse bash script) into mainQueue map
-//5a. Key to mainQueue is time+dnsquery in order to track progress of DNS_LOG
+//5. Parse DNS_LOG (in a similar method to ntrk-parse bash script) into requestBuffer map
+//5a. Key to requestBuffer is time+dnsquery in order to track progress of DNS_LOG
 //5b. timePoint is also used to track progress
-//6. Move mainQueue to displayList on a number in a limited number of items based on size of mainQueue
-//7. displayQueue shows contents of displayList in table with cells coloured depending on if
+//6. Move requestBuffer to requestReady on a number in a limited number of items based on size of requestBuffer
+//7. displayRequests shows contents of requestReady in table with cells coloured depending on if
 //   DNS request is allowed / blocked / local
 
 
@@ -58,13 +58,13 @@ const MAX_LINES = 27;
 var paused = false;
 var throttleApiRequest = 0;                                //Int used to reduce number of requests for DNS_LOG to be read
 var timePoint = 0;                                         //Unix time position in log file
-var displayList = [];                                      //Requests displayed on livetable
-var mainQueue = new Map();                                 //Requests read from DNS_LOG waiting to be moved to displayList
+var requestReady = [];                                     //Requests displayed on livetable
+var requestBuffer = new Map();                             //Requests read from DNS_LOG waiting to be moved to requestReady
 
 drawTable();
 loadApi();
-moveMainQueue();
-displayQueue();
+moveBuffer();
+displayRequests();
 /********************************************************************
  *  Draw Table
  *
@@ -114,42 +114,51 @@ function validIP(str) {
 }
 
 /********************************************************************
- *  Move Main Queue to Display List
- *    1. Calculate how much of the mainQueue to move to displayList
- *    2. Split Time-Request from mainQueue key
- *    3. Split System-Result from mainQueue value
- *    4. Add the 4 items as an array to displayList
- *    5. Advance on the timePoint
+ *  Move requestBuffer to requestReady
+ *    1. This function is called when requestBuffer is ready to be moved to requestReady
+ *       (i.e. window visible and not paused by user)
+ *    2. Calculate how much of the requestBuffer to move to requestReady
+ *    3. Split Time-Request from requestBuffer key
+ *    4. Split System-Result from requestBuffer value
+ *    5. Add the 4 items as an array to requestReady
+ *    6. Advance on the timePoint
  *
  *  Params:
  *    None
  *  Return:
  *    None
  */
-function moveMainQueue() {
-  let i = 0;
-  let mainQueueSize = mainQueue.size;
-  let target = 0;
-  let matches = [];
-  let dnsRequest = "";
-  let sys = "";
+function moveBuffer() {
   let addEntry = true;
-  let searchIP = document.getElementById("ipaddressbox").value.trim();
-  let validSearchIP = validIP(searchIP);
-  
+  let dnsRequest = "";
+  let i = 0;
+  let requestBufferSize = requestBuffer.size;
+  let target = 0;
+  let sys = "";
+  let searchIP = '';
+  let validSearchIP = false;
+  let matches = [];
+
   var regexpKey = /^(\d+)\-(.+)$/                          //Regex to split Key to Time - Request
 
   if (paused) return;                                      //Don't move the queue if user has paused
 
-  if (mainQueueSize == 0) return;
-  target = Math.ceil((mainQueueSize / MAX_LINES) * 3.5);   //Target is based on a percentage of the mainQueueSize
-  if (target > MAX_LINES * 0.75) target = Math.ceil(MAX_LINES * 0.75);  //No more than 75% to be moved
-  if (displayList.length < 10) target = 10;                //If nothing much in displayList then add more requests
+  //Check if user has entered a valid IPv4 or IPv6 in ipaddressbox text box
+  searchIP = document.getElementById("ipaddressbox").value.trim();
+  validSearchIP = validIP(searchIP);
 
-  for (let [key, value] of mainQueue.entries()) {
+  if (requestBufferSize == 0) return;                      //Prevent div by zero
+
+  //Target is based on a percentage of the requestBufferSize with no more than 75% of the buffer to be moved
+  target = Math.ceil((requestBufferSize / MAX_LINES) * 3.5);
+  if (target > MAX_LINES * 0.75) target = Math.ceil(MAX_LINES * 0.75);
+  if (requestReady.length < 10) target = 10;               //If nothing much in requestReady then add more requests
+
+  for (let [key, value] of requestBuffer.entries()) {
     matches = regexpKey.exec(key);
-    if (matches != null) {
-      //Add key, value, system, result to displayList
+    //if (matches != null) { DEPRECATED not needed
+      
+      //Extract sys and dnsResult from value (127.0.0.1A / 127.0.0.1B)
       sys = value.substr(0, value.length-1);
       dnsResult = value.substr(-1);
 
@@ -158,17 +167,17 @@ function moveMainQueue() {
       }
 
       if (addEntry) {
-        displayList.push([matches[1], matches[2], sys, dnsResult]);
+        requestReady.push([matches[1], matches[2], sys, dnsResult]);
         i++;
       }
       /*else {
         console.log(matches[2] + sys);                     //Uncomment for debugging search
       }*/
-      mainQueue.delete(key);                               //Delete key from mainQueue
+      requestBuffer.delete(key);                           //Delete key from requestBuffer
       timePoint = matches[1];                              //Advance position of DNS_LOG on
-      if (displayList.length > MAX_LINES) displayList.shift(); //Delete trailing lines
+      if (requestReady.length > MAX_LINES) requestReady.shift(); //Delete trailing lines
       if (i >= target) break;
-    }
+    //}
     addEntry = true;
   }
 }
@@ -177,7 +186,7 @@ function moveMainQueue() {
 /********************************************************************
  * Clear Queue
  *    Activated when user clicks Clear button
- *    1. Delete all values from displayList and mainQueue
+ *    1. Delete all values from requestReady and requestBuffer
  *    2. Clear all values from liveTable
  *
  *  Params:
@@ -188,8 +197,8 @@ function moveMainQueue() {
 function clearQueue() {
   let liveTable = document.getElementById('livetable');
 
-  displayList.splice(0,displayList.length);
-  mainQueue.clear();
+  requestReady.splice(0,requestReady.length);
+  requestBuffer.clear();
 
   //Remove all values from the table
   for (let i = 0; i < MAX_LINES - 1; i++) {
@@ -199,6 +208,7 @@ function clearQueue() {
     liveTable.rows[i].cells[1].className = '';
   }
 }
+
 
 /********************************************************************
  * Pause Queue
@@ -223,7 +233,7 @@ function pauseQueue() {
 
 /********************************************************************
  *  Read Log Data
- *    Parse JSON output from DNS_LOG into mainQueue
+ *    Parse JSON output from DNS_LOG into requestBuffer
  *    DNS_LOG gets new data added to the end of file, but is flushed after ntrk-parse is run
  *    Track progress point with timePoint
  *
@@ -268,9 +278,9 @@ function readLogData(data) {
           else if (matches[2] == '/etc/localhosts.list') dnsResult='L'; //Local
 
           //Check if entry exists for Time + Request (assume same request is not made more than once per second)
-          if (! mainQueue.has(logTime+'-'+dnsRequest)) {
+          if (! requestBuffer.has(logTime+'-'+dnsRequest)) {
             //Key = Time + Request, Value = System + Result
-            mainQueue.set(logTime+'-'+dnsRequest, systemList.get(dnsRequest) + dnsResult);
+            requestBuffer.set(logTime+'-'+dnsRequest, systemList.get(dnsRequest) + dnsResult);
           }
 
           queryList.delete(dnsRequest);                    //Delete value from queryList
@@ -299,33 +309,35 @@ function simplifyDomain(site) {
 
 /********************************************************************
  *  Display Queue
+ *    Show the results from requestReady array in livetable
+ *    Array is displayed from end-to-start (latest-to-earliest)
  *
  *  Params:
  *    None
  *  Return:
  *    None
  */
-function displayQueue() {
-  let queuesize = displayList.length;
+function displayRequests() {
+  let queuesize = requestReady.length;
   let div = document.getElementById('temp');
   let liveTable = document.getElementById('livetable');
   let currentRow = 0;
 
-  div.innerHTML = 'backlog:' + mainQueue.size + '<br>';
+  div.innerHTML = 'backlog:' + requestBuffer.size + '<br>';
   for (let i = queuesize - 1; i > 0; i--) {                //Start with latest first
-    if (displayList[i][3] == 'A') {
+    if (requestReady[i][3] == 'A') {
       liveTable.rows[currentRow].cells[1].className = '';
     }
-    else if (displayList[i][3] == 'B') {
+    else if (requestReady[i][3] == 'B') {
       liveTable.rows[currentRow].cells[1].className = 'blocked';
     }
-    else if (displayList[i][3] == 'L') {
+    else if (requestReady[i][3] == 'L') {
       liveTable.rows[currentRow].cells[1].className = 'local';
     }
 
-    liveTable.rows[currentRow].cells[0].innerHTML = getTime(displayList[i][0]);
-    liveTable.rows[currentRow].cells[1].innerHTML = simplifyDomain(displayList[i][1]);
-    liveTable.rows[currentRow].cells[2].innerHTML = displayList[i][2];
+    liveTable.rows[currentRow].cells[0].innerHTML = getTime(requestReady[i][0]);
+    liveTable.rows[currentRow].cells[1].innerHTML = simplifyDomain(requestReady[i][1]);
+    liveTable.rows[currentRow].cells[2].innerHTML = requestReady[i][2];
     currentRow++;
   }
 }
@@ -333,7 +345,7 @@ function displayQueue() {
 
 /********************************************************************
  *  Load API
- *    Send requst to NoTrack API requesting the contents of DNS_LOG
+ *    Send POST requst to NoTrack API asking for the contents of DNS_LOG
  *
  *  Params:
  *    None
@@ -360,6 +372,7 @@ function loadApi() {
   xmlhttp.send(params);
 }
 
+
 /********************************************************************
  *  Timer
  *
@@ -374,9 +387,9 @@ setInterval(function() {
     throttleApiRequest = 0;
   }
 
-  if (document.visibilityState == 'visible') {             //Only display if window is visible
-    moveMainQueue();
-    displayQueue();
+  if (document.visibilityState == 'visible') {             //Move queue if window is visible
+    moveBuffer();
+    displayRequests();
   }
   throttleApiRequest++
 
