@@ -29,7 +29,6 @@ ensure_active_session();
   <script src="./include/config.js"></script>
   <script src="./include/menu.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=0.8">
-  <!--TODO Sort mobile view out    -->
   <title>NoTrack - Live</title>
 </head>
 
@@ -156,28 +155,27 @@ function moveBuffer() {
 
   for (let [key, value] of requestBuffer.entries()) {
     matches = regexpKey.exec(key);
-    //if (matches != null) { DEPRECATED not needed
-      
-      //Extract sys and dnsResult from value (127.0.0.1A / 127.0.0.1B)
-      sys = value.substr(0, value.length-1);
-      dnsResult = value.substr(-1);
 
-      if (validSearchIP) {                                 //Are we looking for a specific IP?
-        (sys == searchIP) ? addEntry = true : addEntry = false;
-      }
+    //Extract sys and dnsResult from value (127.0.0.1A / 127.0.0.1B)
+    sys = value.substr(0, value.length-1);
+    dnsResult = value.substr(-1);
 
-      if (addEntry) {
-        requestReady.push([matches[1], matches[2], sys, dnsResult]);
-        i++;
-      }
-      /*else {
-        console.log(matches[2] + sys);                     //Uncomment for debugging search
-      }*/
-      requestBuffer.delete(key);                           //Delete key from requestBuffer
-      timePoint = matches[1];                              //Advance position of DNS_LOG on
-      if (requestReady.length > MAX_LINES) requestReady.shift(); //Delete trailing lines
-      if (i >= target) break;
-    //}
+    if (validSearchIP) {                                   //Are we looking for a specific IP?
+      (sys == searchIP) ? addEntry = true : addEntry = false;
+    }
+
+    if (addEntry) {
+      requestReady.push([matches[1], matches[2], sys, dnsResult]);
+      i++;
+    }
+    /*else {
+      console.log(matches[2] + sys);                       //Uncomment for debugging search
+    }*/
+    requestBuffer.delete(key);                             //Delete key from requestBuffer
+    timePoint = matches[1];                                //Advance position of DNS_LOG on
+    if (requestReady.length > MAX_LINES) requestReady.shift(); //Delete trailing lines
+    if (i >= target) break;
+
     addEntry = true;
   }
 }
