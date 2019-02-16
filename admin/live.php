@@ -28,7 +28,7 @@ ensure_active_session();
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/config.js"></script>
   <script src="./include/menu.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=0.5">
+  <meta name="viewport" content="width=device-width, initial-scale=0.8">
   <!--TODO Sort mobile view out    -->
   <title>NoTrack - Live</title>
 </head>
@@ -42,7 +42,6 @@ echo '<div id="menu-lower">'.PHP_EOL;
 echo '<input type="text" id="ipaddressbox" value="" placeholder="127.0.0.1">';
 echo '<img src="./svg/lmenu_pause.svg" id="pausequeueimg" class="pointer" onclick="pauseQueue()">';
 echo '<img src="./svg/lmenu_clear.svg" id="clearqueueimg" class="pointer" onclick="clearQueue()">';
-echo '<div id="temp"></div>'.PHP_EOL;
 echo '</div>'.PHP_EOL;
 
 echo '<div class="sys-group">'.PHP_EOL;
@@ -80,6 +79,7 @@ function drawTable() {
     row.insertCell(0);
     row.insertCell(1);
     row.insertCell(2);
+    row.insertCell(3);
     liveTable.rows[i].cells[0].innerHTML = '&nbsp;';
   }
 }
@@ -202,10 +202,11 @@ function clearQueue() {
 
   //Remove all values from the table
   for (let i = 0; i < MAX_LINES - 1; i++) {
+    liveTable.rows[i].className = '';
     liveTable.rows[i].cells[0].innerHTML = '&nbsp;';
     liveTable.rows[i].cells[1].innerHTML = '&nbsp;';
     liveTable.rows[i].cells[2].innerHTML = '&nbsp;';
-    liveTable.rows[i].cells[1].className = '';
+    liveTable.rows[i].cells[3].innerHTML = '&nbsp;';
   }
 }
 
@@ -237,6 +238,14 @@ function pauseQueue() {
  *    DNS_LOG gets new data added to the end of file, but is flushed after ntrk-parse is run
  *    Track progress point with timePoint
  *
+ *    regexp:
+ *      Group 1. Month DD HH:MM:SS
+ *      Non.     dnsmasq[pid]:
+ *      Group 2. query|reply|config|\etc\localhosts.list
+ *      Group 3. A or AAAA
+ *      Group 4. is|to|from
+ *      Group 5. IP
+ *
  *  Params:
  *    JSON Data
  *  Return:
@@ -253,7 +262,7 @@ function readLogData(data) {
   let queryList = new Map();
   let systemList = new Map();
 
-  var regexp = /(\w{3}\s\s?\d{1,2}\s\d{2}\:\d{2}\:\d{2})\sdnsmasq\[\d{1,6}\]\:\s(query|reply|config|\/etc\/localhosts\.list)(\[[A]{1,4}\])?\s([A-Za-z0-9\.\-]+)\s(is|to|from)\s(.*)$/;
+  var regexp = /(\w{3}\s\s?\d{1,2}\s\d{2}\:\d{2}\:\d{2})\sdnsmasq\[\d{1,6}\]\:\s(query|reply|cached|config|\/etc\/localhosts\.list)(\[[A]{1,4}\])?\s([A-Za-z0-9\.\-]+)\s(is|to|from)\s(.*)$/;
 
   //TODO hasOwnProperty error condition in data for file not found
 
@@ -275,6 +284,7 @@ function readLogData(data) {
         if (queryList.has(dnsRequest)) {                   //Does Answer match a Query?
           if (matches[2] == 'reply') dnsResult='A';        //Allowed
           else if (matches[2] == 'config') dnsResult='B';  //Blocked
+          else if (matches[2] == 'cached') dnsResult='C';  //Cached
           else if (matches[2] == '/etc/localhosts.list') dnsResult='L'; //Local
 
           //Check if entry exists for Time + Request (assume same request is not made more than once per second)
@@ -319,25 +329,30 @@ function simplifyDomain(site) {
  */
 function displayRequests() {
   let queuesize = requestReady.length;
-  let div = document.getElementById('temp');
   let liveTable = document.getElementById('livetable');
   let currentRow = 0;
 
-  div.innerHTML = 'backlog:' + requestBuffer.size + '<br>';
   for (let i = queuesize - 1; i > 0; i--) {                //Start with latest first
     if (requestReady[i][3] == 'A') {
-      liveTable.rows[currentRow].cells[1].className = '';
+      liveTable.rows[currentRow].className = '';
+      liveTable.rows[currentRow].cells[2].innerHTML = 'Ok (Forwarded)';
     }
     else if (requestReady[i][3] == 'B') {
-      liveTable.rows[currentRow].cells[1].className = 'blocked';
+      liveTable.rows[currentRow].className = 'blocked';
+      liveTable.rows[currentRow].cells[2].innerHTML = 'Blocked';
+    }
+    else if (requestReady[i][3] == 'C') {
+      liveTable.rows[currentRow].className = '';
+      liveTable.rows[currentRow].cells[2].innerHTML = 'Ok (Cached)';
     }
     else if (requestReady[i][3] == 'L') {
-      liveTable.rows[currentRow].cells[1].className = 'local';
+      liveTable.rows[currentRow].className = 'local';
+      liveTable.rows[currentRow].cells[2].innerHTML = 'Local';
     }
 
     liveTable.rows[currentRow].cells[0].innerHTML = getTime(requestReady[i][0]);
     liveTable.rows[currentRow].cells[1].innerHTML = simplifyDomain(requestReady[i][1]);
-    liveTable.rows[currentRow].cells[2].innerHTML = requestReady[i][2];
+    liveTable.rows[currentRow].cells[3].innerHTML = requestReady[i][2];
     currentRow++;
   }
 }
