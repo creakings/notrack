@@ -38,3 +38,8 @@
 .shadow {
 /*   filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5)); */
 }
+@media only screen and (max-width:480px), only screen and (max-device-width:480px) {
+  .linechart-container h2 {
+    font-size: 1rem;
+  }
+}

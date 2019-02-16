@@ -77,6 +77,22 @@
 
 }
 
+@media only screen and (max-width:480px), only screen and (max-device-width:480px) {  /*Mobile view for Home Nav*/
+  .home-nav-container > a > span {
+    font-size: 1.1rem;
+  }
+  .home-nav-container > div > p,
+  .home-nav-container > a > span > h2,
+  .home-nav-container > div > h2 {
+    font-size: 1rem;
+  }
+  .home-nav-container > a > span > h3,
+  .home-nav-container > div > h3 {
+    font-size: 1.2rem;
+  }
+}
+
+
 .home-bggreen {
   background-color: rgba(0, 255, 127, 0.9) !important;
 }

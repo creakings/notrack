@@ -15,6 +15,7 @@ ensure_active_session();
   <link href="./css/chart.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/menu.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=0.9">
   <title>NoTrack Admin</title>
 </head>
 
