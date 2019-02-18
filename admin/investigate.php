@@ -43,7 +43,9 @@ $whois_record = '';
 /************************************************
 *Arrays                                         *
 ************************************************/
-
+$allowed_queries = array();
+$blocked_queries = array();
+$chart_labels = array();
 
 /********************************************************************
  *  Create Who Is Table
@@ -448,6 +450,76 @@ function trafficgraph() {
 
 
 /********************************************************************
+ *  Count Queries
+ *    1. Query time, system, dns_result for all results from passed 24 hours from dnslog
+ *    2. Use SQL rounding to round time to nearest 30 mins
+ *    3. Count by 30 min time blocks into associative array
+ *    4. Move values from associative array to daily count indexed array
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function count_queries() {
+  global $db, $site, $allowed_queries, $blocked_queries, $chart_labels;
+  //global $day_allowed, $day_blocked, $day_local;
+  
+  $allowed_arr = array();
+  $blocked_arr = array();
+  $currenttime = 0;
+  $datestr = '';
+
+  $currenttime = time();
+  
+  $starttime = strtotime('-30 days');
+  $endtime = strtotime('+1 days');
+  
+  $query = "SELECT date_format(log_time, '%m-%d') as log_date, dns_result, COUNT(1) as count FROM dnslog WHERE dns_request LIKE '%$site' GROUP BY dns_result, log_date";
+    
+  
+  if(!$result = $db->query($query)){
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo 'show_time_view: '.$db->error;
+    echo '</div>'.PHP_EOL;
+    die();
+  }
+  
+  for ($i = $starttime; $i < $endtime; $i += 86400) {
+    $datestr = date('m-d', $i);
+    $allowed_arr[$datestr] = 0;
+    $blocked_arr[$datestr] = 0;
+    $chart_labels[] = $datestr;
+  }
+
+  if ($result->num_rows == 0) {                  //Leave if nothing found
+    $result->free();
+    //echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
+    return false;
+  }
+  
+  while($row = $result->fetch_assoc()) {         //Read each row of results
+    
+    if (! array_key_exists($row['log_date'], $allowed_arr)) continue;
+    
+    if ($row['dns_result'] == 'A') {
+      $allowed_arr[$row['log_date']] = $row['count'];
+    }
+    elseif ($row['dns_result'] == 'B') {
+      $blocked_arr[$row['log_date']] = $row['count'];
+    }
+  }
+
+  $result->free();
+  
+  $allowed_queries = array_values($allowed_arr);
+  $blocked_queries = array_values($blocked_arr);
+  
+  linechart($allowed_queries, $blocked_queries, $chart_labels);   //Draw the line chart
+  return null;
+}
+
+/********************************************************************
  *Main
  */
 
@@ -494,7 +566,8 @@ if ($site != '') {                                         //Load whois data?
   }
   show_whoisdata();                                        //Display data from table / JsonWhois
   
-  trafficgraph();                                          //Draw traffic graph
+  //trafficgraph();                                          //Draw traffic graph
+  count_queries();
 }
 
 $db->close();
