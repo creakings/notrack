@@ -148,7 +148,13 @@ function count_rows($query) {
  *    Filtered domain
  */
 function extract_domain($url) {
-  preg_match(REGEX_DOMAIN, $url, $matches);
+  $regex_domain = '/[\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-]+$/';
+  $regex_suppressed_domain = '/^(\*\.)([\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-]+)$/';
+  
+  if (preg_match($regex_suppressed_domain, $url, $matches)) {
+    return $matches[2];
+  }
+  preg_match($regex_domain, $url, $matches);
 
   return $matches[0];
 }
@@ -198,8 +204,8 @@ function filter_integer($value, $min, $max, $defaultvalue=0) {
  *  Return:
  *    True on success, False on failure
  */
-function filter_url($url) {  
-  if (preg_match('/[\d\w\-\_]\.[\d\w\-\_\.]/', $url) > 0) {
+function filter_url($url) {
+  if (preg_match('/^(\*\.)?([\d\w\-\_\.]+)?[\d\w\-\_]+\.[\d\w\-]+$/', $url) > 0) {
     return true;
   }
   else {
@@ -305,7 +311,7 @@ function pagination($totalrows, $linktext) {
   if ($totalrows > ROWSPERPAGE) {                     //Is Pagination needed?
     $numpages = ceil($totalrows / ROWSPERPAGE);       //Calculate List Size
     
-    echo '<div class="float-left pag-nav"><ul>'.PHP_EOL;
+    echo '<div class="pag-nav"><ul>'.PHP_EOL;
   
     if ($page == 1) {                            // [ ] [1]
       echo '<li><span>&nbsp;&nbsp;</span></li>'.PHP_EOL;
@@ -522,7 +528,7 @@ function load_config() {
  *  Return:
  *    None
  */
-function linechart($values1, $values2, $xlabels) {
+function linechart($values1, $values2, $xlabels, $title) {
   $max_value = 0;
   $ymax = 0;
   $xstep = 0;
@@ -550,10 +556,9 @@ function linechart($values1, $values2, $xlabels) {
   }
   
   echo '<div class="linechart-container">'.PHP_EOL;        //Start Chart container
-  echo '<h2>DNS Queries over past 24 hours</h2>';
-  echo '<svg width="100%" height="100%" viewbox="0 0 2000 760" class="shadow">'.PHP_EOL;
-  
-  //echo '<path x="1" y="1" width="1998" height="758" rx="5" ry="5" fill=none stroke="#B3B3B3" stroke-width="2px" opacity="1" />'.PHP_EOL;
+  echo '<h2>'.$title.'</h2>';
+  echo '<svg width="100%" height="100%" viewbox="0 0 2000 760">'.PHP_EOL;
+
   //Axis line rectangle with rounded corners
   echo '<rect class="axisline" paint-order="normal" width="1900" height="701" x="100" y="0" rx="5" ry="5" />'.PHP_EOL;
   
@@ -570,8 +575,8 @@ function linechart($values1, $values2, $xlabels) {
     echo '<path class="gridline" d="M'.(100+($i*$xstep)).',2 V700" />'.PHP_EOL;
   }
   
-  draw_graphline($values1, $xstep, $ymax, '#008CD1');
-  draw_graphline($values2, $xstep, $ymax, '#B1244A');
+  draw_graphline($values1, $xstep, $ymax, '#00b7ba');
+  draw_graphline($values2, $xstep, $ymax, '#b1244a');
 
   //Draw circles over line points in order to smooth the apperance
   for ($i = 1; $i < $numvalues; $i++) {
@@ -581,7 +586,7 @@ function linechart($values1, $values2, $xlabels) {
       $y = 700 - (($values1[$i] / $ymax) * 700);           //Calculate Y position of $values1
       echo '<g>'.PHP_EOL;
       echo '  <title>'.$xlabels[$i].' '.$values1[$i].' Allowed</title>'.PHP_EOL;
-      echo '  <circle cx="'.$x.'" cy="'.(700-($values1[$i]/$ymax)*700).'" r="10px" fill="#008CD1" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" title="'.$x.'"/>'.PHP_EOL;
+      echo '  <circle cx="'.$x.'" cy="'.(700-($values1[$i]/$ymax)*700).'" r="10px" fill="#00b7ba" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" title="'.$x.'"/>'.PHP_EOL;
       echo '</g>'.PHP_EOL;
     }
 
@@ -589,7 +594,7 @@ function linechart($values1, $values2, $xlabels) {
       $y = 700 - (($values2[$i] / $ymax) * 700);           //Calculate Y position of $values2
       echo '<g>'.PHP_EOL;
       echo '  <title>'.$xlabels[$i].' '.$values2[$i].' Blocked</title>'.PHP_EOL;
-      echo '  <circle cx="'.$x.'" cy="'.(700-($values2[$i]/$ymax)*700).'" r="10px" fill="#B1244A" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" />'.PHP_EOL;
+      echo '  <circle cx="'.$x.'" cy="'.(700-($values2[$i]/$ymax)*700).'" r="10px" fill="#b1244a" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" />'.PHP_EOL;
       echo '</g>'.PHP_EOL;
     }
   }
@@ -626,31 +631,6 @@ function draw_graphline($values, $xstep, $ymax, $colour) {
   echo $path;
 }
 
-
-/********************************************************************
- *  Draw Circle Points
- *    Draws circle shapes where line node points are, in order to reduce sharpness of graph line
- *
- *  Params:
- *    $values array, x step, y maximum value, line colour
- *  Return:
- *    svg path nodes with bezier curve points
- */
-function draw_circles($values, $xstep, $ymax, $colour) {
-  $path = '';
-  $x = 0;                                        //Node X
-  $y = 0;                                        //Node Y
-  $numvalues = count($values);
-    
-  for ($i = 1; $i < $numvalues; $i++) {
-    if ($values[$i] > 0) {
-      $x = 100 + (($i) * $xstep);
-      $y = 700 - (($values[$i] / $ymax) * 700);    
-      echo '<title>Test</title>';
-      echo '<circle cx="'.$x.'" cy="'.(700-($values[$i]/$ymax)*700).'" r="10px" fill="'.$colour.'" fill-opacity="1" stroke="#EAEEEE" stroke-width="5px" />'.PHP_EOL;
-    }
-  }
-}
 
 /********************************************************************
  *  Draw Pie Chart
@@ -703,7 +683,7 @@ function piechart($labels, $data, $cx, $cy, $radius, $colours) {
     $chartelem .= " L$adx,$ady ";                          //draw line away away from cursor
     $chartelem .= " A$radius,$radius 0 $laf,1 $ax,$ay ";   //draw arc
     $chartelem .= " z\" ";                                 //z = close path
-    $chartelem .= " fill=\"$colour\" stroke=\"#202020\" stroke-width=\"2\" ";
+    $chartelem .= " fill=\"$colour\" stroke=\"#262626\" stroke-width=\"2\" ";
     $chartelem .= " fill-opacity=\"0.95\" stroke-linejoin=\"round\" />";
     $chartelem .= PHP_EOL;
 

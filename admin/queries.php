@@ -331,7 +331,7 @@ function draw_filterbox() {
   echo '</div>'.PHP_EOL;                                   //End Row
 
   echo '<div class="row">'.PHP_EOL;                        //Start Row for submit button
-  echo '<input type="submit" class="button-blue" value="Search">&nbsp;&nbsp;';
+  echo '<input type="submit" value="Search">&nbsp;&nbsp;';
   echo '<button type="button" class="button-grey" onclick="resetQueriesForm()">Reset</button>';
   echo '</div>'.PHP_EOL;                                   //End Row for submit
 
@@ -453,7 +453,7 @@ function show_group_view() {
   
   echo '<table id="query-group-table">'.PHP_EOL;
   
-  echo '<tr><th>#</th><th>Site</th><th>Action</th><th>Requests<a class="blue" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="blue" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th></tr>'.PHP_EOL;
+  echo '<tr><th>#</th><th>Site</th><th>Action</th><th>Requests<a class="primarydark" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th></tr>'.PHP_EOL;
   
   while($row = $result->fetch_assoc()) {         //Read each row of results
     $action = '<a target="_blank" href="'.$Config['SearchUrl'].$row['dns_request'].'"><img class="icon" src="./images/search_icon.png" alt="G" title="Search"></a>&nbsp;<a target="_blank" href="'.$Config['WhoIsUrl'].$row['dns_request'].'"><img class="icon" src="./images/whois_icon.png" alt="W" title="Whois"></a>&nbsp;';
@@ -555,7 +555,7 @@ function show_time_view() {
   pagination($rows, $paginationlink);
     
   echo '<table id="query-time-table">'.PHP_EOL;
-  echo '<tr><th>Time<a class="blue" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="blue" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
+  echo '<tr><th>Time<a class="primarydark" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
   
   while($row = $result->fetch_assoc()) {         //Read each row of results
     $action = '<a target="_blank" href="'.$Config['SearchUrl'].$row['dns_request'].'"><img class="icon" src="./images/search_icon.png" alt="G" title="Search"></a>&nbsp;<a target="_blank" href="'.$Config['WhoIsUrl'].$row['dns_request'].'"><img class="icon" src="./images/whois_icon.png" alt="W" title="Whois"></a>&nbsp;';
@@ -657,19 +657,19 @@ $db->close();
 <div id="scrollup" class="button-scroll" onclick="ScrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
 <div id="scrolldown" class="button-scroll" onclick="ScrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
 
-<div id="stats-box">
-<div class="dialog-bar">Report</div>
+<div id="queries-box">
+<h2>Report</h2>
 <span id="sitename">site</span>
 <span id="statsmsg">something</span>
-<span id="statsblock1"><a class="button-blue" href="#">Block Whole</a> Block whole domain</span>
-<span id="statsblock2"><a class="button-blue" href="#">Block Sub</a> Block just the subdomain</span>
+<span id="statsblock1"><a class="button-teal" href="#">Block Whole</a> Block whole domain</span>
+<span id="statsblock2"><a class="button-teal" href="#">Block Sub</a> Block just the subdomain</span>
 <form name="reportform" action="https://quidsup.net/notrack/report.php" method="post" target="_blank">
 <input type="hidden" name="site" id="siterep" value="none">
-<span id="statsreport"><input type="submit" class="button-blue" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
+<span id="statsreport"><input type="submit" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
 </form>
 
 <br>
-<div class="centered"><h6 class="button-grey" onclick="HideStatsBox()">Cancel</h6></div>
+<div class="centered"><button class="button-grey" onclick="HideStatsBox()">Cancel</button></div>
 <div class="close-button" onclick="HideStatsBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
 </div>
 

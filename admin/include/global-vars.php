@@ -30,7 +30,6 @@ define('NOTRACK_LIST', '/etc/dnsmasq.d/notrack.list');
 //define('REGEX_DATE', '/^2[0-1][0-9][0-9]\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])$/');DEPRECATED
 //define('REGEX_TIME', '/([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/'); DEPRECATED
 define('REGEX_DATETIME', '/^2[0-1][0-9][0-9]\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])\s([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/');
-define('REGEX_DOMAIN', '/[\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-\_]+$/');
 
 //IPCIDR = Check for valid IP/CIDR - e.g. 192.168.0.1/24
 //         Reject leading zeros - e.g. 10.00.00.009/02

@@ -172,7 +172,7 @@ function show_domain_list() {
 
     if ($line[2] == 0) {                                   //Risk zero means draw new table
       echo '</table>'.PHP_EOL;                             //End current TLD table
-      echo '<input type="submit" class="button-blue" value="Save Changes">'.PHP_EOL;
+      echo '<input type="submit" value="Save Changes">'.PHP_EOL;
       echo '</div>'.PHP_EOL;                               //End sys-group
       echo '</div>'.PHP_EOL;                               //End Tab
 
@@ -219,7 +219,7 @@ function show_domain_list() {
   }
 
   echo '</table>'.PHP_EOL;
-  echo '<input type="submit" class="button-blue" value="Save Changes">'.PHP_EOL;
+  echo '<input type="submit" value="Save Changes">'.PHP_EOL;
 
   echo '</div>'.PHP_EOL;                                   //End last sys-group
   echo '</div>'.PHP_EOL;                                   //End Tab

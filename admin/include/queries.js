@@ -31,7 +31,9 @@ function ValidateIPaddress(ipaddress) {
  *  Return:
  *    None
  */
-function reportSite(site, blocked, showreport) {  
+function reportSite(site, blocked, showreport) {
+  //TODO port to FORM and deprecate button-teal <form action="#" method="GET" target="_blank"
+  //<button formaction
   var Msg = "";                                  //Message to show user
   var button1 = "";                               //Block button and message
   var button2 = "";                               //Block button and message with subdomain
@@ -64,27 +66,27 @@ function reportSite(site, blocked, showreport) {
     //Is it a single domain with optional double-barrelled tld?
     if (/^[\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-\_]+$/.test(site)) {
       if (blocked) {
-        button1 = '<p><a class="button-blue" href=" ./config.php?v=white&action=white&do=add&site='+site+'&comment=" target="_blank">Whitelist Domain</a> Add domain to your White List</p>';
+        button1 = '<p><a class="button-teal" href="./config.php?v=white&action=white&do=add&site='+site+'&comment=" target="_blank">Whitelist Domain</a> Add domain to your White List</p>';
       }
       else {
-        button1 = '<p><a class="button-blue" href=" ./config.php?v=black&action=black&do=add&site='+site+'&comment=" target="_blank">Block Domain</a> Add domain to your Black List</p>';
+        button1 = '<p><a class="button-teal" href="./config.php?v=black&action=black&do=add&site='+site+'&comment=" target="_blank">Block Domain</a> Add domain to your Black List</p>';
       }      
     }
     else {                                       //No, it has one or more sub-domains
       domain = site.match(/[\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-\_]+$/)[0];     //Extract domain with optional double-barrelled tld
       if (blocked) {
-        button1 = '<p><a class="button-blue" href=" ./config.php?v=white&action=white&do=add&site='+domain+'&comment=" target="_blank">Whitelist Domain</a> Whitelist entire domain '+domain+'</p>';
-	      button2 = '<p><a class="button-blue" href=" ./config.php?v=white&action=white&do=add&site='+site+'&comment=" target="_blank">Whitelist  Subdomain</a> Add subdomain to your White List</p>';
+        button1 = '<p><a class="button-teal" href=" ./config.php?v=white&action=white&do=add&site='+domain+'&comment=" target="_blank">Whitelist Domain</a> Whitelist entire domain '+domain+'</p>';
+	      button2 = '<p><a class="button-teal" href=" ./config.php?v=white&action=white&do=add&site='+site+'&comment=" target="_blank">Whitelist  Subdomain</a> Add subdomain to your White List</p>';
       }
       else {
-	      button1 = '<p><a class="button-blue" href=" ./config.php?v=black&action=black&do=add&site='+domain+'&comment=" target="_blank">Block Domain</a> Block entire domain '+domain+'</p>';
-	      button2 = '<p><a class="button-blue" href=" ./config.php?v=black&action=black&do=add&site='+site+'&comment=" target="_blank">Block Subdomain</a> Add subdomain to your Black List</p>';
+	      button1 = '<p><a class="button-teal" href=" ./config.php?v=black&action=black&do=add&site='+domain+'&comment=" target="_blank">Block Domain</a> Block entire domain '+domain+'</p>';
+	      button2 = '<p><a class="button-teal" href=" ./config.php?v=black&action=black&do=add&site='+site+'&comment=" target="_blank">Block Subdomain</a> Add subdomain to your Black List</p>';
       }
     }
   }
   
   //Modify DOM elements depending on whether a string has been set.
-  document.getElementById("sitename").innerHTML = "<h2>"+site+"</h2>";
+  document.getElementById("sitename").innerHTML = "<h3>"+site+"</h3>";
   
   if (Msg == "") {
     document.getElementById("statsmsg").style.display = "none";
@@ -125,13 +127,13 @@ function reportSite(site, blocked, showreport) {
   document.getElementById('fade').style.top=window.pageYOffset+"px";
   document.getElementById('fade').style.display = "block";
     
-  document.getElementById('stats-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+"px";
-  document.getElementById('stats-box').style.left = (window.innerWidth / 2)+"px";
-  document.getElementById('stats-box').style.display = "block";  
+  document.getElementById('queries-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+"px";
+  document.getElementById('queries-box').style.left = (window.innerWidth / 2)+"px";
+  document.getElementById('queries-box').style.display = "block";  
 }
 //-------------------------------------------------------------------
 function HideStatsBox() {
-  document.getElementById('stats-box').style.display = "none";
+  document.getElementById('queries-box').style.display = "none";
   document.getElementById('fade').style.display = "none";
 }
 //-------------------------------------------------------------------
@@ -168,11 +170,11 @@ function Scroll() {
   }
   
   //Lock Stats box and Fade in place if visible
-  if (document.getElementById('stats-box').style.display == "block") {
+  if (document.getElementById('queries-box').style.display == "block") {
     document.getElementById('fade').style.top=window.pageYOffset+"px";
       
-    document.getElementById('stats-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+"px";
-    document.getElementById('stats-box').style.left = (window.innerWidth / 2)+"px";
+    document.getElementById('queries-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+"px";
+    document.getElementById('queries-box').style.left = (window.innerWidth / 2)+"px";
   }
   //Lock Options box in place if visible
   if (document.getElementById('options-box').style.display == "block") {

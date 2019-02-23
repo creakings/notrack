@@ -162,13 +162,13 @@ function show_dhcp() {
   draw_systable('DHCP Config');
   draw_sysrow('Enabled', '<input type="checkbox" name="enabled" id="enabledBox" '.is_checked($DHCPConfig['dhcp_enabled']).'>');
   echo '<tr id="confRow1"><td>Authoritative:</td><td><input type="checkbox" name="authoritative"'.is_checked($DHCPConfig['dhcp_authoritative']).'>Authoritative mode will barge in and take over the lease for any client which broadcasts on the network. Avoids long timeouts when a machine wakes up on a new network.</td></tr>'.PHP_EOL;
-  echo '<tr id="confRow2"><td>Gateway IP: <img class="btn" src="./svg/button_help.svg" alt="help" title="Usually the IP address of your Router"></td><td><input type="text" name="gateway_ip" value="'.$DHCPConfig['gateway_ip'].'"></td></tr>'.PHP_EOL;
+  echo '<tr id="confRow2"><td>Gateway IP <div class="help-icon" title="Usually the IP address of your Router"></div>:</td><td><input type="text" name="gateway_ip" value="'.$DHCPConfig['gateway_ip'].'"></td></tr>'.PHP_EOL;
   echo '<tr id="confRow3"><td>Range - Start IP:</td><td><input type="text" name="start_ip" value="'.$DHCPConfig['start_ip'].'"></td></tr>'.PHP_EOL;
   echo '<tr id="confRow4"><td>Range - End IP:</td><td><input type="text" name="end_ip" value="'.$DHCPConfig['end_ip'].'"></td></tr>'.PHP_EOL;
   echo '<tr id="confRow5"><td>Lease Time:</td><td><input type="text" name="lease_time" value="'.$DHCPConfig['lease_time'].'"></td></tr>'.PHP_EOL; //TODO Beautify
   echo '<tr id="confRow6"><td>Static Hosts:</td><td><p class="light"><code>System.name,MAC Address,IP to allocate</code><br><code>e.g. nas.local,11:22:33:aa:bb:cc,192.168.0.5</code></p>';
   echo '<textarea rows="10" name="static">'.$DHCPConfig['static_hosts'].'</textarea></td></tr>'.PHP_EOL;
-  echo '<tr><td>&nbsp;</td><td><input type="submit" class="button-blue" value="Save Changes">&nbsp;&nbsp;<input type="reset" class="button-grey" value="Reset"></td></tr>'.PHP_EOL;
+  echo '<tr><td>&nbsp;</td><td><input type="submit" value="Save Changes">&nbsp;&nbsp;<input type="reset" class="button-grey" value="Reset"></td></tr>'.PHP_EOL;
   echo '</table></div>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
 }

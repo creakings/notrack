@@ -117,7 +117,7 @@ function draw_blradioform() {
   else {                                         //Draw Show button instead
     echo '<form action="?v=full&amp;page='.$page.'" method="POST">'.PHP_EOL;
     echo '<input type="hidden" name="showblradio" value="1">'.PHP_EOL;
-    echo '<input type="submit" class="button-blue" value="Select Block List">'.PHP_EOL;
+    echo '<input type="submit" value="Select Block List">'.PHP_EOL;
   }
   
   echo '</form>'.PHP_EOL;                        //End of either form above
@@ -178,8 +178,8 @@ function show_advanced() {
   echo '<input type="hidden" name="action" value="advanced">';
   draw_systable('Advanced Settings');
   draw_sysrow('DNS Log Parsing Interval', '<input type="number" class="fixed10" name="parsing" min="1" max="60" value="'.$Config['ParsingTime'].'" title="Time between updates in Minutes">');
-  draw_sysrow('Suppress Domains <img class="btn" src="./svg/button_help.svg" alt="help" title="Group together certain domains on the Stats page">', '<textarea rows="5" name="suppress">'.str_replace(',', PHP_EOL, $Config['Suppress']).'</textarea>');
-  echo '<tr><td>&nbsp;</td><td><input type="submit" class="button-blue" value="Save Changes"></td></tr>'.PHP_EOL;
+  draw_sysrow('Suppress Domains <div class="help-icon" title="Group together certain domains on the Stats page"></div>', '<textarea rows="5" name="suppress">'.str_replace(',', PHP_EOL, $Config['Suppress']).'</textarea>');
+  echo '<tr><td>&nbsp;</td><td><input type="submit" value="Save Changes"></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
@@ -288,7 +288,7 @@ function show_blocklists() {
   draw_systable('Custom Block Lists');
   draw_sysrow('Custom', '<p>Use either Downloadable or Localy stored Block Lists</p><textarea rows="5" name="bl_custom">'.str_replace(',', PHP_EOL,$Config['bl_custom']).'</textarea>');
   
-  echo '<tr><td>&nbsp;</td><td><input type="submit" class="button-blue" value="Save Changes"></td></tr>'.PHP_EOL;
+  echo '<tr><td>&nbsp;</td><td><input type="submit" value="Save Changes"></td></tr>'.PHP_EOL;
   echo '</table><br>'.PHP_EOL;
   
   
@@ -315,7 +315,7 @@ function show_custom_list($view) {
   echo '<form action="?" method="get">';
   echo '<input type="hidden" name="v" value="'.$view.'">';
   echo '<input type="text" name="s" id="searchbox" value="'.$searchbox.'">&nbsp;&nbsp;';
-  echo '<input type="submit" class="button-blue" value="Search">'.PHP_EOL;
+  echo '<input type="submit" value="Search">'.PHP_EOL;
   echo '</form>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
   
@@ -355,9 +355,14 @@ function show_custom_list($view) {
 
   echo '</table>'.PHP_EOL;                                 //End custom list table
 
-  echo '<div class="centered"><br>'.PHP_EOL;  
-  echo '<a href="?v='.$view.'&amp;action='.$view.'&amp;do=update" class="button-blue">Update Blocklists</a>&nbsp;&nbsp;';
-  echo '<a href="./include/downloadlist.php?v='.$view.'" class="button-grey">Download List</a>';
+  echo '<div class="centered"><br>'.PHP_EOL;
+  
+  echo '<form method="get">'.PHP_EOL;
+  echo '<input type="hidden" name="v" value="'.$view.'">'.PHP_EOL;
+  echo '<input type="hidden" name="action" value="'.$view.'">'.PHP_EOL;
+  echo '<input type="hidden" name="do" value="update">'.PHP_EOL;
+  echo '<button type="submit">Update Blocklists</button>&nbsp;'.PHP_EOL;
+  echo '<button type="submit" formaction="./include/downloadlist.php" class="button-grey">Download List</button></form>';
   echo '</div></div>'.PHP_EOL;
 }
 
@@ -405,7 +410,7 @@ function show_full_blocklist() {
   echo '<input type="hidden" name="v" value="full">'.PHP_EOL;
   echo '<input type="hidden" name="blrad" value="'.$blradio.'">'.PHP_EOL;
   echo '<input type="text" name="s" id="search" value="'.$searchbox.'">&nbsp;&nbsp;';
-  echo '<input type="Submit" class="button-blue" value="Search">'.PHP_EOL;
+  echo '<input type="Submit" value="Search">'.PHP_EOL;
   echo '</form></div>'.PHP_EOL;                            //End form for Text Search
   
   
@@ -551,7 +556,7 @@ function show_general() {
     }
   }
   echo '</select></td></tr>'.PHP_EOL;
-  draw_sysrow('JsonWhois API <a href="https://jsonwhois.com/"><img class="btn" src="./svg/button_help.svg"></a>', '<input type="text" name="whoisapi" class="input-conf" value="'.$Config['whoisapi'].'">');
+  draw_sysrow('JsonWhois API <a href="https://jsonwhois.com/"><div class="help-icon"></div></a>', '<input type="text" name="whoisapi" class="input-conf" value="'.$Config['whoisapi'].'">');
   echo '</table></div></form>'.PHP_EOL;                    //End Stats
   
   return null;

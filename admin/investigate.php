@@ -35,6 +35,7 @@ echo '<div id="main">'.PHP_EOL;
 *Global Variables                               *
 ************************************************/
 $datetime = '';
+$domain = '';
 $site = '';
 
 $whois_date = '';
@@ -74,15 +75,32 @@ function create_whoistable() {
  */
 function draw_searchbar() {
   global $site;
-  
-  echo '<div class="sys-group">'.PHP_EOL;
+  echo '<div id="menu-lower">'.PHP_EOL;
   echo '<form method="GET">'.PHP_EOL;
-  echo '<input type="text" name="site" class="input-conf" placeholder="Search domain" value="'.$site.'">&nbsp;'.PHP_EOL;
-  echo '<input type="submit" class="button-blue" value="Investigate">'.PHP_EOL;
+  echo '<input type="text" name="site" class="input-conf" placeholder="Search domain" value="'.$site.'">'.PHP_EOL;
+  echo '<input type="submit" value="Investigate">'.PHP_EOL;
   echo '</form>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
 }
 
+
+/********************************************************************
+ *  Draw Search Box
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function draw_searchbox() {
+  echo '<form method="GET">'.PHP_EOL;
+  echo '<div id="search-box">'.PHP_EOL;
+  
+  echo '<input type="text" name="site" placeholder="Search domain" value="'.$site.'">&nbsp;'.PHP_EOL;
+  echo '<input type="submit" value="Investigate">'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
+  echo '</form>'.PHP_EOL;
+}
 
 
 /********************************************************************
@@ -406,55 +424,14 @@ function show_whoiserror() {
   echo '</div>'.PHP_EOL;
 }
 
-/********************************************************************
- *  Traffic Graph
- *    1. Calculate what Unix time was 23 hours ago
- *    2. Build xlabels using just the hour component of date()
- *    3. This graph adds dns_request like %$site
- *    4. Load allowed 'a' results from dnslog table for values per hour using 00 mins to 59 mins of each hour
- *    5. Load blocked 'b' results from dnslog table for values per hour
- *    6. Send data to linechart() function to draw the chart
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function trafficgraph() {
-  global $site;
-    
-  $allowed_values = array();
-  $blocked_values = array();
-  $xlabels = array();
-  $timestr1 = '';
-  $timestr2 = '';
-  
-  $starttime = time() - 82800;                             //-23 Hours
-
-  for ($i = 0; $i < 24; $i++) {                            //Loop forward to +23 Hours
-    $xlabels[] = date('H:00', $starttime + ($i * 3600));
-    $timestr1 = date('Y-m-d H:00:00', $starttime + ($i * 3600));
-    $timestr2 = date('Y-m-d H:59:59', $starttime + ($i * 3600));
-
-    $allowed_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$timestr1' AND log_time <= '$timestr2'");
-    $blocked_values[] = count_rows("SELECT COUNT(*) FROM dnslog WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$timestr1' AND log_time <= '$timestr2'");
-  }
-
-  /*print_r($allowed_values);                              //For debugging
-  echo '<br>';
-  print_r($blocked_values);*/
-  echo '<div class="home-nav-container">'.PHP_EOL;
-  linechart($allowed_values, $blocked_values, $xlabels);   //Draw the line chart
-  echo '</div>'.PHP_EOL;
-}
-
 
 /********************************************************************
  *  Count Queries
- *    1. Query time, system, dns_result for all results from passed 24 hours from dnslog
- *    2. Use SQL rounding to round time to nearest 30 mins
- *    3. Count by 30 min time blocks into associative array
- *    4. Move values from associative array to daily count indexed array
+ *    1. log_date by day, dns_result for site for past 30 days count and grouped by day
+ *    2. Create associative array for each day (to account for days when no queries are made
+ *    3. Copy known count values into associative array
+ *    4. Move associative values into index array
+ *    5. Draw line chart
  *
  *  Params:
  *    None
@@ -462,43 +439,48 @@ function trafficgraph() {
  *    None
  */
 function count_queries() {
-  global $db, $site, $allowed_queries, $blocked_queries, $chart_labels;
-  //global $day_allowed, $day_blocked, $day_local;
-  
+  global $db, $domain, $site;
+
   $allowed_arr = array();
   $blocked_arr = array();
+  $chart_labels = array();
   $currenttime = 0;
   $datestr = '';
+  $query = '';
 
   $currenttime = time();
   
   $starttime = strtotime('-30 days');
   $endtime = strtotime('+1 days');
-  
-  $query = "SELECT date_format(log_time, '%m-%d') as log_date, dns_result, COUNT(1) as count FROM dnslog WHERE dns_request LIKE '%$site' GROUP BY dns_result, log_date";
-    
-  
+
+  if ($domain != $site) {
+    $query = "SELECT date_format(log_time, '%m-%d') as log_date, dns_result, COUNT(1) as count FROM dnslog WHERE dns_request LIKE '%$domain' GROUP BY dns_result, log_date";
+  }
+  else {
+    $query = "SELECT date_format(log_time, '%m-%d') as log_date, dns_result, COUNT(1) as count FROM dnslog WHERE dns_request LIKE '%$site' GROUP BY dns_result, log_date";
+  }
+
   if(!$result = $db->query($query)){
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
-    echo 'show_time_view: '.$db->error;
+    echo 'count_queries: '.$db->error;
     echo '</div>'.PHP_EOL;
     die();
   }
   
-  for ($i = $starttime; $i < $endtime; $i += 86400) {
+  for ($i = $starttime; $i < $endtime; $i += 86400) {      //Increase by 1 day from -30 days to today
     $datestr = date('m-d', $i);
     $allowed_arr[$datestr] = 0;
     $blocked_arr[$datestr] = 0;
     $chart_labels[] = $datestr;
   }
 
-  if ($result->num_rows == 0) {                  //Leave if nothing found
+  if ($result->num_rows == 0) {                            //Leave if nothing found
     $result->free();
     //echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
     return false;
   }
   
-  while($row = $result->fetch_assoc()) {         //Read each row of results
+  while($row = $result->fetch_assoc()) {                   //Read each row of results
     
     if (! array_key_exists($row['log_date'], $allowed_arr)) continue;
     
@@ -512,10 +494,7 @@ function count_queries() {
 
   $result->free();
   
-  $allowed_queries = array_values($allowed_arr);
-  $blocked_queries = array_values($blocked_arr);
-  
-  linechart($allowed_queries, $blocked_queries, $chart_labels);   //Draw the line chart
+  linechart(array_values($allowed_arr), array_values($blocked_arr), $chart_labels, 'Queries over past 30 days');   //Draw the line chart
   return null;
 }
 
@@ -538,14 +517,15 @@ if (isset($_GET['datetime'])) {                            //Filter for hh:mm:ss
 }
 
 if (isset($_GET['site'])) {
-  if (filter_url($_GET['site'])) {
-    $site = $_GET['site'];
+  if (filter_url(trim($_GET['site']))) {
+    $site = trim($_GET['site']);
+    $domain = extract_domain($site);
   }
 }
 
 if (!table_exists('whois')) {                              //Does whois sql table exist?
   create_whoistable();                                     //If not then create it
-  sleep(2);                                                //Delay to wait for MariaDB to create the table
+  sleep(1);                                                //Delay to wait for MariaDB to create the table
 }
 
 if ($Config['whoisapi'] == '') {                           //Has user set an API key?
@@ -554,20 +534,21 @@ if ($Config['whoisapi'] == '') {                           //Has user set an API
   exit;
 }
 
-draw_searchbar();
-
-if ($datetime != '') show_time_view();                     //Show time view if datetime in parameters
 
 
-if ($site != '') {                                         //Load whois data?
-  $site = extract_domain($site);                           //Can only search for TLD
-  if (! search_whois($site)) {                             //Attempt to search whois table
-    get_whoisdata($site, $Config['whoisapi']);             //No record found - download it from JsonWhois
+if ($domain != '') {                                       //Load whois data?
+  draw_searchbar();
+  if ($datetime != '') show_time_view();                   //Show time view if datetime in parameters
+  
+  if (! search_whois($domain)) {                           //Attempt to search whois table
+    get_whoisdata($domain, $Config['whoisapi']);           //No record found - download it from JsonWhois
   }
   show_whoisdata();                                        //Display data from table / JsonWhois
-  
-  //trafficgraph();                                          //Draw traffic graph
-  count_queries();
+
+  count_queries();                                         //Show log data for last 30 days
+}
+else {
+  draw_searchbox();
 }
 
 $db->close();
@@ -579,19 +560,19 @@ $db->close();
 <div id="scrollup" class="button-scroll" onclick="ScrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
 <div id="scrolldown" class="button-scroll" onclick="ScrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
 
-<div id="stats-box">
-<div class="dialog-bar">Report</div>
+<div id="queries-box">
+<h2>Report</h2>
 <span id="sitename">site</span>
 <span id="statsmsg">something</span>
-<span id="statsblock1"><a class="button-blue" href="#">Block Whole</a> Block whole domain</span>
-<span id="statsblock2"><a class="button-blue" href="#">Block Sub</a> Block just the subdomain</span>
+<span id="statsblock1"><a class="button-teal" href="#">Block Whole</a> Block whole domain</span>
+<span id="statsblock2"><a class="button-teal" href="#">Block Sub</a> Block just the subdomain</span>
 <form name="reportform" action="https://quidsup.net/notrack/report.php" method="post" target="_blank">
 <input type="hidden" name="site" id="siterep" value="none">
-<span id="statsreport"><input type="submit" class="button-blue" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
+<span id="statsreport"><input type="submit" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
 </form>
 
 <br>
-<div class="centered"><h6 class="button-grey" onclick="HideStatsBox()">Cancel</h6></div>
+<div class="centered"><button class="button-grey" onclick="HideStatsBox()">Cancel</button></div>
 <div class="close-button" onclick="HideStatsBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
 </div>
 

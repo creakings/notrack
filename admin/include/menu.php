@@ -58,7 +58,7 @@ function draw_helpmenu() {
 function draw_topmenu($currentpage='') {
   global $Config, $mem;
   
-  echo '<div id="menu-top">'.PHP_EOL;
+  echo '<nav><div id="menu-top">'.PHP_EOL;
   echo '<span class="hamburger pointer mobile-show" onclick="openNav()">&#9776;</span>'.PHP_EOL;   //Hamburger menu to show #menu-side mobile-show
   
   if ($currentpage == '') {                                //Display version number when $currentpage has not been set
@@ -114,30 +114,19 @@ function draw_topmenu($currentpage='') {
 
   echo '</div>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
-  //echo '</nav>'.PHP_EOL;
+  echo '</nav>'.PHP_EOL;
 
   
-  //Dialogs----------------------------------------------------------
-  echo '<div id="dialog-box">'.PHP_EOL;
-  echo '<div class="dialog-bar">NoTrack</div>'.PHP_EOL;
-  echo '<span id="dialogmsg">Doing something</span>'.PHP_EOL;
-  echo '<div class="centered"><img src="/admin/images/progress.gif" alt=""></div>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
-
-  //Operations 
+  
   echo '<div id="options-box">'.PHP_EOL;
-  echo '<div class="dialog-bar">Options</div>'.PHP_EOL;
-  echo '<div class="centered">'.PHP_EOL;
-  
-  //echo '<form id="operation-form" action="?" method="post">'.PHP_EOL;
-  //echo '<input type="hidden" name="operation" id="operation" value="">'.PHP_EOL;
-  echo '<span onclick="updateBlocklist()" title="Force Download and Update Blocklist" class="button-grey button-options pointer">Update Blocklist</span>'.PHP_EOL;
-  echo '<span onclick="restartSystem()" class="button-grey button-options pointer">Restart System</span>'.PHP_EOL;
-  echo '<span onclick="shutdownSystem()" class="button-danger button-options pointer">Shutdown System</span>'.PHP_EOL;
-  //echo '</form>'.PHP_EOL;
-  
+  echo '<h2>Options</h2>'.PHP_EOL;
+
+  echo '<button onclick="updateBlocklist()" title="Force Download and Update Blocklist" class="button-grey button-options">Update Blocklist</button>'.PHP_EOL;
+  echo '<button onclick="restartSystem()" class="button-grey">Restart System</button>'.PHP_EOL;
+  echo '<button onclick="shutdownSystem()" class="button-danger">Shutdown System</button>'.PHP_EOL;
+    
   echo '<div class="close-button"><img src="/admin/svg/button_close.svg" onmouseover="this.src=\'/admin/svg/button_close_over.svg\'" onmouseout="this.src=\'/admin/svg/button_close.svg\'" alt="Close" onclick="hideOptions()"></div>'.PHP_EOL;
-  echo '</div></div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
 
   echo '<div id="fade" onclick="hideOptions()"></div>'.PHP_EOL;
 }

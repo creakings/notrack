@@ -16,6 +16,7 @@ ensure_active_session();
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/config.js"></script>
   <script src="./include/menu.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=0.8">
   <title>NoTrack - Security</title>  
 </head>
 
@@ -66,7 +67,7 @@ function change_password_form() {
   draw_sysrow('New Password', '<input type="password" name="password" id="password" placeholder="Password" onkeyup="checkPassword();" required>');
   draw_sysrow('Confirm Password', '<input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" onkeyup="checkPassword();">');
   
-  echo '<tr><td colspan="2"><div class="centered"><input type="submit" class="button-blue" value="Change Password"></div></td></tr>';
+  echo '<tr><td colspan="2"><div class="centered"><input type="submit" value="Change Password"></div></td></tr>';
   
   echo '</table></form>'.PHP_EOL;
   
@@ -95,7 +96,7 @@ function new_password_input_form() {
   draw_sysrow('Confirm Password', '<input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" onkeyup="checkPassword();">');
   
   draw_sysrow('Delay', '<input type="number" class="fixed10" name="delay" min="5" max="2400" value="'.$Config['Delay'].'"><p><i>Delay in seconds between attempts</i></p>');
-  echo '<tr><td colspan="2"><div class="centered"><input type="submit" class="button-blue" value="Save Changes"></div></td></tr>';
+  echo '<tr><td colspan="2"><div class="centered"><input type="submit" value="Save Changes"></div></td></tr>';
   echo '</table></form>'.PHP_EOL;
 }
 
@@ -214,7 +215,7 @@ elseif ((isset($_POST['username']) && (isset($_POST['password'])))) {
 }
 
 echo '<div class="sys-group">'.PHP_EOL;
-echo '<h5>Security&nbsp;<a href="./help.php?p=security"><img class="btn" src="./svg/button_help.svg" alt="help"></a></h5>'.PHP_EOL;
+echo '<h5>Security&nbsp;<a href="./help.php?p=security"><div class="help-icon"></div></a></h5>'.PHP_EOL;
 
 if (is_password_protection_enabled()) {
   change_password_form();
@@ -224,7 +225,7 @@ if (is_password_protection_enabled()) {
 }
 
 if ($show_button_on) {
-  echo '<form method="post"><input type="hidden" name="enable_password"><input type="submit" class="button-blue" value="Turn on password protection"></form>'.PHP_EOL;
+  echo '<form method="post"><input type="hidden" name="enable_password"><input type="submit" value="Turn on password protection"></form>'.PHP_EOL;
 }
 
 if ($show_password_input_form) {

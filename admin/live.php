@@ -38,7 +38,7 @@ draw_topmenu('Live');
 draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;
 echo '<div id="menu-lower">'.PHP_EOL;
-echo '<input type="text" id="ipaddressbox" value="" placeholder="127.0.0.1">';
+echo '<input type="text" id="ipaddressbox" value="" placeholder="192.168.0.1">';
 echo '<img src="./svg/lmenu_pause.svg" id="pausequeueimg" class="pointer" onclick="pauseQueue()">';
 echo '<img src="./svg/lmenu_clear.svg" id="clearqueueimg" class="pointer" onclick="clearQueue()">';
 echo '</div>'.PHP_EOL;

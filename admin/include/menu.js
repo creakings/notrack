@@ -245,7 +245,7 @@ function showOptions() {
 
 /********************************************************************
  *  Hide Options Box
- *    Check if stats-box is visible, then hide
+ *    Check if queries-box is visible, then hide
  *    Hide options-box
  *    Hide fade
  *  Params:
@@ -254,8 +254,8 @@ function showOptions() {
  *    None
  */
 function hideOptions() {
-  if (document.getElementById("stats-box")) {
-    document.getElementById("stats-box").style.display = "none";
+  if (document.getElementById("queries-box")) {
+    document.getElementById("queries-box").style.display = "none";
   }
 
   document.getElementById("options-box").style.display = "none";

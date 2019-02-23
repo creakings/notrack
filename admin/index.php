@@ -29,7 +29,7 @@ draw_sidemenu();
 ************************************************/
 define('QRY_BLOCKLIST', 'SELECT COUNT(*) FROM blocklist');
 
-$CHARTCOLOURS = array('#008CD1', '#B1244A', '#00AA00');
+$CHARTCOLOURS = array('#00c2c8', '#b1244a', '#93a0ff');
 
 /************************************************
 *Global Variables                               *
@@ -126,11 +126,13 @@ function home_queries() {
   echo '<div class="chart-box">'.PHP_EOL;                  //Start Pie Chart
   echo '<svg width="100%" height="90%" viewbox="0 0 200 200">'.PHP_EOL;
   piechart($lables, $chartdata, 100, 100, 98, $CHARTCOLOURS);
-  echo '<circle cx="100" cy="100" r="26" stroke="#202020" stroke-width="2" fill="#eaf1f1" />'.PHP_EOL;  //Small overlay circle
+  echo '<circle cx="100" cy="100" r="26" stroke="#262626" stroke-width="2" fill="#f7f7f7" />'.PHP_EOL;  //Small overlay circle
   echo '</svg>'.PHP_EOL;
   echo '</div>'.PHP_EOL;                                   //End Pie Chart
 
-  echo '</a>'.PHP_EOL;                               //End Queries Box
+  echo '</a>'.PHP_EOL;                                     //End Queries Box
+  
+  return null;
 }
 
 
@@ -245,7 +247,7 @@ function count_queries() {
   
   if(!$result = $db->query($query)){
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
-    echo 'show_time_view: '.$db->error;
+    echo 'count_queries: '.$db->error;
     echo '</div>'.PHP_EOL;
     die();
   }
@@ -295,7 +297,7 @@ home_network();
 
 echo '</div>'.PHP_EOL;                                     //End home-nav-container
 if ($day_allowed + $day_blocked > 0) {
-  linechart($allowed_queries, $blocked_queries, $chart_labels);
+  linechart($allowed_queries, $blocked_queries, $chart_labels, 'DNS Queries over past 24 hours');
 }
 
 
