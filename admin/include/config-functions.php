@@ -585,8 +585,8 @@ function show_menu() {
   echo '<h5>Block Lists</h5>'.PHP_EOL;
   echo '<a href="../admin/config.php?v=blocks"><div class="conf-nav"><img src="./svg/menu_blocklists.svg"><span>Select Block Lists</span></div></a>'.PHP_EOL;
   echo '<a href="../admin/config/tld.php"><div class="conf-nav"><img src="./svg/menu_domain.svg"><span>Top Level Domains</span></div></a>'.PHP_EOL;
-  echo '<a href="../admin/config.php?v=black"><div class="conf-nav"><img src="./svg/menu_white.svg"><span>Custom Black List</span></div></a>'.PHP_EOL;
-  echo '<a href="../admin/config.php?v=white"><div class="conf-nav"><img src="./svg/menu_black.svg"><span>Custom White List</span></div></a>'.PHP_EOL;
+  echo '<a href="../admin/config.php?v=black"><div class="conf-nav"><img src="./svg/menu_black.svg"><span>Custom Black List</span></div></a>'.PHP_EOL;
+  echo '<a href="../admin/config.php?v=white"><div class="conf-nav"><img src="./svg/menu_white.svg"><span>Custom White List</span></div></a>'.PHP_EOL;
   echo '<a href="../admin/config.php?v=full"><div class="conf-nav"><img src="./svg/menu_sites.svg"><span>View Sites Blocked</span></div></a>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
   

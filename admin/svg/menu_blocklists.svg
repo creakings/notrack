@@ -13,7 +13,7 @@
    height="60"
    id="svg2985"
    version="1.1"
-   inkscape:version="0.91 r13725"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
    sodipodi:docname="menu_blocklists.svg">
   <defs
      id="defs2987" />
@@ -25,15 +25,15 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="5.5"
-     inkscape:cx="15.868686"
+     inkscape:cx="-18.313132"
      inkscape:cy="6.8290958"
      inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:document-units="px"
      inkscape:grid-bbox="true"
-     inkscape:window-width="1860"
+     inkscape:window-width="1864"
      inkscape:window-height="1064"
-     inkscape:window-x="60"
+     inkscape:window-x="1976"
      inkscape:window-y="0"
      inkscape:window-maximized="1" />
   <metadata
@@ -54,13 +54,13 @@
      inkscape:groupmode="layer"
      transform="translate(0,-4)">
     <circle
-       style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:none;stroke:#008cd1;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
+       style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:none;stroke:#00b7ba;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
        id="path2983"
        cx="30.084179"
        cy="34.301514"
        r="24.876114" />
     <path
-       style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:none;stroke:#008cd1;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
+       style="color:#000000;display:inline;overflow:visible;visibility:visible;fill:none;stroke:#00b7ba;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;enable-background:accumulate"
        d="m 5.972475,10.125529 48.48054,48.480537"
        id="path2994"
        inkscape:connector-curvature="0" />

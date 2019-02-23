@@ -14,7 +14,7 @@
    viewBox="0 0 60.000003 60"
    id="svg2"
    version="1.1"
-   inkscape:version="0.91 r13725"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
    sodipodi:docname="menu_status.svg">
   <defs
      id="defs4" />
@@ -26,14 +26,14 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="7.919596"
-     inkscape:cx="40.309401"
+     inkscape:cx="1.4185286"
      inkscape:cy="22.923909"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1860"
+     inkscape:window-width="1920"
      inkscape:window-height="1064"
-     inkscape:window-x="60"
+     inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
      inkscape:snap-global="false"
@@ -58,7 +58,7 @@
      id="layer1"
      transform="translate(0,-992.3622)">
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#008cd1;stroke-width:4.80000029;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;fill-rule:evenodd;stroke:#00b7ba;stroke-width:4.8;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 4.2857144,1020.1301 6.2355406,0 9.929353,-22.84112 14.188328,50.26622 10.855402,-27.3872 10.755662,0"
        id="path4137"
        inkscape:connector-curvature="0"
