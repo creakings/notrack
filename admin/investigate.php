@@ -1,4 +1,9 @@
 <?php
+/*A different view is displayed depending how user enters this page
+* 1. No arguments set - Show searchbox
+* 2. Domain set - display whois, and graph
+* 3. Domain and time set - display surrounding queries, whois, and graph
+*/
 require('./include/global-vars.php');
 require('./include/global-functions.php');
 require('./include/menu.php');
@@ -72,6 +77,7 @@ function create_whoistable() {
  */
 function draw_searchbar() {
   global $site;
+
   echo '<div id="menu-lower">'.PHP_EOL;
   echo '<form method="GET">'.PHP_EOL;
   echo '<input type="text" name="site" class="input-conf" placeholder="Search domain" value="'.$site.'">'.PHP_EOL;
@@ -90,13 +96,14 @@ function draw_searchbar() {
  *    None
  */
 function draw_searchbox() {
-  echo '<form method="GET">'.PHP_EOL;
-  echo '<div id="search-box">'.PHP_EOL;
+  global $site;
 
+  echo '<div id="search-box"><div>'.PHP_EOL;
+  echo '<form method="GET">'.PHP_EOL;
   echo '<input type="text" name="site" placeholder="Search domain" value="'.$site.'">&nbsp;'.PHP_EOL;
   echo '<input type="submit" value="Investigate">'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
+  echo '</div></div>'.PHP_EOL;
 }
 
 

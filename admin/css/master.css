@@ -1001,11 +1001,15 @@ span.key-green {
    ========================================================================== */
 
 #search-box {
-  max-width: 95%;
-  width: 50rem;
-  height: 10rem;
-  margin: 10% auto;
-  padding: 5rem 1rem 3rem;
+  width: 100%;
+  margin: 20vh 0;
+  display: inline-block;
+}
+#search-box > div {
+  width: 60rem;
+  max-width: 85%;
+  margin: 0 auto;
+  padding: 2rem 0.5rem;
   display: block;
   border: 1px solid #bdbdbd;
   border-radius: 2px;
