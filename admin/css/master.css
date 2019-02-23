@@ -871,31 +871,44 @@ span.key-green {
    ========================================================================== */
 
 .conf-nav {
-  width: 27%;
+/*   margin: 0.5rem auto; */
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+.conf-nav > a {
+  flex-basis: 28%;
+  flex-grow: 0;
   height: 3rem;
-  margin: 0.5rem 1.5%;
+  margin: 0.5rem 1%;
   padding: 0.4em 1em;
   font-size: 1.1em;
   border-bottom: 1px solid #bdbdbd;
-  float: left;
 }
-.conf-nav img {
+.conf-nav > a:hover {
+  border-bottom: 1px solid #00c2c8;
+}
+.conf-nav > a > img {
   height: 100%;
   margin-right: 1rem;
   float: left;
 }
-.conf-nav span {
+.conf-nav > a > span {
   float: left;
   margin-top: 1rem;
 }
 @media only screen and (max-width:1200px), only screen and (max-device-width:1200px) {  /*Windowed view for Conf Nav*/
   .conf-nav {
-    width: 41%;
+    flex-wrap: wrap;
+  }
+  .conf-nav > a {
+    flex-basis: 43%;
   }
 }
 @media only screen and (max-width:480px), only screen and (max-device-width:480px) {    /*Mobile view for Conf Nav*/
-  .conf-nav {
-    width: 91%;
+  .conf-nav > a {
+    flex-basis: 91%;
   }
 }
 
