@@ -44,13 +44,10 @@ $whois_record = '';
 /************************************************
 *Arrays                                         *
 ************************************************/
-$allowed_queries = array();
-$blocked_queries = array();
-$chart_labels = array();
 
 /********************************************************************
  *  Create Who Is Table
- *    Run sql query to create whois table 
+ *    Run sql query to create whois table
  *  Params:
  *    None
  *  Return:
@@ -95,7 +92,7 @@ function draw_searchbar() {
 function draw_searchbox() {
   echo '<form method="GET">'.PHP_EOL;
   echo '<div id="search-box">'.PHP_EOL;
-  
+
   echo '<input type="text" name="site" placeholder="Search domain" value="'.$site.'">&nbsp;'.PHP_EOL;
   echo '<input type="submit" value="Investigate">'.PHP_EOL;
   echo '</div>'.PHP_EOL;
@@ -114,11 +111,11 @@ function draw_searchbox() {
 
 function get_blocklistname($bl) {
   global $BLOCKLISTNAMES;
-  
+
   if (array_key_exists($bl, $BLOCKLISTNAMES)) {
     return $BLOCKLISTNAMES[$bl];
   }
-  
+
   return $bl;
 }
 /********************************************************************
@@ -136,20 +133,20 @@ function get_blocklistname($bl) {
  */
 function search_blockreason($site) {
   global $db;
-  
+
   $result = $db->query('SELECT bl_source site FROM blocklist WHERE site = \''.$site.'\'');
   if ($result->num_rows > 0) {
     return $result->fetch_row()[0];
   }
-  
-    
+
+
   //Try to find LIKE site ending with site.tld
   if (preg_match('/([\w\d\-\_]+)\.([\w\d\-\_]+)$/', $site,  $matches) > 0) {
     $result = $db->query('SELECT bl_source site FROM blocklist WHERE site LIKE \'%'.$matches[1].'.'.$matches[2].'\'');
 
     if ($result->num_rows > 0) {
       return $result->fetch_row()[0];
-    }    
+    }
     else {                                      //On fail try for site = .tld
       $result = $db->query('SELECT bl_source site FROM blocklist WHERE site = \'.'.$matches[2].'\'');
       if ($result->num_rows > 0) {
@@ -157,8 +154,8 @@ function search_blockreason($site) {
       }
     }
   }
-  
-  return '';                                     //Don't know at this point    
+
+  return '';                                     //Don't know at this point
 }
 
 
@@ -173,37 +170,37 @@ function search_blockreason($site) {
  */
 function show_time_view() {
   global $db, $datetime, $site, $sys, $Config;
-    
+
   $rows = 0;
   $row_class = '';
   $query = '';
   $action = '';
   $blockreason = '';
-  
+
   $query = "SELECT *, DATE_FORMAT(log_time, '%H:%i:%s') AS formatted_time FROM dnslog WHERE sys = '$sys' AND log_time > SUBTIME('$datetime', '00:00:05') AND log_time < ADDTIME('$datetime', '00:00:03') ORDER BY UNIX_TIMESTAMP(log_time)";
-  
+
   echo '<div class="sys-group">'.PHP_EOL;
-  
+
   if(!$result = $db->query($query)){
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
     echo 'show_time_view: '.$db->error;
     echo '</div>'.PHP_EOL;
     return false;
   }
-  
+
   if ($result->num_rows == 0) {                  //Leave if nothing found
     echo '<h4><img src=./svg/emoji_sad.svg>No results found for selected time</h4>'.PHP_EOL;
     echo '</div>'.PHP_EOL;
     $result->free();
     return false;
   }
-  
-  
+
+
   //draw_viewbuttons();
-  
+
   echo '<table id="query-time-table">'.PHP_EOL;
-  echo '<tr><th>Time</th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;  
-  
+  echo '<tr><th>Time</th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
+
   while($row = $result->fetch_assoc()) {         //Read each row of results
     $action = '<a target="_blank" href="'.$Config['SearchUrl'].$row['dns_request'].'"><img class="icon" src="./images/search_icon.png" alt="G" title="Search"></a>&nbsp;<a target="_blank" href="'.$Config['WhoIsUrl'].$row['dns_request'].'"><img class="icon" src="./images/whois_icon.png" alt="W" title="Whois"></a>&nbsp;';
     if ($row['dns_result'] == 'A') {             //Allowed
@@ -211,8 +208,8 @@ function show_time_view() {
       $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', false, true)"></span>';
     }
     elseif ($row['dns_result'] == 'B') {         //Blocked
-      $row_class = ' class="blocked"';      
-      $blockreason = search_blockreason($row['dns_request']);      
+      $row_class = ' class="blocked"';
+      $blockreason = search_blockreason($row['dns_request']);
       if ($blockreason == 'bl_notrack') {        //Show Report icon on NoTrack list
         $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
         $blockreason = '<p class="small">Blocked by NoTrack list</p>';
@@ -228,25 +225,25 @@ function show_time_view() {
       else {
         $blockreason = '<p class="small">Blocked by '.get_blocklistname($blockreason).'</p>';
         $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, false)"></span>';
-      }    
+      }
     }
     elseif ($row['dns_result'] == 'L') {         //Local
       $row_class = ' class="local"';
       $action = '&nbsp;';
     }
-    
+
     if ($site == $row['dns_request']) {
       $row_class = ' class="cyan"';
     }
-    
+
     echo '<tr'.$row_class.'><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td><td>'.$row['dns_request'].$blockreason.'</td><td>'.$action.'</td></tr>'.PHP_EOL;
     $blockreason = '';
   }
-  
+
   echo '</table>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
-  
+
   $result->free();
   return true;
 }
@@ -279,7 +276,7 @@ function get_whoisdata($site, $apikey) {
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
   $json_response = curl_exec($ch);
   $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  
+
   if ($status == 400) {                                    //Bad request domain doesn't exist
     echo '<div class="sys-group">'.PHP_EOL;
     echo '<h5>Domain Information</h5>'.PHP_EOL;
@@ -289,7 +286,7 @@ function get_whoisdata($site, $apikey) {
     curl_close($ch);
     return false;
   }
-  
+
   if ($status >= 300) {                                    //Other HTTP Error
     echo '<div class="sys-group">'.PHP_EOL;
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
@@ -298,19 +295,19 @@ function get_whoisdata($site, $apikey) {
     curl_close($ch);
     return false;
   }
-  
+
   curl_close($ch);
 
-  
+
   //Save whois record into whois table
   $cmd = "INSERT INTO whois (id, save_time, site, record) VALUES ('NULL', '$whois_date', '$site', '".$db->real_escape_string($json_response)."')";
   if ($db->query($cmd) === false) {
     echo 'get_whoisdata() Error adding data to whois table: '.$db->error;
   }
-  
+
   $whois_record = json_decode($json_response, true);
-  
-  return true;  
+
+  return true;
 }
 
 
@@ -326,29 +323,29 @@ function get_whoisdata($site, $apikey) {
  */
 function search_whois($site) {
   global $db, $whois_date, $whois_record;
-  
+
   $query = "SELECT * FROM whois WHERE site = '$site'";
-      
+
   if(!$result = $db->query($query)){
     die('search_whois() There was an error running the query: '.$db->error);
   }
-  
+
   if ($result->num_rows == 0) {                            //Leave if nothing found
     $result->free();
     return false;
   }
-    
+
   $row = $result->fetch_assoc();                           //Read one row of results
-  
+
   $whois_date = $row['save_time'];
   $whois_record = json_decode($row['record'], true);
 
   $result->free();
-  
+
   return true;
 }
-  
- 
+
+
 /********************************************************************
  *  Show Who Is Data
  *    Displays data from $whois_record
@@ -360,18 +357,18 @@ function search_whois($site) {
  */
 function show_whoisdata() {
   global $whois_date, $whois_record;
-  
+
   if ($whois_record == null) return null;                  //Any data in the array?
-  
+
   //TODO give user a chance to reload data
   if (isset($whois_record['error'])) {
     echo '<div class="sys-group">'.PHP_EOL;
-    echo '<h5>Domain Information</h5>'.PHP_EOL;    
+    echo '<h5>Domain Information</h5>'.PHP_EOL;
     echo $whois_record['error'].PHP_EOL;
     echo '</div>'.PHP_EOL;
     return null;
   }
-  
+
   draw_systable('Domain Information');
   draw_sysrow('Domain Name', $whois_record['domain']);
   draw_sysrow('Name', $whois_record['registrar']['name']);
@@ -385,7 +382,7 @@ function show_whoisdata() {
   if (isset($whois_record['nameservers'][3])) draw_sysrow('', $whois_record['nameservers']['3']['name']);
   draw_sysrow('Last Retrieved', $whois_date);
   echo '</table></div>'.PHP_EOL;
-  
+
   if (isset($whois_record['registrant_contacts'][0])) {
     draw_systable('Registrant Contact');
     draw_sysrow('Name', $whois_record['registrant_contacts']['0']['name']);
@@ -400,7 +397,7 @@ function show_whoisdata() {
     if (isset($whois_record['registrant_contacts'][0]['email'])) draw_sysrow('Email', strtolower($whois_record['registrant_contacts']['0']['email']));
     echo '</table></div>'.PHP_EOL;
   }
-  
+
   //print_r($whois_record);
 }
 
@@ -414,7 +411,7 @@ function show_whoisdata() {
  */
 function show_whoiserror() {
   echo '<div class="sys-group">'.PHP_EOL;
-  echo '<h5>Domain Information</h5>'.PHP_EOL;  
+  echo '<h5>Domain Information</h5>'.PHP_EOL;
   echo '<p>Error: No WhoIs API key set. In order to use this feature you will need to add a valid JsonWhois API key to NoTrack config</p>'.PHP_EOL;
   echo '<p>Instructions:</p>'.PHP_EOL;
   echo '<ol>'.PHP_EOL;
@@ -449,7 +446,7 @@ function count_queries() {
   $query = '';
 
   $currenttime = time();
-  
+
   $starttime = strtotime('-30 days');
   $endtime = strtotime('+1 days');
 
@@ -466,7 +463,7 @@ function count_queries() {
     echo '</div>'.PHP_EOL;
     die();
   }
-  
+
   for ($i = $starttime; $i < $endtime; $i += 86400) {      //Increase by 1 day from -30 days to today
     $datestr = date('m-d', $i);
     $allowed_arr[$datestr] = 0;
@@ -479,11 +476,11 @@ function count_queries() {
     //echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
     return false;
   }
-  
+
   while($row = $result->fetch_assoc()) {                   //Read each row of results
-    
+
     if (! array_key_exists($row['log_date'], $allowed_arr)) continue;
-    
+
     if ($row['dns_result'] == 'A') {
       $allowed_arr[$row['log_date']] = $row['count'];
     }
@@ -493,7 +490,7 @@ function count_queries() {
   }
 
   $result->free();
-  
+
   linechart(array_values($allowed_arr), array_values($blocked_arr), $chart_labels, 'Queries over past 30 days');   //Draw the line chart
   return null;
 }
@@ -539,7 +536,7 @@ if ($Config['whoisapi'] == '') {                           //Has user set an API
 if ($domain != '') {                                       //Load whois data?
   draw_searchbar();
   if ($datetime != '') show_time_view();                   //Show time view if datetime in parameters
-  
+
   if (! search_whois($domain)) {                           //Attempt to search whois table
     get_whoisdata($domain, $Config['whoisapi']);           //No record found - download it from JsonWhois
   }
@@ -554,7 +551,6 @@ else {
 $db->close();
 
 ?>
-
 </div>
 
 <div id="scrollup" class="button-scroll" onclick="ScrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
