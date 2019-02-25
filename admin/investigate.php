@@ -42,6 +42,7 @@ echo '<div id="main">'.PHP_EOL;
 $datetime = '';
 $domain = '';
 $site = '';
+$showraw = false;
 
 $whois_date = '';
 $whois_record = '';
@@ -127,11 +128,12 @@ function get_blocklistname($bl) {
 }
 /********************************************************************
  *  Search Block Reason
- *    1. Search $site in bl_source for Blocklist name
- *    2. Use regex match to extract (site).(tld)
- *    3. Search site.tld in bl_source
- *    4. On fail search for .tld in bl_source
- *    5. On fail return ''
+ *    Searches for $site in bl_source to get blocklist name
+ *    1. Try for $site
+ *    2. Try for .tld
+ *    3. Try for site.co.uk
+ *    4. Try for subdomain.site.co.uk
+ *    5. Don't go any further through subdomains as there aren't many / any in the blocklists
  *
  *  Params:
  *    $site - Site to search
@@ -141,28 +143,26 @@ function get_blocklistname($bl) {
 function search_blockreason($site) {
   global $db;
 
-  $result = $db->query('SELECT bl_source site FROM blocklist WHERE site = \''.$site.'\'');
-  if ($result->num_rows > 0) {
-    return $result->fetch_row()[0];
+  $result = $db->query("SELECT bl_source site FROM blocklist WHERE site = '.$site.'");
+  if ($result->num_rows > 0) return $result->fetch_row()[0];
+
+  //Use regex to get domain and tld (site.co.uk)
+  if (preg_match('/([\w\-_]+)(\.co|\.com|\.org|\.gov)?\.([\w\-]+)$/', $site,  $matches) > 0) {
+    $result = $db->query("SELECT bl_source site FROM blocklist WHERE site = '.$matches[3]'");
+
+    if ($result->num_rows > 0) return $result->fetch_row()[0];
+
+    $result = $db->query("SELECT bl_source site FROM blocklist WHERE site = '$matches[0]'");
+    if ($result->num_rows > 0) return $result->fetch_row()[0];
   }
 
-
-  //Try to find LIKE site ending with site.tld
-  if (preg_match('/([\w\d\-\_]+)\.([\w\d\-\_]+)$/', $site,  $matches) > 0) {
-    $result = $db->query('SELECT bl_source site FROM blocklist WHERE site LIKE \'%'.$matches[1].'.'.$matches[2].'\'');
-
-    if ($result->num_rows > 0) {
-      return $result->fetch_row()[0];
-    }
-    else {                                      //On fail try for site = .tld
-      $result = $db->query('SELECT bl_source site FROM blocklist WHERE site = \'.'.$matches[2].'\'');
-      if ($result->num_rows > 0) {
-        return $result->fetch_row()[0];
-      }
-    }
+  //Try for subdomain.site.co.uk
+  if (preg_match('/([\w\-_]+)\.([\w\-_]+)(\.co|\.com|\.org|\.gov)?\.([\w\-]+)$/', $site,  $matches) > 0) {
+    $result = $db->query("SELECT bl_source site FROM blocklist WHERE site = '$matches[0]'");
+    if ($result->num_rows > 0) return $result->fetch_row()[0];
   }
 
-  return '';                                     //Don't know at this point
+  return '';                                               //Don't know at this point
 }
 
 
@@ -354,6 +354,45 @@ function search_whois($site) {
 
 
 /********************************************************************
+ *  Extract Emails from Raw $whois_record
+ *    Regex match for Registrant, Abuse, and Tech emails
+ *    Don't add Tech email if it matches Registrant
+ *
+ *  Params:
+ *    $whois_data['raw']
+ *  Return:
+ *    Array of emails found on success
+ *    or false if nothing found
+ */
+function extractemails($rawdata) {
+  $abuse = '';
+  $registrant = '';
+  $tech = '';
+  $emails = array();
+  
+   if (preg_match('/Registrant\sEmail:\s([\w\.\-\_\+]+@[\w\.\-\_\+]+)/', $rawdata, $matches) > 0) {
+    $registrant = strtolower($matches[1]);
+    $emails['Registrant Email'] = $registrant;
+  }
+
+  if (preg_match('/Abuse\sContact\sEmail:\s([\w\.\-\_\+]+@[\w\.\-\_\+]+)/', $rawdata, $matches) > 0) {
+    $abuse = strtolower($matches[1]);
+    $emails['Abuse Contact'] = $abuse;
+  }
+
+  if (preg_match('/Tech\sEmail:\s([\w\.\-\_\+]+@[\w\.\-\_\+]+)/', $rawdata, $matches) > 0) {
+    $tech = strtolower($matches[1]);
+    if ($tech != $registrant) $emails['Tech Email'] = $tech;
+  }
+ 
+  if (count($emails) == 0) return false;
+  
+  return $emails;
+}
+
+
+
+/********************************************************************
  *  Show Who Is Data
  *    Displays data from $whois_record
  *
@@ -363,7 +402,10 @@ function search_whois($site) {
  *    None
  */
 function show_whoisdata() {
-  global $whois_date, $whois_record;
+  global $site, $whois_date, $whois_record;
+  
+  $blockreason = '';
+  $notrack_row = '';
 
   if ($whois_record == null) return null;                  //Any data in the array?
 
@@ -376,13 +418,30 @@ function show_whoisdata() {
     return null;
   }
 
+  $emails = extractemails($whois_record['raw']);
+  $blockreason = search_blockreason($site);
+  if ($blockreason != '') {
+    $notrack_row = 'Blocked by '.get_blocklistname($blockreason);
+  }
+  else {
+    $notrack_row = 'Allowed';
+  }
+
   draw_systable('Domain Information');
-  draw_sysrow('Domain Name', $whois_record['domain']);
-  draw_sysrow('Name', $whois_record['registrar']['name']);
-  draw_sysrow('Status', ucfirst($whois_record['status']));
+  draw_sysrow('Domain Name', $whois_record['domain'].'<span class="investigatelink"><a href="?site='.$site.'&amp;v=raw">View Raw</a></span>');
+  draw_sysrow('Status on NoTrack', $notrack_row);
   draw_sysrow('Created On', substr($whois_record['created_on'], 0, 10));
   draw_sysrow('Updated On', substr($whois_record['updated_on'], 0, 10));
   draw_sysrow('Expires On', substr($whois_record['expires_on'], 0, 10));
+  draw_sysrow('Status', ucfirst($whois_record['status']));
+  draw_sysrow('Registrar', $whois_record['registrar']['name']);
+  
+  if ($emails !== false) {
+    foreach ($emails as $key => $value) {
+      draw_sysrow($key, $value);
+    }
+  }
+  
   if (isset($whois_record['nameservers'][0])) draw_sysrow('Name Servers', $whois_record['nameservers']['0']['name']);
   if (isset($whois_record['nameservers'][1])) draw_sysrow('', $whois_record['nameservers']['1']['name']);
   if (isset($whois_record['nameservers'][2])) draw_sysrow('', $whois_record['nameservers']['2']['name']);
@@ -390,7 +449,7 @@ function show_whoisdata() {
   draw_sysrow('Last Retrieved', $whois_date);
   echo '</table></div>'.PHP_EOL;
 
-  if (isset($whois_record['registrant_contacts'][0])) {
+  /*if (isset($whois_record['registrant_contacts'][0])) {
     draw_systable('Registrant Contact');
     draw_sysrow('Name', $whois_record['registrant_contacts']['0']['name']);
     draw_sysrow('Organisation', $whois_record['registrant_contacts']['0']['organization']);
@@ -403,11 +462,36 @@ function show_whoisdata() {
     if (isset($whois_record['registrant_contacts'][0]['fax'])) draw_sysrow('Fax', $whois_record['registrant_contacts']['0']['fax']);
     if (isset($whois_record['registrant_contacts'][0]['email'])) draw_sysrow('Email', strtolower($whois_record['registrant_contacts']['0']['email']));
     echo '</table></div>'.PHP_EOL;
-  }
+  }*/
 
-  //print_r($whois_record);
 }
 
+/********************************************************************
+ *  Show Raw Who Is Data
+ *    Displays contents of raw item in $whois_record
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function show_rawwhoisdata() {
+  global $whois_date, $whois_record;
+
+  if ($whois_record == null) return null;                  //Any data in the array?
+
+  if (isset($whois_record['error'])) {
+    echo '<div class="sys-group">'.PHP_EOL;
+    echo '<h5>Domain Information</h5>'.PHP_EOL;
+    echo $whois_record['error'].PHP_EOL;
+    echo '</div>'.PHP_EOL;
+    return null;
+  }
+  
+  echo '<pre>'.PHP_EOL;
+  echo $whois_record['raw'];
+  echo '</pre>'.PHP_EOL;
+}
 /********************************************************************
  *  Show Who Is Error when no API is set
  *
@@ -527,6 +611,12 @@ if (isset($_GET['site'])) {
   }
 }
 
+if (isset($_GET['v'])) {
+  if ($_GET['v'] == 'raw') {
+    $showraw = true;
+  }
+}
+
 if (!table_exists('whois')) {                              //Does whois sql table exist?
   create_whoistable();                                     //If not then create it
   sleep(1);                                                //Delay to wait for MariaDB to create the table
@@ -547,9 +637,14 @@ if ($domain != '') {                                       //Load whois data?
   if (! search_whois($domain)) {                           //Attempt to search whois table
     get_whoisdata($domain, $Config['whoisapi']);           //No record found - download it from JsonWhois
   }
-  show_whoisdata();                                        //Display data from table / JsonWhois
-
-  count_queries();                                         //Show log data for last 30 days
+  
+  if ($showraw) {
+    show_rawwhoisdata();
+  }
+  else {
+    show_whoisdata();                                      //Display fancy whois data
+    count_queries();                                       //Show log data for last 30 days
+  }
 }
 else {
   draw_searchbox();
