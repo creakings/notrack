@@ -274,8 +274,8 @@ function count_rows_save($query) {
  *    None
  */
 function draw_filterbox() {
-  global $FILTERLIST, $sysiplist, $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby;
-  global $GROUPLIST, $TIMELIST;
+  global $sysiplist, $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby;
+  global $FILTERLIST, $TIMELIST;
   global $datestart, $dateend;
   
   $line = '';
@@ -285,6 +285,7 @@ function draw_filterbox() {
   echo '<form method="get">'.PHP_EOL;
   echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
   echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
+  echo '<input type="hidden" name="groupby" value="'.$groupby.'">'.PHP_EOL;
   
   echo '<div class="row">'.PHP_EOL;                        //Start Row TODO mobile view
   echo '<div class="dnsqueries-filterlarge">'.PHP_EOL;     //Start Search Box
@@ -321,13 +322,6 @@ function draw_filterbox() {
   }
   echo '</select></div>'.PHP_EOL;                          //End Filter List
 
-  echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Group List
-  echo '<select name="groupby" id="filtergroup" class="offset" title="Group By" onchange="submit()">';
-  echo '<option value="'.$groupby.'">'.$GROUPLIST[$groupby].'</option>'.PHP_EOL;
-  foreach ($GROUPLIST as $key => $line) {
-    if ($key != $groupby) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
-  }
-  echo '</select></div>'.PHP_EOL;                          //End Group List
   echo '</div>'.PHP_EOL;                                   //End Row
 
   echo '<div class="row">'.PHP_EOL;                        //Start Row for submit button
@@ -341,6 +335,27 @@ function draw_filterbox() {
 }
 
 
+function draw_groupby() {
+  global $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby;
+  
+  $domainactive = '';
+  $timeactive = '';
+  
+  $domainactive = ($groupby == 'name') ? 'checked="checked"' : '';
+  $timeactive = ($groupby == 'time') ? 'checked="checked"' : '';
+  
+  echo '<form method="get">';
+  echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
+  echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
+  echo '<input type="hidden" name="searchbox" value="'.$searchbox.'">'.PHP_EOL;
+  echo '<input type="hidden" name="searchtime" value="'.$searchtime.'">'.PHP_EOL;
+  echo '<input type="hidden" name="sys" value="'.$sysip.'">'.PHP_EOL;
+  echo '<input type="hidden" name="filter" value="'.$filter.'">'.PHP_EOL;
+  echo '<div id="groupby-container">'.PHP_EOL;
+  echo '<input type="radio" id="gbtab1" name="groupby" value="name" onchange="submit()" '.$domainactive.'><label for="gbtab1">Site</label>'.PHP_EOL;
+  echo '<input type="radio" id="gbtab2" name="groupby" value="time" onchange="submit()" '.$timeactive.'><label for="gbtab2">Time</label>'.PHP_EOL;
+  echo '</div></form>';
+}
 /********************************************************************
  *  Get Block List Name
  *    Returns the name of block list if it exists in the names array
@@ -450,6 +465,7 @@ function show_group_view() {
   if ((($page-1) * ROWSPERPAGE) > $rows) $page = 1;
   
   pagination($rows, $paginationlink);
+  draw_groupby();
   
   echo '<table id="query-group-table">'.PHP_EOL;
   
@@ -553,7 +569,8 @@ function show_time_view() {
   }
   
   pagination($rows, $paginationlink);
-    
+  draw_groupby();
+  
   echo '<table id="query-time-table">'.PHP_EOL;
   echo '<tr><th>Time<a class="primarydark" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
   
