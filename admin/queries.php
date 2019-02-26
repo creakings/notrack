@@ -16,6 +16,7 @@ ensure_active_session();
   <script src="./include/menu.js"></script>
   <script src="./include/queries.js"></script>
   <title>NoTrack - DNS Queries</title>
+  <meta name="viewport" content="width=device-width, initial-scale=0.7">
 </head>
 
 <body>
@@ -29,13 +30,11 @@ echo '<div id="main">'.PHP_EOL;
 ************************************************/
 DEFINE('DEF_FILTER', 'all');
 DEFINE('DEF_SYSTEM', 'all');
-DEFINE('DEF_SDATE', date("Y-m-d", time() - 172800));  //Start Date of Historic -2d
-DEFINE('DEF_EDATE', date("Y-m-d", time() - 86400));   //End Date of Historic   -1d
 
 $FILTERLIST = array('all' => 'All Requests',
-                    'a' => 'Allowed Only',
-                    'b' => 'Blocked Only',
-                    'l' => 'Local Only');
+                    'A' => 'Allowed Only',
+                    'B' => 'Blocked Only',
+                    'L' => 'Local Only');
 
 $GROUPLIST = array('name' => 'Site Name',
                    'time' => 'Time');
@@ -61,14 +60,9 @@ $searchtime = '1 DAY';
 $sort = 'DESC';
 $sysip = DEF_SYSTEM;
 
-$datestart = DEF_SDATE;
-$dateend = DEF_EDATE;
-
-
 /************************************************
 *Arrays                                         *
 ************************************************/
-//$sysiplist = array(); DEPRECATED
 $TLDBlockList = array();
 
 
@@ -90,9 +84,9 @@ function cidr($cidr) {
   $ipLong = ip2long( $ip );
   $ipMaskLong = bindec( $maskBinStr );
   $inverseIpMaskLong = bindec( $inverseMaskBinStr );
-  $netWork = $ipLong & $ipMaskLong; 
+  $netWork = $ipLong & $ipMaskLong;
 
-  $start = long2ip($netWork); 
+  $start = long2ip($netWork);
   $end = long2ip(($netWork | $inverseIpMaskLong));
 
   //echo "start $start end $end";                          //Uncomment to Debug
@@ -140,9 +134,9 @@ function filter_ipaddress($value) {
 function get_dnssearch($urlsearch) {
   $sqlsearch = '';
   $url = '';
-  
+
   $url = preg_replace('/\*/', '', $urlsearch);
-  
+
   if (preg_match('/^\*[\w\d\.\-_]+\*$/', $urlsearch) > 0) {
     $sqlsearch = "AND dns_request LIKE '%$url%' ";
     //echo '1';
@@ -168,7 +162,7 @@ function get_dnssearch($urlsearch) {
     //echo '6';
   }
 
-  
+
   return $sqlsearch;
 }
 
@@ -211,7 +205,7 @@ function add_filterstr() {
   $searchstr = " WHERE ";
 
   $searchstr .= "log_time >= DATE_SUB(NOW(), INTERVAL $searchtime) ";
-  
+
   if ($searchbox != '') {
     $searchstr .= get_dnssearch($searchbox);
   }
@@ -242,24 +236,24 @@ function add_filterstr() {
  */
 function count_rows_save($query) {
   global $db, $mem;
-  
+
   $rows = 0;
-  
+
   if ($mem->get('rows')) {                       //Does rows exist in memcache?
     if ($query == $mem->get('oldquery')) {       //Is this query same as old query?
-      $rows = $mem->get('rows');                 //Use stored value      
+      $rows = $mem->get('rows');                 //Use stored value
       return $rows;
     }
   }
-  
+
   if(!$result = $db->query($query)){
     die('There was an error running the query '.$db->error);
   }
-  
+
   $rows = $result->fetch_row()[0];               //Extract value from array
   $result->free();
   $mem->set('oldquery', $query, 0, 600);         //Save for 10 Mins
-      
+
   return $rows;
 }
 
@@ -276,74 +270,68 @@ function count_rows_save($query) {
 function draw_filterbox() {
   global $sysiplist, $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby;
   global $FILTERLIST, $TIMELIST;
-  global $datestart, $dateend;
-  
+
   $line = '';
-  
-  echo '<div class="sys-group">'.PHP_EOL;                    //Start Div Group
-  echo '<h5>DNS Queries</h5>'.PHP_EOL;
+
   echo '<form method="get">'.PHP_EOL;
+  echo '<div id="dnsfilter-container">'.PHP_EOL;                    //Start Div Group
+
   echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
   echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
   echo '<input type="hidden" name="groupby" value="'.$groupby.'">'.PHP_EOL;
-  
-  echo '<div class="row">'.PHP_EOL;                        //Start Row TODO mobile view
-  echo '<div class="dnsqueries-filterlarge">'.PHP_EOL;     //Start Search Box
-  if ($searchbox != '') {
-    echo '<input type="text" name="searchbox" id="filtersearch" class="full" value="'.$searchbox.'" placeholder="site.com">'.PHP_EOL;
-  }
-  else {
-    echo '<input type="text" name="searchbox" id="filtersearch" class="full" placeholder="site.com">'.PHP_EOL;
-  }
-  echo '</div>'.PHP_EOL;                                   //End Search Box
 
-  echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start System List
+  echo '<div><input type="text" name="searchbox" id="filtersearch" value="'.$searchbox.'" placeholder="site.com"></div>'.PHP_EOL;
+
   if ($sysip == DEF_SYSTEM) {
-    echo '<input type="text" name="sysip" id="filtersys" class="full" placeholder="192.168.0.1/24">'.PHP_EOL;
+    echo '<div><input type="text" name="sysip" id="filtersys" placeholder="192.168.0.1/24"></div>'.PHP_EOL;
   }
   else {
-    echo '<input type="text" name="sysip" id="filtersys" class="full" value="'.$sysip.'" placeholder="192.168.0.1/24">'.PHP_EOL;
+    echo '<input type="text" name="sysip" id="filtersys" value="'.$sysip.'" placeholder="192.168.0.1/24">'.PHP_EOL;
   }
-  echo '</div>'.PHP_EOL;                                   //End System List
 
-  echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Search Time
-  echo '<select name="searchtime" id="filtertime" class="offset" onchange="submit()">';
+  echo '<div><select name="searchtime" id="filtertime" onchange="submit()">';
   echo '<option value="'.$searchtime.'">'.$TIMELIST[$searchtime].'</option>'.PHP_EOL;
   foreach ($TIMELIST as $key => $line) {
     if ($key != $searchtime) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
   }
   echo '</select></div>'.PHP_EOL;                          //End Search Time
 
-  echo '<div class="dnsqueries-filtermedium">'.PHP_EOL;    //Start Filter List
-  echo '<select name="filter" id="filtertype" class="offset" onchange="submit()">';
+  echo '<div><select name="filter" id="filtertype" onchange="submit()">';
   echo '<option value="'.$filter.'">'.$FILTERLIST[$filter].'</option>'.PHP_EOL;
   foreach ($FILTERLIST as $key => $line) {
     if ($key != $filter) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
   }
   echo '</select></div>'.PHP_EOL;                          //End Filter List
 
-  echo '</div>'.PHP_EOL;                                   //End Row
-
-  echo '<div class="row">'.PHP_EOL;                        //Start Row for submit button
   echo '<input type="submit" value="Search">&nbsp;&nbsp;';
-  echo '<button type="button" class="button-grey" onclick="resetQueriesForm()">Reset</button>';
-  echo '</div>'.PHP_EOL;                                   //End Row for submit
+  echo '<button type="button" class="button-grey mobile-hide" onclick="resetQueriesForm()">Reset</button>';
 
-  echo '</form>'.PHP_EOL;
   echo '</div>'.PHP_EOL;                                   //End Div Group
+  echo '</form>'.PHP_EOL;
 
 }
 
 
+/********************************************************************
+ *  Draw Group By Buttons
+ *    groupby is a form which contains hidden elements from draw_filterbox
+ *    Selection between Site / Time is made using radio box, which is missing the input box
+ *    Radio box labels are styled to look like pag-nav
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
 function draw_groupby() {
   global $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby;
-  
+
   $domainactive = '';
   $timeactive = '';
-  
+
   $domainactive = ($groupby == 'name') ? 'checked="checked"' : '';
   $timeactive = ($groupby == 'time') ? 'checked="checked"' : '';
-  
+
   echo '<form method="get">';
   echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
   echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
@@ -356,6 +344,7 @@ function draw_groupby() {
   echo '<input type="radio" id="gbtab2" name="groupby" value="time" onchange="submit()" '.$timeactive.'><label for="gbtab2">Time</label>'.PHP_EOL;
   echo '</div></form>';
 }
+
 /********************************************************************
  *  Get Block List Name
  *    Returns the name of block list if it exists in the names array
@@ -367,13 +356,14 @@ function draw_groupby() {
 
 function get_blocklistname($bl) {
   global $BLOCKLISTNAMES;
-  
+
   if (array_key_exists($bl, $BLOCKLISTNAMES)) {
     return $BLOCKLISTNAMES[$bl];
   }
-  
+
   return $bl;
 }
+
 /********************************************************************
  *  Search Block Reason
  *    1. Search $site in bl_source for Blocklist name
@@ -389,20 +379,20 @@ function get_blocklistname($bl) {
  */
 function search_blockreason($site) {
   global $db;
-  
+
   $result = $db->query('SELECT bl_source site FROM blocklist WHERE site = \''.$site.'\'');
   if ($result->num_rows > 0) {
     return $result->fetch_row()[0];
   }
-  
-    
+
+
   //Try to find LIKE site ending with site.tld
   if (preg_match('/([\w\d\-\_]+)\.([\w\d\-\_]+)$/', $site,  $matches) > 0) {
     $result = $db->query('SELECT bl_source site FROM blocklist WHERE site LIKE \'%'.$matches[1].'.'.$matches[2].'\'');
 
     if ($result->num_rows > 0) {
       return $result->fetch_row()[0];
-    }    
+    }
     else {                                      //On fail try for site = .tld
       $result = $db->query('SELECT bl_source site FROM blocklist WHERE site = \'.'.$matches[2].'\'');
       if ($result->num_rows > 0) {
@@ -410,7 +400,7 @@ function search_blockreason($site) {
       }
     }
   }
-  
+
   return '';                                     //Don't know at this point
 }
 
@@ -427,7 +417,7 @@ function search_blockreason($site) {
 function show_group_view() {
   global $db, $Config, $TLDBlockList;
   global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
-  
+
   $i = 0;
   $rows = 0;
   $row_class = '';
@@ -435,45 +425,45 @@ function show_group_view() {
   $blockreason = '';
   $query = '';
   $site_cell = '';
-  
+
   $sortlink = "?page=$page&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby&amp;";
-  
+
   $paginationlink = "&amp;sort=$sort&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby";
 
   $rows = count_rows_save("SELECT COUNT(DISTINCT dns_request) FROM dnslog ".add_filterstr());
-  
+
   if ((($page-1) * ROWSPERPAGE) > $rows) {
     $page = 1;
   }
   $i = (($page - 1) * ROWSPERPAGE) + 1;
-  
+
   $query = "SELECT sys, dns_request, dns_result, COUNT(*) AS count FROM dnslog" .add_filterstr()." GROUP BY dns_request ORDER BY count $sort LIMIT ".ROWSPERPAGE." OFFSET ".(($page-1) * ROWSPERPAGE);
-  
+
   if(!$result = $db->query($query)){
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
     echo 'show_group_view: '.$db->error;
     echo '</div>'.PHP_EOL;
     die();
-  } 
-  
+  }
+
   if ($result->num_rows == 0) {                 //Leave if nothing found
     $result->free();
     echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
     return false;
   }
-  
+
   if ((($page-1) * ROWSPERPAGE) > $rows) $page = 1;
-  
+
   pagination($rows, $paginationlink);
   draw_groupby();
-  
+
   echo '<table id="query-group-table">'.PHP_EOL;
-  
+
   echo '<tr><th>#</th><th>Site</th><th>Action</th><th>Requests<a class="primarydark" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th></tr>'.PHP_EOL;
-  
+
   while($row = $result->fetch_assoc()) {         //Read each row of results
     $action = '<a target="_blank" href="'.$Config['SearchUrl'].$row['dns_request'].'"><img class="icon" src="./images/search_icon.png" alt="G" title="Search"></a>&nbsp;<a target="_blank" href="'.$Config['WhoIsUrl'].$row['dns_request'].'"><img class="icon" src="./images/whois_icon.png" alt="W" title="Whois"></a>&nbsp;';
-    
+
     if ($row['dns_result'] == 'A') {             //Row colouring
       $row_class='';
       $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', false, true)"></span>';
@@ -502,19 +492,19 @@ function show_group_view() {
       $row_class = ' class="local"';
       $action = '&nbsp;';
     }
-    
+
     //Make entire site cell clickable with link going to Investigate
     $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?site='.$row['dns_request'].'\', \'_blank\')"><a href="./investigate.php?site='.$row['dns_request'].'" class="black" target="_blank">'.$row['dns_request'].$blockreason.'</a></td>';
-        
+
     echo '<tr'.$row_class.'><td>'.$i.'</td>'.$site_cell.'<td>'.$action.'</td><td>'.$row['count'].'</td></tr>'.PHP_EOL;
     $blockreason = '';
     $i++;
   }
-  
+
   echo '</table>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
   pagination($rows, $paginationlink);
-  
+
   $result->free();
 
   return true;
@@ -533,28 +523,28 @@ function show_group_view() {
 function show_time_view() {
   global $db, $Config, $TLDBlockList;
   global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
-  
+
   $rows = 0;
   $row_class = '';
-  
+
   $query = '';
   $action = '';
   $blockreason = '';
   $investigate = '';
   $site_cell = '';
-  
+
   $sortlink = "?page=$page&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby&amp;";
-  
+
   $paginationlink = "&amp;sort=$sort&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby";
-  
+
   $rows = count_rows_save('SELECT COUNT(*) FROM dnslog'.add_filterstr());
   if ((($page-1) * ROWSPERPAGE) > $rows) {
     $page = 1;
   }
-  
+
   $query = "SELECT *, DATE_FORMAT(log_time, '%Y-%m-%d %H:%i:%s') AS formatted_time FROM dnslog ".add_filterstr(). " ORDER BY UNIX_TIMESTAMP(log_time) $sort LIMIT ".ROWSPERPAGE." OFFSET ".(($page-1) * ROWSPERPAGE);
-    
-  
+
+
   if(!$result = $db->query($query)){
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
     echo 'show_time_view: '.$db->error;
@@ -567,16 +557,16 @@ function show_time_view() {
     echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
     return false;
   }
-  
+
   pagination($rows, $paginationlink);
   draw_groupby();
-  
+
   echo '<table id="query-time-table">'.PHP_EOL;
   echo '<tr><th>Time<a class="primarydark" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
-  
+
   while($row = $result->fetch_assoc()) {         //Read each row of results
     $action = '<a target="_blank" href="'.$Config['SearchUrl'].$row['dns_request'].'"><img class="icon" src="./images/search_icon.png" alt="G" title="Search"></a>&nbsp;<a target="_blank" href="'.$Config['WhoIsUrl'].$row['dns_request'].'"><img class="icon" src="./images/whois_icon.png" alt="W" title="Whois"></a>&nbsp;';
-    
+
     if ($row['dns_result'] == 'A') {             //Allowed
       $row_class='';
       $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', false, true)"></span>';
@@ -605,20 +595,20 @@ function show_time_view() {
       $row_class = ' class="local"';
       $action = '&nbsp;';
     }
-    
-        
+
+
     //Make entire site cell clickable with link going to Investigate
     //Add in datetime and system into investigate link
     $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$row['dns_request'].'&amp;sys='.$row['sys'].'\', \'_blank\')"><a href="./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$row['dns_request'].'&amp;sys='.$row['sys'].'" class="black" target="_blank">'.$row['dns_request'].$blockreason.'</a></td>';
-        
+
     echo '<tr'.$row_class.'><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td>'.$site_cell.'<td>'.$action.$investigate.'</td></tr>'.PHP_EOL;
     $blockreason = '';
   }
-  
+
   echo '</table>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
-  pagination($rows,  $paginationlink);  
-  
+  pagination($rows,  $paginationlink);
+
   $result->free();
   return true;
 }

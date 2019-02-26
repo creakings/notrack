@@ -192,10 +192,6 @@ select.input-conf {
   width: 98.5%;
   max-width: 24.6rem;
 }
-select.offset {
-  width: 92%;
-  margin: 0.2rem 0.7rem;
-}
 .button-teal,
 input[type="reset"],
 input[type="submit"],
@@ -273,14 +269,14 @@ button:active {
   box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
   transform: translateY(4px);
 }
-.row {                                                     /*TODO Remove from queries.php*/
-  width:100%;
+/*.row {                                                     /*TODO Remove from queries.php*/
+  /*width:100%;
 }
 .row:after {
   content: "";
   display: table;
   clear: both;
-}
+}*/
 .centered {
   text-align:center;
 }
@@ -302,6 +298,7 @@ button:active {
 /* ==========================================================================
    Paginate / Sub Navigation
    ========================================================================== */
+
 .pag-nav {
   margin: 0 0.2em 0.4em;
   font-size: 0.9em;
@@ -342,6 +339,10 @@ a.pag-exwide {                                                       /*Wide butt
   opacity: 0.74;
 }
 
+
+/* ==========================================================================
+   Group By (similar to pag-nav, but using radio buttons instead)
+   ========================================================================== */
 
 #groupby-container {
   margin: 0 0.1em 0.4em;
@@ -868,10 +869,11 @@ span.key-green {
    Lower Top Menu
    ========================================================================== */
 
-#menu-lower {
+#menu-lower,
+#dnsfilter-container {
   height: 2.6rem;
   margin-top: -0.6rem;
-  padding: 0.2rem 0 0 1rem;
+  padding: 0.2rem 0.5rem 0 0.8rem;
   background-color: rgba(0, 110, 116, 0.95);
 }
 #menu-lower img {
@@ -901,7 +903,29 @@ span.key-green {
   box-shadow: inset 0 0 4px #00c2c8;
 }
 
+#dnsfilter-container {
+  display: flex;
+  flex-direction: row;
+/*   justify-content: flex-start; */
+  align-items: stretch;
+}
 
+#dnsfilter-container div:nth-of-type(1) { 
+  flex: 3 1 auto;
+}
+#dnsfilter-container div { 
+  display: inline-flex;
+  flex: 1 1 auto;
+}
+#dnsfilter-container select,
+#dnsfilter-container input[type="text"] {
+  width: 100%;
+  margin-right: 0.5rem;
+}
+#dnsfilter-container button,
+#dnsfilter-container input[type="submit"] {
+  height: 2.3rem;
+}
 /* ==========================================================================
    Config Navigation
    ========================================================================== */
@@ -1083,27 +1107,6 @@ span.key-green {
   content: "?";
 }
 
-/* ==========================================================================
-   Filters on queries.php
-   ========================================================================== */
-
-.dnsqueries-filterlarge {
-  width: 25%;
-  float: left;
-}
-.dnsqueries-filtermedium {
-  width: 18%;
-  float: left;
-}
-@media only screen and (max-width:1200px), only screen and (max-device-width:1200px) {
-  .dnsqueries-filterlarge {
-    width: 98%;
-  }
-  .dnsqueries-filtermedium {
-    width: 24%;
-  }
-}
-
 
 /* ==========================================================================
    Extra Colours
@@ -1143,11 +1146,11 @@ span.darkgray, h3.darkgray {
    Other Spans
    ========================================================================== */
 
-span.mobile-hide {display: inline-block;}
-span.mobile-show {display: none;}
+/* .mobile-hide {display: inline-block;} */
+.mobile-show {display: none;}
 @media only screen and (max-width:480px), only screen and (max-device-width:480px) {
-  span.mobile-hide {display: none;}
-  span.mobile-show {display: inline-block;}
+  .mobile-hide {display: none;}
+  .mobile-show {display: inline-block;}
 }
 span.filter {
   width: 5rem;
