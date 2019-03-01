@@ -1,5 +1,3 @@
-//Supporting JavaScript for NoTrack queries.php
-//TODO Requires cleanup and fix naming convention
 /********************************************************************
  *  Reset queries form
  *    Reset elements in queries form to their default values
@@ -9,191 +7,263 @@
  *    None
  */
 function resetQueriesForm() {
-  document.getElementById("filtersearch").value = "";
-  document.getElementById("filtersys").value = "";
-  document.getElementById("filtertime").value = "1 DAY";
-  document.getElementById("filtertype").value = "all";
-  document.getElementById("filtergroup").value = "name";
+  document.getElementById('filtersearch').value = '';
+  document.getElementById('filtersys').value = '';
+  document.getElementById('filtertime').value = '1 DAY';
+  document.getElementById('filtertype').value = 'all';
+  document.getElementById('filtergroup').value = 'name';
 }
 
 
-function ValidateIPaddress(ipaddress) {
- if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipaddress)) {
-    return true;
-  }
-  return false;
+/********************************************************************
+ *  Is IP Address
+ *    Checks for IPv4 address
+ *  Params:
+ *    ipaddress
+ *  Return:
+ *    true if IPv4 address
+ *    false if not
+ */
+function isIPaddress(ipaddress) {
+  return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipaddress);
 }
+
+/********************************************************************
+ *  Is Common Domain
+ *    Checks to see if Domain starts with asterisk
+ *  Params:
+ *    Domain
+ *  Return:
+ *    true when domain starts with *.
+ *    false if it doesn't
+ */
+function isCommonDomain(domain) {
+  return /^\*\./.test(domain);
+}
+
+/********************************************************************
+ *  Is Valid Domain
+ *    Checks to see if Domain contains format of site.com
+ *  Params:
+ *    Domain
+ *  Return:
+ *    true when domain is valid
+ *    false invalid domain
+ */
+function isValidDomain(domain) {
+  return /^[\w\-_\.]+[\w\-_]+$/.test(domain);
+}
+
 /********************************************************************
  *  Report Site
  *
  *  Params:
- *    site, if blocked, show report button
+ *    site name, if blocked (true = blocked, false = allowed), show report button
  *  Return:
  *    None
  */
 function reportSite(site, blocked, showreport) {
-  //TODO port to FORM and deprecate button-teal <form action="#" method="GET" target="_blank"
-  //<button formaction
-  var Msg = "";                                  //Message to show user
-  var button1 = "";                               //Block button and message
-  var button2 = "";                               //Block button and message with subdomain
-  var report = "";                               //report button and message
-  var domain = "";
-  
-  if (/^\*/.test(site)) {                        //Is it a *common site?
-    Msg = "<p>Domains starting with * are known to utilise a large number of subdomains</p>";
+  var msg = '';                                            //Message to show user
+  var inv = '';                                            //Investigate Item
+  var item1 = '';                                          //Block button and message
+  var item2 = '';                                          //Block button and message with subdomain
+  var report = '';                                         //report button and message
+  var domain = '';
+  var action = '';
+
+  if (isCommonDomain(site)) {                              //Is it a *common site?
+    msg = '<p>Domains starting with * are known to utilise a large number of subdomains</p>';
   }
-  else if (! /^[\w\d\-\_]+\.[\w\d\-\.\_]+/.test(site)) {  //Is there a dot . present?
-    Msg = "<p>Invalid site</p>";
-  }  
-  else if (/.*\.akamai\.net$|akamaiedge\.net$/.test(site)) {  //Is it an Akami site?
-    Msg = "<p>Akami is a Content Delivery Network (CDN) providing media delivery for a wide range of websites.</p><p>It is more efficient to block the originating website, rather than an Akami subdomain.</p>";
+  else if (! isValidDomain(site)) {
+    msg = '<p>Invalid site</p>';
   }
-  else if (ValidateIPaddress(site)) {            //Is it an IP Address
-    Msg = "<p>Unable to Block IP addresses.<br>You could add it to your Firewall instead</p>";
-  }  
-  
-  else {                                         //Valid site    
-    if (showreport) {                            //Show report button?
-      if (blocked) {                             //Remove blocked site
-        report = 'remove--'+site;
+  else if (/(\.akamai\.net|akamaiedge\.net)$/.test(site)) { //Is it an Akami site?
+    msg = '<p>Akami is a Content Delivery Network (CDN) providing media delivery for a wide range of websites.</p><p>It is more efficient to block the originating website, rather than an Akami subdomain.</p>';
+  }
+  else if (isIPaddress(site)) {            //Is it an IP Address
+    msg = '<p>Unable to Block IP addresses.<br>You could add it to your Firewall instead</p>';
+  }
+
+  else {                                                   //Valid site to block / allow
+    //Is domain a single domain with optional double-barrelled tld?
+    if (/^[\w\-_]+\.(org\.|co\.|com\.|gov\.)?[\w\-_]+$/.test(site)) {
+      if (blocked) {
+        item1 = '<button name="site" value='+site+' type="submit">Whitelist Domain</button><span>Add domain to your White List</span>';
+        action = 'white';
       }
-      else {                                     //Report site for blocking
+      else {
+        item1 = '<button name="site" value='+site+' type="submit">Block Domain</button><span>Add domain to your Black List</span>';
+        action = 'black';
+      }
+    }
+    else {                                                 //No, it has one or more sub-domains
+      domain = site.match(/[\w\-_]+\.(org\.|co\.|com\.|gov\.)?[\w\-_]+$/)[0];     //Extract domain with optional double-barrelled tld
+      if (blocked) {
+        item1 = '<button name="site" value='+domain+' type="submit">Whitelist Domain</button><span>Whitelist entire domain</span>';
+        item2 = '<button name="site" value='+site+' type="submit">Whitelist  Subdomain</button><span>Add subdomain to your White List</span>';
+        action = 'white';
+      }
+      else {
+        item1 = '<button name="site" value='+domain+' type="submit">Block Domain</button><span>Block entire domain</span>';
+        item2 = '<button name="site" value='+site+' type="submit">Block Subdomain</button><span>Add subdomain to your Black List</span>';
+        action = 'black';
+      }
+    }
+
+    inv = '<button name="site" value='+site+' type="submit">View Details</button><span>View domain details in NoTrack Investigate</span>';
+
+    if (showreport) {                                      //Show report button (for NoTrack blocked sites)
+      if (blocked) {                                       //Remove blocked site
+        report = 'remove--'+site;
+    }
+      else {                                               //Report site for blocking
         report = site;
       }
     }
-        
-    //Is it a single domain with optional double-barrelled tld?
-    if (/^[\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-\_]+$/.test(site)) {
-      if (blocked) {
-        button1 = '<p><a class="button-teal" href="./config.php?v=white&action=white&do=add&site='+site+'&comment=" target="_blank">Whitelist Domain</a> Add domain to your White List</p>';
-      }
-      else {
-        button1 = '<p><a class="button-teal" href="./config.php?v=black&action=black&do=add&site='+site+'&comment=" target="_blank">Block Domain</a> Add domain to your Black List</p>';
-      }      
-    }
-    else {                                       //No, it has one or more sub-domains
-      domain = site.match(/[\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-\_]+$/)[0];     //Extract domain with optional double-barrelled tld
-      if (blocked) {
-        button1 = '<p><a class="button-teal" href=" ./config.php?v=white&action=white&do=add&site='+domain+'&comment=" target="_blank">Whitelist Domain</a> Whitelist entire domain '+domain+'</p>';
-	      button2 = '<p><a class="button-teal" href=" ./config.php?v=white&action=white&do=add&site='+site+'&comment=" target="_blank">Whitelist  Subdomain</a> Add subdomain to your White List</p>';
-      }
-      else {
-	      button1 = '<p><a class="button-teal" href=" ./config.php?v=black&action=black&do=add&site='+domain+'&comment=" target="_blank">Block Domain</a> Block entire domain '+domain+'</p>';
-	      button2 = '<p><a class="button-teal" href=" ./config.php?v=black&action=black&do=add&site='+site+'&comment=" target="_blank">Block Subdomain</a> Add subdomain to your Black List</p>';
-      }
-    }
   }
-  
-  //Modify DOM elements depending on whether a string has been set.
-  document.getElementById("sitename").innerHTML = "<h3>"+site+"</h3>";
-  
-  if (Msg == "") {
-    document.getElementById("statsmsg").style.display = "none";
-    document.getElementById("statsmsg").innerHTML = "";
-  }
-  else {
-    document.getElementById("statsmsg").style.display = "block";
-    document.getElementById("statsmsg").innerHTML = Msg;
-  }
-  
-  if (button1 == "") {
-    document.getElementById("statsblock1").style.display = "none";
-    document.getElementById("statsblock1").innerHTML = "";
-  }
-  else {
-    document.getElementById("statsblock1").style.display = "block";
-    document.getElementById("statsblock1").innerHTML = button1;
-  }
-  
-  if (button2 == "") {
-    document.getElementById("statsblock2").style.display = "none";
-    document.getElementById("statsblock2").innerHTML = "";
-  }
-  else {
-    document.getElementById("statsblock2").style.display = "block";
-    document.getElementById("statsblock2").innerHTML = button2;
-  }
-  
-  if (report == "") {
-    document.getElementById("statsreport").style.display = "none";    
-  }
-  else {
-    document.getElementById("statsreport").style.display = "block";    
-    document.getElementById("siterep").value = report;
-  }
-  
-  //Position Fade and Stats box
-  document.getElementById('fade').style.top=window.pageYOffset+"px";
-  document.getElementById('fade').style.display = "block";
-    
-  document.getElementById('queries-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+"px";
-  document.getElementById('queries-box').style.left = (window.innerWidth / 2)+"px";
-  document.getElementById('queries-box').style.display = "block";  
-}
-//-------------------------------------------------------------------
-function HideStatsBox() {
-  document.getElementById('queries-box').style.display = "none";
-  document.getElementById('fade').style.display = "none";
-}
-//-------------------------------------------------------------------
-function ScrollToBottom() {  
-  window.scrollTo(0, document.body.scrollHeight);  
-  //Animated http://jsfiddle.net/forestrf/tPQSv/2/
-}  
-//-------------------------------------------------------------------
-function ScrollToTop() {
-  window.scrollTo(0, 0);
-}  
-//-------------------------------------------------------------------
-window.onscroll = function() {Scroll()};         //OnScroll Event
 
-function Scroll() {
-  //Show Scroll button depending on certain conditions:
-  //1: Under 100 pixels from Top - None
-  //2: Over 100 pixels from Top and Under 60% - Scroll Down
-  //3: Over 60% - Scroll Up
-  
-  var Y = document.body.scrollHeight / 10;
-  
-  if (window.pageYOffset > 100 && window.pageYOffset < Y * 6) {
-    document.getElementById('scrollup').style.display = "none";
-    document.getElementById('scrolldown').style.display = "block";
-  }
-  else if (window.pageYOffset >= (Y * 6)) {
-    document.getElementById('scrollup').style.display = "block";
-    document.getElementById('scrolldown').style.display = "none";
+
+  //Modify DOM elements depending on whether a string has been set.
+  document.getElementById('sitename').innerText = site;
+
+  if (msg == '') {
+    document.getElementById('reportmsg').style.display = 'none';
+    document.getElementById('reportmsg').innerHTML = '';
   }
   else {
-    document.getElementById('scrollup').style.display = "none";
-    document.getElementById('scrolldown').style.display = "none";
+    document.getElementById('reportmsg').style.display = 'block';
+    document.getElementById('reportmsg').innerHTML = msg;
   }
-  
+
+  if (item1 == '') {
+    document.getElementById('reportitem1').style.display = 'none';
+    document.getElementById('reportitem1').innerHTML = '';
+    document.getElementById('invitem').style.display = 'none';
+    document.getElementById('invitem').innerHTML = '';
+  }
+  else {
+    document.getElementById('reportitem1').style.display = 'block';
+    document.getElementById('reportitem1').innerHTML = item1;
+    document.getElementById('invitem').style.display = 'block';
+    document.getElementById('invitem').innerHTML = inv;
+  }
+
+  if (item2 == '') {
+    document.getElementById('reportitem2').style.display = 'none';
+    document.getElementById('reportitem2').innerHTML = '';
+  }
+  else {
+    document.getElementById('reportitem2').style.display = 'block';
+    document.getElementById('reportitem2').innerHTML = item2;
+  }
+
+  document.getElementById('reportv').value = action;
+  document.getElementById('reportaction').value = action;
+
+  if (report == '') {
+    document.getElementById('statsreport').style.display = 'none';
+  }
+  else {
+    document.getElementById('statsreport').style.display = 'block';
+    document.getElementById('siterep').value = report;
+  }
+
+  //Position Fade and Stats box
+  document.getElementById('fade').style.top = window.pageYOffset+'px';
+  document.getElementById('fade').style.display = 'block';
+
+  document.getElementById('queries-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+'px';
+  document.getElementById('queries-box').style.left = (window.innerWidth / 2)+'px';
+  document.getElementById('queries-box').style.display = 'block';
+}
+
+
+/********************************************************************
+ *  Hide Queries Box
+ *    Hides queries-box, and fade elements
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function hideQueriesBox() {
+  document.getElementById('queries-box').style.display = 'none';
+  document.getElementById('fade').style.display = 'none';
+}
+
+
+/********************************************************************
+ *  Scroll To Bottom
+ *    Moves scrollbar when user clicks button-scroll
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function scrollToBottom() {
+  window.scrollTo(0, document.body.scrollHeight);
+  //Animated http://jsfiddle.net/forestrf/tPQSv/2/
+}
+
+
+/********************************************************************
+ *  Scroll To Top
+ *    Moves scrollbar when user clicks button-scroll
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function scrollToTop() {
+  window.scrollTo(0, 0);
+}
+
+
+/********************************************************************
+ *  Scroll Function
+ *    Show Scroll button depending on certain conditions:
+ *    1: Under 100 pixels from Top - None
+ *    2: Over 100 pixels from Top and Under 60% - Scroll Down
+ *    3: Over 60% - Scroll Up
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+window.onscroll = function() {                             //OnScroll Event
+  let y = document.body.scrollHeight / 10;
+
+  if (window.pageYOffset > 100 && window.pageYOffset < y * 6) {
+    document.getElementById('scrollup').style.display = 'none';
+    document.getElementById('scrolldown').style.display = 'block';
+  }
+  else if (window.pageYOffset >= (y * 6)) {
+    document.getElementById('scrollup').style.display = 'block';
+    document.getElementById('scrolldown').style.display = 'none';
+  }
+  else {
+    document.getElementById('scrollup').style.display = 'none';
+    document.getElementById('scrolldown').style.display = 'none';
+  }
+
   //Lock Stats box and Fade in place if visible
-  if (document.getElementById('queries-box').style.display == "block") {
-    document.getElementById('fade').style.top=window.pageYOffset+"px";
-      
-    document.getElementById('queries-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+"px";
-    document.getElementById('queries-box').style.left = (window.innerWidth / 2)+"px";
+  if (document.getElementById('queries-box').style.display == 'block') {
+    document.getElementById('fade').style.top=window.pageYOffset+'px';
+
+    document.getElementById('queries-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+'px';
+    document.getElementById('queries-box').style.left = (window.innerWidth / 2)+'px';
   }
+
   //Lock Options box in place if visible
-  if (document.getElementById('options-box').style.display == "block") {
-    document.getElementById('fade').style.top=window.pageYOffset+"px";
-      
-    document.getElementById('options-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+"px";
-    document.getElementById('options-box').style.left = (window.innerWidth / 2)+"px";
+  if (document.getElementById('options-box').style.display == 'block') {
+    document.getElementById('fade').style.top=window.pageYOffset+'px';
+
+    document.getElementById('options-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+'px';
+    document.getElementById('options-box').style.left = (window.innerWidth / 2)+'px';
   }
 }
-//-------------------------------------------------------------------
-/*function ShowFull(Row) {
-  //Function to show "smallhidden" p element on blocked.php
-  if (document.getElementById('r'+Row).style.display == "block") {
-    document.getElementById('r'+Row).style.display = "none";
-    document.getElementById('b'+Row).innerHTML = "+";
-  }
-  else {
-    document.getElementById('r'+Row).style.display = "block";
-    document.getElementById('b'+Row).innerHTML = "-";
-  }
-}
-*/
+

@@ -20,7 +20,6 @@ ensure_active_session();
   <link href="./css/chart.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/menu.js"></script>
-  <script src="./include/queries.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=0.9">
   <title>NoTrack - Investigate</title>
 </head>
@@ -202,27 +201,20 @@ function show_time_view() {
     return false;
   }
 
-
-  //draw_viewbuttons();
-
   echo '<table id="query-time-table">'.PHP_EOL;
-  echo '<tr><th>Time</th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
+  echo '<tr><th>Time</th><th>System</th><th>Site</th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
-    $action = '<a target="_blank" href="'.$Config['SearchUrl'].$row['dns_request'].'"><img class="icon" src="./images/search_icon.png" alt="G" title="Search"></a>&nbsp;<a target="_blank" href="'.$Config['WhoIsUrl'].$row['dns_request'].'"><img class="icon" src="./images/whois_icon.png" alt="W" title="Whois"></a>&nbsp;';
     if ($row['dns_result'] == 'A') {             //Allowed
       $row_class='';
-      $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', false, true)"></span>';
     }
     elseif ($row['dns_result'] == 'B') {         //Blocked
       $row_class = ' class="blocked"';
       $blockreason = search_blockreason($row['dns_request']);
       if ($blockreason == 'bl_notrack') {        //Show Report icon on NoTrack list
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
         $blockreason = '<p class="small">Blocked by NoTrack list</p>';
       }
       elseif ($blockreason == 'custom') {        //Users blacklist, show report icon
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
         $blockreason = '<p class="small">Blocked by Black list</p>';
       }
       elseif ($blockreason == '') {              //No reason is probably IP or Search request
@@ -231,19 +223,17 @@ function show_time_view() {
       }
       else {
         $blockreason = '<p class="small">Blocked by '.get_blocklistname($blockreason).'</p>';
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, false)"></span>';
       }
     }
     elseif ($row['dns_result'] == 'L') {         //Local
       $row_class = ' class="local"';
-      $action = '&nbsp;';
     }
 
     if ($site == $row['dns_request']) {
       $row_class = ' class="cyan"';
     }
 
-    echo '<tr'.$row_class.'><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td><td>'.$row['dns_request'].$blockreason.'</td><td>'.$action.'</td></tr>'.PHP_EOL;
+    echo '<tr'.$row_class.'><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td><td>'.$row['dns_request'].$blockreason.'</td></tr>'.PHP_EOL;
     $blockreason = '';
   }
 
@@ -654,25 +644,5 @@ $db->close();
 
 ?>
 </div>
-
-<div id="scrollup" class="button-scroll" onclick="ScrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
-<div id="scrolldown" class="button-scroll" onclick="ScrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
-
-<div id="queries-box">
-<h2>Report</h2>
-<span id="sitename">site</span>
-<span id="statsmsg">something</span>
-<span id="statsblock1"><a class="button-teal" href="#">Block Whole</a> Block whole domain</span>
-<span id="statsblock2"><a class="button-teal" href="#">Block Sub</a> Block just the subdomain</span>
-<form name="reportform" action="https://quidsup.net/notrack/report.php" method="post" target="_blank">
-<input type="hidden" name="site" id="siterep" value="none">
-<span id="statsreport"><input type="submit" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
-</form>
-
-<br>
-<div class="centered"><button class="button-grey" onclick="HideStatsBox()">Cancel</button></div>
-<div class="close-button" onclick="HideStatsBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
-</div>
-
 </body>
 </html>

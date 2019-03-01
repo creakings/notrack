@@ -462,21 +462,22 @@ function show_group_view() {
   echo '<tr><th>#</th><th>Site</th><th>Action</th><th>Requests<a class="primarydark" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
-    $action = '<a target="_blank" href="'.$Config['SearchUrl'].$row['dns_request'].'"><img class="icon" src="./images/search_icon.png" alt="G" title="Search"></a>&nbsp;<a target="_blank" href="'.$Config['WhoIsUrl'].$row['dns_request'].'"><img class="icon" src="./images/whois_icon.png" alt="W" title="Whois"></a>&nbsp;';
+    $action = '<a class="button-small" target="_blank" href="'.$Config['SearchUrl'].$row['dns_request'].'"><img src="./images/icon_search.png" alt="" title="Search"></a>';
+    $action .= '<a class="button-small" target="_blank" href="'.$Config['WhoIsUrl'].$row['dns_request'].'"><img src="./images/icon_whois.png" alt="W" title="Whois"></a>';
 
     if ($row['dns_result'] == 'A') {             //Row colouring
       $row_class='';
-      $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', false, true)"></span>';
+      $action .= '<span class="button-small pointer"><img src="./images/icon_boot.png" alt="" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', false, true)"></span>';
     }
     elseif ($row['dns_result'] == 'B') {         //Blocked
       $row_class = ' class="blocked"';
       $blockreason = search_blockreason($row['dns_request']);
       if ($blockreason == 'bl_notrack') {        //Show Report icon on NoTrack list
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
+        $action .= '<span class="button-small pointer"><img src="./images/icon_boot.png" alt="" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
         $blockreason = '<p class="small">Blocked by NoTrack list</p>';
       }
       elseif ($blockreason == 'custom') {        //Users blacklist, show report icon
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
+        $action .= '<span class="button-small pointer"><img src="./images/icon_boot.png" alt="" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
         $blockreason = '<p class="small">Blocked by Black list</p>';
       }
       elseif ($blockreason == '') {              //No reason is probably IP or Search request
@@ -485,12 +486,11 @@ function show_group_view() {
       }
       else {
         $blockreason = '<p class="small">Blocked by '.get_blocklistname($blockreason).'</p>';
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, false)"></span>';
+        $action .= '<span class="button-small pointer"><img src="./images/icon_boot.png" alt="" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, false)"></span>';
       }
     }
     elseif ($row['dns_result'] == 'L') {
       $row_class = ' class="local"';
-      $action = '&nbsp;';
     }
 
     //Make entire site cell clickable with link going to Investigate
@@ -565,21 +565,22 @@ function show_time_view() {
   echo '<tr><th>Time<a class="primarydark" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
-    $action = '<a target="_blank" href="'.$Config['SearchUrl'].$row['dns_request'].'"><img class="icon" src="./images/search_icon.png" alt="G" title="Search"></a>&nbsp;<a target="_blank" href="'.$Config['WhoIsUrl'].$row['dns_request'].'"><img class="icon" src="./images/whois_icon.png" alt="W" title="Whois"></a>&nbsp;';
+    $action = '<a class="button-small" target="_blank" href="'.$Config['SearchUrl'].$row['dns_request'].'"><img src="./images/icon_search.png" alt="" title="Search"></a>';
+    $action .= '<a class="button-small" target="_blank" href="'.$Config['WhoIsUrl'].$row['dns_request'].'"><img src="./images/icon_whois.png" alt="W" title="Whois"></a>';
 
-    if ($row['dns_result'] == 'A') {             //Allowed
+    if ($row['dns_result'] == 'A') {             //Row colouring
       $row_class='';
-      $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', false, true)"></span>';
+      $action .= '<span class="button-small pointer"><img src="./images/icon_boot.png" alt="" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', false, true)"></span>';
     }
     elseif ($row['dns_result'] == 'B') {         //Blocked
       $row_class = ' class="blocked"';
       $blockreason = search_blockreason($row['dns_request']);
       if ($blockreason == 'bl_notrack') {        //Show Report icon on NoTrack list
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
+        $action .= '<span class="button-small pointer"><img src="./images/icon_boot.png" alt="" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
         $blockreason = '<p class="small">Blocked by NoTrack list</p>';
       }
       elseif ($blockreason == 'custom') {        //Users blacklist, show report icon
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
+        $action .= '<span class="button-small pointer"><img src="./images/icon_boot.png" alt="" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
         $blockreason = '<p class="small">Blocked by Black list</p>';
       }
       elseif ($blockreason == '') {              //No reason is probably IP or Search request
@@ -588,12 +589,11 @@ function show_time_view() {
       }
       else {
         $blockreason = '<p class="small">Blocked by '.get_blocklistname($blockreason).'</p>';
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, false)"></span>';
+        $action .= '<span class="button-small pointer"><img src="./images/icon_boot.png" alt="" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, false)"></span>';
       }
     }
-    elseif ($row['dns_result'] == 'L') {         //Local
+    elseif ($row['dns_result'] == 'L') {
       $row_class = ' class="local"';
-      $action = '&nbsp;';
     }
 
 
@@ -661,23 +661,32 @@ $db->close();
 ?>
 </div>
 
-<div id="scrollup" class="button-scroll" onclick="ScrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
-<div id="scrolldown" class="button-scroll" onclick="ScrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
+<div id="scrollup" class="button-scroll" onclick="scrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
+<div id="scrolldown" class="button-scroll" onclick="scrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
 
 <div id="queries-box">
 <h2>Report</h2>
-<span id="sitename">site</span>
-<span id="statsmsg">something</span>
-<span id="statsblock1"><a class="button-teal" href="#">Block Whole</a> Block whole domain</span>
-<span id="statsblock2"><a class="button-teal" href="#">Block Sub</a> Block just the subdomain</span>
+<h3 id="sitename">site</h3>
+<form action="./investigate.php" method="get" target="_blank">
+<span id="invitem"></span>
+</form>
+<span id="reportmsg">something</span>
+<form action="./config.php" method="get" target="_blank">
+<input type="hidden" name="v" id="reportv" value="none">
+<input type="hidden" name="action" id="reportaction" value="none">
+<input type="hidden" name="do" value="add">
+<input type="hidden" name="comment" value="">
+<span id="reportitem1"></span>
+<span id="reportitem2"></span>
+</form>
 <form name="reportform" action="https://quidsup.net/notrack/report.php" method="post" target="_blank">
 <input type="hidden" name="site" id="siterep" value="none">
 <span id="statsreport"><input type="submit" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
 </form>
 
 <br>
-<div class="centered"><button class="button-grey" onclick="HideStatsBox()">Cancel</button></div>
-<div class="close-button" onclick="HideStatsBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
+<div class="centered"><button class="button-grey" onclick="hideQueriesBox()">Cancel</button></div>
+<div class="close-button" onclick="hideQueriesBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
 </div>
 
 </body>
