@@ -195,8 +195,8 @@ select.input-conf {
 input[type="reset"],
 input[type="submit"],
 button {
-  padding: 0.4rem 1.25rem;
-  font-size: 1rem;
+  padding: 0.35rem 1.25rem;
+  font-size: 0.94rem;
   text-align: center;
 /*   text-transform: uppercase; */
   color: #00000a;
@@ -270,14 +270,6 @@ button:active {
   box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
   transform: translateY(4px);
 }
-/*.row {                                                     /*TODO Remove from queries.php*/
-  /*width:100%;
-}
-.row:after {
-  content: "";
-  display: table;
-  clear: both;
-}*/
 .centered {
   text-align:center;
 }
@@ -521,10 +513,10 @@ span.key-green {
   text-align: center;
 }
 #query-group-table td:nth-child(2), #query-group-table th:nth-child(2) {
-  width: 57%;
+  width: 56%;
 }
 #query-group-table td:nth-child(3), #query-group-table th:nth-child(3) {
-  width: 12%;
+  width: 13%;
   text-align: center;
 }
 #query-group-table td:nth-child(4), #query-group-table th:nth-child(4) {
@@ -549,9 +541,6 @@ span.key-green {
 #query-group-table th a, #query-time-table th a {
   font-size: 1.4rem;
   margin-left: 0.2rem;
-}
-#query-group-table img, #query-time-table img {
-  width: 1em;
 }
 
 
@@ -1015,6 +1004,10 @@ span.key-green {
 #queries-box span > span {
   display: inline;
   font-size: 1rem;
+}
+#queries-box span > a > img {
+  height: 4rem;
+  display: inline;
 }
 #options-box,
 #queries-box h3 {

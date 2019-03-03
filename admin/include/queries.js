@@ -54,8 +54,31 @@ function isValidDomain(domain) {
   return /^[\w\-_\.]+[\w\-_]+$/.test(domain);
 }
 
+
+/********************************************************************
+ *  Set Span Contents
+ *    Shorthand method of writing a Value to Element, and then set Display to Block
+ *    If Value is blank, then set Element Display to None
+ *
+ *  Params:
+ *    Element ID, Value
+ *  Return:
+ *    None
+ */
+function setSpanContents(elementId, value) {
+  if (value == '') {
+    document.getElementById(elementId).style.display = 'none';
+    document.getElementById(elementId).innerHTML = '';
+  }
+  else {
+    document.getElementById(elementId).style.display = 'block';
+    document.getElementById(elementId).innerHTML = value;
+  }
+}
+
 /********************************************************************
  *  Report Site
+ *    Fill in elements in queries-box
  *
  *  Params:
  *    site name, if blocked (true = blocked, false = allowed), show report button
@@ -63,16 +86,18 @@ function isValidDomain(domain) {
  *    None
  */
 function reportSite(site, blocked, showreport) {
-  var msg = '';                                            //Message to show user
-  var inv = '';                                            //Investigate Item
-  var item1 = '';                                          //Block button and message
-  var item2 = '';                                          //Block button and message with subdomain
-  var report = '';                                         //report button and message
-  var domain = '';
-  var action = '';
+  let action = '';                                         //Black or White
+  let domain = '';
+  let msg = '';                                            //Message to show user
+  let investigate = '';                                    //Investigate Button
+  let item1 = '';                                          //Block button and message
+  let item2 = '';                                          //Block button and message with subdomain
+  let report = '';                                         //Report to quidsup.net
+  let search = '';                                         //Search Button
 
   if (isCommonDomain(site)) {                              //Is it a *common site?
     msg = '<p>Domains starting with * are known to utilise a large number of subdomains</p>';
+    site = site.substring(2);                              //Drop *. from the string
   }
   else if (! isValidDomain(site)) {
     msg = '<p>Invalid site</p>';
@@ -110,61 +135,55 @@ function reportSite(site, blocked, showreport) {
       }
     }
 
-    inv = '<button name="site" value='+site+' type="submit">View Details</button><span>View domain details in NoTrack Investigate</span>';
-
     if (showreport) {                                      //Show report button (for NoTrack blocked sites)
       if (blocked) {                                       //Remove blocked site
         report = 'remove--'+site;
-    }
+      }
       else {                                               //Report site for blocking
         report = site;
       }
     }
   }
+  
+  search = '<a href="'+SEARCHURL+site+'" target="_blank">'+SEARCHNAME+'</a>&nbsp;';
+  search += '<a href="https://www.virustotal.com/en/domain/'+site+'/information/" target="_blank"><img src="./svg/search/virustotal.svg" onmouseover="this.src=\'./svg/search/virustotal_over.svg\'" onmouseout="this.src=\'./svg/search/virustotal.svg\'"></a>';
 
+  //Whois or NoTrack Investigate button depending on whether user has an API
+  //Some whois providers require the domain to be provided as an argument
+  //The 1st regex test checks if the WHOISURL ends in ?argument=
+  //The 2nd regex splits WHOISURL into (whois.com)?(argument)=
+  //These groups can then be used on the name, value of investigate button
+  //Alternate option is whois.com/site, this can be added to formaction without name, value
+  if (WHOISAPI == 0) {
+    if (/\?\w+=$/.test(WHOISURL)) {
+      let matches = WHOISURL.match(/^([^\?]+)\?([\w]+)=$/);
+      investigate = '<button name="'+matches[2]+'" value='+site+' type="submit" formaction="'+matches[1]+'">Whois Details</button><span>View whois details on '+WHOISNAME+'</span>';
+    }
+    else {
+      investigate = '<button type="submit" formaction="'+WHOISURL+site+'">Whois Details</button><span>View whois details on '+WHOISNAME+'</span>';
+    }
+  }
+  else {                                                   //API Key supplied, use Investigate
+    investigate = '<button name="site" value='+site+' type="submit">View Details</button><span>View domain details in NoTrack Investigate</span>';
+  }
 
   //Modify DOM elements depending on whether a string has been set.
   document.getElementById('sitename').innerText = site;
+  setSpanContents('reportmsg', msg);
+  setSpanContents('searchitem', search)
+  setSpanContents('invitem', investigate)
+  setSpanContents('reportitem1', item1);
+  setSpanContents('reportitem2', item2);
 
-  if (msg == '') {
-    document.getElementById('reportmsg').style.display = 'none';
-    document.getElementById('reportmsg').innerHTML = '';
-  }
-  else {
-    document.getElementById('reportmsg').style.display = 'block';
-    document.getElementById('reportmsg').innerHTML = msg;
-  }
-
-  if (item1 == '') {
-    document.getElementById('reportitem1').style.display = 'none';
-    document.getElementById('reportitem1').innerHTML = '';
-    document.getElementById('invitem').style.display = 'none';
-    document.getElementById('invitem').innerHTML = '';
-  }
-  else {
-    document.getElementById('reportitem1').style.display = 'block';
-    document.getElementById('reportitem1').innerHTML = item1;
-    document.getElementById('invitem').style.display = 'block';
-    document.getElementById('invitem').innerHTML = inv;
-  }
-
-  if (item2 == '') {
-    document.getElementById('reportitem2').style.display = 'none';
-    document.getElementById('reportitem2').innerHTML = '';
-  }
-  else {
-    document.getElementById('reportitem2').style.display = 'block';
-    document.getElementById('reportitem2').innerHTML = item2;
-  }
 
   document.getElementById('reportv').value = action;
   document.getElementById('reportaction').value = action;
 
   if (report == '') {
-    document.getElementById('statsreport').style.display = 'none';
+    document.getElementById('reportitem3').style.display = 'none';
   }
   else {
-    document.getElementById('statsreport').style.display = 'block';
+    document.getElementById('reportitem3').style.display = 'block';
     document.getElementById('siterep').value = report;
   }
 
