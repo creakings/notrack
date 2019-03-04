@@ -664,8 +664,7 @@ $db->close();
 <div id="scrolldown" class="button-scroll" onclick="scrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
 
 <div id="queries-box">
-<h2>Report</h2>
-<h3 id="sitename">site</h3>
+<h2 id="sitename">site</h2>
 <span id="reportmsg">something</span>
 <form action="./investigate.php" method="get" target="_blank">
 <span id="searchitem"></span>

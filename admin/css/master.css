@@ -195,7 +195,7 @@ select.input-conf {
 input[type="reset"],
 input[type="submit"],
 button {
-  padding: 0.35rem 1.25rem;
+  padding: 0.4rem 1.25rem;
   font-size: 0.94rem;
   text-align: center;
 /*   text-transform: uppercase; */
@@ -543,6 +543,11 @@ span.key-green {
   margin-left: 0.2rem;
 }
 
+#query-group-table button,
+#query-time-table button {
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
 
 /* DHCP Table on dhcp.php
    ========================================================================== */
@@ -912,6 +917,7 @@ span.key-green {
   width: 100%;
   margin-right: 0.5rem;
 }
+#menu-lower button,
 #dnsfilter-container button,
 #dnsfilter-container input[type="submit"] {
   height: 2.3rem;
@@ -1023,11 +1029,11 @@ span.key-green {
 }
 #options-box h2,
 #queries-box h2 {
-  line-height: 1.8rem;
+  line-height: 1.9rem;
   margin: 0;
   color: #f7f7f7;
   background-color: #262626;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   text-align: center;
 }
 #options-box button {
@@ -1038,7 +1044,7 @@ span.key-green {
 .close-button {
   position: absolute;
   right: 0.3rem;
-  top: 0.15rem;
+  top: 0.25rem;
   cursor: pointer;
   z-index: 503;
 }

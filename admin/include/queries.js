@@ -56,6 +56,41 @@ function isValidDomain(domain) {
 
 
 /********************************************************************
+ *  Simplify Domain Title
+ *    Limit the length of a domain in queries-box title
+ *    1. Check if length is under MAXDOMAINLEN with a bit of extra leeway (don't want to dot if not much of a gain)
+ *    2. Extract domain and get length
+ *    3. Check if the focus should be at reducing the overall domain or just subdomain
+ *
+ *  Params:
+ *    Domain
+ *  Return:
+ *    Simplified domian for queries-box title
+ */
+function simplfyDomainTitle(site) {
+  const MAXDOMAINLEN = 34;
+  let sitelen = site.length;
+  let availchars = 0
+  let subdomain = '';
+
+  if (sitelen <= (MAXDOMAINLEN + 2)) return site;          //Some extra leeway
+
+  let domain = site.match(/[\w\-_]+\.(org\.|co\.|com\.|gov\.)?[\w\-_]+$/)[0];
+  let domainlen = domain.length;
+
+  if (domainlen < (MAXDOMAINLEN - 2)) {
+    subdomain = site.substring(1, (sitelen - domainlen));
+    availchars = Math.round((MAXDOMAINLEN - domainlen) / 2);
+    return site.substring(0, availchars)+'…'+site.substring(sitelen - (domainlen + availchars));
+  }
+  else {
+    availchars = MAXDOMAINLEN / 2;
+    return site.substring(0, (availchars - 3))+'…'+site.substring((sitelen - 3) - availchars);
+  }
+}
+
+
+/********************************************************************
  *  Set Span Contents
  *    Shorthand method of writing a Value to Element, and then set Display to Block
  *    If Value is blank, then set Element Display to None
@@ -95,6 +130,9 @@ function reportSite(site, blocked, showreport) {
   let report = '';                                         //Report to quidsup.net
   let search = '';                                         //Search Button
 
+  //Set investigate link now and replace with whois link later
+  investigate = '<button name="site" value='+site+' type="submit">View Details</button><span>View domain details in NoTrack Investigate</span>';
+
   if (isCommonDomain(site)) {                              //Is it a *common site?
     msg = '<p>Domains starting with * are known to utilise a large number of subdomains</p>';
     site = site.substring(2);                              //Drop *. from the string
@@ -105,7 +143,7 @@ function reportSite(site, blocked, showreport) {
   else if (/(\.akamai\.net|akamaiedge\.net)$/.test(site)) { //Is it an Akami site?
     msg = '<p>Akami is a Content Delivery Network (CDN) providing media delivery for a wide range of websites.</p><p>It is more efficient to block the originating website, rather than an Akami subdomain.</p>';
   }
-  else if (isIPaddress(site)) {            //Is it an IP Address
+  else if (isIPaddress(site)) {                            //Is it an IP Address
     msg = '<p>Unable to Block IP addresses.<br>You could add it to your Firewall instead</p>';
   }
 
@@ -163,12 +201,9 @@ function reportSite(site, blocked, showreport) {
       investigate = '<button type="submit" formaction="'+WHOISURL+site+'">Whois Details</button><span>View whois details on '+WHOISNAME+'</span>';
     }
   }
-  else {                                                   //API Key supplied, use Investigate
-    investigate = '<button name="site" value='+site+' type="submit">View Details</button><span>View domain details in NoTrack Investigate</span>';
-  }
 
   //Modify DOM elements depending on whether a string has been set.
-  document.getElementById('sitename').innerText = site;
+  document.getElementById('sitename').innerText = simplfyDomainTitle(site);
   setSpanContents('reportmsg', msg);
   setSpanContents('searchitem', search)
   setSpanContents('invitem', investigate)
