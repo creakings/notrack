@@ -1,6 +1,9 @@
 *review lighty config
 
-On queries.php:
+global-functions.php
+*line chart x-step should be based on quantity of data, not += 4
+
+queries.php:
 *Improve Time search
 *Add Search buttons
 *Convert Block/Allow form to POST
