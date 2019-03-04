@@ -81,7 +81,7 @@ function draw_searchbar() {
   echo '<div id="menu-lower">'.PHP_EOL;
   echo '<form method="GET">'.PHP_EOL;
   echo '<input type="text" name="site" class="input-conf" placeholder="Search domain" value="'.$site.'">'.PHP_EOL;
-  echo '<input type="submit" value="Investigate">'.PHP_EOL;
+  echo '<button type="submit">Investigate</button>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
 }
