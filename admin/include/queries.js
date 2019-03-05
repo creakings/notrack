@@ -16,6 +16,22 @@ function resetQueriesForm() {
 
 
 /********************************************************************
+ *  Get Search Image
+ *    Returns a link string of search image, based on SEARCHNAME
+ *  Params:
+ *    domain
+ *  Return:
+ *    Link string
+ */
+function getSearchImage(domain) {
+  switch(SEARCHNAME) {
+    default:
+      return '<a href="'+SEARCHURL+domain+'" target="_blank"><img src="./svg/search/search.svg" onmouseover="this.src=\'./svg/search/search_over.svg\'" onmouseout="this.src=\'./svg/search/search.svg\'"></a>';
+  }
+}
+
+
+/********************************************************************
  *  Is IP Address
  *    Checks for IPv4 address
  *  Params:
@@ -183,7 +199,7 @@ function reportSite(site, blocked, showreport) {
     }
   }
   
-  search = '<a href="'+SEARCHURL+site+'" target="_blank">'+SEARCHNAME+'</a>&nbsp;';
+  search = getSearchImage(site);
   search += '<a href="https://www.virustotal.com/en/domain/'+site+'/information/" target="_blank"><img src="./svg/search/virustotal.svg" onmouseover="this.src=\'./svg/search/virustotal_over.svg\'" onmouseout="this.src=\'./svg/search/virustotal.svg\'"></a>';
 
   //Whois or NoTrack Investigate button depending on whether user has an API

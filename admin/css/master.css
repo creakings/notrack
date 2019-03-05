@@ -1013,6 +1013,7 @@ span.key-green {
 }
 #queries-box span > a > img {
   height: 4rem;
+  margin-left: 1rem;
   display: inline;
 }
 #options-box,
