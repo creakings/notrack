@@ -17,17 +17,24 @@ function resetQueriesForm() {
 
 /********************************************************************
  *  Get Search Image
- *    Returns a link string of search image, based on SEARCHNAME
+ *    Returns a link string of apropriate button based on users search engine choice
  *  Params:
  *    domain
  *  Return:
  *    Link string
  */
 function getSearchImage(domain) {
+  let imageName = '';
+
   switch(SEARCHNAME) {
+    case 'DuckDuckGo':
+      imageName = 'duckduckgo';
+      break;
     default:
-      return '<a href="'+SEARCHURL+domain+'" target="_blank"><img src="./svg/search/search.svg" onmouseover="this.src=\'./svg/search/search_over.svg\'" onmouseout="this.src=\'./svg/search/search.svg\'"></a>';
+      imageName = 'search';
   }
+
+  return '<a href="'+SEARCHURL+domain+'" target="_blank"><img src="./svg/search/'+imageName+'.svg" onmouseover="this.src=\'./svg/search/'+imageName+'_over.svg\'" onmouseout="this.src=\'./svg/search/'+imageName+'.svg\'"></a>';
 }
 
 
