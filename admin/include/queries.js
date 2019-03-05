@@ -30,6 +30,9 @@ function getSearchImage(domain) {
     case 'DuckDuckGo':
       imageName = 'duckduckgo';
       break;
+    case 'Google':
+      imageName = 'google';
+      break;
     default:
       imageName = 'search';
   }
