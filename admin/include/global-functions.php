@@ -529,6 +529,7 @@ function load_config() {
  *    None
  */
 function linechart($values1, $values2, $xlabels, $title) {
+  $jump = 0;
   $max_value = 0;
   $ymax = 0;
   $xstep = 0;
@@ -554,14 +555,16 @@ function linechart($values1, $values2, $xlabels, $title) {
   else {
     $ymax = ceil($max_value / 1000) * 1000;
   }
-  
+
+  $jump = floor($numvalues / 12);                          //X Axis label and line gap
+
   echo '<div class="linechart-container">'.PHP_EOL;        //Start Chart container
   echo '<h2>'.$title.'</h2>';
   echo '<svg width="100%" height="100%" viewbox="0 0 2000 760">'.PHP_EOL;
 
   //Axis line rectangle with rounded corners
   echo '<rect class="axisline" paint-order="normal" width="1900" height="701" x="100" y="0" rx="5" ry="5" />'.PHP_EOL;
-  
+
   for ($i = 0.25; $i < 1; $i += 0.25) {                    //Draw Y Axis lables and (horizontal lines)
     echo '<path class="gridline" d="M100,'.($i*700).' H2000" />'.PHP_EOL;
     echo '<text class="axistext" x="8" y="'.(18+($i*700)).'">'.formatnumber((1-$i)*$ymax).'</text>'.PHP_EOL;
@@ -570,7 +573,7 @@ function linechart($values1, $values2, $xlabels, $title) {
   echo '<text x="8" y="38" class="axistext">'.formatnumber($ymax).'</text>';
   
   
-  for ($i = 0; $i < $numvalues; $i += 4) {                 //Draw X Axis and labels (vertical lines)
+  for ($i = 0; $i < $numvalues; $i += $jump) {             //Draw X Axis and labels (vertical lines)
     echo '<text x="'.(60+($i * $xstep)).'" y="746" class="axistext">'.$xlabels[$i].'</text>'.PHP_EOL;
     echo '<path class="gridline" d="M'.(100+($i*$xstep)).',2 V700" />'.PHP_EOL;
   }
