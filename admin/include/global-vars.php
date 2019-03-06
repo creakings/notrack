@@ -171,7 +171,6 @@ $SEARCHENGINELIST = array(
   'Exalead' => 'https://www.exalead.com/search/web/results/?q=',
   'Gigablast' => 'https://www.gigablast.com/search?q=',
   'Google' => 'https://www.google.com/search?q=',
-  'Ixquick' => 'https://ixquick.eu/do/search?q=',
   'Qwant' => 'https://www.qwant.com/?q=',
   'StartPage' => 'https://startpage.com/do/search?q=',
   'Yahoo' => 'https://search.yahoo.com/search?p=',
