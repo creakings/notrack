@@ -1,8 +1,5 @@
 *review lighty config
 
-global-functions.php
-*line chart x-step should be based on quantity of data, not += 4
-
 queries.php:
 *Improve Time search
 *Add Search buttons
@@ -26,4 +23,7 @@ https://isc.sans.edu/suspicious_domains.html
 
 *Create new script to get statistics of number of malicious sites queried.
  Maybe look for unusual patterns in high / low number of sites queried.
+
+*Login page
+Keep track of IP's attempting to log in, and throttle exponentially
 
