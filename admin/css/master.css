@@ -1004,7 +1004,7 @@ span.key-green {
   padding: 0.4rem 0;
 }
 #queries-box span {
-  margin: 1rem 0.5rem 1.6rem;
+  margin: 0.9rem 0.5rem;
   display: block;
 }
 #queries-box span > span {
@@ -1012,8 +1012,8 @@ span.key-green {
   font-size: 1rem;
 }
 #queries-box span > a > img {
-  height: 4rem;
-  margin-left: 1rem;
+  height: 4.6rem;
+  margin-left: 0.9rem;
   display: inline;
 }
 #options-box,

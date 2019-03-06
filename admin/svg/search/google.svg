@@ -8,7 +8,7 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="90"
-   height="64"
+   height="70"
    version="1.1"
    id="svg22"
    sodipodi:docname="google.svg"
@@ -28,13 +28,14 @@
      inkscape:window-height="1064"
      id="namedview24"
      showgrid="false"
-     inkscape:zoom="12.755556"
-     inkscape:cx="46.619651"
-     inkscape:cy="19.562664"
+     inkscape:zoom="6.377778"
+     inkscape:cx="53.887176"
+     inkscape:cy="17.578226"
      inkscape:window-x="1976"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg22" />
+     inkscape:current-layer="svg22"
+     inkscape:snap-object-midpoints="true" />
   <metadata
      id="metadata2">
     <rdf:RDF>
@@ -42,15 +43,15 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
   <circle
-     style="fill:none;stroke:#00b7ba;stroke-width:2;stroke-linejoin:round;fill-opacity:1"
+     style="fill:none;fill-opacity:1;stroke:#00b7ba;stroke-width:2;stroke-linejoin:round"
      id="circle4"
      r="22.796"
-     cy="25.485001"
+     cy="26.939314"
      cx="44.560001" />
   <text
      id="text8"
@@ -58,27 +59,27 @@
      letter-spacing="0"
      font-size="40"
      style="font-size:40px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0;word-spacing:0;text-anchor:middle;fill:#262626"
-     y="59.881832"
-     x="44.501339">
+     y="64.670929"
+     x="45.041">
     <tspan
        id="tspan6"
        font-size="14.7"
-       style="font-size:14.69999981px;text-align:center;text-anchor:middle"
-       y="59.881832"
-       x="44.501339">Google</tspan>
+       style="font-size:14.69999981px;text-align:center"
+       y="64.670929"
+       x="45.041">Google</tspan>
   </text>
   <path
      style="clip-rule:evenodd;fill:none;image-rendering:optimizeQuality;shape-rendering:geometricPrecision;text-rendering:geometricPrecision"
      inkscape:connector-curvature="0"
      id="path10"
      class="fil1"
-     d="m 64.206,25.116 c 0,10.673 -8.682,19.354 -19.355,19.354 -10.672,0 -19.352,-8.682 -19.352,-19.354 0,-10.67 8.682,-19.352 19.352,-19.352 10.674,0 19.355,8.682 19.355,19.352 z" />
+     d="m 64.206,26.570314 c 0,10.673 -8.682,19.354 -19.355,19.354 -10.672,0 -19.352,-8.682 -19.352,-19.354 0,-10.67 8.682,-19.3520003 19.352,-19.3520003 10.674,0 19.355,8.6820003 19.355,19.3520003 z" />
   <path
      sodipodi:type="inkscape:offset"
      inkscape:radius="-0.8798089"
      inkscape:original="M 44.458984 9.3359375 C 35.469134 9.3359375 28.15625 16.648821 28.15625 25.638672 C 28.15625 34.628523 35.469134 41.943359 44.458984 41.943359 C 53.448835 41.943359 60.763672 34.628523 60.763672 25.638672 L 60.763672 22.533203 L 44.458984 22.533203 L 44.458984 28.744141 L 54.0625 28.744141 C 52.74982 32.794752 48.941255 35.732422 44.458984 35.732422 C 38.893839 35.732422 34.367188 31.203818 34.367188 25.638672 C 34.367188 20.073526 38.893839 15.546875 44.458984 15.546875 C 46.706874 15.546875 48.834292 16.268362 50.609375 17.634766 L 54.396484 12.712891 C 51.525638 10.502888 48.089737 9.3359375 44.458984 9.3359375 z "
-     style="stroke-width:0.15527317;fill:#00b7ba;fill-opacity:1"
+     style="fill:#00b7ba;fill-opacity:1;stroke-width:0.15527317"
      id="path2"
      d="m 44.458984,10.214844 c -8.512723,0 -15.423828,6.911103 -15.423828,15.423828 0,8.512725 6.911232,15.425781 15.423828,15.425781 8.512598,0 15.425782,-6.913184 15.425782,-15.425781 V 23.412109 H 45.337891 v 4.453125 H 54.0625 a 0.87989688,0.87989688 0 0 1 0.837891,1.150391 c -1.428079,4.406704 -5.574719,7.595703 -10.441407,7.595703 -6.042438,0 -10.970703,-4.930423 -10.970703,-10.972656 0,-6.042233 4.928471,-10.970703 10.970703,-10.970703 2.132079,0 4.131696,0.703265 5.900391,1.847656 l 2.714844,-3.527344 c -2.560867,-1.747427 -5.477988,-2.773437 -8.615235,-2.773437 z"
-     transform="matrix(1.0254127,0,0,1.0254127,-1.129848,-0.65157289)" />
+     transform="matrix(1.0254127,0,0,1.0254127,-1.0298073,0.64809269)" />
 </svg>
