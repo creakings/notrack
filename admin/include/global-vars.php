@@ -168,11 +168,13 @@ $SEARCHENGINELIST = array(
   'Baidu' => 'https://www.baidu.com/s?wd=',
   'Bing' => 'https://www.bing.com/search?q=',
   'DuckDuckGo' => 'https://duckduckgo.com/?q=',
+  'Ecosia' =>'https://www.ecosia.org/search?q=',
   'Exalead' => 'https://www.exalead.com/search/web/results/?q=',
   'Gigablast' => 'https://www.gigablast.com/search?q=',
   'Google' => 'https://www.google.com/search?q=',
   'Qwant' => 'https://www.qwant.com/?q=',
   'StartPage' => 'https://startpage.com/do/search?q=',
+  'WolframAlpha' => 'https://www.wolframalpha.com/input/?i=',
   'Yahoo' => 'https://search.yahoo.com/search?p=',
   'Yandex' => 'https://www.yandex.com/search/?text='
 );
