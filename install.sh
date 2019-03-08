@@ -1547,7 +1547,7 @@ function show_finish() {
   echo -e "\t    Run: /usr/bin/mysql_secure_installation"
   echo
   echo -e "\t\u2022 Create HTTPS Certificate"
-  echo -e "\t    bash $INSTALL_LOCATION/create-ssl-cert.sh"
+  echo -e "\t    bash $INSTALL_LOCATION/scripts/create-ssl-cert.sh"
   echo
   echo -e "\t\u2022 Enable DHCP"
   echo -e "\t    http://$(hostname)/dhcp"
