@@ -304,7 +304,6 @@ load_csv(TLD_CSV, 'csvtld');
   <link href="../css/master.css" rel="stylesheet" type="text/css">
   <link href="../css/tabbed.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="../favicon.png">
-  <script src="../include/config.js"></script>
   <script src="../include/menu.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=0.9">
   <title>NoTrack - Domains</title>

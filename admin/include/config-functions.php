@@ -126,45 +126,6 @@ function draw_blradioform() {
 
 
 /********************************************************************
- *  Load Custom Block List
- *    Loads a Black or White List from File into $list Array
- *    Saves $list into respective Memcache array  
- *  Params:
- *    listname - blacklist or whitelist, filename
- *  Return:
- *    true on completion
- */
-function load_customlist($listname, $filename) {
-  global $list, $mem;
-
-  $list = $mem->get($listname);                            //Attempt to load list from Memcache
-
-  if (empty($list)) {                                      //If nothing, then read appropriate file
-    $fh = fopen($filename, 'r') or die('Error unable to open '.$filename);
-    while (!feof($fh)) {
-      $line = trim(fgets($fh));                            //Read and trim line of file
-
-      if (filter_url($line)) {                             //Is there a URL in the line?
-        $seg = explode('#', $line);                        //Split line by comment 
-        $seg[] = '';                                       //Add a blank string to segment to prevent undefined offset error when user has no comment
-
-        if ($seg[0] == '') {                               //Is the whole like commented? (site disabled)
-          $list[] = array(trim($seg[1]), $seg[2], false);
-        }
-        else {                                             //Otherwise site is enabled
-          $list[] = array(trim($seg[0]), $seg[1], true);
-        }
-      }
-    }
-    fclose($fh);                                           //Close file
-    $mem->set($listname, $list, 0, 60);                    //Save array to Memcache
-  }
-
-  return true;
-}
-
-
-/********************************************************************
  *  Show Advanced Page
  *
  *  Params:
@@ -295,75 +256,6 @@ function show_blocklists() {
   echo '</div></form>'.PHP_EOL;
   
   return null;
-}
-
-
-/********************************************************************
- *  Show Custom List
- *    Follows on from Black List or White List being loaded
- *
- *  Params:
- *    $view - Current Config Page
- *  Return:
- *    None
- */
-function show_custom_list($view) {
-  global $list, $searchbox;
-  
-  echo '<div class="sys-group">'.PHP_EOL;
-  echo '<h5>'.ucfirst($view).' List</h5>'.PHP_EOL;  
-  echo '<form action="?" method="get">';
-  echo '<input type="hidden" name="v" value="'.$view.'">';
-  echo '<input type="text" name="s" id="searchbox" value="'.$searchbox.'">&nbsp;&nbsp;';
-  echo '<input type="submit" value="Search">'.PHP_EOL;
-  echo '</form>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
-  
-  echo '<div class="sys-group">';
-  echo '<table id="cfg-custom-table">'.PHP_EOL;            //Start custom list table
-  $i = 1;
-
-  if ($searchbox == '') {
-    foreach ($list as $site) {
-      if ($site[2] == true) {
-        echo '<tr><td>'.$i.'</td><td>'.$site[0].'</td><td>'.$site[1].'<td><input type="checkbox" name="r'.$i.'" onclick="changeSite(this)" checked="checked"><button class="button-small"  onclick="deleteSite('.$i.')"><span><img src="./images/icon_trash.png" class="btn" alt="-"></span></button></td></tr>'.PHP_EOL;
-      }
-      else {
-        echo '<tr class="dark"><td>'.$i.'</td><td>'.$site[0].'</td><td>'.$site[1].'<td><input type="checkbox" name="r'.$i.'" onclick="changeSite(this)"><button class="button-small"  onclick="deleteSite('.$i.')"><span><img src="./images/icon_trash.png" class="btn" alt="-"></span></button></td></tr>'.PHP_EOL;
-      }
-      $i++;
-    }
-  }
-  else {
-    foreach ($list as $site) {
-      if (strpos($site[0], $searchbox) !== false) {
-        if ($site[2] == true) {
-          echo '<tr><td>'.$i.'</td><td>'.$site[0].'</td><td>'.$site[1].'<td><input type="checkbox" name="r'.$i.'" onclick="changeSite(this)" checked="checked"><button class="button-small"  onclick="deleteSite('.$i.')"><span><img src="./images/icon_trash.png" class="btn" alt="-"></span></button></td></tr>'.PHP_EOL;
-        }
-        else {
-          echo '<tr class="dark"><td>'.$i.'</td><td>'.$site[0].'</td><td>'.$site[1].'<td><input type="checkbox" name="r'.$i.'" onclick="changeSite(this)"><button class="button-small"  onclick="deleteSite('.$i.')"><span><img src="./images/icon_trash.png" class="btn" alt="-"></span></button></td></tr>'.PHP_EOL;
-        }
-      }
-      $i++;
-    }
-  }
-  
-  echo '<tr><td>'.$i.'</td><td><input type="text" class="ninty" name="site'.$i.'" placeholder="site.com"></td><td>';   //Add new site row
-  echo '<input type="text" class="ninty" name="comment'.$i.'" placeholder="comment"></td>';
-  echo '<td><button class="button-small" onclick="addSite('.$i.')"><img src="./images/icon_save.png" class="btn" alt="-"></button></td></tr>';                            //End add new site row
-  
-
-  echo '</table>'.PHP_EOL;                                 //End custom list table
-
-  echo '<div class="centered"><br>'.PHP_EOL;
-  
-  echo '<form method="get">'.PHP_EOL;
-  echo '<input type="hidden" name="v" value="'.$view.'">'.PHP_EOL;
-  echo '<input type="hidden" name="action" value="'.$view.'">'.PHP_EOL;
-  echo '<input type="hidden" name="do" value="update">'.PHP_EOL;
-  echo '<button type="submit">Update Blocklists</button>&nbsp;'.PHP_EOL;
-  echo '<button type="submit" formaction="./include/downloadlist.php" class="button-grey">Download List</button></form>';
-  echo '</div></div>'.PHP_EOL;
 }
 
 
@@ -587,8 +479,8 @@ function show_menu() {
   echo '<div class="conf-nav">'.PHP_EOL;
   echo '<a href="../admin/config.php?v=blocks"><img src="./svg/menu_blocklists.svg"><span>Select Block Lists</span></a>'.PHP_EOL;
   echo '<a href="../admin/config/tld.php"><img src="./svg/menu_domain.svg"><span>Top Level Domains</span></a>'.PHP_EOL;
-  echo '<a href="../admin/config.php?v=black"><img src="./svg/menu_black.svg"><span>Custom Black List</span></a>'.PHP_EOL;
-  echo '<a href="../admin/config.php?v=white"><img src="./svg/menu_white.svg"><span>Custom White List</span></a>'.PHP_EOL;
+  echo '<a href="../admin/config/customblocklist.php?v=black"><img src="./svg/menu_black.svg"><span>Custom Black List</span></a>'.PHP_EOL;
+  echo '<a href="../admin/config/customblocklist.php?v=white"><img src="./svg/menu_white.svg"><span>Custom White List</span></a>'.PHP_EOL;
   echo '<a href="../admin/config.php?v=full"><img src="./svg/menu_sites.svg"><span>View Sites Blocked</span></a>'.PHP_EOL;
   echo '</div></div>'.PHP_EOL;                             //End Block lists
   
