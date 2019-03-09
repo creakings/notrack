@@ -3,6 +3,8 @@
    Icons inline svg files
    ========================================================================== */
 .icon-boot,
+.icon-delete,
+.icon-save,
 .icon-tick {
   background-repeat: no-repeat;
   background-size: 1.2rem;
@@ -12,6 +14,12 @@
 
 .icon-boot {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" version="1.1" width="48" height="48"><g fill="rgb(177,36,74)" fill-opacity="1"><path d="M20.528 1.59c-.977.001-2.01.069-3.08.204C12.124 2.47 5.884 4.798.918 9.137l5.152 29.525.05 1.545c-.005 1.548.078 3.332.123 4.718l9.018 1.313 1.403-3.295c.852.142 1.715.268 2.582.382l1.634 2.927c12.337 1.465 21.78-.188 26.478-3.384.003-1.229.197-2.474-.05-3.512-2.282-7.472-9.379-13.462-20.776-8.496l.066-2.603.002-.019-4.166-2.202-5.44 3.881-1.661-2.368 4.24-3.025-4.233-2.237 1.335-2.57 5.535 2.926 5.32-3.797.25-2.512-4.648-2.782-5.412 3.482-1.547-2.445 4.188-2.695-4.305-2.576 1.468-2.495 5.553 3.323 5.709-3.673c.223-3.2-3.307-4.892-8.257-4.883z"/><path d="M28.39 10.168l-2.543 1.636 2.247 1.345zM27.15 22.67l-2.08 1.485 1.837.97.243-2.455z"/></g></svg>');
+}
+.icon-delete {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4z" fill="green"/></svg>');
+}
+.icon-save {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><g fill="rgb(0,0,10)" fill-opacity="1"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></g></svg>');
 }
 .icon-tick {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><g fill="rgb(0,0,10)" fill-opacity="1"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></g></svg>');
