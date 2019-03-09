@@ -1657,7 +1657,7 @@ function upgrade() {
 
 #Main----------------------------------------------------------------
 if [ "$1" ]; then                                #Have any arguments been given
-  if ! options="$(getopt -o fhvtu -l count,help,force,version,upgrade,test -- "$@")"; then
+  if ! options="$(getopt -o fhvtu -l count,help,force,version,upgrade,test,wait -- "$@")"; then
     # something went wrong, getopt will put out an error message for us
     exit 6
   fi
@@ -1689,6 +1689,10 @@ if [ "$1" ]; then                                #Have any arguments been given
       -u|--upgrade)
         upgrade
         exit 0
+      ;;
+      --wait)
+        echo "Waiting"
+        sleep 240
       ;;
       (--) 
         shift

@@ -78,7 +78,10 @@ function create_file() {
 
 #--------------------------------------------------------------------
 # Copy Black list
-#   Copies temp blacklist to /etc/notrack
+#   1. Copies temp blacklist to /etc/notrack
+#   2. Start a copy of notrack in wait mode
+#      This will allow user time to make further changes before lists are updated
+#      If there is a copy of notrack waiting the forked process will close
 #
 # Globals:
 #   None
@@ -93,7 +96,9 @@ function copy_blacklist() {
     chmod 644 /tmp/blacklist.txt
     echo "Copying /tmp/blacklist.txt to /etc/notrack/blacklist.txt"
     mv /tmp/blacklist.txt /etc/notrack/blacklist.txt
-    echo  
+    echo
+    echo "Running NoTrack with delay mode enabled"
+    sudo /usr/local/sbin/notrack --wait > /dev/null &
   else
     echo "/tmp/blacklist.txt missing"
   fi
@@ -102,7 +107,10 @@ function copy_blacklist() {
 
 #--------------------------------------------------------------------
 # Copy White list
-#   Copies temp whitelist to /etc/notrack
+#   1. Copies temp whitelist to /etc/notrack
+#   2. Start a copy of notrack in wait mode
+#      This will allow user time to make further changes before lists are updated
+#      If there is a copy of notrack waiting the forked process will close
 #
 # Globals:
 #   None
@@ -116,7 +124,10 @@ function copy_whitelist() {
     chown root:root /tmp/whitelist.txt
     chmod 644 /tmp/whitelist.txt
     echo "Copying /tmp/whitelist.txt to /etc/notrack/whitelist.txt"
-    mv /tmp/whitelist.txt /etc/notrack/whitelist.txt    
+    mv /tmp/whitelist.txt /etc/notrack/whitelist.txt
+    echo
+    echo "Running NoTrack with delay mode enabled"
+    sudo /usr/local/sbin/notrack --wait > /dev/null &
   else
     echo "/tmp/whitelist.txt missing"
   fi
