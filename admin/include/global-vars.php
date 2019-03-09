@@ -14,9 +14,6 @@ define('DBNAME', 'ntrkdb');
 
 define('ROWSPERPAGE', 200);
 
-$FileBlackList = '/etc/notrack/blacklist.txt';
-$FileWhiteList = '/etc/notrack/whitelist.txt';
-
 $LogLightyAccess = '/var/log/lighttpd/access.log';
 
 define('DIR_TMP', '/tmp/');
@@ -27,6 +24,8 @@ define('DNS_LOG', '/var/log/notrack.log');
 define('TLD_CSV', '../include/tld.csv');
 define('NTRK_EXEC', 'sudo /usr/local/sbin/ntrk-exec ');
 define('NOTRACK_LIST', '/etc/dnsmasq.d/notrack.list');
+define('BLACKLIST_FILE', '/etc/notrack/blacklist.txt');
+define('WHITELIST_FILE', '/etc/notrack/whitelist.txt');
 //define('REGEX_DATE', '/^2[0-1][0-9][0-9]\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])$/');DEPRECATED
 //define('REGEX_TIME', '/([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/'); DEPRECATED
 define('REGEX_DATETIME', '/^2[0-1][0-9][0-9]\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])\s([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/');

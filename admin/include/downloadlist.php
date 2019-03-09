@@ -15,21 +15,21 @@ header('Content-type: text/plain');
 if (isset($_GET['v'])) {
   switch($_GET['v']) {
     case 'black':
-      $list = $FileBlackList;
+      $list = BLACKLIST_FILE;
       $file = 'blacklist.txt';
       break;
     case 'white':
-      $list = $FileWhiteList;
+      $list = WHITELIST_FILE;
       $file = 'whitelist.txt';
-      break;    
+      break;
     default:
       echo 'Error: No valid file selected';
-      die();
+      exit(1);
   }
 }
 else {
   echo 'Error: No file selected';
-  die();
+  exit(1);
 }
 
 header('Content-Disposition: attachment; filename="'.$file.'"');
