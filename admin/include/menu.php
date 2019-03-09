@@ -88,7 +88,7 @@ function draw_topmenu($currentpage='') {
   }
   
   //Dropdown menu for default pause times
-  echo '<div tabindex="1" id="dropbutton" title="Pause for..."><img class="pointer" src="/admin/svg/tmenu_dropdown.svg">'.PHP_EOL;
+  echo '<div tabindex="1" id="dropbutton" title="Pause for..."><img class="pointer" src="/admin/svg/tmenu_dropdown.svg" alt="">'.PHP_EOL;
   echo '<div id="pause-menu">'.PHP_EOL;  
   echo '<span class="pointer" onclick="pauseNoTrack(5)">Pause for 5 minutes</span>'.PHP_EOL;
   echo '<span class="pointer" onclick="pauseNoTrack(15)">Pause for 15 minutes</span>'.PHP_EOL;
