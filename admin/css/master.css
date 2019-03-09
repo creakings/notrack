@@ -174,12 +174,9 @@ textarea:focus {
 input[type="text"].textbox-small {
   width: 15em;
 }
-input[type="text"].ninty {
-  width: 90%;
-}
-input[type="text"].full {
+/*input[type="text"].full { DEPRECATED?
   width: 96%;
-}
+}*/
 input[type="number"].input-conf,
 input[type="text"].input-conf {
   width: 96%;
@@ -466,8 +463,11 @@ span.key-green {
 }
 
 
-/* Cfg Custom Table on config-functions.php
+/* Cfg Custom Table on customblocklist.php
    ========================================================================== */
+#cfg-custom-table {
+  margin-top: 2rem;
+}
 #cfg-custom-table td:nth-child(1), #cfg-custom-table th:nth-child(1) {
   width: 8%;
   text-align: center;
@@ -1141,7 +1141,7 @@ span.darkgray, h3.darkgray {
 
 
 /* ==========================================================================
-   Other Spans
+   Other Items
    ========================================================================== */
 
 /* .mobile-hide {display: inline-block;} */
@@ -1150,6 +1150,10 @@ span.darkgray, h3.darkgray {
   .mobile-hide {display: none;}
   .mobile-show {display: inline-block;}
 }
+.float-left {
+  float: left;
+}
+
 span.filter {
   width: 5rem;
   margin-right: 0.3em;
