@@ -199,13 +199,19 @@ function filter_integer($value, $min, $max, $defaultvalue=0) {
 /********************************************************************
  *  Filter URL
  *    perform regex match to see if url is in the form of some-site.com, or some_site.co.uk
+ *
+ *  Regex:
+ *    Group 1: *. (optional)
+ *    Group 2: subdomain(s) (optional)
+ *    Group 3: domain
+ *    Group 4: TLD
  *  Params:
  *    URL to check
  *  Return:
  *    True on success, False on failure
  */
 function filter_url($url) {
-  if (preg_match('/^(\*\.)?([\d\w\-\_\.]+)?[\d\w\-\_]+\.[\d\w\-]+$/', $url) > 0) {
+  if (preg_match('/^(\*\.)?([\w\-_\.]+)?[\w\-_]+\.[\w\-]+$/', $url) > 0) {
     return true;
   }
   else {
