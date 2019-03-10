@@ -113,8 +113,8 @@ pre {
   border: 1px solid #bdbdbd;
   border-radius: 3px;
   box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
-/*   overflow: auto; */
   white-space: pre-wrap;
+  overflow-y: auto;
 }
 @media only screen and (max-width:1200px), only screen and (max-device-width:1200px) {
   pre {width: 90%}
@@ -228,7 +228,9 @@ button:active {
 .button-grey {
   background-color: #c8c8c8 !important;
 }
-
+.button-yellow {
+  background-color: #ffe808 !important;
+}
 .button-small {
   min-width: 1.2rem;
   margin-right: 0.2rem;
@@ -1084,6 +1086,20 @@ span.key-green {
   display: block;
 }
 
+/* ==========================================================================
+   Bulk Upload Box
+   ========================================================================== */
+
+#bulkBox {
+  height: calc(95vh - 10rem);
+  line-height: 1.4rem;
+}
+#bulkBox span {
+  padding: 0 0.2rem;
+  border: 2px solid green;
+  border-radius: 8px;
+  display: inline;
+}
 
 /* ==========================================================================
    Help Icon

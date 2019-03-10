@@ -19,7 +19,7 @@ $listtype = '';
 /************************************************
 *Arrays                                         *
 ************************************************/
-$list = array();                                           //Global array for all the Block Lists
+$list = array();                                //Global array for all the Block Lists
 
 
 /********************************************************************
@@ -89,9 +89,10 @@ function draw_switcher($view) {
   echo '<div id="groupby-container">'.PHP_EOL;
   echo '<input id="gbtab1" type="radio" name="v" value="black" onchange="submit()" '.$blackactive.'><label for="gbtab1">Black List</label>'.PHP_EOL;
   echo '<input id="gbtab2" type="radio" name="v" value="white" onchange="submit()" '.$whiteactive.'><label for="gbtab2">White List</label>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;                                   //End Groupby box
   echo '</form>'.PHP_EOL;
 }
+
 
 /********************************************************************
  *  Show Custom List
@@ -161,23 +162,66 @@ function show_custom_list($view) {
 
   echo '<div class="centered"><br>'.PHP_EOL;
   echo '<form method="get">'.PHP_EOL;
-  echo '<input type="hidden" name="v" value="'.$view.'">'.PHP_EOL;
-  //echo '<button type="submit">Update Blocklists</button>&nbsp;'.PHP_EOL;
-  echo '<button type="submit" formaction="../include/downloadlist.php" class="button-grey">Download List</button></form>';
+  echo '<button type="submit" name="v" value="bulk'.$view.'">Bulk Upload</button>&nbsp;'.PHP_EOL;
+  echo '<button type="submit" name="v" value="'.$view.'" formaction="../include/downloadlist.php" class="button-grey">Download List</button></form>';
   echo '</div>'.PHP_EOL;
   echo '</div>'.PHP_EOL;                                   //End sys-group
 }
 
 
 /********************************************************************
+ *  Process Bulk List
+ *    Validate POST items and then run function write_temp_list to save $list
+ *    1. Carry out input validation on POST items
+ *    2. Create an array from $_POST[site], which are seperated by a comma
+ *    3. Check if each item of array is valid, then add
+ *    4. Run write_temp_list()
+ *
+ *  Params:
+ *    Actual Name, List name
+ *  Return:
+ *    True when action carried out
+ */
+function process_bulk_list($actualname, $listname) {
+  global $list;
+
+  $domainlist = array();
+  $domain = '';
+
+  if (isset($_POST['site'])) {
+    if (strlen($_POST['site']) < 4) {                      //Reject if below minimum domain len
+      return false;
+    }
+  }
+  else {
+    return false;
+  }
+
+  //Remove tags and trim before exploding by comma
+  $domainlist = explode(',', strip_tags(trim($_POST['site'])));
+  if (! is_array($domainlist)) return false;
+
+  foreach ($domainlist as $domain) {
+    if (filter_url($domain)) {                             //Is domain valid?
+      $list[] = array(strtolower($domain), '', true);      //Add item to whichever list
+      //echo "$domain<br>";
+    }
+  }
+
+  write_temp_list($actualname, $listname);
+
+  return true;
+}
+
+
+/********************************************************************
  *  Update Custom List
- *    Save $list to a temporary file, then run ntrk-exec to copy temp file to /etc/notrack
- *    Run notrack in wait mode, which gives user 4 mins before blocklists are processed
+ *    Validate POST items and then run function write_temp_list to save $list
  *    1. Carry out input validation on POST items
  *    2. Find site in $list[x][0]
  *    3. Carry out action specified in status
  *    4. Save $list to temporary file
- *    5. Run notrack in wait mode
+ *    5. Run write_temp_list()
  *
  *  Params:
  *    Actual Name, List name
@@ -185,7 +229,7 @@ function show_custom_list($view) {
  *    True when action carried out
  */
 function update_custom_list($actualname, $listname) {
-  global $list, $mem;
+  global $list;
 
   $comment = '';
   $status = '';
@@ -218,18 +262,21 @@ function update_custom_list($actualname, $listname) {
   }
 
   //Find position of site in array, unless we are adding a site
-  if ((! is_array($list)) && ($status != 'add')) {         //Prevent error finding item in empty array
-    return false;
-  }
+  if ($status != 'add') {
+    if (! is_array($list)) {                               //Prevent error finding item in empty array
+      return false;
+    }
+    //Find position of $site in array
+    $arraypos = array_search($site, array_column($list, 0));
 
-  $arraypos = array_search($site, array_column($list, 0)); //Find position of $site in array
-  if (($arraypos === false) && ($status != 'add')) {
-    return false;
+    if ($arraypos === false) {
+      return false;
+    }
   }
 
   //Carry out action
   if ($status == 'add') {
-    $list[] = array($site, $comment, true);                //Add item to array
+    $list[] = array($site, $comment, true);                //Add item to whichever list
   }
   elseif ($status == 'del') {
     array_splice($list, $arraypos, 1);                     //Remove 1 item from array
@@ -241,6 +288,22 @@ function update_custom_list($actualname, $listname) {
     $list[$arraypos][2] = true;
   }
 
+  write_temp_list($actualname, $listname);
+}
+
+
+/********************************************************************
+ *  Write Temp List
+ *    Save $list to a temporary file, then run ntrk-exec to copy temp file to /etc/notrack
+ *    Run notrack in wait mode, which gives user 4 mins before blocklists are processed
+ *
+ *  Params:
+ *    Actual Name, List name
+ *  Return:
+ *    True when action carried out
+ */
+function write_temp_list($actualname, $listname) {
+  global $list, $mem;
 
   //Open file /tmp/listname.txt for writing
   $fh = fopen(DIR_TMP.strtolower($actualname).'.txt', 'w') or die('Unable to open '.DIR_TMP.$actualname.'.txt for writing');
@@ -259,14 +322,34 @@ function update_custom_list($actualname, $listname) {
   }
   fclose($fh);                                             //Close file
 
-  $mem->delete($listname);
-  $mem->set($listname, $list, 0, 60);
-
   exec(NTRK_EXEC.'--copy '.$listname);
+
+  $mem->delete($listname);
+  $mem->set($listname, $list, 0, 120);
 
   return true;
 }
 
+
+/********************************************************************
+ *  Show Bulkupload
+ *
+ *  Params:
+ *    $view - black or white
+ *  Return:
+ *    None
+ */
+function show_bulkupload($view) {
+  echo '<pre id="bulkBox" contenteditable="true">'.PHP_EOL;
+  echo '#paste a list of sites here, and then click the "Check" Button'.PHP_EOL;
+  echo '</pre>'.PHP_EOL;
+  echo '<div class="sys-group">'.PHP_EOL;
+  echo '<div class="centered">'.PHP_EOL;
+  echo '<button id="bulkCheck" class="button-yellow" onclick="evaluateBulkBox()">Check</button>&nbsp;&nbsp;';
+  echo '<button id="bulkSubmit" class="button-danger" onclick="submitBulkBox()">Submit</button>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -275,8 +358,8 @@ function update_custom_list($actualname, $listname) {
   <link href="../css/master.css" rel="stylesheet" type="text/css">
   <link href="../css/icons.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="../favicon.png">
-  <script src="../include/config.js"></script>
   <script src="../include/menu.js"></script>
+  <script src="../include/customblocklist.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=0.9">
   <title>NoTrack - Custom Blocklists</title>
 </head>
@@ -291,33 +374,57 @@ draw_sidemenu();
 
 echo '<div id="main">'.PHP_EOL;
 
-if (isset($_GET['s'])) {                         //Search box
+if (isset($_GET['s'])) {                                   //Search box
   //Limit characters to alphanumeric, . - _
   $searchbox = preg_replace('/[^\w\.\-_]/', '', $_GET['s']);
   $searchbox = strtolower($searchbox);
 }
 
-if (isset($_POST['action'])) {
+if (isset($_POST['action'])) {                             //Is there an action to carry out?
   switch($_POST['action']) {
     case 'black':
       load_customlist('black', BLACKLIST_FILE);
       update_custom_list('BlackList', 'black');
+      show_custom_list('black');
       $listtype = 'black';
       break;
     case 'white':
       load_customlist('white', WHITELIST_FILE);
       update_custom_list('WhiteList', 'white');
+      show_custom_list('white');
+      $listtype = 'white';
+      break;
+    case 'bulkblack':
+      load_customlist('black', BLACKLIST_FILE);
+      process_bulk_list('BlackList', 'black');
+      show_custom_list('black');
+      $listtype = 'black';
+      break;
+    case 'bulkwhite':
+      load_customlist('white', WHITELIST_FILE);
+      process_bulk_list('WhiteList', 'white');
+      show_custom_list('white');
       $listtype = 'white';
       break;
   }
 }
 
-if (isset($_GET['v'])) {                                   //What view to show?
+elseif (isset($_GET['v'])) {                               //What view to show?
   switch($_GET['v']) {
     case 'white':
       load_customlist('white', WHITELIST_FILE);
       show_custom_list('white');
       $listtype = 'white';
+      break;
+    case 'bulkblack':
+      load_customlist('black', BLACKLIST_FILE);
+      show_bulkupload('black');
+      $listtype = 'bulkblack';
+      break;
+    case 'bulkwhite':
+      load_customlist('white', WHITELIST_FILE);
+      show_bulkupload('white');
+      $listtype = 'bulkwhite';
       break;
     default:
       load_customlist('black', BLACKLIST_FILE);
@@ -341,28 +448,5 @@ echo '<input type="hidden" name="comment" value="" id="commentItem">'.PHP_EOL;
 echo '<input type="hidden" name="status" value="" id="statusItem">'.PHP_EOL;
 echo '</form>';
 ?>
-
-
-<script>
-function addSite() {
-  document.getElementById('siteItem').value = document.getElementById('newSite').value;
-  document.getElementById('commentItem').value = document.getElementById('newComment').value;
-  document.getElementById('statusItem').value = 'add';
-  document.getElementById('blocklistform').submit();
-}
-function deleteSite(site) {
-  document.getElementById('siteItem').value = site;
-  document.getElementById('statusItem').value = 'del';
-  document.getElementById('blocklistform').submit();
-}
-function changeSite(box) {
-  let statusValue = '';
-  statusValue = (box.checked) ? 'enable' : 'disable';
-
-  document.getElementById('siteItem').value = box.name;
-  document.getElementById('statusItem').value = statusValue;
-  document.getElementById('blocklistform').submit();
-}
-</script>
 </body>
 </html>
