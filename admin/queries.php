@@ -670,10 +670,10 @@ $db->close();
 <span id="searchitem"></span>
 <span id="invitem"></span>
 </form>
-<form action="./config.php" method="get" target="_blank">
+<form action="./config/customblocklist.php" method="POST" target="_blank">
 <input type="hidden" name="v" id="reportv" value="none">
 <input type="hidden" name="action" id="reportaction" value="none">
-<input type="hidden" name="do" value="add">
+<input type="hidden" name="status" value="add">
 <input type="hidden" name="comment" value="">
 <span id="reportitem1"></span>
 <span id="reportitem2"></span>
