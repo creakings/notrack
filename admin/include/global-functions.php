@@ -225,10 +225,9 @@ function filter_integer($value, $min, $max, $defaultvalue=0) {
  *    perform regex match to see if url is in the form of some-site.com, or some_site.co.uk
  *
  *  Regex:
- *    Group 1: *. (optional)
- *    Group 2: subdomain(s) (optional)
- *    Group 3: domain
- *    Group 4: TLD
+ *    Group 1: FTP or HTTP
+ *    Group 2: Domain
+ *    Group 3: URI
  *  Params:
  *    URL to check
  *  Return:
