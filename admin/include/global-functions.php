@@ -189,7 +189,7 @@ function filter_bool($value) {
  *    Group 3: domain
  *    Group 4: TLD
  *  Params:
- *    URL to check
+ *    Domain to check
  *  Return:
  *    True on success, False on failure
  */
