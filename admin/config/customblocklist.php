@@ -202,7 +202,7 @@ function process_bulk_list($actualname, $listname) {
   if (! is_array($domainlist)) return false;
 
   foreach ($domainlist as $domain) {
-    if (filter_url($domain)) {                             //Is domain valid?
+    if (filter_domain($domain)) {                          //Is domain valid?
       $list[] = array(strtolower($domain), '', true);      //Add item to whichever list
       //echo "$domain<br>";
     }
@@ -246,7 +246,7 @@ function update_custom_list($actualname, $listname) {
   }
 
   if (isset($_POST['site'])) {
-    if (filter_url(trim($_POST['site']))) {
+    if (filter_domain(trim($_POST['site']))) {
       $site = trim(strtolower($_POST['site']));            //New sites should be lowercase
     }
     else {

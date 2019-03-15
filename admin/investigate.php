@@ -595,7 +595,7 @@ if (isset($_GET['datetime'])) {                            //Filter for hh:mm:ss
 }
 
 if (isset($_GET['site'])) {
-  if (filter_url(trim($_GET['site']))) {
+  if (filter_domain(trim($_GET['site']))) {
     $site = trim($_GET['site']);
     $domain = extract_domain($site);
   }
