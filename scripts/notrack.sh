@@ -5,7 +5,9 @@
 #Date : 2015-01-14
 #Usage : sudo bash notrack.sh
 
-#User Configerable Settings (in case config file is missing)---------
+#######################################
+# User Configerable Settings
+#######################################
 #Set NetDev to the name of network device e.g. "eth0" IF you have multiple network cards
 NetDev=$(ip -o link show | awk '{print $2,$9}' | grep ": UP" | cut -d ":" -f 1)
 
@@ -14,7 +16,7 @@ NetDev=$(ip -o link show | awk '{print $2,$9}' | grep ": UP" | cut -d ":" -f 1)
 IPVersion="IPv4"
 
 declare -A Config                                #Config array for Block Lists
-Config[bl_custom]=""
+Config[bl_custom]="0"
 Config[bl_notrack]=1
 Config[bl_tld]=1
 Config[bl_notrack_malware]=1
@@ -82,7 +84,7 @@ readonly PASSWORD="ntrkpass"
 readonly DBNAME="ntrkdb"
 
 readonly REGEX_IPV4="^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
-readonly REGEX_DEFANGED="^(fxp|ftp|hxxps?|https?):\/\/([A-Za-z0-9_]+\[?\.\]?[A-Za-z0-9._-\[\]]+)\/?.*;"
+readonly REGEX_DEFANGED="^(f[xX]p|ftp|h[xX][xX]ps?|https?):\/\/([\.A-Za-z0-9_-]+)\/?.*$"
 readonly REGEX_EASY="^\|\|([A-Za-z0-9._-]+)(\^|\/|$)(\$third-party|\$popup|\$popup\,third\-party)?$"
 readonly REGEX_PLAINLINE="^([A-Za-z0-9_-]+\.[A-Za-z0-9._-]+)[[:space:]]?#?([^#]*)$"
 readonly REGEX_UNIX="^(127\.0\.0\.1|0\.0\.0\.0)[[:space:]]+([A-Za-z0-9_-]+\.[A-Za-z0-9._-]+)[[:space:]]*#?(.*)\n?$"
@@ -585,104 +587,134 @@ function get_blacklist() {
 }
 
 
-#Get Custom List-----------------------------------------------------
-#TODO Rewrite this function
-function get_custom() {
-  local -A CustomListArray
+#######################################
+# Get Custom Blocklists
+#   Get the users custom blocklists
+#
+# Globals:
+#   Config, sql_list
+# Arguments:
+#   None
+# Returns:
+#   None
+#
+#######################################
+function get_custom_blocklists() {
   local dlfile=""
   local dlfile_time=0                            #Downloaded File Time
-  local CustomCount=1                            #For displaying count of custom list
-  local FileName=""
+  local -i c=1                            #For displaying count of custom list
+  local filename=""
+  local customurl=""
+  local -a customurllist
 
-  if [[ ${Config[bl_custom]} == "" ]]; then      #Are there any custom block lists?
+  if [[ ${Config[bl_custom]} == "0" ]]; then      #Are there any custom block lists?
     echo "No Custom Block Lists in use"
     echo
-    for FileName in /etc/notrack/custom_*; do    #Clean up old custom lists
-      FileName=${FileName##*/}                   #Get filename from path
-      FileName=${FileName%.*}                    #Remove file extension
-      delete_file "/etc/dnsmasq.d/$FileName.list"
-      delete_file "/etc/notrack/$FileName.csv"
-      delete_file "/tmp/$FileName.txt"
+    for filename in /tmp/custom_*; do            #Clean up old custom lists
+      delete_file "/tmp/$filename"
     done
-    return
+    return 0
   fi
 
   echo "Processing Custom Block Lists"
-  #Split comma seperated list into individual URL's
-  IFS=',' read -ra CustomList <<< "${Config[bl_custom]}"
-  for ListUrl in "${CustomList[@]}"; do
-    echo "$CustomCount: $ListUrl"
-    FileName=${ListUrl##*/}                      #Get filename from URL
-    FileName=${FileName%.*}                      #Remove file extension
-    dlfile="/tmp/custom_$FileName.txt"
-    CustomListArray[$FileName]="$FileName"       #Used later to find old custom lists
-
-    get_filetime "$dlfile"                       #When was file last downloaded / copied?
+    
+  #Read comma seperated values from bl_custom string into an array
+  IFS=',' read -ra customurllist <<< "${Config[bl_custom]}"
+  unset IFS
+  
+  for customurl in "${customurllist[@]}"; do               #Review each url from array
+    echo "$c: $customurl"
+    filename=${customurl##*/}                              #Get filename from URL
+    filename=${filename%.*}                                #Remove file extension
+    dlfile="/tmp/custom_$filename.txt"
+   
+    get_filetime "$dlfile"                                 #When was file last downloaded?
     dlfile_time="$filetime"
 
     #Determine whether we are dealing with a download or local file
-    if [[ $ListUrl =~ ^(https?|ftp):// ]]; then  #Is URL a http(s) or ftp?
+    if [[ $customurl =~ ^(https?|ftp):// ]]; then           #Is this a URL - http(s) / ftp?
       if [ $dlfile_time -lt $((EXECTIME-CHECKTIME)) ]; then #Is list older than 4 days
-        download_file "$dlfile" "${urls[$list]}"         #Yes - Download it
+        download_file "$dlfile" "$customurl"               #Yes - Download it
         if [ $? -gt 0 ]; then
-          echo "Error: get_list - unable to proceed without ${urls[$list]}"
-        return 1
+          echo "Warning: get_custom_blocklists - unable to proceed without $customurl"
+          continue
         fi
       else
         echo "File in date, not downloading"
       fi
-    elif [ -e "$ListUrl" ]; then                 #Is it a file on the server?
-      echo "$ListUrl File Found on system"
-      get_filetime "$ListUrl"                    #Get date of file
-
-      if [ $filetime -gt $dlfile_time ]; then    #Is the original file newer than file in /tmp?
-        echo "Copying to $dlfile"                #Yes, copy file
-        cp "$ListUrl" "$dlfile"
-      else
-        echo "File in date, not copying"
-      fi
-    else                                         #Don't know what to do, skip to next file
-      echo "Unable to identify what $ListUrl is"
+    elif [ -e "$customurl" ]; then                         #Is it a file on the server?
+      echo "$customurl found on system"
+      dlfile="$customurl"      
+    else                                                   #Don't know what to do
+      echo "Warning: get_custom_blocklists - unable to find $customurl"
       echo
-      continue
+      continue                                             #Skip to next item
     fi
 
-    if [ -s "$dlfile" ]; then                    #Only process if filesize > 0
-      sql_list=()                                 #Zero Array
-
-      #Adblock EasyList can be identified by first line of file
-      Line=$(head -n1 "$dlfile")                 #What is on the first line?
-      if [[ ${Line:0:13} == "[Adblock Plus" ]]; then #First line identified as EasyList
-        echo "Block list identified as Adblock Plus EasyList"
-        #process_easylist "$dlfile"
-      fi
-
-      if [ ${#sql_list[@]} -gt 0 ]; then          #Are there any URL's in the block list?
-        insert_data "custom_$FileName"
-        echo "Finished processing $FileName"
-      else                                       #No URL's in block list
-        echo "No URL's extracted from Block list"
-      fi
-    else                                         #File not downloaded
-      echo "Error $dlfile not found"
-    fi
-
-    echo
-    ((CustomCount++))                            #Increase count of custom lists
+    process_custom_blocklist "$dlfile" "$filename"
+    ((c++))                                                #Increase count of custom lists
   done
 
+  
+}
 
-  for FileName in /etc/dnsmasq.d/custom_*; do    #Clean up old custom lists
-    FileName=${FileName##*/}                     #Get filename from path
-    FileName=${FileName%.*}                      #Remove file extension
-    FileName=${FileName:7}                       #Remove custom_
-    if [ ! "${CustomListArray[$FileName]}" ]; then
-      delete_file "/etc/dnsmasq.d/custom_$FileName.list"
-      delete_file "/etc/notrack/custom_$FileName.csv"
+
+#######################################
+# Process Custom Blocklist
+#   1. Calculate percentpoint
+#   2. Attempt to match against a known pattern line
+#
+# Arguments:
+#   $1. List file
+#   $2. filename for temp csv
+# Returns:
+#   None
+#
+#######################################
+function process_custom_blocklist() {
+  local listfile="$1"
+  local csvfile="$2"
+  local i=0
+  local j=0
+  local line=""
+
+  calc_percentpoint "$1"
+  i=1                                                      #Progress counter
+  j=$jumppoint                                             #Jump in percent
+
+  sql_list=()                                              #Zero Array
+  
+  while IFS=$'\n\r' read -r line
+  do
+    if [[ ! $line =~ ^# ]] && [[ -n $line ]]; then  
+      if ! match_plainline "$line"; then
+        if ! match_easyline "$line"; then
+          if ! match_unixline "$line"; then
+            match_defangedline "$line"
+          fi          
+        fi        
+      fi
     fi
-  done
+
+    if [ $i -ge $percentpoint ]; then                      #Display progress
+      echo -ne " $j%  \r"                                  #Echo without return
+      j=$((j + jumppoint))
+      i=0
+    fi
+    ((i++))
+  done < "$listfile"
+  echo " 100%"
 
   unset IFS
+  
+  if [ ${#sql_list[@]} -gt 0 ]; then                       #Any domains in the block list?
+    insert_data "custom_$csvfile"
+    echo "Finished processing $csvfile"
+  else                                                     #No domains in block list
+    echo "No domains extracted from block list"
+  fi
+  
+  echo
 }
 
 
@@ -837,7 +869,7 @@ function load_config() {
       value="${value%\"*}"                                 #Del opening string quotes
       value="${value#\"*}"                                 #Del closing string quotes
 
-      if [ "${Config[$key]}" ]; then                       #Does key exist in Config array?
+      if [ "${Config[$key]}" ]; then                       #Does key exist in Config array?      
         Config[$key]="$value"                              #Yes - replace value
       else
         case "$key" in
@@ -1003,7 +1035,9 @@ function process_list() {
 #
 #######################################
 function match_defangedline() {
-  if [[ $1 =~ $REGEX_DEFANGED ]]; then
+  local tmpstr="${1//[\[\]]/}"                             #Remove square brackets
+  
+  if [[ $tmpstr =~ $REGEX_DEFANGED ]]; then
     add_domain "${BASH_REMATCH[2]}" ""
   else
     return 1
@@ -1583,7 +1617,7 @@ function test() {
   done
   echo
 
-  if [[ ${Config[bl_custom]} != "" ]]; then      #Any custom block lists?
+  if [[ ${Config[bl_custom]} != "0" ]]; then      #Any custom block lists?
     echo "Additional Custom Block Lists Utilised:"
     echo "${Config[bl_custom]}"
   fi
@@ -1718,6 +1752,7 @@ process_tldlist                                            #Load and Process TLD
 process_whitelist                                          #Process White List
 
 get_blacklist                                              #Process Users Blacklist
+get_custom_blocklists                                      #Process Custom Block lists
 
 get_list "notrack" "notrack"
 get_list "notrack_malware" "match_plainline"
@@ -1768,7 +1803,7 @@ get_list "sweeasy" "match_easyline"
 get_list "viefb" "match_easyline"
 get_list "yhosts" "match_unixline"
 
-get_custom                                                 #Process Custom Block lists
+
 
 echo "Deduplicated $dedup Domains"
 sortlist                                                   #Sort, Dedup 2nd round, Save list
