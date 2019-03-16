@@ -193,11 +193,11 @@ service_restart() {
   if [[ -n $1 ]]; then
     echo "Restarting $1"
     if [ "$(command -v systemctl)" ]; then       #systemd
-      sudo systemctl restart $1
+      sudo systemctl restart "$1"
     elif [ "$(command -v service)" ]; then       #sysvinit
-      sudo service $1 restart
+      sudo service "$1" restart
     elif [ "$(command -v sv)" ]; then            #runit
-      sudo sv restart $1
+      sudo sv restart "$1"
     else
       error_exit "Unable to restart services. Unknown service supervisor" "21"
     fi
@@ -362,29 +362,6 @@ function check_root() {
   if [[ $pid != "$$" ]] && [[ -n $pid ]] ; then  #$$ = This PID
     error_exit "NoTrack already running under pid $pid" "8"
   fi
-}
-
-
-#######################################
-# Count number of lines in /etc/dnsmasq.d block lists
-#
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#
-#######################################
-function count_list_lines() {
-  local listfile=""
-  local linecount=0
-
-  for listfile in /etc/dnsmasq.d/*.list; do
-    let "linecount += $(wc -l "$listfile" | cut -d\  -f 1)"
-  done
-
-  echo "Total list count $linecount"
 }
 
 
@@ -589,10 +566,10 @@ function get_blacklist() {
 
 #######################################
 # Get Custom Blocklists
-#   Get the users custom blocklists
+#   Get the users custom blocklists from either download or local file
 #
 # Globals:
-#   Config, sql_list
+#   Config
 # Arguments:
 #   None
 # Returns:
@@ -601,16 +578,17 @@ function get_blacklist() {
 #######################################
 function get_custom_blocklists() {
   local dlfile=""
-  local dlfile_time=0                            #Downloaded File Time
-  local -i c=1                            #For displaying count of custom list
+  local dlfile_time=0                                      #Downloaded File Time
+  local -i c=1                                             #For displaying count of custom list
   local filename=""
   local customurl=""
   local -a customurllist
 
-  if [[ ${Config[bl_custom]} == "0" ]]; then      #Are there any custom block lists?
+   #Are there any custom block lists set? 
+  if [[ ${Config[bl_custom]} == "0" ]] || [[ ${Config[bl_custom]} == "" ]]; then
     echo "No Custom Block Lists in use"
     echo
-    for filename in /tmp/custom_*; do            #Clean up old custom lists
+    for filename in /tmp/custom_*; do                      #Clean up old custom lists
       delete_file "/tmp/$filename"
     done
     return 0
@@ -634,8 +612,7 @@ function get_custom_blocklists() {
     #Determine whether we are dealing with a download or local file
     if [[ $customurl =~ ^(https?|ftp):// ]]; then           #Is this a URL - http(s) / ftp?
       if [ $dlfile_time -lt $((EXECTIME-CHECKTIME)) ]; then #Is list older than 4 days
-        download_file "$dlfile" "$customurl"               #Yes - Download it
-        if [ $? -gt 0 ]; then
+        if ! download_file "$dlfile" "$customurl"; then     #Yes - Download it
           echo "Warning: get_custom_blocklists - unable to proceed without $customurl"
           continue
         fi
@@ -664,6 +641,8 @@ function get_custom_blocklists() {
 #   1. Calculate percentpoint
 #   2. Attempt to match against a known pattern line
 #
+# Globals:
+#   sql_list, jumppoint, percentpoint
 # Arguments:
 #   $1. List file
 #   $2. filename for temp csv
@@ -869,7 +848,7 @@ function load_config() {
       value="${value%\"*}"                                 #Del opening string quotes
       value="${value#\"*}"                                 #Del closing string quotes
 
-      if [ "${Config[$key]}" ]; then                       #Does key exist in Config array?      
+      if [ -n "${Config[$key]}" ]; then                       #Does key exist in Config array?      
         Config[$key]="$value"                              #Yes - replace value
       else
         case "$key" in
@@ -943,9 +922,8 @@ function get_list() {
 
   if [ $filetime -gt $((EXECTIME-CHECKTIME)) ]; then
     echo "$list in date. Not downloading"
-  else
-    download_file "$dlfile" "${urls[$list]}"               #Download out of date
-    if [ $? -gt 0 ]; then                                  #Check exit value to see if successful
+  else                   
+    if ! download_file "$dlfile" "${urls[$list]}"; then    #Download out of date list
       echo "Error: get_list - unable to proceed without ${urls[$list]}"
       return 1
     fi
@@ -1247,7 +1225,6 @@ function process_notracklist() {
 #
 #######################################
 function process_tldlist() {
-  local comment=""
   local line=""
   local name=""
   local risk=""
@@ -1282,13 +1259,13 @@ function process_tldlist() {
 
   while IFS=$',\n' read -r tld name risk _; do             #Load the TLD CSV file
     if [[ $risk == 1 ]]; then                              #Risk 1 - High Risk
-      if [ ! "${tld_white[$tld]}" ]; then                  #Is site not in whitelist?
+      if [ -z "${tld_white[$tld]}" ]; then                  #Is site not in whitelist?
         domainlist[$tld]=true                              #Add high risk unless told
         sql_list+=("\"$tld\",\"1\",\"$name\"")
         tldlist[$tld]=true
       fi
     else
-      if [ "${tld_black[$tld]}" ]; then
+      if [ -n "${tld_black[$tld]}" ]; then
         domainlist[$tld]=true
         sql_list+=("\"$tld\",\"1\",\"$name\"")
         tldlist[$tld]=true
@@ -1343,7 +1320,7 @@ function process_whitelist() {
 
   for domain in "${!whitelist[@]}"; do                     #Read entire White List associative array
     if [[ $domain =~ \.[A-Za-z0-9\-]+$ ]]; then            #Extract the TLD
-      if [ "${tldlist[${BASH_REMATCH[0]}]}" ]; then        #Is TLD present in Domain List?
+      if [ -n "${tldlist[${BASH_REMATCH[0]}]}" ]; then     #Is TLD present in Domain List?
         if [ "$method" == 1 ]; then                        #What method to unblock domain?
           domains+=("server=/$domain/#")                   #Add unblocked domain to domains Array
         elif [ "$method" == 2 ]; then                      #Or use Dig
@@ -1410,29 +1387,29 @@ function add_domain() {
   #Group 2 (Double-barrelled TLD's) : org. | co. | com.  optional
   #Group 3 TLD: A-Z,a-z,0-9,-  one or more
 
-  if [[ $domain =~ ([A-Za-z0-9\-]+)\.(org\.|co\.|com\.)?([A-Za-z0-9\-]+)$ ]]; then
-    if [ "${tldlist[.${BASH_REMATCH[3]}]}" ]; then         #Drop if .domain is in TLD
+  if [[ $domain =~ ([A-Za-z0-9_\-]+)\.(org\.|co\.|com\.|gov\.)?([A-Za-z0-9\-]+)$ ]]; then
+    if [ -n "${tldlist[.${BASH_REMATCH[3]}]}" ]; then      #Drop if .domain is in TLD
       #echo "Dedup TLD $domain"                            #Uncomment for debugging
       ((dedup++))
       return 1
     fi
 
     #Drop if sub.site.domain has been added
-    if [ "${domainlist[${BASH_REMATCH[1]}.${BASH_REMATCH[2]}${BASH_REMATCH[3]}]}" ]; then
+    if [ -n "${domainlist[${BASH_REMATCH[1]}.${BASH_REMATCH[2]}${BASH_REMATCH[3]}]}" ]; then
       #echo "Dedup Domain $domain"                         #Uncomment for debugging
       ((dedup++))
       return 1
     fi
 
     #Drop if sub.site.domain has been added
-    if [ "${domainlist[$domain]}" ]; then
+    if [ -n "${domainlist[$domain]}" ]; then
       #echo "Dedup Duplicate Sub $domain"                  #Uncomment for debugging
       ((dedup++))
       return 1
     fi
 
     #Is sub.site.domain or site.domain in whitelist?
-    if [ "${whitelist[$domain]}" ] || [ "${whitelist[${BASH_REMATCH[1]}.${BASH_REMATCH[2]}${BASH_REMATCH[3]}]}" ]; then
+    if [ -n "${whitelist[$domain]}" ] || [ -n "${whitelist[${BASH_REMATCH[1]}.${BASH_REMATCH[2]}${BASH_REMATCH[3]}]}" ]; then
       sql_list+=("\"$domain\",\"0\",\"$2\"")               #Add to SQL as Disabled
     else                                                   #Not found it whitelist
       sql_list+=("\"$domain\",\"1\",\"$2\"")               #Add to SQL as Active
@@ -1466,7 +1443,8 @@ function sortlist() {
   local j=0
   local -a sortedlist                                      #Sorted array of domainlist
   local -a domains                                         #Dnsmasq list
-  local site=""
+  local domain=""
+  local tmpstr=""
   dedup=0                                                  #Reset Deduplication
 
   listsize=${#domainlist[@]}                               #Get number of items in Array
@@ -1489,22 +1467,21 @@ function sortlist() {
   domains+=("#Tracker Block list last updated $(date)")
   domains+=("#Don't make any changes to this file, use $FILE_BLACKLIST and $FILE_WHITELIST instead")
 
-  for site in "${sortedlist[@]}"; do
+  for domain in "${sortedlist[@]}"; do
     # ^ Subdomain
     #Group 1: Domain
     #Group 2: org. | co. | com.  optional
     #Group 3: TLD
-
     #Is there a subdomain?
-    if [[ $site =~ ^[A-Za-z0-9\-]+\.([A-Za-z0-9\-]+)\.(org\.|co\.|com\.)?([A-Za-z0-9\-]+)$ ]]; then
-      #Is site.domain already in list?
-      if [ ${domainlist[${BASH_REMATCH[1]}.${BASH_REMATCH[2]}${BASH_REMATCH[3]}]} ]; then
+    if [[ $domain =~ ^[A-Za-z0-9_\-]+\.([A-Za-z0-9_\-]+)\.(org\.|co\.|com\.|gov\.)?([A-Za-z0-9\-]+)$ ]]; then
+      #Is domain.domain already in list?
+      if [ -n "${domainlist[${BASH_REMATCH[1]}.${BASH_REMATCH[2]}${BASH_REMATCH[3]}]}" ]; then        
         ((dedup++))                                        #Yes, add to total of dedup
       else
-        domains+=("address=/$site/$IPAddr")                #No, add to Array
+        domains+=("address=/$domain/$IPAddr")              #No, add to Array
       fi
     else                                                   #No subdomain, add to Array
-      domains+=("address=/$site/$IPAddr")
+      domains+=("address=/$domain/$IPAddr")
     fi
 
     if [ $i -ge $percentpoint ]; then                      #Display progress
@@ -1513,7 +1490,6 @@ function sortlist() {
       i=0
     fi
     ((i++))
-
   done
 
   echo " 100%"
@@ -1547,7 +1523,6 @@ function show_help() {
   echo -e "  -t, --test\tConfig Test"
   echo -e "  -v, --version\tDisplay version information and exit"
   echo -e "  -u, --upgrade\tRun a full upgrade"
-  echo -e "  --count\tCount number of sites in active Block lists"
 }
 
 
@@ -1648,8 +1623,8 @@ function upgrade() {
 #######################################
 # Main
 #######################################
-if [ "$1" ]; then                                          #Have any arguments been given
-  if ! options="$(getopt -o fhvtu -l count,help,force,version,upgrade,test,wait -- "$@")"; then
+if [ -n "$1" ]; then                                       #Have any arguments been given
+  if ! options="$(getopt -o fhvtu -l help,force,version,upgrade,test,wait -- "$@")"; then
     # something went wrong, getopt will put out an error message for us
     exit 6
   fi
@@ -1659,10 +1634,6 @@ if [ "$1" ]; then                                          #Have any arguments b
   while [ $# -gt 0 ]
   do
     case $1 in
-      --count)
-        count_list_lines
-        exit 0
-      ;;
       -f|--force)
         FORCE=1
       ;;
@@ -1720,10 +1691,8 @@ is_sql_installed                                           #Check if MariaDB is 
 create_sqltables                                           #Create Tables if they don't exist
 
 if [ ! -d "/etc/notrack" ]; then                           #Check /etc/notrack folder exists
-  echo "Creating notrack folder under /etc"
-  echo
-  mkdir "/etc/notrack"
-  if [ ! -d "/etc/notrack" ]; then                         #Check again
+  echo "Creating notrack config folder: /etc/notrack"
+  if ! mkdir "/etc/notrack"; then 
     error_exit "Unable to create folder /etc/notrack" "2"
   fi
 fi
@@ -1731,22 +1700,23 @@ fi
 load_config                                                #Load saved variables
 get_ip                                                     #Read IP Address of NetDev
 
-if [ ! -e $FILE_WHITELIST ]; then generate_whitelist
+if [ ! -e $FILE_WHITELIST ]; then 
+  generate_whitelist
 fi
 
 load_whitelist                                             #Load Whitelist into array
 
-if [ ! -e "$FILE_BLACKLIST" ]; then generate_blacklist
+if [ ! -e "$FILE_BLACKLIST" ]; then 
+  generate_blacklist
 fi
 
-create_file "$FILE_TLDWHITE"                               #Create Black & White lists
+create_file "$FILE_TLDWHITE"                               #Create Black & White TLD lists if they don't exist
 create_file "$FILE_TLDBLACK"
 
-is_update_required                                         #Check if NoTrack needs to run
+is_update_required                                         #Check if NoTrack really needs to run
 delete_table
 
 create_file "$MAIN_BLOCKLIST"                              #The main notrack.list
-
 
 process_tldlist                                            #Load and Process TLD List
 process_whitelist                                          #Process White List
@@ -1802,7 +1772,6 @@ get_list "svneasy" "match_easyline"
 get_list "sweeasy" "match_easyline"
 get_list "viefb" "match_easyline"
 get_list "yhosts" "match_unixline"
-
 
 
 echo "Deduplicated $dedup Domains"
