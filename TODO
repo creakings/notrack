@@ -19,7 +19,9 @@ blocked.php
 
 notrack.sh
 *Add more blocklists
-https://isc.sans.edu/suspicious_domains.html
+https://isc.sans.edu/suspicious_domains.html - dshild low, medium, high
+https://firebog.net/ - nice list and layout
+
 
 *Create new script to get statistics of number of malicious sites queried.
  Maybe look for unusual patterns in high / low number of sites queried.
