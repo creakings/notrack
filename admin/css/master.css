@@ -31,11 +31,6 @@ code {
 img {
   border: none;
 }
-img.btn {  /*TODO: Deprecate from config-functions*/
-  margin-top: 0.1rem;
-  height: 1em;
-  width: 1em;
-}
 img.full {
   width: 100%;
 }
@@ -632,6 +627,10 @@ span.key-green {
 }
 .sys-table a {
   font-size: 0.7em;
+}
+.sys-table img {
+  margin: 0 0.1rem;
+  width: 1.1rem;
 }
 
 

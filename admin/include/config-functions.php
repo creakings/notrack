@@ -170,79 +170,79 @@ function show_blocklists() {
   
   //Advert Blocking
   draw_systable('Advert Blocking');
-  draw_blocklist_row('bl_easylist', 'EasyList', 'EasyList without element hiding rules‎ <a href="https://forums.lanik.us/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_pglyoyo', 'Peter Lowe&rsquo;s Ad server list‎', 'Some of this list is already in NoTrack <a href="https://pgl.yoyo.org/adservers/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_easylist', 'EasyList', 'EasyList without element hiding rules‎ <a href="https://forums.lanik.us/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_pglyoyo', 'Peter Lowe&rsquo;s Ad server list‎', 'Some of this list is already in NoTrack <a href="https://pgl.yoyo.org/adservers/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
   echo '</table></div>'.PHP_EOL;
   
   //Privacy
   draw_systable('Privacy');
-  draw_blocklist_row('bl_easyprivacy', 'EasyPrivacy', 'Supplementary list from AdBlock Plus <a href="https://forums.lanik.us/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_fbenhanced', 'Fanboy&rsquo;s Enhanced Tracking List', 'Blocks common tracking scripts <a href="https://www.fanboy.co.nz/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_easyprivacy', 'EasyPrivacy', 'Supplementary list from AdBlock Plus <a href="https://forums.lanik.us/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_fbenhanced', 'Fanboy&rsquo;s Enhanced Tracking List', 'Blocks common tracking scripts <a href="https://www.fanboy.co.nz/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
   echo '</table></div>'.PHP_EOL;
   
   //Malware
   draw_systable('Malware');
-  draw_blocklist_row('bl_hexxium', 'Hexxium Creations Threat List', 'Hexxium Creations are a small independent team running a community based malware and scam domain database <a href="https://www.hexxiumcreations.com/projects/malicious-domain-blocking" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_cedia', 'CEDIA Malware List', 'National network investigation and education of Ecuador - Malware List <a href="https://cedia.org.ec/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_cedia_immortal', 'CEDIA Immortal Malware List', 'CEDIA Long-lived &#8220;immortal&#8221; Malware sites <a href="https://cedia.org.ec/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_disconnectmalvertising', 'Malvertising list by Disconnect', '<a href="https://disconnect.me/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_malwaredomainlist', 'Malware Domain List', '<a href="http://www.malwaredomainlist.com/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_malwaredomains', 'Malware Domains', 'A good list to add <a href="http://www.malwaredomains.com/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_spam404', 'Spam404', '<a href="http://www.spam404.com/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_swissransom', 'Swiss Security - Ransomware Tracker', 'Protects against downloads of several variants of Ransomware, including Cryptowall and TeslaCrypt <a href="https://ransomwaretracker.abuse.ch/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_swisszeus', 'Swiss Security - ZeuS Tracker', 'Protects systems infected with ZeuS malware from accessing Command & Control servers <a href="https://zeustracker.abuse.ch/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_hexxium', 'Hexxium Creations Threat List', 'Hexxium Creations are a small independent team running a community based malware and scam domain database <a href="https://www.hexxiumcreations.com/projects/malicious-domain-blocking" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_cedia', 'CEDIA Malware List', 'National network investigation and education of Ecuador - Malware List <a href="https://cedia.org.ec/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_cedia_immortal', 'CEDIA Immortal Malware List', 'CEDIA Long-lived &#8220;immortal&#8221; Malware sites <a href="https://cedia.org.ec/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_disconnectmalvertising', 'Malvertising list by Disconnect', '<a href="https://disconnect.me/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_malwaredomainlist', 'Malware Domain List', '<a href="http://www.malwaredomainlist.com/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_malwaredomains', 'Malware Domains', 'A good list to add <a href="http://www.malwaredomains.com/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_spam404', 'Spam404', '<a href="http://www.spam404.com/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_swissransom', 'Swiss Security - Ransomware Tracker', 'Protects against downloads of several variants of Ransomware, including Cryptowall and TeslaCrypt <a href="https://ransomwaretracker.abuse.ch/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_swisszeus', 'Swiss Security - ZeuS Tracker', 'Protects systems infected with ZeuS malware from accessing Command & Control servers <a href="https://zeustracker.abuse.ch/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
   echo '</table></div>'.PHP_EOL;
   
   draw_systable('Crypto Coin Mining');                     //Start Crypto Coin
     
-  draw_blocklist_row('bl_cbl_all', 'Coin Blocker Lists - All', 'This list contains all crypto mining domains - A list for administrators to prevent mining in networks. <a href="https://gitlab.com/ZeroDot1/CoinBlockerLists" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_cbl_all', 'Coin Blocker Lists - All', 'This list contains all crypto mining domains - A list for administrators to prevent mining in networks. <a href="https://gitlab.com/ZeroDot1/CoinBlockerLists" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
   
-  draw_blocklist_row('bl_cbl_opt', 'Coin Blocker Lists - Optional', 'This list contains all optional mining domains - An additional list for administrators. <a href="https://gitlab.com/ZeroDot1/CoinBlockerLists" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_cbl_opt', 'Coin Blocker Lists - Optional', 'This list contains all optional mining domains - An additional list for administrators. <a href="https://gitlab.com/ZeroDot1/CoinBlockerLists" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
   
-  draw_blocklist_row('bl_cbl_browser', 'Coin Blocker Lists - Browser', 'This list contains all browser mining domains - A list to prevent browser mining only. <a href="https://gitlab.com/ZeroDot1/CoinBlockerLists" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');    
+  draw_blocklist_row('bl_cbl_browser', 'Coin Blocker Lists - Browser', 'This list contains all browser mining domains - A list to prevent browser mining only. <a href="https://gitlab.com/ZeroDot1/CoinBlockerLists" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');    
   
   echo '</table></div>'.PHP_EOL;                           //End Crypto Coin
   
   //Social
   draw_systable('Social');
-  draw_blocklist_row('bl_fbannoyance', 'Fanboy&rsquo;s Annoyance List', 'Block Pop-Ups and other annoyances. <a href="https://www.fanboy.co.nz/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_fbsocial', 'Fanboy&rsquo;s Social Blocking List', 'Block social content, widgets, scripts and icons. <a href="https://www.fanboy.co.nz" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_fbannoyance', 'Fanboy&rsquo;s Annoyance List', 'Block Pop-Ups and other annoyances. <a href="https://www.fanboy.co.nz/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_fbsocial', 'Fanboy&rsquo;s Social Blocking List', 'Block social content, widgets, scripts and icons. <a href="https://www.fanboy.co.nz" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
   echo '</table></div>'.PHP_EOL;
   
   //Multipurpose
   draw_systable('Multipurpose');
-  draw_blocklist_row('bl_someonewhocares', 'Dan Pollock&rsquo;s hosts file', 'Mixture of Shock and Ad sites. <a href="http://someonewhocares.org/hosts" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_hphosts', 'hpHosts', 'Inefficient list <a href="http://hosts-file.net" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_someonewhocares', 'Dan Pollock&rsquo;s hosts file', 'Mixture of Shock and Ad sites. <a href="http://someonewhocares.org/hosts" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_hphosts', 'hpHosts', 'Inefficient list <a href="http://hosts-file.net" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
   //draw_blocklist_row('bl_securemecca', 'Secure Mecca', 'Mixture of Adult, Gambling and Advertising sites <a href="http://securemecca.com/" target="_blank">(securemecca.com)</a>');
-  draw_blocklist_row('bl_winhelp2002', 'MVPS Hosts‎', 'Very inefficient list <a href="http://winhelp2002.mvps.org/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_winhelp2002', 'MVPS Hosts‎', 'Very inefficient list <a href="http://winhelp2002.mvps.org/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
   echo '</table></div>'.PHP_EOL;
   
   //Region Specific
   draw_systable('Region Specific');
-  draw_blocklist_row('bl_fblatin', 'Latin EasyList', 'Spanish/Portuguese Adblock List <a href="https://www.fanboy.co.nz/regional.html" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_areasy', 'AR EasyList', 'عربي EasyList (Arab) ‎ <a href="https://forums.lanik.us/viewforum.php?f=98" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_chneasy', 'CHN EasyList', '中文 EasyList (China)‎ <a href="http://abpchina.org/forum/forum.php" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_yhosts', 'CHN Yhosts', 'YHosts 中文‎ focused on Chinese advert sites (China) <a href="https://github.com/vokins/yhosts" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_fblatin', 'Latin EasyList', 'Spanish/Portuguese Adblock List <a href="https://www.fanboy.co.nz/regional.html" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_areasy', 'AR EasyList', 'عربي EasyList (Arab) ‎ <a href="https://forums.lanik.us/viewforum.php?f=98" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_chneasy', 'CHN EasyList', '中文 EasyList (China)‎ <a href="http://abpchina.org/forum/forum.php" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_yhosts', 'CHN Yhosts', 'YHosts 中文‎ focused on Chinese advert sites (China) <a href="https://github.com/vokins/yhosts" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
 
-  draw_blocklist_row('bl_deueasy', 'DEU EasyList', 'Deutschland EasyList (Germany) <a href="https://forums.lanik.us/viewforum.php?f=90" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_dnkeasy', 'DNK EasyList', 'Danmark Schacks Adblock Plus liste‎ (Denmark) <a href="https://henrik.schack.dk/adblock/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');  
-  draw_blocklist_row('bl_fraeasy', 'FRA EasyList', 'France EasyList <a href="https://forums.lanik.us/viewforum.php?f=91" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_grceasy', 'GRC EasyList', 'Ελλάδα EasyList (Greece) <a href="https://github.com/kargig/greek-adblockplus-filter" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_huneasy', 'HUN hufilter', 'Magyar Adblock szűrőlista (Hungary) <a href="https://github.com/szpeter80/hufilter" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_idneasy', 'IDN EasyList', 'ABPindo (Indonesia) <a href="https://github.com/ABPindo/indonesianadblockrules" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_isleasy', 'ISL EasyList', 'Adblock Plus listi fyrir íslenskar vefsíður (Iceland) <a href="https://adblock.gardar.net" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_itaeasy', 'ITA EasyList', 'Italia EasyList (Italy) <a href="https://forums.lanik.us/viewforum.php?f=96" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_jpneasy', 'JPN EasyList', '日本用フィルタ (Japan) <a href="https://github.com/k2jp/abp-japanese-filters" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_koreasy', 'KOR EasyList', '대한민국 EasyList (Korea) <a href="https://github.com/gfmaster/adblock-korea-contrib" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_korfb', 'KOR Fanboy', '대한민국 Fanboy&rsquo;s list (Korea) <a href="https://forums.lanik.us/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_koryous', 'KOR YousList', '대한민국 YousList (Korea) <a href="https://github.com/yous/YousList" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_ltueasy', 'LTU EasyList', 'Lietuva EasyList (Lithuania) <a href="http://margevicius.lt/easylist_lithuania" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_lvaeasy', 'LVA EasyList', 'Latvija List (Latvia) <a href="https://notabug.org/latvian-list/adblock-latvian" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_nldeasy', 'NLD EasyList', 'Nederland EasyList (Dutch) <a href="https://forums.lanik.us/viewforum.php?f=100" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_poleasy', 'POL EasyList', 'Polskie filtry do Adblocka (Poland) <a href="https://www.certyficate.it/adblock-ublock-polish-filters/" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_ruseasy', 'RUS EasyList', 'Россия RuAdList+EasyList (Russia) <a href="https://forums.lanik.us/viewforum.php?f=102" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_spaeasy', 'SPA EasyList', 'España EasyList (Spain) <a href="https://forums.lanik.us/viewforum.php?f=103" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
-  draw_blocklist_row('bl_svneasy', 'SVN EasyList', 'Slovenska lista (Slovenia) <a href="https://github.com/betterwebleon/slovenian-list" target="_blank"><img class="btn" alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_deueasy', 'DEU EasyList', 'Deutschland EasyList (Germany) <a href="https://forums.lanik.us/viewforum.php?f=90" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_dnkeasy', 'DNK EasyList', 'Danmark Schacks Adblock Plus liste‎ (Denmark) <a href="https://henrik.schack.dk/adblock/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');  
+  draw_blocklist_row('bl_fraeasy', 'FRA EasyList', 'France EasyList <a href="https://forums.lanik.us/viewforum.php?f=91" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_grceasy', 'GRC EasyList', 'Ελλάδα EasyList (Greece) <a href="https://github.com/kargig/greek-adblockplus-filter" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_huneasy', 'HUN hufilter', 'Magyar Adblock szűrőlista (Hungary) <a href="https://github.com/szpeter80/hufilter" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_idneasy', 'IDN EasyList', 'ABPindo (Indonesia) <a href="https://github.com/ABPindo/indonesianadblockrules" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_isleasy', 'ISL EasyList', 'Adblock Plus listi fyrir íslenskar vefsíður (Iceland) <a href="https://adblock.gardar.net" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_itaeasy', 'ITA EasyList', 'Italia EasyList (Italy) <a href="https://forums.lanik.us/viewforum.php?f=96" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_jpneasy', 'JPN EasyList', '日本用フィルタ (Japan) <a href="https://github.com/k2jp/abp-japanese-filters" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_koreasy', 'KOR EasyList', '대한민국 EasyList (Korea) <a href="https://github.com/gfmaster/adblock-korea-contrib" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_korfb', 'KOR Fanboy', '대한민국 Fanboy&rsquo;s list (Korea) <a href="https://forums.lanik.us/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_koryous', 'KOR YousList', '대한민국 YousList (Korea) <a href="https://github.com/yous/YousList" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_ltueasy', 'LTU EasyList', 'Lietuva EasyList (Lithuania) <a href="http://margevicius.lt/easylist_lithuania" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_lvaeasy', 'LVA EasyList', 'Latvija List (Latvia) <a href="https://notabug.org/latvian-list/adblock-latvian" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_nldeasy', 'NLD EasyList', 'Nederland EasyList (Dutch) <a href="https://forums.lanik.us/viewforum.php?f=100" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_poleasy', 'POL EasyList', 'Polskie filtry do Adblocka (Poland) <a href="https://www.certyficate.it/adblock-ublock-polish-filters/" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_ruseasy', 'RUS EasyList', 'Россия RuAdList+EasyList (Russia) <a href="https://forums.lanik.us/viewforum.php?f=102" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_spaeasy', 'SPA EasyList', 'España EasyList (Spain) <a href="https://forums.lanik.us/viewforum.php?f=103" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
+  draw_blocklist_row('bl_svneasy', 'SVN EasyList', 'Slovenska lista (Slovenia) <a href="https://github.com/betterwebleon/slovenian-list" target="_blank"><img alt="Link" src="./svg/icon_home.svg"></a>');
   
   echo '</table></div>'.PHP_EOL;
   
