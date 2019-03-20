@@ -18,6 +18,26 @@ readonly DBNAME="ntrkdb"
 # Global Variables
 #######################################
 declare -a results
+declare -A blocklists
+
+
+#######################################
+# Error Exit
+#
+# Globals:
+#   None
+# Arguments:
+#  $1. Error Message
+#  $2. Exit Code
+# Returns:
+#   None
+#
+#######################################
+function error_exit() {
+  echo "Error: $1"
+  echo "Aborting"
+  exit "$2"
+}
 
 
 #######################################
@@ -58,6 +78,33 @@ function delete_table() {
 }
 
 
+#######################################
+# Get Available Block Lists
+#   1. Find the distinct blocklists the user has selected in blocklist table
+#   2. Add them to associative array blocklists
+#
+# Globals:
+#   DBNAME, PASSWORD, USER, blocklists
+# Arguments:
+#   1. Blocklist Code
+# Returns:
+#   None
+#
+#######################################
+function get_blocklists() {
+  local -a templist
+  local str=""
+  
+  echo "Checking which blocklists are in use"
+  
+  mapfile templist < <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" --batch -e "SELECT DISTINCT bl_source FROM blocklist;")
+  
+  for str in "${templist[@]}"; do
+    str="${str//[[:space:]]/}"                             #Remove spaces and tabs
+    blocklists[$str]=true                                  #Add key to blocklists
+  done
+}
+
 
 #######################################
 # Check Malware
@@ -66,17 +113,20 @@ function delete_table() {
 # Globals:
 #   DBNAME, PASSWORD, USER
 # Arguments:
-#   None
+#   1. Blocklist Code
 # Returns:
 #   None
 #
 #######################################
 function check_malware() {
-  results=()
-  mapfile results < <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" --batch -e "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 2 HOUR) AND dns_request IN (SELECT site FROM blocklist WHERE bl_source = 'bl_notrack_malware');")
+  local bl="$1"                                            #Blocklist
+  results=()                                               #Clear results array
+  
+  echo "Searching for domains from $bl"
+  mapfile results < <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" --batch -e "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 2 HOUR) AND dns_request IN (SELECT site FROM blocklist WHERE bl_source = '$bl');")
   
   if [ ${#results[@]} -gt 1 ]; then
-    review_results "Malware-bl_notrack_malware"
+    review_results "Malware-$bl"
   fi
  
 }
@@ -108,6 +158,7 @@ function review_results() {
   #Group 5: dns_result
   
   results_size=${#results[@]}
+  echo "Found $results_size domains"
   
   while [ $i -lt "$results_size" ]
   do    
@@ -117,6 +168,7 @@ function review_results() {
     ((i++))
   done  
   
+  echo
 }
 
 
@@ -137,7 +189,7 @@ function review_results() {
 #######################################
 
 function insert_data() {
-#echo "$1,$2,$3,$4,$5"
+#echo "$1,$2,$3,$4,$5"                                     #Uncomment for debugging
  
 mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" << EOF
 INSERT INTO anlytics (id,log_time,sys,dns_request,dns_result,issue,ack) VALUES (NULL,'$1','$2','$3','$4','$5',FALSE);
@@ -146,8 +198,16 @@ EOF
 #TODO error checking with #?
 }
 
+echo "NoTrack Analytics"
 
-#SELECT DISTINCT bl_source FROM blocklist;
 create_sqltables
 
-check_malware
+get_blocklists
+[ -n "${blocklists['bl_notrack_malware']}" ] && check_malware "bl_notrack_malware"
+[ -n "${blocklists['bl_hexxium']}" ] && check_malware "bl_hexxium"
+[ -n "${blocklists['bl_cedia']}" ] && check_malware "bl_cedia"
+[ -n "${blocklists['bl_cedia_immortal']}" ] && check_malware "bl_cedia_immortal"
+[ -n "${blocklists['bl_malwaredomainlist']}" ] && check_malware "bl_malwaredomainlist"
+[ -n "${blocklists['bl_malwaredomains']}" ] && check_malware "bl_malwaredomains"
+[ -n "${blocklists['bl_swissransom']}" ] && check_malware "bl_swissransom"
+[ -n "${blocklists['bl_swisszeus']}" ] && check_malware "bl_swisszeus"
