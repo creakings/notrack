@@ -2,7 +2,16 @@
 /* ==========================================================================
    Icons inline svg files
    https://www.materialui.co/icons
+   https://materialdesignicons.com/
    ========================================================================== */
+.material-icon-inline {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.3rem;
+  background-size: 1.5rem;
+  background-repeat: no-repeat;
+}
+
 .icon-boot,
 .icon-delete,
 .icon-save,
