@@ -428,5 +428,10 @@ else {                                           //No View set
 $db->close();
 ?> 
 </div>
+<script>
+function confirmLogDelete() {
+  if (confirm("Are you sure you want to delete all History?")) window.open("?action=delete-history", "_self");
+}
+</script>
 </body>
 </html>

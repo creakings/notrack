@@ -192,18 +192,21 @@ function create_accesslog() {
 #   None
 #--------------------------------------------------------------------
 delete_history() {
-  echo "Deleting contents of Historic table"
-  echo "DELETE LOW_PRIORITY FROM historic;" | mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME"
-  echo "ALTER TABLE historic AUTO_INCREMENT = 1;" | mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME"
-  
-  echo "Deleting Log Files in /var/log/lighttpd"
-  rm /var/log/lighttpd/*                         #Delete all files in lighttpd log folder
-  touch /var/log/lighttpd/access.log             #Create new access log and set privileges
-  chown www-data:root /var/log/lighttpd/access.log
-  chmod 644 /var/log/lighttpd/access.log
-  touch /var/log/lighttpd/error.log              #Create new error log and set privileges
-  chown www-data:root /var/log/lighttpd/error.log
-  chmod 644 /var/log/lighttpd/error.log
+  echo "Deleting contents of dnslog and weblog tables"
+mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" << EOF
+DELETE LOW_PRIORITY FROM dnslog;
+ALTER TABLE dnslog AUTO_INCREMENT = 1;
+DELETE LOW_PRIORITY FROM weblog;
+ALTER TABLE weblog AUTO_INCREMENT = 1;
+EOF
+  #echo "Deleting Log Files in /var/log/lighttpd" DEPRECATED
+  #rm /var/log/lighttpd/*                         #Delete all files in lighttpd log folder
+  #touch /var/log/lighttpd/access.log             #Create new access log and set privileges
+  #chown www-data:root /var/log/lighttpd/access.log
+  #chmod 644 /var/log/lighttpd/access.log
+  #touch /var/log/lighttpd/error.log              #Create new error log and set privileges
+  #chown www-data:root /var/log/lighttpd/error.log
+  #chmod 644 /var/log/lighttpd/error.log
 }
 
 
