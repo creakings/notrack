@@ -250,6 +250,13 @@ function copy_scripts() {
   sudo cp "$INSTALL_LOCATION/scripts/ntrk-parse.sh" /usr/local/sbin/
   sudo mv /usr/local/sbin/ntrk-parse.sh /usr/local/sbin/ntrk-parse
   sudo chmod 755 /usr/local/sbin/ntrk-parse
+  
+  #check_file_exists "$INSTALL_LOCATION/scripts/ntrk-analytics.sh" "29"   #ntrk-parse.sh
+  #echo "Copying ntrk-analytics.sh"
+  #sudo cp "$INSTALL_LOCATION/scripts/ntrk-analytics.sh" /usr/local/sbin/
+  #sudo mv /usr/local/sbin/ntrk-analytics.sh /usr/local/sbin/ntrk-analytics
+  #sudo chmod 755 /usr/local/sbin/ntrk-analytics
+  
   echo "========================================================="
   echo
 }
@@ -881,6 +888,9 @@ function setup_notrack() {
     echo "Removing old file: /etc/cron.daily/notrack"
     sudo rm /etc/cron.daily/notrack
   fi
+  
+  #sudo ln -s /usr/local/sbin/ntrk-analytics /etc/cron.hourly/ntrk-analytics
+  
   #Create cron daily job with a symlink to notrack script
   sudo ln -s /usr/local/sbin/notrack /etc/cron.daily/notrack
 

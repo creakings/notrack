@@ -187,6 +187,9 @@ rename_file "/usr/local/sbin/ntrk-upgrade.sh" "/usr/local/sbin/ntrk-upgrade"
 
 copy_file "scripts/ntrk-parse.sh" "/usr/local/sbin/"                 #ntrk-parse.sh
 rename_file "/usr/local/sbin/ntrk-parse.sh" "/usr/local/sbin/ntrk-parse"
+
+copy_file "scripts/ntrk-analytics.sh" "/usr/local/sbin/"             #ntrk-analytics.sh
+rename_file "/usr/local/sbin/ntrk-analytics.sh" "/usr/local/sbin/ntrk-analytics"
 echo "Finished copying scripts"
 echo
 
