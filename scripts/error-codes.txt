@@ -27,6 +27,7 @@
 33. unused
 34. unused
 35. MariaDB setup failed
+36. MariaDB error
 41. Create SSL Cert - Lighttpd missing
 42. Create SSL Cert - OpenSSL missing
 43. Create SSL Cert - Certificate file not created
