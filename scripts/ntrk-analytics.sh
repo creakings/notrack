@@ -3,8 +3,7 @@
 #Description : Analyse dns_logs for suspect lookups to malicious or unknown tracking sites
 #Author : QuidsUp
 #Date : 2019-03-17
-#Usage : 
-
+#Usage : bash ntrk-analytics.sh
 
 #######################################
 # Constants
@@ -19,6 +18,28 @@ readonly DBNAME="ntrkdb"
 #######################################
 declare -a results
 declare -A blocklists
+
+
+#######################################
+# Check Running
+#
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#
+#######################################
+function check_running() {
+  local pid=""
+  pid=$(pgrep ntrk-analytics | head -n 1)                  #Get PID of first process
+
+  #Check if another copy is running
+  if [[ $pid != "$$" ]] && [[ -n $pid ]] ; then            #$$ = This PID
+    error_exit "Ntrk-Analytics already running under pid $pid" "8"
+  fi
+}
 
 
 #######################################
@@ -108,7 +129,7 @@ function get_blocklists() {
 
 #######################################
 # Check Malware
-#   
+#   Do a search of dnslog for any requests for sites that appear in a blocklist
 #
 # Globals:
 #   DBNAME, PASSWORD, USER
@@ -123,14 +144,37 @@ function check_malware() {
   results=()                                               #Clear results array
   
   echo "Searching for domains from $bl"
-  mapfile results < <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" --batch -e "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 2 HOUR) AND dns_request IN (SELECT site FROM blocklist WHERE bl_source = '$bl');")
+  mapfile results < <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -N --batch -e "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request IN (SELECT site FROM blocklist WHERE bl_source = '$bl') GROUP BY(dns_request) ORDER BY id asc;")
   
-  if [ ${#results[@]} -gt 1 ]; then
+  if [ ${#results[@]} -gt 0 ]; then
     review_results "Malware-$bl"
-  fi
- 
+  fi 
 }
 
+
+#######################################
+# Check Tracking
+#   Do a search of dnslog for any requests for sites starting with known tracker names
+#
+# Globals:
+#   DBNAME, PASSWORD, USER
+# Arguments:
+#   1. subdomain
+# Returns:
+#   None
+#
+#######################################
+function check_tracking() {
+  local subdomain="$1"
+  results=()                                               #Clear results array
+  
+  echo "Searching for trackers with subdomain of $subdomain.*"
+  mapfile results < <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -N --batch -e "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request LIKE '$subdomain.%' AND dns_result='A' GROUP BY(dns_request) ORDER BY id asc;")
+    
+  if [ ${#results[@]} -gt 0 ]; then
+    review_results "Tracker"
+  fi 
+}
 
 
 #######################################
@@ -149,7 +193,7 @@ function check_malware() {
 function review_results() {
   local issue="$1"
   local -i results_size=0
-  local -i i=1
+  local -i i=0
   
   #Group 1: id
   #Group 2: log_time
@@ -192,14 +236,21 @@ function insert_data() {
 #echo "$1,$2,$3,$4,$5"                                     #Uncomment for debugging
  
 mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" << EOF
-INSERT INTO anlytics (id,log_time,sys,dns_request,dns_result,issue,ack) VALUES (NULL,'$1','$2','$3','$4','$5',FALSE);
+INSERT INTO analytics (id,log_time,sys,dns_request,dns_result,issue,ack) VALUES (NULL,'$1','$2','$3','$4','$5',FALSE);
 EOF
 
-#TODO error checking with #?
+  if [ $? -gt 0 ]; then
+    error_exit "Unable to add data to analytics table" "36"
+  fi
 }
 
+#######################################
+# Main
+#
+#######################################
 echo "NoTrack Analytics"
 
+check_running
 create_sqltables
 
 get_blocklists
@@ -211,3 +262,8 @@ get_blocklists
 [ -n "${blocklists['bl_malwaredomains']}" ] && check_malware "bl_malwaredomains"
 [ -n "${blocklists['bl_swissransom']}" ] && check_malware "bl_swissransom"
 [ -n "${blocklists['bl_swisszeus']}" ] && check_malware "bl_swisszeus"
+
+check_tracking "pixel"
+check_tracking "tracking"
+check_tracking "trk"
+check_tracking "ads"
