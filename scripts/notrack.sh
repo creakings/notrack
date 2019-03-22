@@ -554,7 +554,6 @@ function get_filetime() {
 #######################################
 function get_blacklist() {
   echo "Processing Custom Black List"
-  sql_list=()
   process_list "$FILE_BLACKLIST" "match_plainline"
 
   if [ ${#sql_list[@]} -gt 0 ]; then                         #Get size of sql_list
@@ -662,8 +661,6 @@ function process_custom_blocklist() {
   i=1                                                      #Progress counter
   j=$jumppoint                                             #Jump in percent
 
-  sql_list=()                                              #Zero Array
-  
   while IFS=$'\n\r' read -r line
   do
     if [[ ! $line =~ ^# ]] && [[ -n $line ]]; then  
@@ -717,6 +714,8 @@ function insert_data() {
 
   mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "LOAD DATA INFILE '/tmp/$1.csv' INTO TABLE blocklist FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\n' (@var1, @var2, @var3) SET id='NULL', bl_source = '$1', site = @var1, site_status=@var2, comment=@var3;"
   delete_file "/tmp/$1.csv"
+
+  sql_list=()                                              #Zero SQL Array
 }
 
 
@@ -867,9 +866,11 @@ function load_config() {
 
 #######################################
 # Load White List
+#   Load items from whitelist file into whitelist array
+#   Add to SQL table as well
 #
 # Globals:
-#   FILE_WHITELIST, whitelist, REGEX_PLAINLINE
+#   FILE_WHITELIST, sql_list, whitelist, REGEX_PLAINLINE
 # Arguments:
 #   None
 # Returns:
@@ -877,14 +878,21 @@ function load_config() {
 #
 #######################################
 function load_whitelist() {
+  echo "Loading whitelist"
+
   while IFS=$'\n' read -r line
   do
     if [[ $line =~ $REGEX_PLAINLINE ]]; then
       whitelist["${BASH_REMATCH[1]}"]=true                 #Add site to associative array
+      sql_list+=("\"${BASH_REMATCH[1]}\",\"1\",\"${BASH_REMATCH[2]}\"")
     fi
   done < $FILE_WHITELIST
 
   unset IFS
+
+  if [ ${#sql_list[@]} -gt 0 ]; then                       #Any items in sql_list
+    insert_data "whitelist"
+  fi
 }
 
 
@@ -923,7 +931,7 @@ function get_list() {
 
   if [ $filetime -gt $((EXECTIME-CHECKTIME)) ]; then
     echo "$list in date. Not downloading"
-  else                   
+  else
     if ! download_file "$dlfile" "${urls[$list]}"; then    #Download out of date list
       echo "Error: get_list - unable to proceed without ${urls[$list]}"
       return 1
@@ -939,7 +947,6 @@ function get_list() {
     fi
   fi
 
-  sql_list=()                                              #Zero Arrays
   echo "Processing list $list"                             #Inform user
 
   case $2 in                                               #What type of processing is required?
@@ -1240,8 +1247,6 @@ function process_tldlist() {
     return 1                                               #If not then leave function
   fi
 
-  sql_list=()                                              #Zero Array
-
   echo "Processing Top Level Domain list"
 
   while IFS=$'\n' read -r line                             #Load TLD White into array
@@ -1260,7 +1265,7 @@ function process_tldlist() {
 
   while IFS=$',\n' read -r tld name risk _; do             #Load the TLD CSV file
     if [[ $risk == 1 ]]; then                              #Risk 1 - High Risk
-      if [ -z "${tld_white[$tld]}" ]; then                  #Is site not in whitelist?
+      if [ -z "${tld_white[$tld]}" ]; then                 #Is site not in whitelist?
         domainlist[$tld]=true                              #Add high risk unless told
         sql_list+=("\"$tld\",\"1\",\"$name\"")
         tldlist[$tld]=true
@@ -1305,6 +1310,8 @@ function process_whitelist() {
   local domain=""
   local -a domains
   domains=()                                               #Zero Array
+
+  echo "Processing whitelist"
 
   check_dnsmasq_version                                    #What version is Dnsmasq?
   if [ $? == 53 ]; then                                    #v2.75 or above can whitelist
@@ -1705,20 +1712,18 @@ if [ ! -e $FILE_WHITELIST ]; then
   generate_whitelist
 fi
 
-load_whitelist                                             #Load Whitelist into array
-
 if [ ! -e "$FILE_BLACKLIST" ]; then 
   generate_blacklist
 fi
 
 create_file "$FILE_TLDWHITE"                               #Create Black & White TLD lists if they don't exist
 create_file "$FILE_TLDBLACK"
+create_file "$MAIN_BLOCKLIST"                              #The main notrack.list
 
 is_update_required                                         #Check if NoTrack really needs to run
 delete_table
 
-create_file "$MAIN_BLOCKLIST"                              #The main notrack.list
-
+load_whitelist                                             #Load Whitelist into array
 process_tldlist                                            #Load and Process TLD List
 process_whitelist                                          #Process White List
 
