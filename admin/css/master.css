@@ -565,6 +565,34 @@ span.key-green {
 }
 
 
+/* Analytics Table on analytics.php
+   ========================================================================== */
+#analytics-table td:nth-child(1),
+#analytics-table th:nth-child(1) {
+  width: 20%;
+  text-align: center;
+}
+#analytics-table td:nth-child(2),
+#analytics-table th:nth-child(2) {
+  width: 20%;
+  text-align: center;
+}
+#analytics-table td:nth-child(3),
+#analytics-table th:nth-child(3) {
+  width: 40%;
+}
+#analytics-table td:nth-child(4),
+#analytics-table th:nth-child(4) {
+  width: 13%;
+  text-align: center;
+}
+#analytics-table td:nth-child(5),
+#analytics-table th:nth-child(5) {
+  width: 7%;
+  text-align: center;
+}
+
+
 /* Top Level Domain Tables on config-functions.php
    ========================================================================== */
 .tld-table {
