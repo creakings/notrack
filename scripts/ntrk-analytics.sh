@@ -18,6 +18,7 @@ readonly DBNAME="ntrkdb"
 #######################################
 declare -a results
 declare -A blocklists
+declare -A whitelist
 
 
 #######################################
@@ -115,14 +116,42 @@ function delete_table() {
 function get_blocklists() {
   local -a templist
   local str=""
-  
+
   echo "Checking which blocklists are in use"
-  
-  mapfile templist < <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" --batch -e "SELECT DISTINCT bl_source FROM blocklist;")
-  
+
+  mapfile templist < <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -N --batch -e "SELECT DISTINCT bl_source FROM blocklist;")
+
   for str in "${templist[@]}"; do
     str="${str//[[:space:]]/}"                             #Remove spaces and tabs
     blocklists[$str]=true                                  #Add key to blocklists
+  done
+}
+
+
+#######################################
+# Get Whitelist
+#   1. Load list of sites from whitelist bl_source in blocklist
+#   2. Add them to associative array whitelist
+#
+# Globals:
+#   DBNAME, PASSWORD, USER, whitelist
+# Arguments:
+#   1. Blocklist Code
+# Returns:
+#   None
+#
+#######################################
+function get_whitelist() {
+  local -a templist
+  local str=""
+
+  echo "Loading whitelist"
+
+  mapfile templist < <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -N --batch -e "SELECT site from blocklist WHERE bl_source = 'whitelist';")
+
+  for str in "${templist[@]}"; do
+    str="${str//[[:space:]]/}"                             #Remove spaces and tabs
+    whitelist[$str]=true                                   #Add key to whitelist
   done
 }
 
@@ -142,13 +171,13 @@ function get_blocklists() {
 function check_malware() {
   local bl="$1"                                            #Blocklist
   results=()                                               #Clear results array
-  
+
   echo "Searching for domains from $bl"
   mapfile results < <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -N --batch -e "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request IN (SELECT site FROM blocklist WHERE bl_source = '$bl') GROUP BY(dns_request) ORDER BY id asc;")
-  
+
   if [ ${#results[@]} -gt 0 ]; then
     review_results "Malware-$bl"
-  fi 
+  fi
 }
 
 
@@ -167,13 +196,13 @@ function check_malware() {
 function check_tracking() {
   local subdomain="$1"
   results=()                                               #Clear results array
-  
+
   echo "Searching for trackers with subdomain of $subdomain.*"
   mapfile results < <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -N --batch -e "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request LIKE '$subdomain.%' AND dns_result='A' GROUP BY(dns_request) ORDER BY id asc;")
-    
+
   if [ ${#results[@]} -gt 0 ]; then
     review_results "Tracker"
-  fi 
+  fi
 }
 
 
@@ -194,30 +223,31 @@ function review_results() {
   local issue="$1"
   local -i results_size=0
   local -i i=0
-  
+
   #Group 1: id
   #Group 2: log_time
   #Group 3: sys
   #Group 4: dns_request
   #Group 5: dns_result
-  
+
   results_size=${#results[@]}
   echo "Found $results_size domains"
-  
+
   while [ $i -lt "$results_size" ]
-  do    
+  do
     if [[ ${results[$i]} =~ ^([0-9]+)[[:blank:]]([0-9\-]+[[:blank:]][0-9:]+)[[:blank:]]([^[:blank:]]+)[[:blank:]]([^[:blank:]]+)[[:blank:]]([ABCL]) ]]; then
       insert_data "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}" "${BASH_REMATCH[4]}" "${BASH_REMATCH[5]}" "$issue"
     fi
     ((i++))
-  done  
-  
+  done
+
   echo
 }
 
 
 #######################################
 # Insert Data into SQL Table
+#   Disreagard any dns_request that appears in whitelist
 #
 # Globals:
 #   DBNAME, PASSWORD, USER
@@ -233,8 +263,12 @@ function review_results() {
 #######################################
 
 function insert_data() {
-#echo "$1,$2,$3,$4,$5"                                     #Uncomment for debugging
- 
+  #echo "$1,$2,$3,$4,$5"                                   #Uncomment for debugging
+  if [ -n "${whitelist[$3]}" ]; then                       #Does dns_request appear in whitelist?
+    echo "skipping $3"
+    return 0
+  fi
+
 mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" << EOF
 INSERT INTO analytics (id,log_time,sys,dns_request,dns_result,issue,ack) VALUES (NULL,'$1','$2','$3','$4','$5',FALSE);
 EOF
@@ -254,6 +288,7 @@ check_running
 create_sqltables
 
 get_blocklists
+get_whitelist
 [ -n "${blocklists['bl_notrack_malware']}" ] && check_malware "bl_notrack_malware"
 [ -n "${blocklists['bl_hexxium']}" ] && check_malware "bl_hexxium"
 [ -n "${blocklists['bl_cedia']}" ] && check_malware "bl_cedia"
