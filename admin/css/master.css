@@ -43,7 +43,7 @@ p.indent {
 }
 p.small {
   margin: 0.1em 0.5em 0em 1em;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
 p.light {
   margin: 0 0 0 0.5em;
@@ -1169,7 +1169,7 @@ span.violet {
   color: DarkViolet;
 }
 span.red {
-  color: Maroon;
+  color: #ee202b;
 }
 span.pink {
   color: #F757F5;
