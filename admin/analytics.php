@@ -163,7 +163,7 @@ function show_analytics() {
   echo '<p></p>'.PHP_EOL;
 
   echo '<table id="analytics-table">'.PHP_EOL;             //Start table
-  echo '<tr><th>Time</th><th>System</th><th>Site</th><th>Action</th><th>Review</th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp;</th><th>Time</th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {                   //Read each row of results
     $log_time = $row['log_time'];
@@ -193,8 +193,8 @@ function show_analytics() {
       }
     }
 
-    echo "<tr$row_colour><td>$log_time</td><td>$sys</td><td>$issue - $dns_request</td><td>$action</td>";
-    echo '<td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td></tr>'.PHP_EOL;
+    echo '<tr'.$row_colour.'><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
+    echo "<td>$log_time</td><td>$sys</td><td>$issue - $dns_request</td><td>$action</td></tr>".PHP_EOL;
     //print_r($row);
 
   }
