@@ -225,41 +225,6 @@ function add_filterstr() {
 
 
 /********************************************************************
- *  Count rows in table and save result to memcache COULD THIS BE DEPRECATED?
- *    1. Attempt to load value from Memcache
- *    2. Check if same query is being run
- *    3. If that fails then run query
- *
- *  Params:
- *    Query String
- *  Return:
- *    Number of Rows
- */
-function count_rows_save($query) {
-  global $db, $mem;
-
-  $rows = 0;
-
-  if ($mem->get('rows')) {                       //Does rows exist in memcache?
-    if ($query == $mem->get('oldquery')) {       //Is this query same as old query?
-      $rows = $mem->get('rows');                 //Use stored value
-      return $rows;
-    }
-  }
-
-  if(!$result = $db->query($query)){
-    die('There was an error running the query '.$db->error);
-  }
-
-  $rows = $result->fetch_row()[0];               //Extract value from array
-  $result->free();
-  $mem->set('oldquery', $query, 0, 600);         //Save for 10 Mins
-
-  return $rows;
-}
-
-
-/********************************************************************
  *  Draw Filter Box
  *    Reset form is dealt with by queries.js function resetQueriesForm()
  *    Show current value first in <select>, and then read through respective array to output values
@@ -420,7 +385,7 @@ function show_group_view() {
   global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
 
   $i = 0;
-  $rows = 0;
+  $k = 1;                                                  //Count within ROWSPERPAGE
   $row_class = '';
   $action = '';
   $blockreason = '';
@@ -431,14 +396,7 @@ function show_group_view() {
 
   $paginationlink = "&amp;sort=$sort&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby";
 
-  $rows = count_rows_save("SELECT COUNT(DISTINCT dns_request) FROM dnslog ".add_filterstr());
-
-  if ((($page-1) * ROWSPERPAGE) > $rows) {
-    $page = 1;
-  }
-  $i = (($page - 1) * ROWSPERPAGE) + 1;
-
-  $query = "SELECT sys, dns_request, dns_result, COUNT(*) AS count FROM dnslog" .add_filterstr()." GROUP BY dns_request ORDER BY count $sort LIMIT ".ROWSPERPAGE." OFFSET ".(($page-1) * ROWSPERPAGE);
+  $query = "SELECT sys, dns_request, dns_result, COUNT(*) AS count FROM dnslog".add_filterstr()." GROUP BY dns_request ORDER BY count $sort";
 
   if(!$result = $db->query($query)){
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
@@ -453,9 +411,16 @@ function show_group_view() {
     return false;
   }
 
-  if ((($page-1) * ROWSPERPAGE) > $rows) $page = 1;
+  if ((($page-1) * ROWSPERPAGE) > $result->num_rows) {
+    $page = 1;
+  }
+  $i = (($page - 1) * ROWSPERPAGE) + 1;
+  
+  if ($page > 1) {
+    $result->data_seek($page * ROWSPERPAGE);
+  }
 
-  pagination($rows, $paginationlink);
+  pagination($result->num_rows, $paginationlink);
   draw_groupby();
 
   echo '<table id="query-group-table">'.PHP_EOL;
@@ -498,12 +463,15 @@ function show_group_view() {
 
     echo '<tr'.$row_class.'><td>'.$i.'</td>'.$site_cell.'<td>'.$action.'</td><td>'.$row['count'].'</td></tr>'.PHP_EOL;
     $blockreason = '';
+
     $i++;
+    $k++;
+    if ($k > ROWSPERPAGE) break;
   }
 
   echo '</table>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
-  pagination($rows, $paginationlink);
+  pagination($result->num_rows, $paginationlink);
 
   $result->free();
 
@@ -524,9 +492,8 @@ function show_time_view() {
   global $db, $Config, $TLDBlockList;
   global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
 
-  $rows = 0;
+  $k = 1;                                                  //Count within ROWSPERPAGE
   $row_class = '';
-
   $query = '';
   $action = '';
   $blockreason = '';
@@ -537,13 +504,7 @@ function show_time_view() {
 
   $paginationlink = "&amp;sort=$sort&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby";
 
-  $rows = count_rows_save('SELECT COUNT(*) FROM dnslog'.add_filterstr());
-  if ((($page-1) * ROWSPERPAGE) > $rows) {
-    $page = 1;
-  }
-
-  $query = "SELECT *, DATE_FORMAT(log_time, '%Y-%m-%d %H:%i:%s') AS formatted_time FROM dnslog ".add_filterstr(). " ORDER BY UNIX_TIMESTAMP(log_time) $sort LIMIT ".ROWSPERPAGE." OFFSET ".(($page-1) * ROWSPERPAGE);
-
+  $query = "SELECT *, DATE_FORMAT(log_time, '%Y-%m-%d %H:%i:%s') AS formatted_time FROM dnslog ".add_filterstr(). " ORDER BY UNIX_TIMESTAMP(log_time) $sort";
 
   if(!$result = $db->query($query)){
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
@@ -558,7 +519,16 @@ function show_time_view() {
     return false;
   }
 
-  pagination($rows, $paginationlink);
+  if ((($page-1) * ROWSPERPAGE) > $result->num_rows) {
+    $page = 1;
+  }
+  $i = (($page - 1) * ROWSPERPAGE) + 1;
+  
+  if ($page > 1) {
+    $result->data_seek($page * ROWSPERPAGE);
+  }
+  
+  pagination($result->num_rows, $paginationlink);
   draw_groupby();
 
   echo '<table id="query-time-table">'.PHP_EOL;
@@ -602,11 +572,14 @@ function show_time_view() {
 
     echo '<tr'.$row_class.'><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td>'.$site_cell.'<td>'.$action.$investigate.'</td></tr>'.PHP_EOL;
     $blockreason = '';
+
+    $k++;
+    if ($k > ROWSPERPAGE) break;
   }
 
   echo '</table>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
-  pagination($rows,  $paginationlink);
+  pagination($result->num_rows,  $paginationlink);
 
   $result->free();
   return true;
