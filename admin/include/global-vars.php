@@ -28,7 +28,7 @@ define('BLACKLIST_FILE', '/etc/notrack/blacklist.txt');
 define('WHITELIST_FILE', '/etc/notrack/whitelist.txt');
 //define('REGEX_DATE', '/^2[0-1][0-9][0-9]\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])$/');DEPRECATED
 //define('REGEX_TIME', '/([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/'); DEPRECATED
-define('REGEX_DATETIME', '/^2[0-1][0-9][0-9]\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])\s([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/');
+define('REGEX_DATETIME', '/^2\d\d\d\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])\s([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/');
 
 //IPCIDR = Check for valid IP/CIDR - e.g. 192.168.0.1/24
 //         Reject leading zeros - e.g. 10.00.00.009/02
