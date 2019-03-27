@@ -55,6 +55,7 @@ $VIEWLIST = array('name', 'time');
 ************************************************/
 $page = 1;
 $filter = DEF_FILTER;
+$datetime = '';
 $groupby = 'name';
 $searchbox = '';
 $searchtime = '1 DAY';
@@ -202,10 +203,14 @@ function get_ipsearch($ipsearch) {
  *    SQL Query string
  */
 function add_filterstr() {
-  global $searchbox, $searchtime, $filter, $sysip;
-  $searchstr = " WHERE ";
+  global $datetime, $searchbox, $searchtime, $filter, $sysip;
 
-  $searchstr .= "log_time >= DATE_SUB(NOW(), INTERVAL $searchtime) ";
+  if ($datetime != '') {
+    $searchstr = " WHERE log_time > SUBTIME('$datetime', '00:01:00') AND log_time < ADDTIME('$datetime', '00:03:00')"; //ORDER BY UNIX_TIMESTAMP(log_time)
+  }
+  else {
+    $searchstr = " WHERE log_time >= DATE_SUB(NOW(), INTERVAL $searchtime) ";
+  }
 
   if ($searchbox != '') {
     $searchstr .= get_dnssearch($searchbox);
@@ -252,7 +257,7 @@ function draw_filterbox() {
     echo '<div><input type="text" name="sysip" id="filtersys" placeholder="192.168.0.1/24"></div>'.PHP_EOL;
   }
   else {
-    echo '<input type="text" name="sysip" id="filtersys" value="'.$sysip.'" placeholder="192.168.0.1/24">'.PHP_EOL;
+    echo '<div><input type="text" name="sysip" id="filtersys" value="'.$sysip.'" placeholder="192.168.0.1/24"></div>'.PHP_EOL;
   }
 
   echo '<div><select name="searchtime" id="filtertime" onchange="submit()">';
@@ -609,7 +614,6 @@ if (isset($_GET['sysip'])) {                               //sysip uses custom f
   $sysip = filter_ipaddress($_GET['sysip']);
 }
 
-
 if (isset($_GET['groupby'])) {
   if (array_key_exists($_GET['groupby'], $GROUPLIST)) $groupby = $_GET['groupby'];
 }
@@ -620,6 +624,12 @@ if (isset($_GET['searchtime'])) {
 
 if (isset($_GET['searchbox'])) {                           //searchbox uses preg_replace to remove invalid characters
   $searchbox = preg_replace(REGEX_URLSEARCH, '', $_GET['searchbox']);
+}
+
+if (isset($_GET['datetime'])) {
+  if (preg_match(REGEX_DATETIME, $_GET['datetime'])) {
+    $datetime = $_GET['datetime'];
+  }
 }
 
 draw_filterbox();                                          //Draw filters

@@ -8,7 +8,7 @@ ensure_active_session();
 
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <link href="./css/master.css" rel="stylesheet" type="text/css">
@@ -136,6 +136,7 @@ function show_analytics() {
   $list = '';
   $query = '';
   $checkboxid = '';
+  $queryurl = '';                                          //URL to queries.php
 
   $query = "SELECT * FROM analytics WHERE ack = '$view' ORDER BY log_time DESC";
 
@@ -193,10 +194,10 @@ function show_analytics() {
       }
     }
 
-    echo '<tr'.$row_colour.'><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
-    echo "<td>$log_time</td><td>$sys</td><td>$issue - $dns_request</td><td>$action</td></tr>".PHP_EOL;
-    //print_r($row);
+    $queryurl = './queries.php?groupby=time&amp;sysip='.$sys.'&amp;datetime='.$log_time;
 
+    echo '<tr'.$row_colour.'><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
+    echo '<td>'.$log_time.'</td><td>'.$sys.'</td><td class="pointer" onclick="window.open(\''.$queryurl.'\')">'.$issue.' - '.$dns_request.'</td><td>'.$action.'</td></tr>'.PHP_EOL;
   }
 
   echo '</table>'.PHP_EOL;
