@@ -330,44 +330,49 @@ function get_blocklistname($bl) {
   return $bl;
 }
 
+
 /********************************************************************
  *  Search Block Reason
- *    1. Search $site in bl_source for Blocklist name
- *    2. Use regex match to extract (site).(tld)
- *    3. Search site.tld in bl_source
- *    4. On fail search for .tld in bl_source
- *    5. On fail return ''
+ *    1. Search site.com in blocklist table
+ *    2. Search .tld in blocklist table
+ *    3. Search for like site.com in blocklist table
+ *    4. On fail return ''
  *
  *  Params:
- *    $site - Site to search
+ *    $domain - Domain to search
  *  Return:
  *    blocklist name
  */
-function search_blockreason($site) {
+function search_blockreason($domain) {
   global $db;
+  $res = '';
 
-  $result = $db->query('SELECT bl_source site FROM blocklist WHERE site = \''.$site.'\'');
+  preg_match('/[\w\-_]+(\.co|\.com|\.org|\.gov)?\.([\w\-]+)$/', $domain, $matches);
+
+  //Search for site.com
+  $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '".$matches[0]."'");
   if ($result->num_rows > 0) {
-    return $result->fetch_row()[0];
+    $res = $result->fetch_row()[0];
   }
-
-
-  //Try to find LIKE site ending with site.tld
-  if (preg_match('/([\w\d\-\_]+)\.([\w\d\-\_]+)$/', $site,  $matches) > 0) {
-    $result = $db->query('SELECT bl_source site FROM blocklist WHERE site LIKE \'%'.$matches[1].'.'.$matches[2].'\'');
-
+  else {
+    $result->free();
+    //Search for .tld
+    $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '.".$matches[2]."'");
     if ($result->num_rows > 0) {
-      return $result->fetch_row()[0];
+      $res = $result->fetch_row()[0];
     }
-    else {                                      //On fail try for site = .tld
-      $result = $db->query('SELECT bl_source site FROM blocklist WHERE site = \'.'.$matches[2].'\'');
+    else {
+      $result->free();
+      //Search for like site.com (possibly prone to misidentifying bl_source)
+      $result = $db->query("SELECT bl_source FROM blocklist WHERE site LIKE '%.".$matches[0]."'");
       if ($result->num_rows > 0) {
-        return $result->fetch_row()[0];
+        $res = $result->fetch_row()[0];
       }
     }
   }
 
-  return '';                                     //Don't know at this point
+  $result->free();
+  return $res;
 }
 
 
