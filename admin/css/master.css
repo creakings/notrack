@@ -1175,7 +1175,8 @@ span.pink {
   color: #F757F5;
   font-weight: bold;
 }
-span.gray {
+span.gray,
+p.grey {
   color: DimGrey;
 }
 span.darkgray, h3.darkgray {

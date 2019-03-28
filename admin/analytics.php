@@ -113,6 +113,7 @@ function update_value($id, $logdate, $logtime, $action) {
   $db->query($cmd);
 }
 
+
 /********************************************************************
  *  Show Analytics
  *    1. Query results
@@ -179,17 +180,17 @@ function show_analytics() {
     }
 
     if (($row['issue'] == 'Tracker') || ($row['issue'] == 'Advert')) {
-      $issue = $row['issue'].' Accessed';
+      $issue = $row['issue'].' Accessed - '.$dns_request;
     }
     else {                                                 //Setup Malware Alert
       $list = ucwords(str_replace('_', ' ', substr($row['issue'], 11)));
 
       if ($dns_result == 'B') {
-        $issue = '<span title="Blocked by '.$list.'">Malware Blocked</span>';
+        $issue = 'Malware Blocked - '.$dns_request.'<p class="small grey">Blocked by '.$list.'</p>';
         $action = ($list == 'Notrack Malware') ? '<button type="button" class="icon-tick button-grey" onclick="reportSite(\''.$dns_request.'\', true, true)">Allow</button>' : '<button type="button" class="icon-tick button-grey" onclick="reportSite(\''.$dns_request.'\', true, false)">Allow</button>';
       }
       else {
-        $issue = '<span class="red" title="Blocklist '.$list.'">Malware Accessed</span>';
+        $issue = '<span class="red">Malware Accessed</span> - '.$dns_request.'<p class="small grey">Identified by '.$list.'</p>';
         $action = '';
       }
     }
@@ -197,7 +198,7 @@ function show_analytics() {
     $queryurl = './queries.php?groupby=time&amp;sysip='.$sys.'&amp;datetime='.$log_time;
 
     echo '<tr'.$row_colour.'><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
-    echo '<td>'.$log_time.'</td><td>'.$sys.'</td><td class="pointer" onclick="window.open(\''.$queryurl.'\')">'.$issue.' - '.$dns_request.'</td><td>'.$action.'</td></tr>'.PHP_EOL;
+    echo '<td>'.$log_time.'</td><td>'.$sys.'</td><td class="pointer" onclick="window.open(\''.$queryurl.'\')">'.$issue.'</td><td>'.$action.'</td></tr>'.PHP_EOL;
   }
 
   echo '</table>'.PHP_EOL;
