@@ -5,15 +5,15 @@
 #Usage : bash install.sh
 
 
-##############################################################################
-# Optional User Customisable Settings
-##############################################################################
+#######################################
+# User Configerable Settings
+#######################################
 INSTALL_LOCATION=""                         #define custom installation path
 
 
-##############################################################################
+#######################################
 # Constants
-##############################################################################
+#######################################
 readonly IP_V4="IPv4"
 readonly IP_V6="IPv6"
 
@@ -25,9 +25,9 @@ readonly NETWORK_INTERFACES_OLD_PATH="/etc/network/interfaces.old"
 readonly DNSMASQ_CONF_PATH="/etc/dnsmasq.conf"
 
 
-##############################################################################
-# Environment variables
-##############################################################################
+#######################################
+# Global Variables
+#######################################
 readonly VERSION="0.9.0"
 
 SUDO_REQUIRED=false                              #true if installing to /opt
@@ -77,11 +77,11 @@ service_restart() {
   if [[ -n $1 ]]; then
     echo "Restarting $1"
     if [ "$(command -v systemctl)" ]; then       #systemd
-      sudo systemctl restart $1
+      sudo systemctl restart "$1"
     elif [ "$(command -v service)" ]; then       #sysvinit
-      sudo service $1 restart
+      sudo service "$1" restart
     elif [ "$(command -v sv)" ]; then            #runit
-      sudo sv restart $1
+      sudo sv restart "$1"
     else
       error_exit "Unable to restart services. Unknown service supervisor" "21"
     fi
@@ -198,14 +198,13 @@ function backup_configs() {
 #   None
 # Arguments:
 #   $1 File Path
-#   $2 Exit Code
 # Returns:
 #   Exit Code
 #######################################
-check_file_exists() {
+function check_file_exists() {
   if [ ! -e "$1" ]; then
     echo "Error. File $1 is missing :-( Aborting."
-    exit "$2" 
+    exit "25" 
   fi
 }
 
@@ -221,42 +220,42 @@ check_file_exists() {
 #   None
 #--------------------------------------------------------------------
 function copy_scripts() {
-  check_file_exists "$INSTALL_LOCATION/scripts/notrack.sh" "25"      #Blocklist parser
+  check_file_exists "$INSTALL_LOCATION/scripts/notrack.sh"      #Blocklist parser
   echo "Copying notrack.sh"
   sudo cp "$INSTALL_LOCATION/scripts/notrack.sh" /usr/local/sbin/notrack.sh
   sudo mv /usr/local/sbin/notrack.sh /usr/local/sbin/notrack 
   sudo chmod 755 /usr/local/sbin/notrack
 
-  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-exec.sh" "26"    #Exec
+  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-exec.sh"    #Exec
   echo "Copying ntrk-exec.sh"
   sudo cp "$INSTALL_LOCATION/scripts/ntrk-exec.sh" /usr/local/sbin/
   sudo mv /usr/local/sbin/ntrk-exec.sh /usr/local/sbin/ntrk-exec
   sudo chmod 755 /usr/local/sbin/ntrk-exec
   
-  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-pause.sh" "27"   #Pause
+  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-pause.sh"   #Pause
   echo "Copying ntrk-pause.sh"
   sudo cp "$INSTALL_LOCATION/scripts/ntrk-pause.sh" /usr/local/sbin/
   sudo mv /usr/local/sbin/ntrk-pause.sh /usr/local/sbin/ntrk-pause
   sudo chmod 755 /usr/local/sbin/ntrk-pause
   
-  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-upgrade.sh" "28" #Upgrader
+  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-upgrade.sh" #Upgrader
   echo "Copying ntrk-upgrade.sh"
   sudo cp "$INSTALL_LOCATION/scripts/ntrk-upgrade.sh" /usr/local/sbin/
   sudo mv /usr/local/sbin/ntrk-upgrade.sh /usr/local/sbin/ntrk-upgrade
   sudo chmod 755 /usr/local/sbin/ntrk-upgrade
   
-  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-parse.sh" "29"   #ntrk-parse.sh
+  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-parse.sh"   #ntrk-parse.sh
   echo "Copying ntrk-parse.sh"
   sudo cp "$INSTALL_LOCATION/scripts/ntrk-parse.sh" /usr/local/sbin/
   sudo mv /usr/local/sbin/ntrk-parse.sh /usr/local/sbin/ntrk-parse
   sudo chmod 755 /usr/local/sbin/ntrk-parse
   
-  #check_file_exists "$INSTALL_LOCATION/scripts/ntrk-analytics.sh" "29"   #ntrk-parse.sh
-  #echo "Copying ntrk-analytics.sh"
-  #sudo cp "$INSTALL_LOCATION/scripts/ntrk-analytics.sh" /usr/local/sbin/
-  #sudo mv /usr/local/sbin/ntrk-analytics.sh /usr/local/sbin/ntrk-analytics
-  #sudo chmod 755 /usr/local/sbin/ntrk-analytics
-  
+  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-analytics.sh" "29"   #ntrk-parse.sh
+  echo "Copying ntrk-analytics.sh"
+  sudo cp "$INSTALL_LOCATION/scripts/ntrk-analytics.sh" /usr/local/sbin/
+  sudo mv /usr/local/sbin/ntrk-analytics.sh /usr/local/sbin/ntrk-analytics
+  sudo chmod 755 /usr/local/sbin/ntrk-analytics
+
   echo "========================================================="
   echo
 }
@@ -856,7 +855,7 @@ function setup_mariadb() {
   #weblog
   mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE weblog (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, site TINYTEXT, http_method CHAR(4), uri_path TEXT, referrer TEXT, user_agent TEXT, remote_host TEXT);"
 
-  echo "Creating CRON job for Log Parser"
+  echo "Creating cron job for Log Parser in /etc/cron.d"
   echo -e "*/4 * * * *\troot\t/usr/local/sbin/ntrk-parse" | sudo tee /etc/cron.d/ntrk-parse &> /dev/null
 
   echo "MariaDB setup complete"
@@ -866,37 +865,38 @@ function setup_mariadb() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Setup NoTrack
-#   Copy notrack.sh and do initial setup of notrack.conf
+#   1. Initial setup of notrack.conf
+#   2. Create cron jobs
+#
 # Globals:
 #   INSTALL_LOCATION, IP_VERSION, NETWORK_DEVICE
 # Arguments:
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#
+#######################################
 function setup_notrack() {
-  #Setup Tracker list downloader
   echo "Setting up NoTrack block list downloader"
-  
+
   create_folder "/etc/notrack"
-  create_file "/etc/notrack/notrack.conf"        #Create Config file
-  
-  echo "Creating daily cron job in /etc/cron.daily/"
-  if [ -e /etc/cron.daily/notrack ]; then        #Remove old symlink
-    echo "Removing old file: /etc/cron.daily/notrack"
-    sudo rm /etc/cron.daily/notrack
-  fi
-  
-  #sudo ln -s /usr/local/sbin/ntrk-analytics /etc/cron.hourly/ntrk-analytics
-  
-  #Create cron daily job with a symlink to notrack script
-  sudo ln -s /usr/local/sbin/notrack /etc/cron.daily/notrack
+  create_file "/etc/notrack/notrack.conf"                  #Create Config file
 
   echo "Writing initial config"
   echo "IPVersion = $IP_VERSION" | sudo tee /etc/notrack/notrack.conf
   echo "NetDev = $NETWORK_DEVICE" | sudo tee -a /etc/notrack/notrack.conf
+
+  delete_file "/etc/cron.daily/notrack"                    #Remove old symlinks
+  delete_file "/etc/cron.hourly/ntrk-analytics"
+
+  echo "Creating daily cron job in /etc/cron.daily/"
+  sudo ln -s /usr/local/sbin/notrack /etc/cron.daily/notrack
+
+  echo "Creating hourly cron job for ntrk-analytics in /etc/cron.hourly"
+  sudo ln -s /usr/local/sbin/ntrk-analytics /etc/cron.hourly/ntrk-analytics
+
   echo
   echo "NoTrack configuration complete"
   echo "========================================================="
@@ -1078,7 +1078,7 @@ prompt_dns_server() {
   
   case "$?" in
     1)                                           #OpenDNS
-      if [[ $1 == $IP_V6 ]]; then
+      if [[ $1 == "$IP_V6" ]]; then
         DNS_SERVER_1="2620:0:ccc::2"
         DNS_SERVER_2="2620:0:ccd::2"
       else
@@ -1087,7 +1087,7 @@ prompt_dns_server() {
       fi
     ;;
     2)                                           #Google
-      if [[ $1 == $IP_V6 ]]; then
+      if [[ $1 == "$IP_V6" ]]; then
         DNS_SERVER_1="2001:4860:4860::8888"
         DNS_SERVER_2="2001:4860:4860::8844"
       else
@@ -1095,8 +1095,8 @@ prompt_dns_server() {
         DNS_SERVER_2="8.8.4.4"
       fi
     ;;
-    3)                                           #DNSWatch
-      if [[ $1 == $IP_V6 ]]; then
+    3)                                                     #DNSWatch
+      if [[ $1 == "$IP_V6" ]]; then
         DNS_SERVER_1="2001:1608:10:25::1c04:b12f"
         DNS_SERVER_2="2001:1608:10:25::9249:d69b"
       else
@@ -1104,8 +1104,8 @@ prompt_dns_server() {
         DNS_SERVER_2="84.200.70.40"
       fi
     ;;
-    4)                                           #Verisign
-      if [[ $1 == $IP_V6 ]]; then
+    4)                                                     #Verisign
+      if [[ $1 == "$IP_V6" ]]; then
         DNS_SERVER_1="2620:74:1b::1:1"
         DNS_SERVER_2="2620:74:1c::2:2"
       else
@@ -1113,16 +1113,16 @@ prompt_dns_server() {
         DNS_SERVER_2="64.6.65.6"
       fi
     ;;
-    5)                                           #Comodo
+    5)                                                     #Comodo
       DNS_SERVER_1="8.26.56.26"
       DNS_SERVER_2="8.20.247.20"
     ;;
-    6)                                           #FreeDNS
+    6)                                                     #FreeDNS
       DNS_SERVER_1="37.235.1.174"
       DNS_SERVER_2="37.235.1.177"
     ;;
-    7)                                           #Yandex
-      if [[ $1 == $IP_V6 ]]; then
+    7)                                                     #Yandex
+      if [[ $1 == "$IP_V6" ]]; then
         DNS_SERVER_1="2a02:6b8::feed:bad"
         DNS_SERVER_2="2a02:6b8:0:1::feed:bad"
       else
@@ -1131,7 +1131,7 @@ prompt_dns_server() {
       fi
     ;;
     8)
-      if [[ $1 == $IP_V6 ]]; then                #Cloudflare
+      if [[ $1 == "$IP_V6" ]]; then                        #Cloudflare
         DNS_SERVER_1="2606:4700:4700::1111"
         DNS_SERVER_2="2606:4700:4700::1001"
       else
@@ -1139,7 +1139,7 @@ prompt_dns_server() {
         DNS_SERVER_2="1.0.0.1"
       fi
     ;;
-    9)                                           #Other
+    9)                                                     #Other
       echo -en "DNS Server 1: "
       read -r DNS_SERVER_1
       echo -en "DNS Server 2: "
@@ -1174,7 +1174,7 @@ get_gateway_address() {
 #   None
 #######################################
 get_ip_address() {
-  if [[ $1 == $IP_V4 ]]; then
+  if [[ $1 == "$IP_V4" ]]; then
     echo "Reading IPv4 Address from $2"
     IP_ADDRESS=$(ip addr list "$2" |grep "inet " |cut -d' ' -f6|cut -d/ -f1)
     
@@ -1332,7 +1332,7 @@ set_static_ip_dhcpcd(){
   sudo sed -i -e "\$a\ " $DHCPCD_CONF_PATH
   sudo sed -i -e "\$a#Static Ip Address" $DHCPCD_CONF_PATH
   sudo sed -i -e "\$ainterface $NETWORK_DEVICE" $DHCPCD_CONF_PATH
-  if [[ $IP_VERSION = $IP_V4 ]]; then
+  if [[ $IP_VERSION == "$IP_V4" ]]; then
     sudo sed -i -e "\$astatic ip_address=$IP_ADDRESS/24" $DHCPCD_CONF_PATH
   else
     sudo sed -i -e "\$astatic ip_address=$IP_ADDRESS/64" $DHCPCD_CONF_PATH
@@ -1381,23 +1381,17 @@ set_static_ip_network_interfaces(){
 get_static_ip_address_info(){
   prompt_ip_version
 
-  if [[ $IP_VERSION == $IP_V6 ]]; then
+  if [[ $IP_VERSION == "$IP_V6" ]]; then
     error_exit "Only IPv4 supported for now" 12
     # TODO: Add support for setting static IPv6 address in /etc/network/interfaces
   fi
 
   prompt_network_device
-
-  prompt_dns_server $IP_VERSION
-
-  get_ip_address $IP_VERSION $NETWORK_DEVICE
-
-  get_broadcast_address $NETWORK_DEVICE
-
-  get_netmask_address $NETWORK_DEVICE
-
-  get_network_start_address $IP_ADDRESS $NETMASK_ADDRESS
-
+  prompt_dns_server "$IP_VERSION"
+  get_ip_address "$IP_VERSION" "$NETWORK_DEVICE"
+  get_broadcast_address "$NETWORK_DEVICE"
+  get_netmask_address "$NETWORK_DEVICE"
+  get_network_start_address "$IP_ADDRESS" "$NETMASK_ADDRESS"
   get_gateway_address
 }
 
@@ -1592,18 +1586,13 @@ if [ $1 ]; then
     echo "If it does make a note of it, as you will need it later"
     echo "Press any key to continue"
     read -rn1
-    
-    echo "Running ntrk-upgrade"
-    sudo /usr/local/sbin/ntrk-upgrade            #Run Ntrk-Upgrade first
-    sudo rm /etc/logrotate.d/notrack             #Remove old log rotator
+
     install_packages
     setup_mariadb
-    
+
     service_restart dnsmasq
     service_restart lighttpd
-    
-    sudo /usr/local/sbin/ntrk-parse
-    sudo /usr/local/sbin/notrack
+
     show_finish
     exit
   fi
