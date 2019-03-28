@@ -4,13 +4,21 @@
 #Author : QuidsUp
 #Usage : sudo bash uninstall.sh
 
-#TODO Delete MariaDB Tables
+
+#######################################
+# User Configerable Settings
+#######################################
+readonly FOLDER_SBIN="/usr/local/sbin"                     #User configurable
+readonly FOLDER_ETC="/etc"                                 #User configurable
+
 
 #######################################
 # Constants
 #######################################
-readonly FOLDER_SBIN="/usr/local/sbin"                     #User configurable
-readonly FOLDER_ETC="/etc"                                 #User configurable
+readonly USER="ntrk"
+readonly PASSWORD="ntrkpass"
+readonly DBNAME="ntrkdb"
+
 
 #######################################
 # Global Variables
@@ -18,7 +26,27 @@ readonly FOLDER_ETC="/etc"                                 #User configurable
 INSTALL_LOCATION="$HOME/notrack"
 
 
-#--------------------------------------------------------------------
+#######################################
+# Delete SQL Tables
+#
+# Globals:
+#   USER, PASSWORD, DBNAME
+# Arguments:
+#   None
+# Returns:
+#   None
+#
+#######################################
+function delete_tables() {
+  echo "Deleting MariaDB tables"
+mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" << EOF
+DROP TABLE IF EXISTS blocklist, dnslog, weblog, config, users, whois, analytics;
+DROP DATABASE ntrkdb;
+EOF
+
+}
+
+#######################################
 # Stop service
 #   with either systemd or sysvinit or runit
 # Globals:
@@ -27,8 +55,9 @@ INSTALL_LOCATION="$HOME/notrack"
 #   $1. Service name
 # Returns:
 #   None
-#--------------------------------------------------------------------
-service_stop() {
+#
+#######################################
+function service_stop() {
   if [[ -n $1 ]]; then
     echo "Stopping $1"
     if [ "$(command -v systemctl)" ]; then     #systemd
@@ -45,18 +74,19 @@ service_stop() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Copy File
 #   Copies source file to destination if it exists
 # Globals:
 #   None
 # Arguments:
-#   $1: Source
-#   $2: Target
+#   $1. Source
+#   $2. Target
 # Returns:
 #   None
-#--------------------------------------------------------------------
-copyfile() {
+#
+#######################################
+function copy_file() {
   if [ -e "$1" ]; then                                     #Check file exists
     echo "Copying $1 to $2"
     cp "$1" "$2"
@@ -66,17 +96,18 @@ copyfile() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Delete File
 #   Deletes a file if it exists
 # Globals:
 #   None
 # Arguments:
-#   $1: Source
+#   $1. Source
 # Returns:
 #   None
-#--------------------------------------------------------------------
-deletefile() {
+#
+#######################################
+function delete_file() {
   if [ -e "$1" ]; then                                     #Check file exists
     echo "Deleting file $1"
     rm "$1"
@@ -84,18 +115,18 @@ deletefile() {
 }
 
 
-
-#--------------------------------------------------------------------
+#######################################
 # Delete Folder
-#   Deletes a folder if it exists
+#  Deletes a folder if it exists
 # Globals:
 #   None
 # Arguments:
-#   $1: Source
+#   $1. Source
 # Returns:
 #   None
-#--------------------------------------------------------------------
-deletefolder() {
+#
+#######################################
+delete_folder() {
   if [ -d "$1" ]; then                                     #Check folder exists
     echo "Deleting folder $1"
     rm -rf "$1"
@@ -103,7 +134,7 @@ deletefolder() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Find NoTrack
 #   This function finds where NoTrack is installed
 #   1. Check current folder
@@ -117,8 +148,9 @@ deletefolder() {
 #   None
 # Returns:
 #   1 if found
-#--------------------------------------------------------------------
-find_notrack() {
+#
+#######################################
+function find_notrack() {
   local homefolders=""
 
   if [ -e "$(pwd)/notrack.sh" ]; then                      #Check current folder
@@ -155,7 +187,7 @@ find_notrack() {
 find_notrack                                               #Where is NoTrack located?
 
 if [[ "$(id -u)" != "0" ]]; then
-  echo "Root access is required to carry out uninstall of NoTrack"
+  echo "Root access is required to uninstall NoTrack"
   echo "Usage: sudo bash uninstall.sh"
   exit 5
   #su -c "$0" "$@" - This could be an alternative for systems without sudo
@@ -178,54 +210,49 @@ echo
 
 echo "Deleting Symlinks for Web Folders"
 echo "Deleting Sink symlink"
-deletefile "/var/www/html/sink"
+delete_file "/var/www/html/sink"
 echo "Deleting Admin symlink"
-deletefile "/var/www/html/admin"
+delete_file "/var/www/html/admin"
 echo
 
 echo "Restoring Configuration files"
 echo "Restoring Dnsmasq config"
-copyfile "/etc/dnsmasq.conf.old" "/etc/dnsmasq.conf"
+copy_file "/etc/dnsmasq.conf.old" "/etc/dnsmasq.conf"
 echo "Restoring Lighttpd config"
-copyfile "/etc/lighttpd/lighttpd.conf.old" "/etc/lighttpd/lighttpd.conf"
+copy_file "/etc/lighttpd/lighttpd.conf.old" "/etc/lighttpd/lighttpd.conf"
 echo "Removing Local Hosts file"
-deletefile "/etc/localhosts.list"
+delete_file "/etc/localhosts.list"
 echo
 
-echo "Removing Log file rotator"
-deletefile "/etc/logrotate.d/notrack"
-echo
-
-echo "Removing Cron job"
-deletefile "/etc/cron.d/ntrk-parse"
+echo "Removing Cron jobs"
+delete_file "/etc/cron.d/ntrk-parse"                       #Remove old symlinks
+delete_file "/etc/cron.daily/notrack"
+delete_file "/etc/cron.hourly/ntrk-analytics"
 echo
 
 echo "Deleting NoTrack scripts"
-echo "Deleting dns-log-archive"
-deletefile "$FOLDER_SBIN/dns-log-archive"
-echo "Deleting notrack"
-deletefile "$FOLDER_SBIN/notrack"
-echo "Deleting ntrk-exec"
-deletefile "$FOLDER_SBIN/ntrk-exec"
-echo "Deleting ntrk-pause"
-deletefile "$FOLDER_SBIN/ntrk-pause"
-echo "Deleting ntrk-parser"
-deletefile "$FOLDER_SBIN/ntrk-parser"
+delete_file "$FOLDER_SBIN/notrack"
+delete_file "$FOLDER_SBIN/ntrk-analytics"
+delete_file "$FOLDER_SBIN/ntrk-exec"
+delete_file "$FOLDER_SBIN/ntrk-pause"
+delete_file "$FOLDER_SBIN/ntrk-parser"
 echo
 
 echo "Removing root permissions for www-data to launch ntrk-exec"
 sed -i '/www-data/d' /etc/sudoers
 
 echo "Deleting /etc/notrack Folder"
-deletefolder "$FOLDER_ETC/notrack"
+delete_folder "$FOLDER_ETC/notrack"
 echo 
 
 echo "Deleting Install Folder"
-deletefolder "$INSTALL_LOCATION"
+delete_folder "$INSTALL_LOCATION"
 echo
 
 echo "Finished deleting all files"
 echo
+
+delete_tables
 
 echo "The following packages will also need removing:"
 echo -e "\tdnsmasq"
