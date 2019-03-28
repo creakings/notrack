@@ -299,7 +299,7 @@ function create_folder() {
 
 
 #--------------------------------------------------------------------
-# Delete Old File
+# Delete File
 #   Checks if a file exists and then deletes it
 #
 # Globals:
@@ -740,15 +740,16 @@ setup_lighttpd() {
   local group=""
 
   echo "Configuring Lighttpd"
-  if getent passwd www-data > /dev/null 2>&1; then  #default group is www-data
+
+  if getent passwd www-data > /dev/null 2>&1; then         #default group is www-data
     echo "Adding www-data rights to $(whoami)"
     sudo usermod -a -G www-data "$(whoami)"
     group="www-data"
-  elif getent passwd http > /dev/null 2>&1; then    #Arch uses group http
+  elif getent passwd http > /dev/null 2>&1; then           #Arch uses group http
     echo "Adding http rights to $(whoami)"
     sudo usermod -a -G http "$(whoami)"
     group="http"
-  elif getent passwd _lighttpd > /dev/null 2>&1; then    #void uses group _lighttpd
+  elif getent passwd _lighttpd > /dev/null 2>&1; then      #void uses group _lighttpd
     echo "Adding _lighttpd rights to $(whoami)"
     sudo usermod -a -G _lighttpd "$(whoami)"
     group="_lighttpd"
@@ -769,16 +770,17 @@ setup_lighttpd() {
   sudo sed -i "s/changegroup/$group/" /etc/lighttpd/lighttpd.conf
   sudo sed -i "s/changehost/$hostname/" /etc/lighttpd/lighttpd.conf
     
-  create_folder "/var/www"                       #/var/www/html should be created by lighty
+  create_folder "/var/www"                                 #/var/www/html should be created by lighty
   create_folder "/var/www/html"
+  delete_file "/var/www/html/index.lighttpd.html"          #Remove default lighty html file
   
-  delete_file "/var/www/html/admin"              #Remove old symlinks
-    
-  echo "Creating Sink Folder"                    #Create new sink folder
+  delete_file "/var/www/html/admin"                        #Remove old symlinks
+
+  echo "Creating Sink Folder"                              #Create new sink folder
   create_folder "/var/www/html/sink"
   echo "Setting Block message to 1x1 pixel"
   echo '<img src="data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=" alt="" />' | sudo tee /var/www/html/sink/index.html &> /dev/null
-  
+
   echo "Changing ownership of sink folder to $group"
   sudo chown -hR "$group":"$group" /var/www/html/sink
   sudo chmod -R 775 /var/www/html/sink
