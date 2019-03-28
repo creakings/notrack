@@ -209,8 +209,9 @@ service_stop lighttpd
 echo
 
 echo "Deleting Symlinks for Web Folders"
-echo "Deleting Sink symlink"
-delete_file "/var/www/html/sink"
+echo "Deleting Sink page"
+delete_file "/var/www/html/sink/index.html"
+delete_folder "/var/www/html/sink"
 echo "Deleting Admin symlink"
 delete_file "/var/www/html/admin"
 echo
