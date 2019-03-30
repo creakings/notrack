@@ -58,7 +58,7 @@ function do_action($action) {
   $boxes = array();
   $box = '';
 
-  if (isset($_POST['selectedCheckboxes'])) {
+  if (filter_string('selectedCheckboxes', 'POST', 2300)) {
     $boxstr = $_POST['selectedCheckboxes'];
   }
   else {

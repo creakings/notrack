@@ -182,13 +182,13 @@ function update_blocklist_config() {
     }
   }
   
-  if (isset($_POST['bl_custom'])) {              //bl_custom requires extra processing
+  if (filter_string('bl_custom', 'POST', 2000)) {          //bl_custom requires extra processing
     $customstr = preg_replace('#\s+#',',',trim(strip_tags($_POST['bl_custom']))); //Split array
     $customlist = explode(',', $customstr);      //Split string into array
     foreach ($customlist as $site) {             //Check if each item is a valid URL
       if (filter_url($site)) {
         $validlist[] = strip_tags($site);
-      }      
+      }
       elseif (preg_match('/\/\w{3,4}\/[\w\/\.]/', $site) > 0) { #Or file location?
         $validlist[] = strip_tags($site);
       }

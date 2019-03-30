@@ -220,6 +220,39 @@ function filter_integer($value, $min, $max, $defaultvalue=0) {
   return $defaultvalue;
 }
 
+
+/********************************************************************
+ *  Filter String
+ *    Checks if $var exists in POST or GET array
+ *    Check strlen
+ *
+ *  Params:
+ *    Array value to check, method - POST / GET, max string length
+ *  Return:
+ *    true on acceptable value
+ *    false for unacceptable value
+ */
+function filter_string($var, $method, $maxlen=255) {
+  if ($method == 'POST') {
+    if (isset($_POST[$var])) {
+      if (strlen($_POST[$var]) <= $maxlen) {
+        return true;
+      }
+    }
+  }
+
+  elseif ($method == 'GET') {
+    if (isset($_GET[$var])) {
+      if (strlen($_GET[$var]) <= $maxlen) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+
 /********************************************************************
  *  Filter URL
  *    perform regex match to see if url is in the form of some-site.com, or some_site.co.uk
