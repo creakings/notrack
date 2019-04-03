@@ -1,9 +1,12 @@
 *review lighty config
 
+analytics.php
+Add Resolve and delete to popup menu
+Add view switcher to show resolved
+
 queries.php:
 *Improve Time search
 *Add Search buttons
-*Convert Block/Allow form to POST
 *Add more SVG-icons
 
 Config
@@ -12,7 +15,7 @@ Config
 *Split config options into seperate pages
 
 menu.php
-*Add more SVG-icons
+*Add number of alerts to Alerts button
 
 blocked.php
 *Expand number of user agents
