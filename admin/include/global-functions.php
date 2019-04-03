@@ -299,20 +299,53 @@ function formatnumber($number) {
 
 
 /********************************************************************
+ *  Pluralise
+ *
+ *  Params:
+ *    count, text
+ *  Return:
+ *    pluralised string
+ */
+function pluralise($count, $text)
+{
+  return $count.(($count == 1) ? (" $text") : (" ${text}s"));
+}
+
+/********************************************************************
+ *  Simplified Time
+ *    Returns a simplified time from now - $timestr
+ *
+ *  Params:
+ *    date-time string
+ *  Return:
+ *    A simplified time string
+ */
+function simplified_time($timestr) {
+  $datetime = new DateTime($timestr);
+  $interval = date_create('now')->diff($datetime);
+
+  $suffix = ($interval->invert ? ' ago' : '');
+  if ($interval->y >= 1 ) return pluralise($interval->y, 'year').$suffix;
+  if ($interval->m >= 1 ) return pluralise($interval->m, 'month').$suffix;
+  if ($interval->d > 7) return pluralise(floor($interval->d / 7), 'week').$suffix;
+  if ($interval->d >= 1) return pluralise($interval->d, 'day').$suffix;
+  if ($interval->h >= 1 ) return pluralise($interval->h, 'hour').$suffix;
+  if ($interval->i >= 1 ) return pluralise($interval->i, 'minute').$suffix;
+  return pluralise($interval->s, 'second').$suffix;
+}
+
+
+/********************************************************************
  *  Is Active Class
  *    Used to allocate class="active" against li
+ *
  *  Params:
  *    Current View, Item
  *  Return:
- *    class='active' or '' when inactive
+ *    class="active" or nothing when inactive
  */
 function is_active_class($currentview, $item) {
-  if ($currentview == $item) {
-    return ' class="active"';
-  }
-  else {
-    return '';
-  }
+  return ($currentview == $item) ? ' class="active"' : '';
 }
 
 
@@ -325,7 +358,7 @@ function is_active_class($currentview, $item) {
  *    checked="checked" or nothing
  */
  function is_checked($value) {
-  if ($value == 1 || $value == true) {
+  if ($value == 1 || $value === true) {
     return ' checked="checked"';
   }
   

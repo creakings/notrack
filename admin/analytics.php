@@ -1,4 +1,6 @@
 <?php
+/*TODO: Add Resolve and delete to popup menu
+  TODO: Add view switcher to show resolved*/
 require('./include/global-vars.php');
 require('./include/global-functions.php');
 require('./include/menu.php');
@@ -16,20 +18,21 @@ ensure_active_session();
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/menu.js"></script>
   <script src="./include/queries.js"></script>
-  <title>NoTrack - Analytics</title>
+  <title>NoTrack - Alerts</title>
   <meta name="viewport" content="width=device-width, initial-scale=0.7">
 </head>
 
 <body>
 <?php
-draw_topmenu('Analytics');
+draw_topmenu('Alerts');
 draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;
 
 /************************************************
 *Constants                                      *
 ************************************************/
-
+$INVESTIGATE = '';
+$INVESTIGATEURL = '';
 
 /************************************************
 *Global Variables                               *
@@ -115,6 +118,35 @@ function update_value($id, $logdate, $logtime, $action) {
 
 
 /********************************************************************
+ *  Popup Menu
+ *    Prepare popup menu and contents
+ *
+ *  Params:
+ *    Domain, Blocked (true/false), Show Report Button ('true'/'false')
+ *  Return:
+ *    HTML code for popup menu
+ */
+function popupmenu($domain, $blocked, $showreport) {
+  global $Config, $INVESTIGATE, $INVESTIGATEURL;
+
+  $str = '';
+  $str .= '<div class="dropdown-container"><span class="dropbtn"></span><div class="dropdown">';
+  
+  if ($blocked) {
+    $str .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
+  }
+  else {
+    $str .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
+  }
+  $str .= '<a href="'.$INVESTIGATEURL.$domain.'">'.$INVESTIGATE.'</a>';
+  $str .= '<a href="'.$Config['SearchUrl'].$domain.'" target="_blank">'.$Config['Search'].'</a>';
+  $str .= '<a href="https://www.virustotal.com/en/domain/'.$domain.'/information/" target="_blank">VirusTotal</a>';
+  $str .= '</div></div>';                                  //End dropdown-container
+
+  return $str;
+}
+
+/********************************************************************
  *  Show Analytics
  *    1. Query results
  *    2. Draw Checkbox and Buttons
@@ -138,6 +170,8 @@ function show_analytics() {
   $query = '';
   $checkboxid = '';
   $queryurl = '';                                          //URL to queries.php
+  $severity = 2;
+  $event = '';
 
   $query = "SELECT * FROM analytics WHERE ack = '$view' ORDER BY log_time DESC";
 
@@ -165,7 +199,7 @@ function show_analytics() {
   echo '<p></p>'.PHP_EOL;
 
   echo '<table id="analytics-table">'.PHP_EOL;             //Start table
-  echo '<tr><th>&nbsp;</th><th>Time</th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp;</th><th>&nbsp;</th><th>Site</th><th>System</th><th>Time</th><th>&nbsp;</th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {                   //Read each row of results
     $log_time = $row['log_time'];
@@ -173,32 +207,35 @@ function show_analytics() {
     $dns_request = $row['dns_request'];
     $dns_result = $row['dns_result'];
     $row_colour = ($row['ack'] == 0) ? '' : ' class="dark"';
+    $severity = 2;
 
     $checkboxid = $row['id'].'_'.str_replace(' ', '_', $log_time);
     if ($dns_result != 'B') {                              //Setup Action Button
-      $action = '<button type="button" class="icon-boot button-grey" onclick="reportSite(\''.$dns_request.'\', false, true)">Block</button>';
+      $action = popupmenu($dns_request, false, 'true');
     }
 
     if (($row['issue'] == 'Tracker') || ($row['issue'] == 'Advert')) {
       $issue = $row['issue'].' Accessed - '.$dns_request;
+      $event = 'tracker';
     }
     else {                                                 //Setup Malware Alert
       $list = ucwords(str_replace('_', ' ', substr($row['issue'], 11)));
-
+      $event = 'malware';
+      $action = ($list == 'Notrack Malware') ? popupmenu($dns_request, true, 'true') : popupmenu($dns_request, true, 'false');
+      
       if ($dns_result == 'B') {
         $issue = 'Malware Blocked - '.$dns_request.'<p class="small grey">Blocked by '.$list.'</p>';
-        $action = ($list == 'Notrack Malware') ? '<button type="button" class="icon-tick button-grey" onclick="reportSite(\''.$dns_request.'\', true, true)">Allow</button>' : '<button type="button" class="icon-tick button-grey" onclick="reportSite(\''.$dns_request.'\', true, false)">Allow</button>';
       }
       else {
         $issue = '<span class="red">Malware Accessed</span> - '.$dns_request.'<p class="small grey">Identified by '.$list.'</p>';
-        $action = '';
+        $severity = 3;
       }
     }
 
     $queryurl = './queries.php?groupby=time&amp;sysip='.$sys.'&amp;datetime='.$log_time;
 
-    echo '<tr'.$row_colour.'><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
-    echo '<td>'.$log_time.'</td><td>'.$sys.'</td><td class="pointer" onclick="window.open(\''.$queryurl.'\')">'.$issue.'</td><td>'.$action.'</td></tr>'.PHP_EOL;
+    echo '<tr'.$row_colour.'><td><img src="./svg/events/'.$event.$severity.'.svg" alt=""></td><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
+    echo '<td class="pointer" onclick="window.open(\''.$queryurl.'\')">'.$issue.'</td><td>'.$sys.'</td><td>'.simplified_time($log_time).'</td><td>'.$action.'</td></tr>'.PHP_EOL;
   }
 
   echo '</table>'.PHP_EOL;
@@ -224,9 +261,19 @@ if (isset($_POST['action'])) {                             //Any POST actions to
       break;
   }
 }
+
+if ($Config['whoisapi'] == '') {                           //Setup Investigate / Whois for popupmenu
+  $INVESTIGATE = $Config['WhoIs'];
+  $INVESTIGATEURL = $Config['WhoIsUrl'];
+}
+else {
+  $INVESTIGATE = 'Investigate';
+  $INVESTIGATEURL = './investigate.php?site=';
+}
+
 show_analytics();
 
-//echo '</div>'.PHP_EOL;                                     //End Div Group
+//echo '</div>'.PHP_EOL;                                   //End Div Group
 $db->close();
 
 ?>
