@@ -374,7 +374,7 @@ table {
 }
 td,
 th {
-  padding: 0.55em 0.6em;
+  padding: 0.45rem 0.6rem;
   border-bottom: 1px solid #bdbdbd;
 }
 th {
@@ -390,7 +390,7 @@ tr.blocked,
 td.blocked {
   background-color: #eb5d66;
 }
-tr.invalid,
+/*tr.invalid,*/
 td.red,
 span.key-red {
   background-color: #ee202b;
@@ -503,33 +503,49 @@ span.key-green {
 
 /* Query Tables on queries.php
    ========================================================================== */
-#query-group-table td:nth-child(1), #query-group-table th:nth-child(1) {
+#query-group-table td:nth-child(1),
+#query-group-table th:nth-child(1),
+#query-time-table td:nth-child(1),
+#query-time-table th:nth-child(1) {
+  width: 2.5rem;
+  text-align: center;
+}
+#query-group-table td:nth-child(2),
+#query-group-table th:nth-child(2) {
   width: 11%;
   text-align: center;
 }
-#query-group-table td:nth-child(2), #query-group-table th:nth-child(2) {
+#query-group-table td:nth-child(3),
+#query-group-table th:nth-child(3) {
   width: 56%;
 }
-#query-group-table td:nth-child(3), #query-group-table th:nth-child(3) {
+#query-group-table td:nth-child(4),
+#query-group-table th:nth-child(4) {
   width: 13%;
   text-align: center;
 }
-#query-group-table td:nth-child(4), #query-group-table th:nth-child(4) {
+#query-group-table td:nth-child(5),
+#query-group-table th:nth-child(5) {
   width: 15%;
   text-align: center;
 }
-#query-time-table td:nth-child(1), #query-time-table th:nth-child(1) {
+
+#query-time-table td:nth-child(2),
+#query-time-table th:nth-child(2) {
   width: 15%;
   text-align: center;
 }
-#query-time-table td:nth-child(2), #query-time-table th:nth-child(2) {
+#query-time-table td:nth-child(3),
+#query-time-table th:nth-child(3) {
   width: 25%;
   text-align: center;
 }
-#query-time-table td:nth-child(3), #query-time-table th:nth-child(3) {
+#query-time-table td:nth-child(4),
+#query-time-table th:nth-child(4) {
   width: 45%;
 }
-#query-time-table td:nth-child(4), #query-time-table th:nth-child(4) {
+#query-time-table td:nth-child(5),
+#query-time-table th:nth-child(5) {
   width: 12%;
   text-align: center;
 }
@@ -543,7 +559,10 @@ span.key-green {
   padding-top: 0.35rem;
   padding-bottom: 0.35rem;
 }
-
+#query-group-table img,
+#query-time-table img {
+  width: 2.4rem;
+}
 /* DHCP Table on dhcp.php
    ========================================================================== */
 #dhcp-table td:nth-child(1), #dhcp-table th:nth-child(1) {
@@ -593,6 +612,12 @@ span.key-green {
 }
 #analytics-table img {
   width: 2.4rem;
+}
+@media only screen and (max-width:1000px), only screen and (max-device-width:1000px) {
+  #analytics-table td:nth-child(3),
+  #analytics-table th:nth-child(3) {
+    width: 50%;
+  }
 }
 @media only screen and (max-width:480px), only screen and (max-device-width:480px) {
   #analytics-table td:nth-child(3),

@@ -195,41 +195,6 @@ function get_ipsearch($ipsearch) {
 
 
 /********************************************************************
- *  Add Filter Vars to SQL Search
- *
- *  Params:
- *    None
- *  Return:
- *    SQL Query string
- */
-function add_filterstr() {
-  global $datetime, $searchbox, $searchtime, $filter, $sysip;
-
-  if ($datetime != '') {
-    $searchstr = " WHERE log_time > SUBTIME('$datetime', '00:01:00') AND log_time < ADDTIME('$datetime', '00:03:00')"; //ORDER BY UNIX_TIMESTAMP(log_time)
-  }
-  else {
-    $searchstr = " WHERE log_time >= DATE_SUB(NOW(), INTERVAL $searchtime) ";
-  }
-
-  if ($searchbox != '') {
-    $searchstr .= get_dnssearch($searchbox);
-  }
-
-  if ($sysip != DEF_SYSTEM) {
-    //$searchstr .= "AND sys = '$sysip'";
-    $searchstr .= get_ipsearch($sysip);
-  }
-  if ($filter != DEF_FILTER) {
-    $searchstr .= " AND dns_result = '$filter'";
-  }
-
-  //echo $searchstr;                                       //Uncomment to debug sql query
-  return $searchstr;
-}
-
-
-/********************************************************************
  *  Draw Filter Box
  *    Reset form is dealt with by queries.js function resetQueriesForm()
  *    Show current value first in <select>, and then read through respective array to output values
@@ -316,23 +281,39 @@ function draw_groupby() {
   echo '</div></form>';
 }
 
+
 /********************************************************************
- *  Get Block List Name
- *    Returns the name of block list if it exists in the names array
+ *  Add Filter Vars to SQL Search
+ *
  *  Params:
- *    $bl - bl_name
+ *    None
  *  Return:
- *    Full block list name
+ *    SQL Query string
  */
+function add_filterstr() {
+  global $datetime, $searchbox, $searchtime, $filter, $sysip;
 
-function get_blocklistname($bl) {
-  global $BLOCKLISTNAMES;
-
-  if (array_key_exists($bl, $BLOCKLISTNAMES)) {
-    return $BLOCKLISTNAMES[$bl];
+  if ($datetime != '') {
+    $searchstr = " WHERE log_time > SUBTIME('$datetime', '00:01:00') AND log_time < ADDTIME('$datetime', '00:03:00')"; //ORDER BY UNIX_TIMESTAMP(log_time)
+  }
+  else {
+    $searchstr = " WHERE log_time >= DATE_SUB(NOW(), INTERVAL $searchtime) ";
   }
 
-  return $bl;
+  if ($searchbox != '') {
+    $searchstr .= get_dnssearch($searchbox);
+  }
+
+  if ($sysip != DEF_SYSTEM) {
+    //$searchstr .= "AND sys = '$sysip'";
+    $searchstr .= get_ipsearch($sysip);
+  }
+  if ($filter != DEF_FILTER) {
+    $searchstr .= " AND dns_result = '$filter'";
+  }
+
+  //echo $searchstr;                                       //Uncomment to debug sql query
+  return $searchstr;
 }
 
 
@@ -355,7 +336,8 @@ function search_blockreason($domain) {
   preg_match('/[\w\-_]+(\.co|\.com|\.org|\.gov)?\.([\w\-]+)$/', $domain, $matches);
 
   //Search for site.com
-  $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '".$matches[0]."'");
+  //Negate whitelist to prevent stupid results
+  $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '".$matches[0]."' AND bl_source != 'whitelist'");
   if ($result->num_rows > 0) {
     $res = $result->fetch_row()[0];
   }
@@ -369,7 +351,7 @@ function search_blockreason($domain) {
     else {
       $result->free();
       //Search for like site.com (possibly prone to misidentifying bl_source)
-      $result = $db->query("SELECT bl_source FROM blocklist WHERE site LIKE '%.".$matches[0]."'");
+      $result = $db->query("SELECT bl_source FROM blocklist WHERE site LIKE '%.".$matches[0]."' AND bl_source != 'whitelist'");
       if ($result->num_rows > 0) {
         $res = $result->fetch_row()[0];
       }
@@ -378,6 +360,109 @@ function search_blockreason($domain) {
 
   $result->free();
   return $res;
+}
+
+
+/********************************************************************
+ *  Get Block List Name
+ *    Returns the name of block list if it exists in the names array
+ *
+ *  Params:
+ *    $bl - bl_name
+ *  Return:
+ *    Full block list name
+ *    Or what it has been named as
+ */
+function get_blocklistname($bl) {
+  global $BLOCKLISTNAMES;
+
+  if (array_key_exists($bl, $BLOCKLISTNAMES)) {
+    return $BLOCKLISTNAMES[$bl];
+  }
+
+  return $bl;
+}
+
+
+/********************************************************************
+ *  Get Block List Event
+ *    Returns the name of block list event if it exists in the event array
+ *
+ *  Params:
+ *    $bl - bl_name
+ *  Return:
+ *    event value
+ */
+function get_blocklistevent($bl) {
+  global $BLOCKLISTEVENT;
+
+  if (array_key_exists($bl, $BLOCKLISTEVENT)) {
+    return $BLOCKLISTEVENT[$bl];
+  }
+  elseif (substr($bl, 0, 6) == 'custom') {                 //Could be a custom_x list
+    return 'custom';
+  }
+
+  return $bl;                                              //Shouldn't get to here
+}
+
+/********************************************************************
+ *  Format Row
+ *    Returns the action, blockreason, event, and severity in an array
+ *
+ *  Params:
+ *    domain, dns_result(allowed, blocked, local)
+ *
+ *  Return:
+ *    Array of variables to be taken using list()
+ */
+function format_row($domain, $dns_result) {
+  $action = '';
+  $blocklist = '';
+  $blockreason = '';
+  $event = '';
+  $severity = '1';
+  
+  if ($dns_result == 'A') {
+    $action = '<button class="icon-boot button-grey" onclick="reportSite(\''.$domain.'\', false, true)">Block</button>';
+    $event = 'allowed1';
+  }
+  elseif ($dns_result == 'B') {         //Blocked
+    $blocklist = search_blockreason($domain);
+    $severity = '2';
+      
+    if ($blocklist == 'bl_notrack') {        //Show Report icon on NoTrack list
+      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, true)">Allow</button>';
+      $blockreason = '<p class="small grey">Blocked by NoTrack list</p>';
+      $event = 'tracker2'; //TODO change image
+    }
+    elseif ($blocklist == 'custom') {        //Users blacklist
+      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, false)">Allow</button>';
+      $blockreason = '<p class="small grey">Blocked by Custom Black list</p>';
+      $event = 'custom2';
+    }
+    elseif ($blocklist != '') {
+      $blockreason = '<p class="small grey">Blocked by '.get_blocklistname($blocklist).'</p>';
+      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, false)">Allow</button>';
+
+      $event = get_blocklistevent($blocklist);
+
+      if ($event == 'malware') {
+        $severity = '3';
+      }
+      $event .= $severity;
+
+    }
+    else {  //No reason is probably IP or Search request
+      $blockreason = '<p class="small">Invalid request</p>';
+      $event = 'invalid2';
+    }
+  }
+  elseif ($dns_result == 'L') {
+    $event = 'local1';
+  }
+
+  return array($action, $blockreason, $event, $severity);
 }
 
 
@@ -396,10 +481,12 @@ function show_group_view() {
 
   $i = 0;
   $k = 1;                                                  //Count within ROWSPERPAGE
-  $row_class = '';
   $action = '';
   $blockreason = '';
+  $event = '';
+  $severity = 1;
   $query = '';
+  $domain = '';
   $site_cell = '';
 
   $sortlink = "?page=$page&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby&amp;";
@@ -435,43 +522,16 @@ function show_group_view() {
 
   echo '<table id="query-group-table">'.PHP_EOL;
 
-  echo '<tr><th>#</th><th>Site</th><th>Action</th><th>Requests<a class="primarydark" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp;</th><th>#</th><th>Site</th><th>Action</th><th>Requests<a class="primarydark" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
-    $action = '&nbsp;';
-
-    if ($row['dns_result'] == 'A') {             //Row colouring
-      $row_class='';
-      $action = '<button class="icon-boot button-grey" onclick="reportSite(\''.$row['dns_request'].'\', false, true)">Block</button>';
-    }
-    elseif ($row['dns_result'] == 'B') {         //Blocked
-      $row_class = ' class="blocked"';
-      $blockreason = search_blockreason($row['dns_request']);
-      if ($blockreason == 'bl_notrack') {        //Show Report icon on NoTrack list
-        $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$row['dns_request'].'\', true, true)">Allow</button>';
-        $blockreason = '<p class="small">Blocked by NoTrack list</p>';
-      }
-      elseif ($blockreason == 'custom') {        //Users blacklist, show report icon
-        $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$row['dns_request'].'\', true, true)">Allow</button>';
-        $blockreason = '<p class="small">Blocked by Black list</p>';
-      }
-      elseif ($blockreason == '') {              //No reason is probably IP or Search request
-        $row_class = ' class="invalid"';
-        $blockreason = '<p class="small">Invalid request</p>';
-      }
-      else {
-        $blockreason = '<p class="small">Blocked by '.get_blocklistname($blockreason).'</p>';
-        $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$row['dns_request'].'\', true, false)">Allow</button>';
-      }
-    }
-    elseif ($row['dns_result'] == 'L') {
-      $row_class = ' class="local"';
-    }
+    $domain = $row['dns_request'];
+    list($action, $blockreason, $event, $severity) = format_row($domain, $row['dns_result']);
 
     //Make entire site cell clickable with link going to Investigate
-    $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?site='.$row['dns_request'].'\', \'_blank\')"><a href="./investigate.php?site='.$row['dns_request'].'" class="black" target="_blank">'.$row['dns_request'].$blockreason.'</a></td>';
+    $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?site='.$domain.'\', \'_blank\')"><a href="./investigate.php?site='.$domain.'" class="black" target="_blank">'.$domain.$blockreason.'</a></td>';
 
-    echo '<tr'.$row_class.'><td>'.$i.'</td>'.$site_cell.'<td>'.$action.'</td><td>'.$row['count'].'</td></tr>'.PHP_EOL;
+    echo '<tr><td><img src="./svg/events/'.$event.'.svg" alt=""></td><td>'.$i.'</td>'.$site_cell.'<td>'.$action.'</td><td>'.$row['count'].'</td></tr>'.PHP_EOL;
     $blockreason = '';
 
     $i++;
@@ -502,12 +562,14 @@ function show_time_view() {
   global $db, $Config, $TLDBlockList;
   global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
 
+  $i = 0;
   $k = 1;                                                  //Count within ROWSPERPAGE
-  $row_class = '';
-  $query = '';
   $action = '';
   $blockreason = '';
-  $investigate = '';
+  $event = '';
+  $severity = 1;
+  $query = '';
+  $domain = '';
   $site_cell = '';
 
   $sortlink = "?page=$page&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby&amp;";
@@ -542,45 +604,17 @@ function show_time_view() {
   draw_groupby();
 
   echo '<table id="query-time-table">'.PHP_EOL;
-  echo '<tr><th>Time<a class="primarydark" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp</th><th>Time<a class="primarydark" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
-    $action = '&nbsp;';
-
-    if ($row['dns_result'] == 'A') {             //Row colouring
-      $row_class='';
-      $action = '<button class="icon-boot button-grey" onclick="reportSite(\''.$row['dns_request'].'\', false, true)">Block</button>';
-    }
-    elseif ($row['dns_result'] == 'B') {         //Blocked
-      $row_class = ' class="blocked"';
-      $blockreason = search_blockreason($row['dns_request']);
-      if ($blockreason == 'bl_notrack') {        //Show Report icon on NoTrack list
-        $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$row['dns_request'].'\', true, true)">Allow</button>';
-        $blockreason = '<p class="small">Blocked by NoTrack list</p>';
-      }
-      elseif ($blockreason == 'custom') {        //Users blacklist, show report icon
-        $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$row['dns_request'].'\', true, true)">Allow</button>';
-        $blockreason = '<p class="small">Blocked by Black list</p>';
-      }
-      elseif ($blockreason == '') {              //No reason is probably IP or Search request
-        $row_class = ' class="invalid"';
-        $blockreason = '<p class="small">Invalid request</p>';
-      }
-      else {
-        $blockreason = '<p class="small">Blocked by '.get_blocklistname($blockreason).'</p>';
-        $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$row['dns_request'].'\', true, false)">Allow</button>';
-      }
-    }
-    elseif ($row['dns_result'] == 'L') {
-      $row_class = ' class="local"';
-    }
-
+    $domain = $row['dns_request'];
+    list($action, $blockreason, $event, $severity) = format_row($domain, $row['dns_result']);
 
     //Make entire site cell clickable with link going to Investigate
     //Add in datetime and system into investigate link
-    $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$row['dns_request'].'&amp;sys='.$row['sys'].'\', \'_blank\')"><a href="./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$row['dns_request'].'&amp;sys='.$row['sys'].'" class="black" target="_blank">'.$row['dns_request'].$blockreason.'</a></td>';
+    $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$domain.'&amp;sys='.$row['sys'].'\', \'_blank\')"><a href="./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$domain.'&amp;sys='.$row['sys'].'" class="black" target="_blank">'.$domain.$blockreason.'</a></td>';
 
-    echo '<tr'.$row_class.'><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td>'.$site_cell.'<td>'.$action.$investigate.'</td></tr>'.PHP_EOL;
+    echo '<tr><td><img src="./svg/events/'.$event.'.svg" alt=""><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td>'.$site_cell.'<td>'.$action.'</td></tr>'.PHP_EOL;
     $blockreason = '';
 
     $k++;
