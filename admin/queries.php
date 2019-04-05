@@ -344,7 +344,7 @@ function search_blockreason($domain) {
   else {
     $result->free();
     //Search for .tld
-    $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '.".$matches[2]."'");
+    $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '.".$matches[2]."' AND bl_source = 'bl_tld'");
     if ($result->num_rows > 0) {
       $res = $result->fetch_row()[0];
     }
