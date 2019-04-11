@@ -26,3 +26,10 @@ Tracking is absolutely rife on the Internet, on average 17 cookies are dropped b
 At a glance see how many sites are in your blocklist, number of DNS Queries, number of Systems on your Netowork, and volume of traffic over the past 24 hours.  
 As well as links to all the other admin features
 ![notrackmain](https://gitlab.com/quidsup/notrack/wikis/uploads/57be0de25f7bd55dd4a59d1cc3106885/notrackmain.png)
+   
+### Analytics
+NoTrack analytics will monitor your traffic and provide an Alert when any of your devices attempt to access known malware sites, as well as for sites suspected of being related to tracking, but have not yet been blocked.   
+You have the option of Investigating the traffic further, Whitelisting, or Blacklisting the site. Once completed you can Resolve or Delete the alert.   
+  
+Analytics runs on your system locally. None of your data is ever transmitted.   
+![notrackanalytics](https://gitlab.com/quidsup/notrack/wikis/uploads/c1b4372a5619e8dca800176482ee9276/notrackanalytics.png)   
