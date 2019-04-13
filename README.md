@@ -32,4 +32,6 @@ NoTrack analytics will monitor your traffic and provide an Alert when any of you
 You have the option of Investigating the traffic further, Whitelisting, or Blacklisting the site. Once completed you can Resolve or Delete the alert.   
   
 Analytics runs on your system locally. None of your data is ever transmitted.   
-![notrackanalytics](https://gitlab.com/quidsup/notrack/wikis/uploads/c1b4372a5619e8dca800176482ee9276/notrackanalytics.png)   
+![notrackanalytics](https://gitlab.com/quidsup/notrack/wikis/uploads/c1b4372a5619e8dca800176482ee9276/notrackanalytics.png)
+
+More features in the [NoTrack Wiki](https://gitlab.com/quidsup/notrack/wikis/Features)
