@@ -232,7 +232,7 @@ function show_analytics() {
       }
     }
 
-    $queryurl = './queries.php?groupby=time&amp;sysip='.$sys.'&amp;datetime='.$log_time;
+    $queryurl = './queries.php?groupby=time&amp;sort=ASC&amp;sysip='.$sys.'&amp;datetime='.$log_time;
 
     echo '<tr'.$row_colour.'><td><img src="./svg/events/'.$event.$severity.'.svg" alt=""></td><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
     echo '<td class="pointer" onclick="window.open(\''.$queryurl.'\')">'.$issue.'</td><td>'.$sys.'</td><td>'.simplified_time($log_time).'</td><td>'.$action.'</td></tr>'.PHP_EOL;
