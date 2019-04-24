@@ -41,9 +41,9 @@ function delete_tables() {
   echo "Deleting MariaDB tables"
 mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" << EOF
 DROP TABLE IF EXISTS blocklist, dnslog, weblog, config, users, whois, analytics;
-DROP DATABASE ntrkdb;
 EOF
 
+  #DROP DATABASE ntrkdb;
 }
 
 #######################################
