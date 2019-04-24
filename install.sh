@@ -772,11 +772,11 @@ setup_lighttpd() {
   
   #Fix for lighty 1.4.53 changing create-mime.assign and create-mime.conf
   if [ -e "/usr/share/lighttpd/create-mime.assign.pl" ]; then
-    sudo sed -i 's/##include_shell "/usr/share/lighttpd/create-mime.assign.pl"/include_shell "/usr/share/lighttpd/create-mime.assign.pl"/' /etc/lighttpd/lighttpd.conf
+    sudo sed -i 's!##include_shell "/usr/share/lighttpd/create-mime.assign.pl"!include_shell "/usr/share/lighttpd/create-mime.assign.pl"!' /etc/lighttpd/lighttpd.conf
   fi
   
   if [ -e "/usr/share/lighttpd/create-mime.conf.pl" ]; then
-    sudo sed -i 's/##include_shell "/usr/share/lighttpd/create-mime.conf.pl"/include_shell "/usr/share/lighttpd/create-mime.conf.pl"/' /etc/lighttpd/lighttpd.conf
+    sudo sed -i 's!##include_shell "/usr/share/lighttpd/create-mime.conf.pl"!include_shell "/usr/share/lighttpd/create-mime.conf.pl"!' /etc/lighttpd/lighttpd.conf
   fi
     
   create_folder "/var/www"                                 #/var/www/html should be created by lighty
