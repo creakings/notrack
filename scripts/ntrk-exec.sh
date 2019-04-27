@@ -231,7 +231,7 @@ function addvalue() {
   fi
   
   echo "'$1','$2','$3','$enabled'"
-  mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "INSERT INTO config (config_id, config_type, option_name, option_value, option_enabled) VALUES ('NULL', '$1', '$2', '$3', '$enabled');"
+  mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "INSERT INTO config (config_id, config_type, option_name, option_value, option_enabled) VALUES (NULL, '$1', '$2', '$3', '$enabled');"
 }
 
 

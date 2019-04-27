@@ -331,7 +331,7 @@ function process_dnslog() {
           simplify_url "$url"                              #Simplify with commonsites
 
           if [[ $simpleurl != "" ]]; then                  #Add row into SQL Table
-            echo "INSERT INTO dnslog (id,log_time,sys,dns_request,dns_result) VALUES ('null','${querylist[$url]}', '${systemlist[$url]}', '$simpleurl', '$dns_result')" | mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME"
+            echo "INSERT INTO dnslog (id,log_time,sys,dns_request,dns_result) VALUES (NULL,'${querylist[$url]}', '${systemlist[$url]}', '$simpleurl', '$dns_result')" | mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME"
           fi
 
           unset querylist[$url]                            #Delete value from querylist
@@ -394,7 +394,7 @@ function process_weblog() {
       user_agent="${BASH_REMATCH[6]}"
       remote_host="${BASH_REMATCH[7]}"
       if [[ ! $uri_path =~ ^(\/admin|\/favicon\.ico) ]]; then  #Negate admin access
-        mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "INSERT INTO weblog (id,log_time,site,http_method,uri_path,referrer,user_agent,remote_host) VALUES ('NULL',FROM_UNIXTIME('$log_time'), '$site', '$http_method', '$uri_path', '$referrer', '$user_agent', '$remote_host')"
+        mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "INSERT INTO weblog (id,log_time,site,http_method,uri_path,referrer,user_agent,remote_host) VALUES (NULL,FROM_UNIXTIME('$log_time'), '$site', '$http_method', '$uri_path', '$referrer', '$user_agent', '$remote_host')"
       fi
     fi
   done

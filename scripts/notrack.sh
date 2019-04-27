@@ -712,7 +712,7 @@ function process_custom_blocklist() {
 function insert_data() {
   printf "%s\n" "${sql_list[@]}" > "/tmp/$1.csv"           #Output arrays to file
 
-  mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "LOAD DATA INFILE '/tmp/$1.csv' INTO TABLE blocklist FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\n' (@var1, @var2, @var3) SET id='NULL', bl_source = '$1', site = @var1, site_status=@var2, comment=@var3;"
+  mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "LOAD DATA INFILE '/tmp/$1.csv' INTO TABLE blocklist FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\n' (@var1, @var2, @var3) SET id=NULL, bl_source = '$1', site = @var1, site_status=@var2, comment=@var3;"
   delete_file "/tmp/$1.csv"
 
   sql_list=()                                              #Zero SQL Array

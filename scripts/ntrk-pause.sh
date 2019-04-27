@@ -6,8 +6,6 @@
 #Last updated with notrack 0.8.9
 #Usage : ntrk-pause [--pause | --stop | --start | --status]
 
-#Move file to /scripts at 0.8.5 TODO
-
 #######################################
 # Constants
 #######################################
