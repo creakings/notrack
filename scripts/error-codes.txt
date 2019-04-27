@@ -15,7 +15,7 @@
 21. ntrk-upgrade requires Root access
 22. Unable to find NoTrack folder
 23. Download of NoTrack has failed
-24. unused
+24. File missing
 25. Script File missing
 26. unused
 27. unused
