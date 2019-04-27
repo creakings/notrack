@@ -930,8 +930,10 @@ function setup_notrack() {
 #######################################
 function disable_systemd_dns() {
   if [ "$(command -v systemctl)" ]; then
-    echo "Disabling systemd-resolved stub listener"
-    echo "DNSStubListener=no" | sudo tee -a /etc/systemd/resolved.conf
+    echo "If you are seeing errors with dnsmasq restarting try the following"
+    echo "echo DNSStubListener=no | sudo tee -a /etc/systemd/resolved.conf"
+    echo "sudo systemctl restart systemd-resolved.service"
+    echo "sudo systemctl restart dnsmasq.service"
     echo
   fi
 }
