@@ -919,7 +919,6 @@ function setup_notrack() {
 #######################################
 # disable_systemd_dns
 #   Avoid conflict from systemd-resolved dns service
-#   alternate option add DNSStubListener=no to /etc/systemd/resolved.conf
 #
 # Globals:
 #   None
@@ -931,8 +930,8 @@ function setup_notrack() {
 #######################################
 function disable_systemd_dns() {
   if [ "$(command -v systemctl)" ]; then
-    echo "Disabling systemd-resolved"
-    sudo systemctl disable systemd-resolved
+    echo "Disabling systemd-resolved stub listener"
+    echo "DNSStubListener=no" | sudo tee -a /etc/systemd/resolved.conf
     echo
   fi
 }
