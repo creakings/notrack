@@ -916,6 +916,30 @@ function setup_notrack() {
 }
 
 
+#######################################
+# disable_systemd_dns
+#   Avoid conflict from systemd-resolved dns service
+#   alternate option add DNSStubListener=no to /etc/systemd/resolved.conf
+#
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#
+#######################################
+function disable_systemd_dns() {
+  if [ "$(command -v systemctl)" ]; then
+    echo "Disabling systemd-resolved"
+    sudo systemctl disable systemd-resolved
+    echo
+  fi
+}
+
+
+
+
 
 #FirewallD-----------------------------------------------------------
 setup_firewalld() {
@@ -1189,7 +1213,7 @@ get_ip_address() {
     echo "Reading IPv4 Address from $2"
     IP_ADDRESS=$(ip addr list "$2" |grep "inet " |cut -d' ' -f6|cut -d/ -f1)
     
-  elif [[ $1 == $IP_V6 ]]; then
+  elif [[ $1 == "$IP_V6" ]]; then
     echo "Reading IPv6 Address from $2"
     IP_ADDRESS=$(ip addr list "$2" |grep "inet6 " |cut -d' ' -f6|cut -d/ -f1)    
   else
@@ -1688,6 +1712,7 @@ if [ "$(command -v firewall-cmd)" ]; then        #Check FirewallD exists
   setup_firewalld
 fi
 
+disable_systemd_dns
 service_restart dnsmasq
 service_restart lighttpd
 
