@@ -359,6 +359,7 @@ function trafficgraph() {
 
 //Main---------------------------------------------------------------
 echo '<div id="main">';
+
 echo '<div class="home-nav-container">';
 
 home_status();
@@ -370,7 +371,27 @@ home_network();
 trafficgraph();
 
 echo '</div>'.PHP_EOL;
+echo '<div class="sys-group">'.PHP_EOL;
+echo '<h5>NoTrack v0.9 is available</h5>'.PHP_EOL;
+echo '<p>There is quite a significant change in how logs are stored between NoTrack v0.8.x and NoTrack v0.9, so unfortunately there is no simple upgrade path. It will also mean that you’ll be unable to view any of your historic DNS log records.</p><p>An uninstall and reinstall of NoTrack is required in order to use version 0.9.</p>';
+echo '<p><b>Instructions:</b></p>';
+echo '<ul>'.PHP_EOL;
+echo '<li>Uninstall NoTrack v0.8.11</li>'.PHP_EOL;
+echo '<ul>'.PHP_EOL;
+echo '<li><code>sudo bash /opt/notrack/uninstall.sh</code></li>'.PHP_EOL;
+echo '<li>or <code>sudo bash ~/notrack/uninstall.sh</code></li>'.PHP_EOL;
+echo '</ul>'.PHP_EOL;
+echo '</ul>'.PHP_EOL;
+echo '<br>';
+echo '<ul>'.PHP_EOL;
+echo '<li>Install NoTrack v0.9</li>'.PHP_EOL;
+echo '<ul>'.PHP_EOL;
+echo '<li><code>wget https://gitlab.com/quidsup/notrack/raw/master/install.sh</code></li>'.PHP_EOL;
+echo '<li><code>bash install.sh</code></li>'.PHP_EOL;
+echo '</ul>'.PHP_EOL;
+echo '</ul>'.PHP_EOL;
 
+echo '</div>'.PHP_EOL;
 $db->close();
 ?>
 </div>

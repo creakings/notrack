@@ -68,7 +68,7 @@ Config[bl_yhosts]=0                              #China yhosts
 #######################################
 # Constants
 #######################################
-readonly VERSION="0.8.10"
+readonly VERSION="0.8.11"
 readonly MAIN_BLOCKLIST="/etc/dnsmasq.d/notrack.list"
 readonly FILE_BLACKLIST="/etc/notrack/blacklist.txt"
 readonly FILE_WHITELIST="/etc/notrack/whitelist.txt"

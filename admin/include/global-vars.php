@@ -6,7 +6,7 @@ define('STATUS_INCOGNITO', 8);
 define('STATUS_NOTRACKRUNNING', 64);
 define('STATUS_ERROR', 128);
 
-define('VERSION', '0.8.10');
+define('VERSION', '0.8.11');
 define('SERVERNAME', 'localhost');
 define('USERNAME', 'ntrk');
 define('PASSWORD', 'ntrkpass');
