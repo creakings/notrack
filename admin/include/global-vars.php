@@ -177,7 +177,7 @@ $WHOISLIST = array(
 
 
 if (!extension_loaded('memcache')) {
-  die('NoTrack requires memcached and php-memcache to be installed');
+  die('NoTrack requires memcached, php-memcache and php-memcached to be installed');
 }
 
 $mem = new Memcache;                             //Initiate Memcache
