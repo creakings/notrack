@@ -679,6 +679,44 @@ function install_xbps() {
 
 
 
+#######################################
+# check_systemd_dnsmasq
+#   Attempt to resolve any issues with systemd-resolved dns service conflicting with dnsmasq
+#
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   0. Success
+#
+#######################################
+function check_systemd_dnsmasq() {
+  if [ "$(command -v systemctl)" ]; then
+    if (systemctl -q is-active dnsmasq.service); then
+      echo "Dnsmasq successfully restarted"
+      return 0
+    fi
+    echo
+    echo "WARNING: Dnsmasq has failed to restart. This could be due to a conflict with systemd-resolved service running a stub dns server on port 53."
+    echo "This issue is known to affect Ubuntu 19.04"
+    echo
+    echo "I can fix the issue by adding DNSStubListener=no to /etc/systemd/resolved.conf"
+    
+    read -p "Do you want me to edit resolved.conf(Y/n)? " -n 1 -r
+    echo
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      echo "DNSStubListener=no" | sudo tee -a /etc/systemd/resolved.conf &> /dev/null
+      sudo systemctl restart systemd-resolved.service
+      sudo systemctl restart dnsmasq.service
+    else
+      return 1      
+    fi
+  fi
+}
+
+
 
 #--------------------------------------------------------------------
 # Setup Dnsmasq
@@ -716,7 +754,9 @@ function setup_dnsmasq() {
   echo "Writing first entry for this system: $IP_ADDRESS - $hostname"
   echo -e "$IP_ADDRESS\t$hostname" | sudo tee -a /etc/localhosts.list 
 
-
+  service_restart dnsmasq
+  check_systemd_dnsmasq
+  
   echo "Setup of Dnsmasq complete"
   echo "========================================================="
   echo
@@ -914,32 +954,6 @@ function setup_notrack() {
   echo
   sleep 3s
 }
-
-
-#######################################
-# disable_systemd_dns
-#   Avoid conflict from systemd-resolved dns service
-#
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#
-#######################################
-function disable_systemd_dns() {
-  if [ "$(command -v systemctl)" ]; then
-    echo "If you are seeing errors with dnsmasq restarting try the following"
-    echo "echo DNSStubListener=no | sudo tee -a /etc/systemd/resolved.conf"
-    echo "sudo systemctl restart systemd-resolved.service"
-    echo "sudo systemctl restart dnsmasq.service"
-    echo
-  fi
-}
-
-
-
 
 
 #FirewallD-----------------------------------------------------------
@@ -1713,8 +1727,6 @@ if [ "$(command -v firewall-cmd)" ]; then        #Check FirewallD exists
   setup_firewalld
 fi
 
-disable_systemd_dns
-service_restart dnsmasq
 service_restart lighttpd
 
 echo "========================================================="
