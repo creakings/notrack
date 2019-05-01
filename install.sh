@@ -818,6 +818,20 @@ setup_lighttpd() {
   if [ -e "/usr/share/lighttpd/create-mime.conf.pl" ]; then
     sudo sed -i 's!##include_shell "/usr/share/lighttpd/create-mime.conf.pl"!include_shell "/usr/share/lighttpd/create-mime.conf.pl"!' /etc/lighttpd/lighttpd.conf
   fi
+  
+  #Fix for lighty 1.4.53 moving from include-conf-enabled.pl to /etc/lighttpd/conf-enabled/*.conf
+  if [ -e "/usr/share/lighttpd/include-conf-enabled.pl" ]; then
+    if grep --quiet deprecated /usr/share/lighttpd/include-conf-enabled.pl; then
+      #Deprecated exists in include-conf-enabled.pl, so use new method
+      sudo sed -i 's!##include "/etc/lighttpd/conf-enabled/*.conf"!include "/etc/lighttpd/conf-enabled/*.conf"!' /etc/lighttpd/lighttpd.conf
+    else
+      #Deprecated doesn't exist, so fo with old method
+      sudo sed -i 's!##include_shell "/usr/share/lighttpd/include-conf-enabled.pl"!include_shell "/usr/share/lighttpd/include-conf-enabled.pl"!' /etc/lighttpd/lighttpd.conf
+    fi
+  else
+    sudo sed -i 's!##include "/etc/lighttpd/conf-enabled/*.conf"!include "/etc/lighttpd/conf-enabled/*.conf"!' /etc/lighttpd/lighttpd.conf
+  fi
+  
     
   create_folder "/var/www"                                 #/var/www/html should be created by lighty
   create_folder "/var/www/html"
