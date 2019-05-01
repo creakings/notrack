@@ -1,13 +1,15 @@
-v0.9.0 Development
+v0.9.0 Released 28 Apr 2019
+Development moved to GitLab
+
 New Live feature
 New Alerts feature
 DNS Logs now stored in one table
 New search capabilities on DNS Queries page
 Improved user-agent recognition on Sites Blocked page #227
-Added ability to configure DHCP via Admin GUI
-No need to add /admin URL when accessing the Admin GUI #270
+No need to add /admin when accessing the Admin GUI #270 via web browser
+Added ability to configure DHCP via Admin GUI. Browser address: notrack.server/dhcp
 Improved mobile view
 New bulk uploader for custom blocklist
 Wider range of custom blocklists can be added
+New layout for Top Level Domain admin page
 *************************************************
-
