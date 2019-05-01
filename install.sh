@@ -812,23 +812,29 @@ setup_lighttpd() {
   
   #Fix for lighty 1.4.53 changing create-mime.assign and create-mime.conf
   if [ -e "/usr/share/lighttpd/create-mime.assign.pl" ]; then
+    echo "Found create-mime.assign.pl, editing lighttpd.conf"
     sudo sed -i 's!##include_shell "/usr/share/lighttpd/create-mime.assign.pl"!include_shell "/usr/share/lighttpd/create-mime.assign.pl"!' /etc/lighttpd/lighttpd.conf
   fi
   
   if [ -e "/usr/share/lighttpd/create-mime.conf.pl" ]; then
+    echo "Found create-mime.conf.pl, editing lighttpd.conf"
     sudo sed -i 's!##include_shell "/usr/share/lighttpd/create-mime.conf.pl"!include_shell "/usr/share/lighttpd/create-mime.conf.pl"!' /etc/lighttpd/lighttpd.conf
   fi
   
   #Fix for lighty 1.4.53 moving from include-conf-enabled.pl to /etc/lighttpd/conf-enabled/*.conf
   if [ -e "/usr/share/lighttpd/include-conf-enabled.pl" ]; then
+    echo "Found include-conf-enabled.pl"
     if grep --quiet deprecated /usr/share/lighttpd/include-conf-enabled.pl; then
+      echo "deprecated version of include-conf-enabled.pl, using newer config setting"
       #Deprecated exists in include-conf-enabled.pl, so use new method
-      sudo sed -i 's!##include "/etc/lighttpd/conf-enabled/*.conf"!include "/etc/lighttpd/conf-enabled/*.conf"!' /etc/lighttpd/lighttpd.conf
+      sudo sed -i 's!##include "/etc/lighttpd/conf-enabled/\*.conf"!include "/etc/lighttpd/conf-enabled/*.conf"!' /etc/lighttpd/lighttpd.conf
     else
-      #Deprecated doesn't exist, so fo with old method
+      #Deprecated doesn't exist, so go with old method
+      echo "legacy version of include-conf-enabled.pl, using older config setting"
       sudo sed -i 's!##include_shell "/usr/share/lighttpd/include-conf-enabled.pl"!include_shell "/usr/share/lighttpd/include-conf-enabled.pl"!' /etc/lighttpd/lighttpd.conf
     fi
   else
+    echo "Unable to find include-conf-enabled.pl, assuming newer config setting"
     sudo sed -i 's!##include "/etc/lighttpd/conf-enabled/*.conf"!include "/etc/lighttpd/conf-enabled/*.conf"!' /etc/lighttpd/lighttpd.conf
   fi
   
