@@ -79,7 +79,7 @@ function drawTable() {
     row.insertCell(1);
     row.insertCell(2);
     row.insertCell(3);
-    liveTable.rows[i].cells[0].innerHTML = '&nbsp;';
+    liveTable.rows[i].cells[0].innerHTML = '<img src="./svg/events/blank.svg" alt="">';
   }
 }
 /********************************************************************
@@ -200,8 +200,8 @@ function clearQueue() {
 
   //Remove all values from the table
   for (let i = 0; i < MAX_LINES - 1; i++) {
-    liveTable.rows[i].className = '';
-    liveTable.rows[i].cells[0].innerHTML = '&nbsp;';
+    //liveTable.rows[i].className = '';
+    liveTable.rows[i].cells[0].innerHTML = '<img src="./svg/events/blank.svg" alt="">';
     liveTable.rows[i].cells[1].innerHTML = '&nbsp;';
     liveTable.rows[i].cells[2].innerHTML = '&nbsp;';
     liveTable.rows[i].cells[3].innerHTML = '&nbsp;';
@@ -332,24 +332,21 @@ function displayRequests() {
 
   for (let i = queuesize - 1; i > 0; i--) {                //Start with latest first
     if (requestReady[i][3] == 'A') {
-      liveTable.rows[currentRow].className = '';
-      liveTable.rows[currentRow].cells[2].innerHTML = 'Ok (Forwarded)';
+//      liveTable.rows[currentRow].className = '';
+      liveTable.rows[currentRow].cells[0].innerHTML = '<img src="./svg/events/allowed1.svg" alt="" title="Ok (Forwarded)">';
     }
     else if (requestReady[i][3] == 'B') {
-      liveTable.rows[currentRow].className = 'blocked';
-      liveTable.rows[currentRow].cells[2].innerHTML = 'Blocked';
+      liveTable.rows[currentRow].cells[0].innerHTML = '<img src="./svg/events/invalid2.svg" alt="" title="Blocked">'; //TODO need actual reason
     }
     else if (requestReady[i][3] == 'C') {
-      liveTable.rows[currentRow].className = '';
-      liveTable.rows[currentRow].cells[2].innerHTML = 'Ok (Cached)';
+      liveTable.rows[currentRow].cells[0].innerHTML = '<img src="./svg/events/cached1.svg" alt="" title="Ok (Cached)">';
     }
     else if (requestReady[i][3] == 'L') {
-      liveTable.rows[currentRow].className = 'local';
-      liveTable.rows[currentRow].cells[2].innerHTML = 'Local';
+      liveTable.rows[currentRow].cells[0].innerHTML = '<img src="./svg/events/local1.svg" alt="" title="Local">';
     }
 
-    liveTable.rows[currentRow].cells[0].innerHTML = getTime(requestReady[i][0]);
-    liveTable.rows[currentRow].cells[1].innerHTML = simplifyDomain(requestReady[i][1]);
+    liveTable.rows[currentRow].cells[1].innerHTML = getTime(requestReady[i][0]);
+    liveTable.rows[currentRow].cells[2].innerHTML = simplifyDomain(requestReady[i][1]);
     liveTable.rows[currentRow].cells[3].innerHTML = requestReady[i][2];
     currentRow++;
   }
@@ -406,7 +403,7 @@ setInterval(function() {
   }
   throttleApiRequest++
 
-}, 1800);
+}, 2000);
 
 
 </script>
