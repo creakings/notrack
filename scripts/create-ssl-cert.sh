@@ -142,5 +142,5 @@ if [ -z "$(pgrep lighttpd)" ]; then                #Check if lighttpd restart ha
   fi
 fi
 
-echo "SSL Certificate has been installed and Lighttpd has sucessfully restarted"
+echo "SSL Certificate has been installed and Lighttpd has successfully restarted"
 #echo "Install the $HOSTNAME-cert.p12 certificate into your web browser"
