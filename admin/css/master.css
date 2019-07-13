@@ -479,24 +479,33 @@ span.key-green {
 }
 
 
-/* Live Table on live.pph
+/* Live Table on live.php
    ========================================================================== */
 #livetable td:nth-child(1) {
   width: 2.1rem;
   text-align: center;
 }
 #livetable td:nth-child(2) {
-  width: 16%;
+  width: 15%;
   text-align: center;
 }
 #livetable td:nth-child(3) {
-  width: 59%;
+  width: 50%;
 }
 #livetable td:nth-child(4) {
-  width: 15%;
+  width: 20%;
+}
+#livetable td:nth-child(5) {
+  width: 2rem;
 }
 #livetable img {
   width: 2.0rem;
+}
+/*Hide popup menu on mobile display*/
+@media only screen and (max-width:480px), only screen and (max-device-width:480px) {
+  #livetable td:nth-child(5) {
+    display: none;
+  }
 }
 
 

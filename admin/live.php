@@ -7,9 +7,7 @@
 //5a. Key to requestBuffer is time+dnsquery in order to track progress of DNS_LOG
 //5b. timePoint is also used to track progress
 //6. Move requestBuffer to requestReady on a number in a limited number of items based on size of requestBuffer
-//7. displayRequests shows contents of requestReady in table with cells coloured depending on if
-//   DNS request is allowed / blocked / local
-
+//7. displayRequests shows contents of requestReady with event images showing the result of the request (forwarded / cached / blocked / local)
 
 require('./include/global-vars.php');
 require('./include/global-functions.php');
@@ -26,7 +24,6 @@ ensure_active_session();
   <meta charset="UTF-8">
   <link href="./css/master.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="./favicon.png">
-  <script src="./include/config.js"></script>
   <script src="./include/menu.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=0.8">
   <title>NoTrack - Live</title>
@@ -39,8 +36,8 @@ draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;
 echo '<div id="menu-lower">'.PHP_EOL;
 echo '<input type="text" id="ipaddressbox" value="" placeholder="192.168.0.1">';
-echo '<img src="./svg/lmenu_pause.svg" id="pausequeueimg" class="pointer" onclick="pauseQueue()">';
-echo '<img src="./svg/lmenu_clear.svg" id="clearqueueimg" class="pointer" onclick="clearQueue()">';
+echo '<img src="./svg/lmenu_pause.svg" id="pausequeueimg" class="pointer" onclick="pauseQueue()" alt="">';
+echo '<img src="./svg/lmenu_clear.svg" id="clearqueueimg" class="pointer" onclick="clearQueue()" alt="">';
 echo '</div>'.PHP_EOL;
 
 echo '<div class="sys-group">'.PHP_EOL;
@@ -48,10 +45,29 @@ echo '<table id="livetable">'.PHP_EOL;
 echo '</table>'.PHP_EOL;
 echo '</div>'.PHP_EOL;
 echo '</div>'.PHP_EOL;
+
 ?>
+<form name="customBlockForm" id="customBlockForm" method="POST" target="_blank" action="./config/customblocklist.php">
+<input type="hidden" name="v" value="" id="viewItem">
+<input type="hidden" name="action" value="" id="actionItem">
+<input type="hidden" name="site" value="" id="domainItem">
+<input type="hidden" name="comment" value="" id="commentItem">
+<input type="hidden" name="status" value="add" id="statusItem">
+</form>
 
 <script>
-
+<?php
+echo 'const SEARCH = "'.$Config['Search'].'";'.PHP_EOL;
+echo 'const SEARCHURL = "'.$Config['SearchUrl'].'";'.PHP_EOL;
+if ($Config['whoisapi'] == '') {                           //Setup Investigate / Whois for popupmenu
+  echo 'const INVESTIGATE = "'.$Config['WhoIs'].'";'.PHP_EOL;
+  echo 'const INVESTIGATEURL = "'.$Config['WhoIsUrl'].'";'.PHP_EOL;
+}
+else {
+  echo 'const INVESTIGATE = "Investigate";'.PHP_EOL;
+  echo 'const INVESTIGATEURL = "./investigate.php?site=";'.PHP_EOL;
+}
+?>
 const MAX_LINES = 27;
 var paused = false;
 var throttleApiRequest = 0;                                //Int used to reduce number of requests for DNS_LOG to be read
@@ -63,6 +79,8 @@ drawTable();
 loadApi();
 moveBuffer();
 displayRequests();
+
+
 /********************************************************************
  *  Draw Table
  *
@@ -79,9 +97,12 @@ function drawTable() {
     row.insertCell(1);
     row.insertCell(2);
     row.insertCell(3);
+    row.insertCell(4);
     liveTable.rows[i].cells[0].innerHTML = '<img src="./svg/events/blank.svg" alt="">';
   }
 }
+
+
 /********************************************************************
  *  Get Time
  *    Return formatted time: hh:mm:ss
@@ -99,6 +120,7 @@ function getTime(t)
   return hr+ ':' + m.substr(-2) + ':' + s.substr(-2);
 }
 
+
 /********************************************************************
  *  Valid IP
  *    Regex to check for Valid IPv4 or IPv6
@@ -111,6 +133,7 @@ function getTime(t)
 function validIP(str) {
   return /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?$/.test(str);
 }
+
 
 /********************************************************************
  *  Move requestBuffer to requestReady
@@ -205,6 +228,7 @@ function clearQueue() {
     liveTable.rows[i].cells[1].innerHTML = '&nbsp;';
     liveTable.rows[i].cells[2].innerHTML = '&nbsp;';
     liveTable.rows[i].cells[3].innerHTML = '&nbsp;';
+    liveTable.rows[i].cells[4].innerHTML = '&nbsp;';
   }
 }
 
@@ -316,6 +340,35 @@ function simplifyDomain(site) {
 
 
 /********************************************************************
+ *  Popup Menu
+ *    HTML Code for popup menu using dropdown-container
+ *    Paused should be activated when using the popup menu, this is done using onmouseover / onmouseout
+ *
+ *  Params:
+ *    domian, blocked status
+ *  Return:
+ *    HTML code for popup menu
+ */
+function popupMenu(domain, blocked) {
+  let str = '<div class="dropdown-container" onmouseover="pauseQueue()" onmouseout="pauseQueue()"><span class="dropbtn"></span><div class="dropdown">';
+
+  if ((blocked == 'A') || (blocked == 'C')) {               //Allowed or Cached domains can be added to Black list
+    str += '<span onclick="submitCustomBlock(\''+domain+'\', \'black\')">Block</span>';
+  }
+  else if (blocked == 'B') {                               //Blocked domains can be added to White list
+    str += '<span onclick="submitCustomBlock(\''+domain+'\', \'white\')">Allow</span>';
+  }
+
+  str += '<a href="'+INVESTIGATEURL+domain+'" target="_blank">'+INVESTIGATE+'</a>';
+  str += '<a href="'+SEARCHURL+domain+'" target="_blank">'+SEARCH+'</a>';
+  str += '<a href="https://www.virustotal.com/en/domain/'+domain+'/information/" target="_blank">VirusTotal</a>';
+  str += '</div></div>';                                   //End dropdown-container
+
+  return str;
+}
+
+
+/********************************************************************
  *  Display Queue
  *    Show the results from requestReady array in livetable
  *    Array is displayed from end-to-start (latest-to-earliest)
@@ -328,11 +381,14 @@ function simplifyDomain(site) {
 function displayRequests() {
   let queuesize = requestReady.length;
   let liveTable = document.getElementById('livetable');
+  let domain = '';
   let currentRow = 0;
 
+  if (paused) return;
+
   for (let i = queuesize - 1; i > 0; i--) {                //Start with latest first
+    domain = simplifyDomain(requestReady[i][1]);
     if (requestReady[i][3] == 'A') {
-//      liveTable.rows[currentRow].className = '';
       liveTable.rows[currentRow].cells[0].innerHTML = '<img src="./svg/events/allowed1.svg" alt="" title="Ok (Forwarded)">';
     }
     else if (requestReady[i][3] == 'B') {
@@ -346,12 +402,30 @@ function displayRequests() {
     }
 
     liveTable.rows[currentRow].cells[1].innerHTML = getTime(requestReady[i][0]);
-    liveTable.rows[currentRow].cells[2].innerHTML = simplifyDomain(requestReady[i][1]);
+    liveTable.rows[currentRow].cells[2].innerHTML = domain
     liveTable.rows[currentRow].cells[3].innerHTML = requestReady[i][2];
+    liveTable.rows[currentRow].cells[4].innerHTML = popupMenu(domain, requestReady[i][3]);
     currentRow++;
   }
 }
 
+
+/********************************************************************
+ *  Submit Custom Block Form
+ *    Fill out hidden items in customBlockForm
+ *    Submit the form
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function submitCustomBlock(domain, action) {
+  document.getElementById('domainItem').value = domain;
+  document.getElementById('actionItem').value = action;
+  document.getElementById('viewItem').value = action;
+  document.getElementById('customBlockForm').submit();
+}
 
 /********************************************************************
  *  Load API
