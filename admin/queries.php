@@ -57,6 +57,7 @@ $page = 1;
 $filter = DEF_FILTER;
 $datetime = '';
 $groupby = 'name';
+$dtrange = 0;
 $searchbox = '';
 $searchtime = '1 DAY';
 $sort = 'DESC';
@@ -204,7 +205,7 @@ function get_ipsearch($ipsearch) {
  *    None
  */
 function draw_filterbox() {
-  global $sysiplist, $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby;
+  global $sysiplist, $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby, $datetime, $dtrange;
   global $FILTERLIST, $TIMELIST;
 
   $line = '';
@@ -215,6 +216,12 @@ function draw_filterbox() {
   echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
   echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
   echo '<input type="hidden" name="groupby" value="'.$groupby.'">'.PHP_EOL;
+  if ($datetime != '') {
+    echo '<input type="hidden" name="datetime" value="'.$datetime.'">'.PHP_EOL;
+  }
+  if ($dtrange != 0) {
+    echo '<input type="hidden" name="dtrange" value="'.$dtrange.'">'.PHP_EOL;
+  }
 
   echo '<div><input type="text" name="searchbox" id="filtersearch" value="'.$searchbox.'" placeholder="site.com"></div>'.PHP_EOL;
 
@@ -260,7 +267,7 @@ function draw_filterbox() {
  *    None
  */
 function draw_groupby() {
-  global $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby;
+  global $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby, $datetime, $dtrange;
 
   $domainactive = '';
   $timeactive = '';
@@ -272,7 +279,15 @@ function draw_groupby() {
   echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
   echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
   echo '<input type="hidden" name="searchbox" value="'.$searchbox.'">'.PHP_EOL;
-  echo '<input type="hidden" name="searchtime" value="'.$searchtime.'">'.PHP_EOL;
+  if ($datetime != '') {
+    echo '<input type="hidden" name="datetime" value="'.$datetime.'">'.PHP_EOL;
+  }
+  else {
+    echo '<input type="hidden" name="searchtime" value="'.$searchtime.'">'.PHP_EOL;
+  }
+  if ($dtrange > 0) {
+    echo '<input type="hidden" name="dtrange" value="'.$dtrange.'">'.PHP_EOL;
+  }
   echo '<input type="hidden" name="sys" value="'.$sysip.'">'.PHP_EOL;
   echo '<input type="hidden" name="filter" value="'.$filter.'">'.PHP_EOL;
   echo '<div id="groupby-container">'.PHP_EOL;
@@ -291,10 +306,14 @@ function draw_groupby() {
  *    SQL Query string
  */
 function add_filterstr() {
-  global $datetime, $searchbox, $searchtime, $filter, $sysip;
+  global $datetime, $dtrange, $searchbox, $searchtime, $filter, $sysip;
 
-  if ($datetime != '') {
+  if (($datetime != '') && ($dtrange == 0)) {
     $searchstr = " WHERE log_time > SUBTIME('$datetime', '00:01:00') AND log_time < ADDTIME('$datetime', '00:03:00')"; //ORDER BY UNIX_TIMESTAMP(log_time)
+  }
+  elseif (($datetime != '') && ($dtrange > 0)) {
+    $datetimerange = $dtrange * 60;
+    $searchstr = " WHERE log_time > SUBTIME('$datetime', '00:00:01') AND log_time < ADDTIME('$datetime', $datetimerange)"; //ORDER BY UNIX_TIMESTAMP(log_time)
   }
   else {
     $searchstr = " WHERE log_time >= DATE_SUB(NOW(), INTERVAL $searchtime) ";
@@ -664,6 +683,9 @@ if (isset($_GET['datetime'])) {
   if (preg_match(REGEX_DATETIME, $_GET['datetime'])) {
     $datetime = $_GET['datetime'];
   }
+}
+if (isset($_GET['dtrange'])) {
+  $dtrange = filter_integer($_GET['dtrange'], 0, 1440, 0); //1440 = 24 Hours in Minutes
 }
 
 draw_filterbox();                                          //Draw filters
