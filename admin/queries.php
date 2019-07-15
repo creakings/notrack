@@ -79,7 +79,6 @@ $TLDBlockList = array();
  *  Return:
  *    String of parameters
  */
-
 function buildlink() {
   global $datetime, $dtrange, $filter, $groupby, $searchbox, $searchtime, $sysip;
 
