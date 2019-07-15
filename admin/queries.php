@@ -56,8 +56,8 @@ $VIEWLIST = array('name', 'time');
 $page = 1;
 $filter = DEF_FILTER;
 $datetime = '';
-$groupby = 'name';
 $dtrange = 0;
+$groupby = 'name';
 $searchbox = '';
 $searchtime = '1 DAY';
 $sort = 'DESC';
@@ -67,6 +67,32 @@ $sysip = DEF_SYSTEM;
 *Arrays                                         *
 ************************************************/
 $TLDBlockList = array();
+
+
+/********************************************************************
+ *  Build Link Text
+ *    Returns a HTML link containing parameters used on the page
+ *    Used to create the links for sort and pagination
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    String of parameters
+ */
+
+function buildlink() {
+  global $datetime, $dtrange, $filter, $groupby, $searchbox, $searchtime, $sysip;
+
+  $link = "groupby=$groupby";
+
+  $link .= ($datetime != '') ? "&amp;datetime=".rawurlencode($datetime) : "&amp;searchtime=$searchtime";
+  $link .= ($dtrange > 0) ? "&amp;dtrange=$dtrange" : '';
+  $link .= ($filter != DEF_FILTER) ? "&amp;filter=$filter" : '';
+  $link .= ($sysip != DEF_SYSTEM) ? "&amp;sysip=$sysip" : '';
+  $link .= ($searchbox != '') ? "&amp;searchbox=$searchbox" : '';
+
+  return $link;
+}
 
 
 /********************************************************************
@@ -104,7 +130,7 @@ function cidr($cidr) {
  *    2. IPv4 / IPv6
  *
  *  Params:
- *    sysip GET paramater
+ *    sysip GET parameter
  *  Return:
  *    Trimmed input if valid
  *    Otherwise return DEF_SYSTEM
@@ -508,9 +534,8 @@ function show_group_view() {
   $domain = '';
   $site_cell = '';
 
-  $sortlink = "?page=$page&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby&amp;";
-
-  $paginationlink = "&amp;sort=$sort&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby";
+  $sortlink = "?page=$page&amp;".buildlink();
+  $paginationlink = buildlink()."&amp;sort=$sort";
 
   $query = "SELECT sys, dns_request, dns_result, COUNT(*) AS count FROM dnslog".add_filterstr()." GROUP BY dns_request ORDER BY count $sort";
 
@@ -541,7 +566,7 @@ function show_group_view() {
 
   echo '<table id="query-group-table">'.PHP_EOL;
 
-  echo '<tr><th>&nbsp;</th><th>#</th><th>Site</th><th>Action</th><th>Requests<a class="primarydark" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp;</th><th>#</th><th>Site</th><th>Action</th><th>Requests<a class="primarydark" href="'.$sortlink.'&amp;sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'&amp;sort=ASC">&#x25B4;</a></th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
     $domain = $row['dns_request'];
@@ -591,9 +616,8 @@ function show_time_view() {
   $domain = '';
   $site_cell = '';
 
-  $sortlink = "?page=$page&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby&amp;";
-
-  $paginationlink = "&amp;sort=$sort&amp;searchbox=$searchbox&amp;searchtime=$searchtime&amp;sys=$sysip&amp;filter=$filter&amp;groupby=$groupby";
+  $sortlink = "?page=$page&amp;".buildlink();
+  $paginationlink = buildlink()."&amp;sort=$sort";
 
   $query = "SELECT *, DATE_FORMAT(log_time, '%Y-%m-%d %H:%i:%s') AS formatted_time FROM dnslog ".add_filterstr(). " ORDER BY UNIX_TIMESTAMP(log_time) $sort";
 
@@ -623,7 +647,7 @@ function show_time_view() {
   draw_groupby();
 
   echo '<table id="query-time-table">'.PHP_EOL;
-  echo '<tr><th>&nbsp</th><th>Time<a class="primarydark" href="'.$sortlink.'sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'sort=ASC">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp</th><th>Time<a class="primarydark" href="'.$sortlink.'&amp;sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'&amp;sort=ASC">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
     $domain = $row['dns_request'];
