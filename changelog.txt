@@ -1,6 +1,8 @@
-v0.9.1 Development
-Modern style for Live page
+v0.9.1 Released 21 Jul 2019
+DNS Query Line charts are now clickable
+Modern styling for Live page
 Added Block / Investigate menu to Live page
+#283 - Fixed pagination on queries.php
 *************************************************
 
 v0.9.0 Released 28 Apr 2019
