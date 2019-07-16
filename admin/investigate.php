@@ -574,7 +574,7 @@ function count_queries() {
 
   $result->free();
 
-  linechart(array_values($allowed_arr), array_values($blocked_arr), $chart_labels, $link_labels, 'dtrange=1440&amp;searchbox='.$domain, 'Queries over past 30 days');   //Draw the line chart
+  linechart(array_values($allowed_arr), array_values($blocked_arr), $chart_labels, $link_labels, 'dtrange=24:00:00&amp;searchbox='.$domain, 'Queries over past 30 days');   //Draw the line chart
   return null;
 }
 

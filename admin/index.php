@@ -299,7 +299,7 @@ home_network();
 
 echo '</div>'.PHP_EOL;                                     //End home-nav-container
 if ($day_allowed + $day_blocked > 0) {
-  linechart($allowed_queries, $blocked_queries, $chart_labels, $link_labels, 'dtrange=60', 'DNS Queries over past 24 hours');
+  linechart($allowed_queries, $blocked_queries, $chart_labels, $link_labels, 'dtrange=1:00:00', 'DNS Queries over past 24 hours');
 }
 
 
