@@ -56,7 +56,7 @@ $VIEWLIST = array('name', 'time');
 $page = 1;
 $filter = DEF_FILTER;
 $datetime = '';
-$dtrange = 0;
+$dtrange = '';
 $groupby = 'name';
 $searchbox = '';
 $searchtime = '1 DAY';
@@ -85,7 +85,7 @@ function buildlink() {
   $link = "groupby=$groupby";
 
   $link .= ($datetime != '') ? "&amp;datetime=".rawurlencode($datetime) : "&amp;searchtime=$searchtime";
-  $link .= ($dtrange > 0) ? "&amp;dtrange=$dtrange" : '';
+  $link .= ($dtrange != '') ? "&amp;dtrange=$dtrange" : '';
   $link .= ($filter != DEF_FILTER) ? "&amp;filter=$filter" : '';
   $link .= ($sysip != DEF_SYSTEM) ? "&amp;sysip=$sysip" : '';
   $link .= ($searchbox != '') ? "&amp;searchbox=$searchbox" : '';
@@ -244,7 +244,7 @@ function draw_filterbox() {
   if ($datetime != '') {
     echo '<input type="hidden" name="datetime" value="'.$datetime.'">'.PHP_EOL;
   }
-  if ($dtrange != 0) {
+  if ($dtrange != '') {
     echo '<input type="hidden" name="dtrange" value="'.$dtrange.'">'.PHP_EOL;
   }
 
@@ -310,7 +310,7 @@ function draw_groupby() {
   else {
     echo '<input type="hidden" name="searchtime" value="'.$searchtime.'">'.PHP_EOL;
   }
-  if ($dtrange > 0) {
+  if ($dtrange != '') {
     echo '<input type="hidden" name="dtrange" value="'.$dtrange.'">'.PHP_EOL;
   }
   echo '<input type="hidden" name="sys" value="'.$sysip.'">'.PHP_EOL;
@@ -333,12 +333,11 @@ function draw_groupby() {
 function add_filterstr() {
   global $datetime, $dtrange, $searchbox, $searchtime, $filter, $sysip;
 
-  if (($datetime != '') && ($dtrange == 0)) {
-    $searchstr = " WHERE log_time > SUBTIME('$datetime', '00:01:00') AND log_time < ADDTIME('$datetime', '00:03:00')"; //ORDER BY UNIX_TIMESTAMP(log_time)
+  if (($datetime != '') && ($dtrange == '')) {             //No date-time range specified, use fixed -1m to +3m
+    $searchstr = " WHERE log_time > SUBTIME('$datetime', '00:01:00') AND log_time < ADDTIME('$datetime', '00:03:00')";
   }
-  elseif (($datetime != '') && ($dtrange > 0)) {
-    $datetimerange = $dtrange * 60;
-    $searchstr = " WHERE log_time > SUBTIME('$datetime', '00:00:01') AND log_time < ADDTIME('$datetime', $datetimerange)"; //ORDER BY UNIX_TIMESTAMP(log_time)
+  elseif (($datetime != '') && ($dtrange != '')) {         //Date-time range specified by user1
+    $searchstr = " WHERE log_time > '$datetime' AND log_time < ADDTIME('$datetime', '$dtrange')";
   }
   else {
     $searchstr = " WHERE log_time >= DATE_SUB(NOW(), INTERVAL $searchtime) ";
@@ -710,7 +709,10 @@ if (isset($_GET['datetime'])) {
   }
 }
 if (isset($_GET['dtrange'])) {
-  $dtrange = filter_integer($_GET['dtrange'], 0, 1441, 0); //1440 = 24 Hours in Minutes
+  if (preg_match('/^([0-1][0-9]:|2[0-4]:|[0-9]:)?([0-5]?[0-9]):([0-5][0-9])$/', $_GET['dtrange'])) {
+    $dtrange = $_GET['dtrange'];
+  }
+  //$dtrange = filter_integer($_GET['dtrange'], 0, 1441, 0); //1440 = 24 Hours in Minutes
 }
 
 draw_filterbox();                                          //Draw filters
