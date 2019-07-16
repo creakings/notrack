@@ -545,20 +545,21 @@ function show_group_view() {
     die();
   }
 
-  if ($result->num_rows == 0) {                 //Leave if nothing found
+  if ($result->num_rows == 0) {                            //Leave if nothing found
     $result->free();
     echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
     return false;
   }
 
-  if ((($page-1) * ROWSPERPAGE) > $result->num_rows) {
+  //Page needs to be reduced by one to account for array position starting at zero vs human readable starting page at one
+  if ((($page-1) * ROWSPERPAGE) > $result->num_rows) {     //Prevent page being greater than number of rows
     $page = 1;
   }
-  $i = (($page - 1) * ROWSPERPAGE) + 1;
-  
-  if ($page > 1) {
-    $result->data_seek($page * ROWSPERPAGE);
+
+  if ($page > 1) {                                         //Move seek point if currrent page is greater than one
+    $result->data_seek(($page - 1) * ROWSPERPAGE);
   }
+  $i = (($page - 1) * ROWSPERPAGE) + 1;                    //Friendly table position
 
   pagination($result->num_rows, $paginationlink);
   draw_groupby();
@@ -627,21 +628,22 @@ function show_time_view() {
     die();
   }
 
-  if ($result->num_rows == 0) {                  //Leave if nothing found
+  if ($result->num_rows == 0) {                            //Leave if nothing found
     $result->free();
     echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
     return false;
   }
 
-  if ((($page-1) * ROWSPERPAGE) > $result->num_rows) {
+  //Page needs to be reduced by one to account for array position starting at zero vs human readable starting page at one
+  if ((($page-1) * ROWSPERPAGE) > $result->num_rows) {     //Prevent page being greater than number of rows
     $page = 1;
   }
-  $i = (($page - 1) * ROWSPERPAGE) + 1;
-  
-  if ($page > 1) {
-    $result->data_seek($page * ROWSPERPAGE);
+
+  if ($page > 1) {                                         //Move seek point if currrent page is greater than one
+    $result->data_seek(($page - 1) * ROWSPERPAGE);
   }
-  
+  $i = (($page - 1) * ROWSPERPAGE) + 1;                    //Friendly table position
+
   pagination($result->num_rows, $paginationlink);
   draw_groupby();
 
@@ -708,7 +710,7 @@ if (isset($_GET['datetime'])) {
   }
 }
 if (isset($_GET['dtrange'])) {
-  $dtrange = filter_integer($_GET['dtrange'], 0, 1440, 0); //1440 = 24 Hours in Minutes
+  $dtrange = filter_integer($_GET['dtrange'], 0, 1441, 0); //1440 = 24 Hours in Minutes
 }
 
 draw_filterbox();                                          //Draw filters
