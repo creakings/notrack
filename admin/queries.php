@@ -712,7 +712,6 @@ if (isset($_GET['dtrange'])) {
   if (preg_match('/^([0-1][0-9]:|2[0-4]:|[0-9]:)?([0-5]?[0-9]):([0-5][0-9])$/', $_GET['dtrange'])) {
     $dtrange = $_GET['dtrange'];
   }
-  //$dtrange = filter_integer($_GET['dtrange'], 0, 1441, 0); //1440 = 24 Hours in Minutes
 }
 
 draw_filterbox();                                          //Draw filters
