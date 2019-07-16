@@ -623,7 +623,7 @@ function load_config() {
  *  Return:
  *    None
  */
-function linechart($values1, $values2, $xlabels, $title) {
+function linechart($values1, $values2, $xlabels, $link_labels, $extraparams, $title) {
   $jump = 0;
   $max_value = 0;
   $ymax = 0;
@@ -658,7 +658,7 @@ function linechart($values1, $values2, $xlabels, $title) {
   echo '<svg width="100%" height="100%" viewbox="0 0 2000 760">'.PHP_EOL;
 
   //Axis line rectangle with rounded corners
-  echo '<rect class="axisline" paint-order="normal" width="1900" height="701" x="100" y="0" rx="5" ry="5" />'.PHP_EOL;
+  echo '<rect class="axisline" width="1900" height="701" x="100" y="0" rx="5" ry="5" />'.PHP_EOL;
 
   for ($i = 0.25; $i < 1; $i += 0.25) {                    //Draw Y Axis lables and (horizontal lines)
     echo '<path class="gridline" d="M100,'.($i*700).' H2000" />'.PHP_EOL;
@@ -682,18 +682,20 @@ function linechart($values1, $values2, $xlabels, $title) {
 
     if ($values1[$i] > 0) {                                //$values1[] (Allowed)
       $y = 700 - (($values1[$i] / $ymax) * 700);           //Calculate Y position of $values1
-      echo '<g>'.PHP_EOL;
-      echo '  <title>'.$xlabels[$i].' '.$values1[$i].' Allowed</title>'.PHP_EOL;
-      echo '  <circle cx="'.$x.'" cy="'.(700-($values1[$i]/$ymax)*700).'" r="10px" fill="#00b7ba" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" title="'.$x.'"/>'.PHP_EOL;
-      echo '</g>'.PHP_EOL;
+      echo '<a href="./queries.php?datetime='.$link_labels[$i].'&amp;'.$extraparams.'&amp;groupby=time&sort=ASC" target="_blank">'.PHP_EOL;
+      echo '  <circle cx="'.$x.'" cy="'.(700-($values1[$i]/$ymax)*700).'" r="10px" fill="#00b7ba" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px">'.PHP_EOL;
+      echo '    <title>'.$xlabels[$i].' '.$values1[$i].' Allowed</title>'.PHP_EOL;
+      echo '  </circle>'.PHP_EOL;
+      echo '</a>'.PHP_EOL;
     }
 
     if ($values2[$i] > 0) {                                //$values2[] (Blocked)
       $y = 700 - (($values2[$i] / $ymax) * 700);           //Calculate Y position of $values2
-      echo '<g>'.PHP_EOL;
-      echo '  <title>'.$xlabels[$i].' '.$values2[$i].' Blocked</title>'.PHP_EOL;
-      echo '  <circle cx="'.$x.'" cy="'.(700-($values2[$i]/$ymax)*700).'" r="10px" fill="#b1244a" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px" />'.PHP_EOL;
-      echo '</g>'.PHP_EOL;
+      echo '<a href="./queries.php?datetime='.$link_labels[$i].'&amp;'.$extraparams.'&amp;groupby=time&sort=ASC&amp;filter=B" target="_blank">'.PHP_EOL;
+      echo '  <circle cx="'.$x.'" cy="'.(700-($values2[$i]/$ymax)*700).'" r="10px" fill="#b1244a" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px">'.PHP_EOL;
+      echo '    <title>'.$xlabels[$i].' '.$values2[$i].' Blocked</title>'.PHP_EOL;
+      echo '  </circle>'.PHP_EOL;
+      echo '</a>'.PHP_EOL;
     }
   }
   

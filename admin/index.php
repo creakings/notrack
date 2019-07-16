@@ -42,6 +42,7 @@ $day_local = 0;
 $allowed_queries = array();
 $blocked_queries = array();
 $chart_labels = array();
+$link_labels = array();
 
 /********************************************************************
  *  Block List Box
@@ -217,7 +218,7 @@ function home_status() {
  *    None
  */
 function count_queries() {
-  global $db, $allowed_queries, $blocked_queries, $chart_labels;
+  global $db, $allowed_queries, $blocked_queries, $chart_labels, $link_labels;
   global $day_allowed, $day_blocked, $day_local;
   
   $allowed_arr = array();
@@ -242,6 +243,7 @@ function count_queries() {
     $allowed_arr[$datestr] = 0;
     $blocked_arr[$datestr] = 0;
     $chart_labels[] = date('H:i', $i);
+    $link_labels[] = date('Y-m-d H:i:00', $i);
   }
   //print_r($allowed_arr);
   
@@ -297,7 +299,7 @@ home_network();
 
 echo '</div>'.PHP_EOL;                                     //End home-nav-container
 if ($day_allowed + $day_blocked > 0) {
-  linechart($allowed_queries, $blocked_queries, $chart_labels, 'DNS Queries over past 24 hours');
+  linechart($allowed_queries, $blocked_queries, $chart_labels, $link_labels, 'dtrange=60', 'DNS Queries over past 24 hours');
 }
 
 
