@@ -28,7 +28,7 @@ readonly DNSMASQ_CONF_PATH="/etc/dnsmasq.conf"
 #######################################
 # Global Variables
 #######################################
-readonly VERSION="0.9.0"
+readonly VERSION="0.9.1"
 
 SUDO_REQUIRED=false                              #true if installing to /opt
 REBOOT_REQUIRED=false
