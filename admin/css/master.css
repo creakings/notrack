@@ -12,7 +12,7 @@ body {
   min-height: 92vh;                                        /*Fix for mobiles*/
   margin: 0;
   padding: 0;
-  font-size: 90%;
+  font-size: 85%;
   font-family: Arial, Helvetica, sans-serif;
   color: #00000a;
   background: url("../svg/background_circles.svg") no-repeat center center fixed;
@@ -374,7 +374,7 @@ table {
 }
 td,
 th {
-  padding: 0.45rem 0.6rem;
+  padding: 0.4rem 0.6rem;
   border-bottom: 1px solid #bdbdbd;
 }
 th {
@@ -425,19 +425,19 @@ span.key-green {
   text-align: center;
 }
 #access-table td:nth-child(2), #access-table th:nth-child(2) {
-  width: 10%;
+  width: 4.2rem;
   text-align: center;
 }
 #access-table th:nth-child(3), #access-table th:nth-child(3) {
-  width: 14%;
+  width: 5.2rem;
   text-align: center;
 }
 #access-table th:nth-child(4), #access-table th:nth-child(4) {
   width: 58%;
+  overflow: auto;
 }
 #access-table td img {
-  width: 3em;
-  padding: 0 0.2rem;
+  width: 2.5rem;
 }
 
 
@@ -488,12 +488,15 @@ span.key-green {
 #livetable td:nth-child(2) {
   width: 15%;
   text-align: center;
+  overflow: auto;
 }
 #livetable td:nth-child(3) {
   width: 50%;
+  overflow: auto;
 }
 #livetable td:nth-child(4) {
   width: 20%;
+  overflow: auto;
 }
 #livetable td:nth-child(5) {
   width: 2rem;
@@ -526,6 +529,7 @@ span.key-green {
 #query-group-table td:nth-child(3),
 #query-group-table th:nth-child(3) {
   width: 56%;
+  overflow: auto;
 }
 #query-group-table td:nth-child(4),
 #query-group-table th:nth-child(4) {
@@ -545,16 +549,17 @@ span.key-green {
 }
 #query-time-table td:nth-child(3),
 #query-time-table th:nth-child(3) {
-  width: 25%;
+  width: 24%;
   text-align: center;
 }
 #query-time-table td:nth-child(4),
 #query-time-table th:nth-child(4) {
-  width: 45%;
+  width: 44%;
+  overflow: auto;
 }
 #query-time-table td:nth-child(5),
 #query-time-table th:nth-child(5) {
-  width: 12%;
+  width: 14%;
   text-align: center;
 }
 #query-group-table th a, #query-time-table th a {
@@ -590,7 +595,7 @@ span.key-green {
 }
 
 
-/* Analytics Table on analytics.php
+/* Alerts Table on analytics.php
    ========================================================================== */
 #analytics-table td:nth-child(1),
 #analytics-table th:nth-child(1) {
@@ -605,14 +610,17 @@ span.key-green {
 #analytics-table td:nth-child(3),
 #analytics-table th:nth-child(3) {
   width: 60%;
+  overflow: auto;
 }
 #analytics-table td:nth-child(4),
 #analytics-table th:nth-child(4) {
   text-align: center;
+  overflow: auto;
 }
 #analytics-table td:nth-child(5),
 #analytics-table th:nth-child(5) {
   text-align: center;
+  overflow: hidden;
 }
 #analytics-table td:nth-child(6),
 #analytics-table th:nth-child(6) {
@@ -700,16 +708,6 @@ span.key-green {
 .sys-table img {
   margin: 0 0.1rem;
   width: 1.1rem;
-}
-
-
-/* Other table settings
-   ========================================================================== */
-#access-table td,
-#query-group-table td,
-#query-time-table td,
-#livetable td {
-  overflow: auto;  /*Can't use overflow in config table in Chrome*/
 }
 
 
