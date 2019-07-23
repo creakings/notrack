@@ -3,7 +3,7 @@ v0.9.1 Released 23 Jul 2019
 DNS Query Line charts are now clickable
 Modern styling for Live page
 Added Block / Investigate menu to Live page
-Styling improvements for Webkit based browsers
+Styling improvements for Chrome based browsers
 #283 - Fixed pagination on queries.php
 *************************************************
 
