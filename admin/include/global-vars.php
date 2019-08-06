@@ -107,6 +107,8 @@ $DEFAULTCONFIG = array(
   'bl_viefb' => 0,
   'bl_fblatin' => 0,
   'bl_yhosts' => 0,
+  'api_key' => '',
+  'api_readonly' => '',
   'LatestVersion' => VERSION
 );
 
