@@ -9,6 +9,7 @@ ensure_active_session();
 /************************************************
 *Constants                                      *
 ************************************************/
+define('REGEX_VALIDAPI', '/^[a-f0-9]*$/');                 //any length of hexadecimal lowercase from start to end
 
 /************************************************
 *Global Variables                               *
@@ -33,20 +34,55 @@ function draw_form() {
 
   echo '<form method="POST">'.PHP_EOL;
   
-  echo '<div class="sys-group">'.PHP_EOL;
+  echo '<div class="sys-group">'.PHP_EOL;                  //Start sys-group box
   echo '<h5>API Setup</h5>'.PHP_EOL;
   echo '<table class="sys-table">'.PHP_EOL;
-  echo '<tr><td>API Key</td><td><input type="text" name="key" id="key" value="'.$Config['api_key'].'">&nbsp;<button class="button-grey icon-generate" type="button" name="generate-key" onclick="generateKey(\'key\')">Generate</button></td></tr>'.PHP_EOL;
-  echo '<tr><td>Read Only</td><td><input type="text" name="readonly" id="readonly" value="'.$Config['api_readonly'].'">&nbsp;<button class="button-grey icon-generate" type="button" onclick="generateKey(\'readonly\')">Generate</button></td></tr>'.PHP_EOL;
+  echo '<tr><td>API Key</td><td><input type="text" name="apikey" id="apikey" value="'.$Config['api_key'].'">&nbsp;<button class="button-grey icon-generate" type="button" onclick="generateKey(\'apikey\')">Generate</button></td></tr>'.PHP_EOL;
+  echo '<tr><td>Read Only</td><td><input type="text" name="apireadonly" id="apireadonly" value="'.$Config['api_readonly'].'">&nbsp;<button class="button-grey icon-generate" type="button" onclick="generateKey(\'apireadonly\')">Generate</button></td></tr>'.PHP_EOL;
   
-  echo '<tr><td colspan="2"><button class="icon-tick float-left" type="submit" name="generate-key" value="1">Save Changes</button></td></tr>'.PHP_EOL;
+  echo '<tr><td colspan="2"><div class="centered"><button class="icon-tick" type="submit">Save Changes</button></div></td></tr>'.PHP_EOL;
   
   echo '</table>'.PHP_EOL;
   
-  echo '</div>'.PHP_EOL;                                   //End Groupby box
+  echo '</div>'.PHP_EOL;                                   //End sys-group box
   echo '</form>'.PHP_EOL;
 }
 
+
+/********************************************************************
+ *  Save Changes
+ *    1. Check POST vars have been set
+ *    2. Carry out input validation using regex
+ *    3. Failed input validation results in Config settings remaining unchanged
+ *    4. Save Config array to file
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function save_changes() {
+  global $Config;
+
+  $apikey = '';
+  $apireadonly = '';
+
+  //Use null coalescing operator in PHP 7 to check if POST vars have been set
+  $apikey = $_POST['apikey'] ?? '';
+  $apireadonly = $_POST['apireadonly'] ?? '';
+
+  //Carry out input validation of apikey
+  if (preg_match(REGEX_VALIDAPI, $apikey)) {
+    $Config['api_key'] = $apikey;
+  }
+
+  //Carry out input validation of apireadonly
+  if (preg_match(REGEX_VALIDAPI, $apireadonly)) {
+    $Config['api_readonly'] = $apireadonly;
+  }
+
+  save_config();
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -69,6 +105,10 @@ draw_topmenu('API Setup');
 draw_sidemenu();
 
 echo '<div id="main">'.PHP_EOL;
+
+if (sizeof($_POST) > 0) {                                  //Anything in POST to process?
+  save_changes();
+}
 
 draw_form();
 
