@@ -9,7 +9,6 @@ ensure_active_session();
 /************************************************
 *Constants                                      *
 ************************************************/
-define('REGEX_VALIDAPI', '/^[a-f0-9]*$/');                 //any length of hexadecimal lowercase from start to end
 
 /************************************************
 *Global Variables                               *

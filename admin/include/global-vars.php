@@ -28,6 +28,9 @@ define('BLACKLIST_FILE', '/etc/notrack/blacklist.txt');
 define('WHITELIST_FILE', '/etc/notrack/whitelist.txt');
 define('REGEX_DATETIME', '/^2\d\d\d\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])\s([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/');
 
+//VALIDAPI is any length of hexadecimal lowercase from start to end
+define('REGEX_VALIDAPI', '/^[a-f0-9]*$/');
+
 //IPCIDR = Check for valid IP/CIDR - e.g. 192.168.0.1/24
 //         Reject leading zeros - e.g. 10.00.00.009/02
 //Group 1 - First three octets with following zero - (222.) * 3 - 250-255, 200-249, 100-199, 10-99, 0-9
