@@ -1,6 +1,7 @@
 <?php
 require('./global-vars.php');
 require('./global-functions.php');
+require('./mysqlidb.php');
 load_config();
 ensure_active_session();
 
@@ -10,6 +11,7 @@ header('Content-Type: application/json; charset=UTF-8');
 *Global Variables                               *
 ************************************************/
 $response = array();
+$readonly = true;
 
 /********************************************************************
  *  Enable NoTrack
@@ -169,6 +171,69 @@ function api_load_dns() {
 }
 
 
+/********************************************************************
+ *  Is Key Valid
+ *    
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function is_key_valid() {
+  global $Config, $readonly;
+
+  $key = '';
+
+  if ($Config['api_key'] == '') return false;
+  
+  $key = $_GET['api_key'] ?? '';
+  
+  if (preg_match(REGEX_VALIDAPI, $key)) {
+    if ($key == $Config['api_key']) {
+      $readonly = false;
+      return true;
+    }
+    elseif ($key == $Config['api_readonly']) {
+      $readonly = true;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+/********************************************************************
+ *  Do GET Action
+ *    Review the specified action on GET parameter
+ *    Create new sqli wrapper class
+ *    Carry out the action specified by user
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function do_action() {
+  global $Config, $response;
+  
+  $dbwrapper = new MySqliDb;
+  
+  $action = $_GET['action'] ?? '';
+  
+  switch ($action) {
+    case 'count_blocklists':
+      $response['blocklists'] = $dbwrapper->count_blocklists();
+      break;
+    case 'count_dnsqueries_today':
+      $response = $dbwrapper->count_queries_today();
+      break;
+    case 'count_total_dnsqueries_today':
+      $response['queries'] = $dbwrapper->count_total_queries_today();
+      break;
+    default:
+      $response['error'] = 'Unknown Request';
+  }
+}
 //Main---------------------------------------------------------------
 
 /************************************************
@@ -195,6 +260,16 @@ if (isset($_POST['operation'])) {
 elseif (isset($_POST['livedns'])) {
   api_load_dns();
 }
+
+elseif (sizeof($_GET) > 0) {
+  if (is_key_valid()) {
+    do_action();
+  }
+  else {
+    $response['message'] = 'Invalid API Key';
+  }
+}
+
 else {
   $response['error'] = 'Nothing specified';
 }
