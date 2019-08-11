@@ -155,19 +155,21 @@ function api_load_dns() {
   
 
   if (! file_exists(DNS_LOG)) {
-    $response['error'] = DNS_LOG. 'not found';
+    http_response_code(410);                               //File Gone
+    $response['error_code'] = 'file_not_found';
+    $response['error_message'] = DNS_LOG.' not found';
     return;
   }
 
   $fh = fopen(DNS_LOG, 'r') or die('Error unable to open '.DNS_LOG);
   while (!feof($fh)) {
-    $line = trim(fgets($fh));                            //Read and trim line of file
+    $line = trim(fgets($fh));                              //Read and trim line of file
 
     $response[$linenum] = $line;
     $linenum++;
   }
-  fclose($fh);                                           //Close file
-  
+  fclose($fh);                                             //Close file
+
 }
 
 
@@ -231,7 +233,9 @@ function do_action() {
       $response['queries'] = $dbwrapper->count_total_queries_today();
       break;
     default:
-      $response['error'] = 'Unknown Request';
+      http_response_code(400);
+      $response['error_code'] = 'missing_required_parameter';
+      $response['error_message'] = 'Your request was missing an action parameter';
   }
 }
 //Main---------------------------------------------------------------
@@ -266,12 +270,18 @@ elseif (sizeof($_GET) > 0) {
     do_action();
   }
   else {
-    $response['message'] = 'Invalid API Key';
+    //Unauthorised
+    http_response_code(401);
+    $response['error_code'] = 'invalid_request';
+    $response['error_message'] = 'Your client ID is invalid';
   }
 }
 
 else {
-  $response['error'] = 'Nothing specified';
+  //Bad Request
+  http_response_code(400);
+  $response['error_code'] = 'missing_required_parameter';
+  $response['error_message'] = 'Your request was missing an action parameter';
 }
 echo json_encode($response);
 ?>
