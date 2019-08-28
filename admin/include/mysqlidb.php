@@ -107,4 +107,57 @@ class MySqliDb {
   public function count_total_queries_today() {
     return $this->count_table_rows("dnslog WHERE log_time > CURDATE()");
   }
+
+
+  /******************************************************************
+   *  Get Status
+   *    Return Config Status
+   *  Params:
+   *    None
+   *  Return:
+   *    Config Status
+   */
+  public function get_status() {
+    global $Config;
+    return $Config['status'];
+  }
+
+
+  /******************************************************************
+   *  Recent Queries
+   *    Return recent DNS queries in an array
+   *    Increase interval time by 4 minutes as the cron job to collect DNS data
+   *     only runs every 4 minutes by default
+   *  Params:
+   *    Interval to look back in minutes
+   *  Return:
+   *    Config Status
+   */
+  public function recent_queries($interval) {
+    $queries = array();
+
+    $starttime = $interval + 4;
+    $cmd = "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL $starttime MINUTE) AND log_time <= DATE_SUB(NOW(), INTERVAL 4 MINUTE) ORDER BY UNIX_TIMESTAMP(log_time) ASC";
+
+    
+
+    if(!$result = $this->db->query($cmd)) {
+      http_response_code(400);                             //Bad Request
+      return array('error_code' => 'invalid_input', 'error_message' => $this->db->error);
+    }
+
+    if ($result->num_rows == 0) {
+      //Valid query, but no data found
+      http_response_code(204);                             //200 = No Content
+      $queries = array('error_code' => 'no_data_found', 'error_message' => 'No recent queries found');
+    }
+    else {
+      //Valid query with data found
+      $queries = $result->fetch_all();
+    }
+
+    $result->free();
+
+    return $queries;
+  }
 }

@@ -77,7 +77,7 @@ function api_pause_notrack() {
     $Config['status'] = STATUS_INCOGNITO + STATUS_PAUSED;
   }
   else {
-    $Config['status'] = STATUS_PAUSED;    
+    $Config['status'] = STATUS_PAUSED;
   }
   //sleep(1);
   $mem->delete('Config');                      //Force reload of config
@@ -174,6 +174,29 @@ function api_load_dns() {
 
 
 /********************************************************************
+ *  API Recent Queries
+ *    Get recent DNS queries
+ *    Optional value of interval (in minutes) can be specified
+ *  Params:
+ *    MySqliDb class
+ *  Return:
+ *    None
+ */
+function api_recent_queries($dbwrapper) {
+  global $response;
+
+  $interval = 4;                                           //Assume 4 mins (default log collecting interval)
+
+  //Check that interval if specified is within a valid range of one hour
+  if (isset($_GET['interval'])) {
+    $interval = filter_integer($_GET['interval'], 1, 60, 4);
+  }
+
+  $response = $dbwrapper->recent_queries($interval);
+}
+
+
+/********************************************************************
  *  Is Key Valid
  *    
  *  Params:
@@ -231,6 +254,12 @@ function do_action() {
       break;
     case 'count_total_dnsqueries_today':
       $response['queries'] = $dbwrapper->count_total_queries_today();
+      break;
+    case 'get_status':
+      $response['status'] = $dbwrapper->get_status();
+      break;
+    case 'recent_queries':
+      api_recent_queries($dbwrapper);
       break;
     default:
       http_response_code(400);
