@@ -49,14 +49,6 @@ if (isset($_POST['action'])) {
       }      
       header('Location: ?v=advanced');           //Reload page
       break;
-    case 'blocklists':
-      update_blocklist_config();
-      save_config();
-      exec(NTRK_EXEC.'--run-notrack');
-      $mem->delete('SiteList');                  //Delete Site Blocked from Memcache
-      sleep(1);                                  //Short pause to prevent race condition
-      header('Location: ?v=blocks');             //Reload page
-      break;
     case 'dhcp':
       update_dhcp();
       header('Location: ?v=dhcp');               //Reload to DHCP
@@ -148,61 +140,6 @@ function update_advanced() {
   
   return true;
 }
-
-
-/********************************************************************
- *  Update Block List Config
- *    1: Search through Config array for bl_? (excluding bl_custom)
- *    2: Check if bl_? appears in POST[bl_?]
- *    3: Set bl_custom by splitting and filtering values from POST[bl_custom]
- *    4: After this function save_config is run
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function update_blocklist_config() {  
-  global $Config;
-  $customstr = '';
-  $customlist = array();
-  $validlist = array();
-  $key = '';
-  $value = '';
-  
-  foreach($Config as $key => $value) {           //Read entire Config array
-    if (preg_match('/^bl\_(?!custom)/', $key) > 0) { //Look for values starting bl_
-      if (isset($_POST[$key])) {                 //Is there an equivilent POST value?
-        if ($_POST[$key] == 'on') {              //Is it set to on (ticked)?
-          $Config[$key] = 1;                     //Yes - enable block list
-        }
-      }
-      else {                                     //No POST value
-        $Config[$key] = 0;                       //Block list is unticked
-      }
-    }
-  }
-  
-  if (filter_string('bl_custom', 'POST', 2000)) {          //bl_custom requires extra processing
-    $customstr = preg_replace('#\s+#',',',trim(strip_tags($_POST['bl_custom']))); //Split array
-    $customlist = explode(',', $customstr);      //Split string into array
-    foreach ($customlist as $site) {             //Check if each item is a valid URL
-      if (filter_url($site)) {
-        $validlist[] = strip_tags($site);
-      }
-      elseif (preg_match('/\/\w{3,4}\/[\w\/\.]/', $site) > 0) { #Or file location?
-        $validlist[] = strip_tags($site);
-      }
-    }
-    if (sizeof($validlist) == 0) $Config['bl_custom'] = '';
-    else $Config['bl_custom'] = implode(',', $validlist);
-  }
-  else {
-    $Config['bl_custom'] = "";
-  }
-    
-  return null;
-}
-
 
 
 /********************************************************************
@@ -399,9 +336,6 @@ if (isset($_GET['v'])) {                         //What view to show?
   switch($_GET['v']) {
     case 'config':
       show_general();
-      break;
-    case 'blocks':
-      show_blocklists();
       break;
     case 'full':
       show_full_blocklist();
