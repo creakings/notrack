@@ -148,7 +148,7 @@ class MySqliDb {
 
     if ($result->num_rows == 0) {
       //Valid query, but no data found
-      http_response_code(204);                             //200 = No Content
+      //http_response_code(204);                             //200 = No Content
       $queries = array('error_code' => 'no_data_found', 'error_message' => 'No recent queries found');
     }
     else {
