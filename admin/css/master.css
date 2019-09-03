@@ -1352,3 +1352,26 @@ span.key {
   border-radius: 4px;
   display: block;
 }
+
+/* Block List Flex Container and Items
+   ========================================================================== */
+.bl-flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+}
+
+.bl-flex-container > div {
+  margin: 0.5rem 1%;
+  flex-basis: 27%;
+  border: 2px solid #bdbdbd;
+  border-radius: 4px;
+  text-align: center;
+}
+.bl-flex-container > div:hover {
+  opacity: 0.92;
+  border: 2px solid #00c2c8;
+}
+.bl-flex-container > div > a:focus {
+  opacity: 0.82;
+}
