@@ -39,7 +39,6 @@ Config[bl_pglyoyo]=0
 Config[bl_someonewhocares]=0
 Config[bl_spam404]=0
 Config[bl_swissransom]=0
-Config[bl_swisszeus]=0
 Config[bl_winhelp2002]=0
 Config[bl_areasy]=0                              #Arab
 Config[bl_chneasy]=0                             #China
@@ -109,7 +108,6 @@ urls[malwaredomainlist]="http://www.malwaredomainlist.com/hostslist/hosts.txt"
 urls[malwaredomains]="http://mirror1.malwaredomains.com/files/justdomains"
 urls[spam404]="https://raw.githubusercontent.com/Dawsey21/Lists/master/adblock-list.txt"
 urls[swissransom]="https://ransomwaretracker.abuse.ch/downloads/RW_DOMBL.txt"
-urls[swisszeus]="https://zeustracker.abuse.ch/blocklist.php?download=domainblocklist"
 urls[pglyoyo]="http://pgl.yoyo.org/adservers/serverlist.php?hostformat=;mimetype=plaintext"
 urls[someonewhocares]="http://someonewhocares.org/hosts/hosts"
 urls[winhelp2002]="http://winhelp2002.mvps.org/hosts.txt"
@@ -1751,7 +1749,6 @@ get_list "pglyoyo" "match_plainline"
 get_list "someonewhocares" "match_unixline"
 get_list "spam404" "match_easyline"
 get_list "swissransom" "match_plainline"
-get_list "swisszeus" "match_plainline"
 get_list "winhelp2002" "match_unixline"
 get_list "fblatin" "match_easyline"
 get_list "areasy" "match_easyline"
