@@ -362,7 +362,7 @@ function custom_blocklists() {
   echo '<h5>Custom Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="sys-table">'.PHP_EOL;
-  echo '<tr><td>&nbsp;</td><td><p>Use either Downloadable or Localy stored Block Lists</p><textarea rows="5" name="bl_custom">'.str_replace(',', PHP_EOL, $Config['bl_custom']).'</textarea></td></tr>';
+  echo '<tr><td>&nbsp;</td><td><p>Use either Downloadable or Localy stored Block Lists</p><textarea rows="18" name="bl_custom">'.str_replace(',', PHP_EOL, $Config['bl_custom']).'</textarea></td></tr>';
   echo '</table>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
@@ -500,14 +500,14 @@ function draw_tabbedview($view) {
 function draw_welcome() {
   echo '<div class="sys-group">'.PHP_EOL;
   echo '<div class="bl-flex-container">'.PHP_EOL;
-  echo '<div><a href="?v=1">Tracking</a></div>'.PHP_EOL;
-  echo '<div><a href="?v=2">Advertising</a></div>'.PHP_EOL;
-  echo '<div><a href="?v=3">Malware</a></div>'.PHP_EOL;
-  echo '<div><a href="?v=4">Crypto Coin</a></div>'.PHP_EOL;
-  echo '<div><a href="?v=5">Social</a></div>'.PHP_EOL;
-  echo '<div><a href="?v=6">Multipurpose</a></div>'.PHP_EOL;
-  echo '<div><a href="?v=7">Regional</a></div>'.PHP_EOL;
-  echo '<div><a href="?v=8">Custom</a></div>'.PHP_EOL;
+  echo '<a href="?v=1"><img src="../svg/homebl_tracking.svg" alt=""><h6>Tracking</h6></a>'.PHP_EOL;
+  echo '<a href="?v=2"><img src="../svg/homebl_advertising.svg" alt=""><h6>Advertising</h6></a>'.PHP_EOL;
+  echo '<a href="?v=3"><img src="../svg/homebl_malware.svg" alt=""><h6>Malware</h6></a>'.PHP_EOL;
+  echo '<a href="?v=4"><img src="../svg/homebl_cryptocoin.svg" alt=""><h6>Crypto Coin</h6></a>'.PHP_EOL;
+  echo '<a href="?v=5"><img src="../svg/homebl_social.svg" alt=""><h6>Social</h6></a>'.PHP_EOL;
+  echo '<a href="?v=6"><img src="../svg/homebl_multipurpose.svg" alt=""><h6>Multipurpose</h6></a>'.PHP_EOL;
+  echo '<a href="?v=7"><img src="../svg/homebl_regional.svg" alt=""><h6>Regional</h6></a>'.PHP_EOL;
+  echo '<a href="?v=8"><img src="../svg/homebl_custom.svg" alt=""><h6>Custom</h6></a>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
 }
