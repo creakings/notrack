@@ -1,3 +1,8 @@
+v0.9.2 Development
+New styling for block list selector
+New features added to API to allow construction of notrack-lcd project
+
+*************************************************
 v0.9.1 Released 23 Jul 2019
 
 DNS Query Line charts are now clickable
