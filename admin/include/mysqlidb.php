@@ -26,8 +26,8 @@ class MySqliDb {
       unset($this->db);
     }
   }
-  
-  
+
+
   /******************************************************************
    *  Class Destructer
    *    Close connection to mysql
@@ -78,6 +78,18 @@ class MySqliDb {
     return $this->count_table_rows('blocklist');
   }
 
+
+  /******************************************************************
+   *  Count number of rows in a Specific Blocklist
+   *    Return the value from count_table_rows for Blocklist table
+   *  Params:
+   *    blocklist to search for
+   *  Return:
+   *    Number of rows
+   */
+  public function count_specific_blocklist($blocklist) {
+    return $this->count_table_rows("blocklist WHERE bl_source = '$blocklist'");
+  }
 
   /******************************************************************
    *  Count queries for today

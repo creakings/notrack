@@ -10,6 +10,7 @@ All other config functions are in ./include/config-functions.php
 require('../include/global-vars.php');
 require('../include/global-functions.php');
 require('../include/menu.php');
+require('../include/mysqlidb.php');
 
 load_config();
 ensure_active_session();
@@ -22,7 +23,7 @@ define('DOMAIN_WHITELIST', '/etc/notrack/domain-whitelist.txt');
 /************************************************
 *Global Variables                               *
 ************************************************/
-$db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
+$dbwrapper = new MySqliDb;
 
 /************************************************
 *Arrays                                         *
@@ -39,7 +40,7 @@ $list = array();                                 //Global array for all the Bloc
  *    None
  */
 function draw_blocklist_row($bl, $bl_name, $msg, $url) {
-  global $Config;
+  global $Config, $dbwrapper;
   //Txt File = Origniating download file
   //TLD Is a special case, and the Txt file used is TLD_CSV
 
@@ -61,7 +62,7 @@ function draw_blocklist_row($bl, $bl_name, $msg, $url) {
       $txtfilename = DIR_TMP.$filename.'.txt';
     }
 
-    $rows = count_rows("SELECT COUNT(*) FROM blocklist WHERE bl_source = '$bl'");
+    $rows = $dbwrapper->count_specific_blocklist($bl);
 
     if (($rows > 0) && (file_exists($txtfilename))) {
 
@@ -550,8 +551,6 @@ else {
   draw_welcome();
 }
 
-
-$db->close();
 ?>
 
 </div>
