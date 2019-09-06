@@ -58,10 +58,10 @@ function home_blocklist() {
   exec('pgrep notrack', $pids);
   if(empty($pids)) {
     $rows = count_rows(QRY_BLOCKLIST); 
-    echo '<a class="home-nav-item" href="./config.php?v=full"><span><h2>Block List</h2>'.number_format(floatval($rows)).'<br>Domains</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></a>'.PHP_EOL;
+    echo '<a class="home-nav-item" href="./config/blocklists.php"><span><h2>Block List</h2>'.number_format(floatval($rows)).'<br>Domains</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></a>'.PHP_EOL;
   }
   else {
-    echo '<a href="./config.php?v=full"><span><h2>Block List</h2>Processing</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></a>'.PHP_EOL;
+    echo '<a href="./config/blocklists.php"><span><h2>Block List</h2>Processing</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></a>'.PHP_EOL;
   }
 }
 
