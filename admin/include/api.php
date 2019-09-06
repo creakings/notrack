@@ -3,7 +3,6 @@ require('./global-vars.php');
 require('./global-functions.php');
 require('./mysqlidb.php');
 load_config();
-ensure_active_session();
 
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -274,6 +273,7 @@ function do_action() {
 ************************************************/
 
 if (isset($_POST['operation'])) {
+  ensure_active_session();
   switch ($_POST['operation']) {
       case 'force-notrack':
         exec(NTRK_EXEC.'--force');
@@ -287,10 +287,16 @@ if (isset($_POST['operation'])) {
       case 'restart': api_restart(); break;
       case 'shutdown': api_shutdown(); break;
       case 'updateblocklist': exec(NTRK_EXEC.'--run-notrack'); break;
+      default:
+        http_response_code(400);
+        $response['error_code'] = 'missing_required_parameter';
+        $response['error_message'] = 'Your request was missing an operation parameter';
+        break;
   }
 }
 
 elseif (isset($_POST['livedns'])) {
+  ensure_active_session();
   api_load_dns();
 }
 
