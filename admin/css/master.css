@@ -1017,49 +1017,98 @@ span.key-green {
 #dnsfilter-container input[type="submit"] {
   height: 2.3rem;
 }
+
+
 /* ==========================================================================
    Config Navigation
    ========================================================================== */
 
 .conf-nav {
-/*   margin: 0.5rem auto; */
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
   flex-wrap: wrap;
 }
 .conf-nav > a {
-  flex-basis: 28%;
+  flex-basis: 29.4%;
   flex-grow: 0;
   height: 3rem;
   margin: 0.5rem 1%;
   padding: 0.4em 1em;
-  font-size: 1.1em;
-  border-bottom: 1px solid #bdbdbd;
+  border: 2px solid #bdbdbd;
+  border-radius: 4px;
 }
-.conf-nav > a:hover {
-  border-bottom: 1px solid #00c2c8;
+.conf-nav > a:hover  {
+  opacity: 0.92;
+  border: 2px solid #00c2c8;
+}
+.conf-nav > a:focus {
+  opacity: 0.82;
 }
 .conf-nav > a > img {
   height: 100%;
-  margin-right: 1rem;
+  margin-right: 0.6rem;
   float: left;
 }
 .conf-nav > a > span {
   float: left;
-  margin-top: 1rem;
+  margin-top: 0.6rem;
 }
 @media only screen and (max-width:1200px), only screen and (max-device-width:1200px) {  /*Windowed view for Conf Nav*/
   .conf-nav {
     flex-wrap: wrap;
   }
   .conf-nav > a {
-    flex-basis: 43%;
+    flex-basis: 44%;
   }
 }
 @media only screen and (max-width:480px), only screen and (max-device-width:480px) {    /*Mobile view for Conf Nav*/
   .conf-nav > a {
     flex-basis: 91%;
+  }
+}
+
+
+/* ==========================================================================
+   Block List Flex Container and Items
+   ========================================================================== */
+
+.bl-flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+.bl-flex-container > a {
+  margin: 0.8rem 1%;
+  flex-basis: 22%;
+  border: 2px solid #bdbdbd;
+  border-radius: 4px;
+  text-align: center;
+}
+.bl-flex-container > a > img {
+  width: 85%;
+}
+.bl-flex-container > a:hover {
+  opacity: 0.92;
+  border: 2px solid #00c2c8;
+}
+.bl-flex-container > a:focus {
+  opacity: 0.82;
+}
+@media only screen and (max-width:1000px), only screen and (max-device-width:1000px) {
+  .bl-flex-container {
+     justify-content: flex-start;
+  }
+  .bl-flex-container > a {
+    flex-basis: 30%;
+  }
+}
+@media only screen and (max-width:480px), only screen and (max-device-width:480px) {
+  .bl-flex-container > a {
+    margin: 0.6rem 2%;
+    flex-basis: 44%;
   }
 }
 
@@ -1351,45 +1400,4 @@ span.key {
   border: 1px solid #00000a;
   border-radius: 4px;
   display: block;
-}
-
-/* Block List Flex Container and Items
-   ========================================================================== */
-.bl-flex-container {
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: row;
-  justify-content: space-around;
-}
-
-.bl-flex-container > a {
-  margin: 0.8rem 1%;
-  flex-basis: 22%;
-  border: 2px solid #bdbdbd;
-  border-radius: 4px;
-  text-align: center;
-}
-.bl-flex-container > a > img {
-  width: 85%;
-}
-.bl-flex-container > a:hover {
-  opacity: 0.92;
-  border: 2px solid #00c2c8;
-}
-.bl-flex-container > a:focus {
-  opacity: 0.82;
-}
-@media only screen and (max-width:1000px), only screen and (max-device-width:1000px) {
-  .bl-flex-container {
-     justify-content: flex-start;
-  }
-  .bl-flex-container > a {
-    flex-basis: 30%;
-  }
-}
-@media only screen and (max-width:480px), only screen and (max-device-width:480px) {
-  .bl-flex-container > a {
-    margin: 0.6rem 2%;
-    flex-basis: 44%;
-  }
 }
