@@ -295,7 +295,7 @@ function show_general() {
 
 /********************************************************************
  *  Show Menu
- *    Show menu using a flexbox (conf-nav) for each category
+ *    Show menu using a flexbox (conf-`nav) for each category
  *  Params:
  *    None
  *  Return:
@@ -305,27 +305,28 @@ function show_menu() {
   echo '<div class="sys-group">'.PHP_EOL;                 //Start System
   echo '<h5>System</h5>'.PHP_EOL;
   echo '<div class="conf-nav">'.PHP_EOL;
-  echo '<a href="../admin/config.php?v=general"><img src="./svg/menu_config.svg"><span>General</span></a>'.PHP_EOL;
-  echo '<a href="../admin/config.php?v=status"><img src="./svg/menu_status.svg"><span>Back-end Status</span></a>'.PHP_EOL;
-  echo '<a href="../admin/security.php"><img src="./svg/menu_security.svg"><span>Security</span></a>'.PHP_EOL;
-  echo '<a href="../admin/upgrade.php"><img src="./svg/menu_upgrade.svg"><span>Upgrade</span></a>'.PHP_EOL;
-  echo '<a href="../admin/config.php?v=dnsmasq"><img src="./svg/menu_config.svg"><span>Work in progress</span></a>'.PHP_EOL;
+  echo '<a href="../admin/config.php?v=general"><img src="./svg/menu_config.svg"><span><h6>General</h6></span></a>'.PHP_EOL;
+  echo '<a href="../admin/config.php?v=status"><img src="./svg/menu_status.svg"><span><h6>Back-end Status</h6></span></a>'.PHP_EOL;
+  echo '<a href="../admin/security.php"><img src="./svg/menu_security.svg"><span><h6>Security</h6></span></a>'.PHP_EOL;
+  echo '<a href="../admin/config/apisetup.php"><img src="./svg/menu_security.svg"><span><h6>API Setup</h6></span></a>'.PHP_EOL;
+  echo '<a href="../admin/upgrade.php"><img src="./svg/menu_upgrade.svg"><span><h6>Upgrade</h6></span></a>'.PHP_EOL;
+  echo '<a href="../admin/config.php?v=dnsmasq"><img src="./svg/menu_config.svg"><span><h6>Work in progress</h6></span></a>'.PHP_EOL;
   echo '</div></div>'.PHP_EOL;                             //End System
   
   echo '<div class="sys-group">'.PHP_EOL;                  //Start Block lists
   echo '<h5>Block Lists</h5>'.PHP_EOL;
   echo '<div class="conf-nav">'.PHP_EOL;
-  echo '<a href="../admin/config/blocklists.php"><img src="./svg/menu_blocklists.svg"><span>Select Block Lists</span></a>'.PHP_EOL;
-  echo '<a href="../admin/config/tld.php"><img src="./svg/menu_domain.svg"><span>Top Level Domains</span></a>'.PHP_EOL;
-  echo '<a href="../admin/config/customblocklist.php?v=black"><img src="./svg/menu_black.svg"><span>Custom Black List</span></a>'.PHP_EOL;
-  echo '<a href="../admin/config/customblocklist.php?v=white"><img src="./svg/menu_white.svg"><span>Custom White List</span></a>'.PHP_EOL;
-  echo '<a href="../admin/config.php?v=full"><img src="./svg/menu_sites.svg"><span>View Sites Blocked</span></a>'.PHP_EOL;
+  echo '<a href="../admin/config/blocklists.php"><img src="./svg/menu_blocklists.svg"><span><h6>Select Block Lists</h6></span></a>'.PHP_EOL;
+  echo '<a href="../admin/config/tld.php"><img src="./svg/menu_domain.svg"><span><h6>Top Level Domains</h6></span></a>'.PHP_EOL;
+  echo '<a href="../admin/config/customblocklist.php?v=black"><img src="./svg/menu_black.svg"><span><h6>Custom Black List</h6></span></a>'.PHP_EOL;
+  echo '<a href="../admin/config/customblocklist.php?v=white"><img src="./svg/menu_white.svg"><span><h6>Custom White List</h6></span></a>'.PHP_EOL;
+  echo '<a href="../admin/config.php?v=full"><img src="./svg/menu_sites.svg"><span><h6>View Sites Blocked</h6></span></a>'.PHP_EOL;
   echo '</div></div>'.PHP_EOL;                             //End Block lists
   
   echo '<div class="sys-group">'.PHP_EOL;                  //Advanced
   echo '<h5>Advanced</h5>'.PHP_EOL;
   echo '<div class="conf-nav">'.PHP_EOL;
-  echo '<a href="../admin/config.php?v=advanced"><img src="./svg/menu_advanced.svg"><span>Advanced Options</span></a>'.PHP_EOL;
+  echo '<a href="../admin/config.php?v=advanced"><img src="./svg/menu_advanced.svg"><span><h6>Advanced Options</h6></span></a>'.PHP_EOL;
   echo '</div></div>'.PHP_EOL;                             //End Config
 }
 
