@@ -114,6 +114,8 @@ function tracking_blocklists() {
 
   draw_blocklist_row('bl_fbenhanced', 'Fanboy&rsquo;s Enhanced Tracking List', 'Blocks common tracking scripts', 'https://www.fanboy.co.nz/');
 
+  draw_blocklist_row('bl_windowsspyblocker', 'Windows Spy Blocker', 'Windows Spy Blocker provides a block list to prevent spying and tracking on Windows Systems', 'https://github.com/crazy-max/WindowsSpyBlocker');
+
   echo '<tr><td colspan="3"><button type="submit" name="v" value="1">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End sys-group

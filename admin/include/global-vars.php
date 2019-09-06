@@ -6,7 +6,7 @@ define('STATUS_INCOGNITO', 8);
 define('STATUS_NOTRACKRUNNING', 64);
 define('STATUS_ERROR', 128);
 
-define('VERSION', '0.9.1');
+define('VERSION', '0.9.2');
 define('SERVERNAME', 'localhost');
 define('USERNAME', 'ntrk');
 define('PASSWORD', 'ntrkpass');
@@ -83,6 +83,7 @@ $DEFAULTCONFIG = array(
   'bl_spam404' => 0,
   'bl_swissransom' => 0,
   'bl_winhelp2002' => 0,
+  'bl_windowsspyblocker' => 0,
   //Region Specific BlockLists
   'bl_areasy' => 0,
   'bl_chneasy' => 0,
@@ -139,6 +140,7 @@ $BLOCKLISTNAMES = array(
   'bl_pglyoyo' => 'Peter Lowe&rsquo;s Ad List',
   'bl_spam404'=> 'Spam 404',
   'bl_swissransom' => 'Swiss Security Ransomware',
+  'bl_windowsspyblocker' => 'Windows Spy Blocker',
   'bl_areasy' => 'AR Easy List',
   'bl_chneasy' => 'CHN Easy List',
   'bl_yhosts' => 'CHN Yhosts',
@@ -188,6 +190,7 @@ $BLOCKLISTEVENT = array(
   'bl_pglyoyo' => 'advert',
   'bl_spam404'=> 'misc',
   'bl_swissransom' => 'malware',
+  'bl_windowsspyblocker' => 'tracker',
   'bl_areasy' => 'advert',
   'bl_chneasy' => 'advert',
   'bl_yhosts' => 'advert',

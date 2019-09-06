@@ -40,6 +40,7 @@ Config[bl_someonewhocares]=0
 Config[bl_spam404]=0
 Config[bl_swissransom]=0
 Config[bl_winhelp2002]=0
+Config[bl_windowsspyblocker]=0
 Config[bl_areasy]=0                              #Arab
 Config[bl_chneasy]=0                             #China
 Config[bl_deueasy]=0                             #Germany
@@ -69,7 +70,7 @@ Config[bl_yhosts]=0                              #China yhosts
 #######################################
 # Constants
 #######################################
-readonly VERSION="0.9.1"
+readonly VERSION="0.9.2"
 readonly MAIN_BLOCKLIST="/etc/dnsmasq.d/notrack.list"
 readonly FILE_BLACKLIST="/etc/notrack/blacklist.txt"
 readonly FILE_WHITELIST="/etc/notrack/whitelist.txt"
@@ -111,6 +112,7 @@ urls[swissransom]="https://ransomwaretracker.abuse.ch/downloads/RW_DOMBL.txt"
 urls[pglyoyo]="http://pgl.yoyo.org/adservers/serverlist.php?hostformat=;mimetype=plaintext"
 urls[someonewhocares]="http://someonewhocares.org/hosts/hosts"
 urls[winhelp2002]="http://winhelp2002.mvps.org/hosts.txt"
+urls[windowsspyblocker]="https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/update.txt"
 urls[areasy]="https://easylist-downloads.adblockplus.org/Liste_AR.txt"
 urls[chneasy]="https://easylist-downloads.adblockplus.org/easylistchina.txt"
 urls[deueasy]="https://easylist-downloads.adblockplus.org/easylistgermany.txt"
@@ -1750,6 +1752,7 @@ get_list "someonewhocares" "match_unixline"
 get_list "spam404" "match_easyline"
 get_list "swissransom" "match_plainline"
 get_list "winhelp2002" "match_unixline"
+get_list "windowsspyblocker" "match_unixline"
 get_list "fblatin" "match_easyline"
 get_list "areasy" "match_easyline"
 get_list "chneasy" "match_easyline"
