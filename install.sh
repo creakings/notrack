@@ -5,15 +5,15 @@
 #Usage : bash install.sh
 
 
-##############################################################################
-# Optional User Customisable Settings
-##############################################################################
+#######################################
+# User Configerable Settings
+#######################################
 INSTALL_LOCATION=""                         #define custom installation path
 
 
-##############################################################################
+#######################################
 # Constants
-##############################################################################
+#######################################
 readonly IP_V4="IPv4"
 readonly IP_V6="IPv6"
 
@@ -25,10 +25,10 @@ readonly NETWORK_INTERFACES_OLD_PATH="/etc/network/interfaces.old"
 readonly DNSMASQ_CONF_PATH="/etc/dnsmasq.conf"
 
 
-##############################################################################
-# Environment variables
-##############################################################################
-readonly VERSION="0.8.10"
+#######################################
+# Global Variables
+#######################################
+readonly VERSION="0.9.1"
 
 SUDO_REQUIRED=false                              #true if installing to /opt
 REBOOT_REQUIRED=false
@@ -42,11 +42,8 @@ DNS_SERVER_2=""
 BROADCAST_ADDRESS=""
 NETMASK_ADDRESS=""
 NETWORK_START_ADDRESS=""
+hostname="notrack.local"
 
-SETUP_DHCP=false
-DHCP_RANGE_START=""
-DHCP_RANGE_END=""
-DHCP_LEASE_TIME=""
 
 #######################################
 # Exit script with exit code
@@ -80,32 +77,14 @@ service_restart() {
   if [[ -n $1 ]]; then
     echo "Restarting $1"
     if [ "$(command -v systemctl)" ]; then       #systemd
-      sudo systemctl restart $1
+      sudo systemctl restart "$1"
     elif [ "$(command -v service)" ]; then       #sysvinit
-      sudo service $1 restart
+      sudo service "$1" restart
     elif [ "$(command -v sv)" ]; then            #runit
-      sudo sv restart $1
+      sudo sv restart "$1"
     else
       error_exit "Unable to restart services. Unknown service supervisor" "21"
     fi
-  fi
-}
-
-
-#######################################
-# Check if file exists
-# Globals:
-#   None
-# Arguments:
-#   $1 File Path
-#   $2 Exit Code
-# Returns:
-#   Exit Code
-#######################################
-check_file_exists() {
-  if [ ! -e "$1" ]; then
-    echo "Error. File $1 is missing :-( Aborting."
-    exit "$2" 
   fi
 }
 
@@ -158,7 +137,7 @@ menu() {
     echo "$choice"
     if [[ $choice =~ ^[0-9]+$ ]]; then           #Has the user chosen 0-9
       if [[ $choice -ge 1 ]] && [[ $choice -lt $menu_size ]]; then
-        return "$choice"        
+        return "$choice"
       fi
     elif [[ $choice ==  "A" ]]; then             #Up
       if [ $highlight -le 1 ]; then              #Loop around list
@@ -213,6 +192,23 @@ function backup_configs() {
 }
 
 
+#######################################
+# Check if file exists
+# Globals:
+#   None
+# Arguments:
+#   $1 File Path
+# Returns:
+#   Exit Code
+#######################################
+function check_file_exists() {
+  if [ ! -e "$1" ]; then
+    echo "Error. File $1 is missing :-( Aborting."
+    exit "25" 
+  fi
+}
+
+
 #--------------------------------------------------------------------
 # Copy Scripts
 #   Copy notrack script files to /usr/local/sbin
@@ -224,39 +220,65 @@ function backup_configs() {
 #   None
 #--------------------------------------------------------------------
 function copy_scripts() {
-  check_file_exists "$INSTALL_LOCATION/notrack.sh" "25"              #Main
+  check_file_exists "$INSTALL_LOCATION/scripts/notrack.sh"      #Blocklist parser
   echo "Copying notrack.sh"
-  sudo cp "$INSTALL_LOCATION/notrack.sh" /usr/local/sbin/notrack.sh
+  sudo cp "$INSTALL_LOCATION/scripts/notrack.sh" /usr/local/sbin/notrack.sh
   sudo mv /usr/local/sbin/notrack.sh /usr/local/sbin/notrack 
   sudo chmod 755 /usr/local/sbin/notrack
 
-  check_file_exists "$INSTALL_LOCATION/ntrk-exec.sh" "26"            #Exec
+  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-exec.sh"    #Exec
   echo "Copying ntrk-exec.sh"
-  sudo cp "$INSTALL_LOCATION/ntrk-exec.sh" /usr/local/sbin/
+  sudo cp "$INSTALL_LOCATION/scripts/ntrk-exec.sh" /usr/local/sbin/
   sudo mv /usr/local/sbin/ntrk-exec.sh /usr/local/sbin/ntrk-exec
   sudo chmod 755 /usr/local/sbin/ntrk-exec
   
-  check_file_exists "$INSTALL_LOCATION/ntrk-pause.sh" "27"           #Pause
+  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-pause.sh"   #Pause
   echo "Copying ntrk-pause.sh"
-  sudo cp "$INSTALL_LOCATION/ntrk-pause.sh" /usr/local/sbin/
+  sudo cp "$INSTALL_LOCATION/scripts/ntrk-pause.sh" /usr/local/sbin/
   sudo mv /usr/local/sbin/ntrk-pause.sh /usr/local/sbin/ntrk-pause
   sudo chmod 755 /usr/local/sbin/ntrk-pause
   
-  check_file_exists "$INSTALL_LOCATION/ntrk-upgrade.sh" "28"         #Upgrader
+  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-upgrade.sh" #Upgrader
   echo "Copying ntrk-upgrade.sh"
-  sudo cp "$INSTALL_LOCATION/ntrk-upgrade.sh" /usr/local/sbin/
+  sudo cp "$INSTALL_LOCATION/scripts/ntrk-upgrade.sh" /usr/local/sbin/
   sudo mv /usr/local/sbin/ntrk-upgrade.sh /usr/local/sbin/ntrk-upgrade
   sudo chmod 755 /usr/local/sbin/ntrk-upgrade
   
-  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-parse.sh" "29"   #ntrk-parse.sh
+  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-parse.sh"   #ntrk-parse.sh
   echo "Copying ntrk-parse.sh"
   sudo cp "$INSTALL_LOCATION/scripts/ntrk-parse.sh" /usr/local/sbin/
   sudo mv /usr/local/sbin/ntrk-parse.sh /usr/local/sbin/ntrk-parse
   sudo chmod 755 /usr/local/sbin/ntrk-parse
+  
+  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-analytics.sh" "29"   #ntrk-parse.sh
+  echo "Copying ntrk-analytics.sh"
+  sudo cp "$INSTALL_LOCATION/scripts/ntrk-analytics.sh" /usr/local/sbin/
+  sudo mv /usr/local/sbin/ntrk-analytics.sh /usr/local/sbin/ntrk-analytics
+  sudo chmod 755 /usr/local/sbin/ntrk-analytics
+
   echo "========================================================="
   echo
 }
 
+
+#--------------------------------------------------------------------
+# Create File
+# Checks if a file exists and creates it
+#
+# Globals:
+#   None
+# Arguments:
+#   #$1 File to create
+# Returns:
+#   None
+#--------------------------------------------------------------------
+function create_file() {
+  if [ ! -e "$1" ]; then                         #Does file already exist?
+    echo "Creating file: $1"
+    sudo touch "$1"                              #If not then create it
+    sudo chmod 664 "$1"                          #RW RW R permissions
+  fi
+}
 
 #--------------------------------------------------------------------
 # Create Folder
@@ -268,7 +290,7 @@ function copy_scripts() {
 # Returns:
 #   None
 #--------------------------------------------------------------------
-function create_folder {
+function create_folder() {
   if [ ! -d "$1" ]; then                         #Does folder exist?
     echo "Creating folder: $1"                   #Tell user folder being created
     sudo mkdir "$1"                              #Create folder
@@ -277,7 +299,7 @@ function create_folder {
 
 
 #--------------------------------------------------------------------
-# Delete Old File
+# Delete File
 #   Checks if a file exists and then deletes it
 #
 # Globals:
@@ -287,7 +309,7 @@ function create_folder {
 # Returns:
 #   None
 #--------------------------------------------------------------------
-function delete_file() {  
+function delete_file() {
   if [ -e "$1" ]; then                           #Does file exist?
     echo "Deleting file $1"
     sudo rm "$1"                                 #If yes then delete it
@@ -309,9 +331,9 @@ function download_with_git() {
   echo "Downloading NoTrack using Git"
 
   if [ $SUDO_REQUIRED == false ]; then
-    git clone --depth=1 https://github.com/quidsup/notrack.git "$INSTALL_LOCATION"
+    git clone --depth=1 https://gitlab.com/quidsup/notrack.git "$INSTALL_LOCATION"
   else
-    sudo git clone --depth=1 https://github.com/quidsup/notrack.git "$INSTALL_LOCATION"
+    sudo git clone --depth=1 https://gitlab.com/quidsup/notrack.git "$INSTALL_LOCATION"
   fi
   echo
 }
@@ -331,11 +353,11 @@ function download_with_wget() {
   if [ -d "$INSTALL_LOCATION" ]; then            #Check if NoTrack folder exists
     echo "NoTrack folder exists. Skipping download"
   else
-    echo "Downloading latest version of NoTrack from github"
-    wget https://github.com/quidsup/notrack/archive/master.zip -O /tmp/notrack-master.zip
+    echo "Downloading latest version of NoTrack from Gitlab"
+    wget https://gitlab.com/quidsup/notrack/-/archive/master/notrack-master.zip -O /tmp/notrack-master.zip
     if [ ! -e /tmp/notrack-master.zip ]; then    #Check to see if download was successful
       #Abort we can't go any further without any code from git
-      error_exit "Error Download from github has failed" "23"
+      error_exit "Error Download from Gitlab has failed" "23"
     fi
 
     unzip -oq /tmp/notrack-master.zip -d /tmp
@@ -348,6 +370,27 @@ function download_with_wget() {
   fi
 
   sudo chown "$(whoami)":"$(whoami)" -hR "$INSTALL_LOCATION"
+}
+
+
+#--------------------------------------------------------------------
+# Get hostname
+#   Attempt to find hostname of system
+# Globals:
+#   hostname
+# Arguments:
+#   None
+# Returns:
+#   None
+#--------------------------------------------------------------------
+function get_hostname() {
+  if [ -e /etc/sysconfig/network ]; then         #Set first entry for localhosts
+    hostname=$(grep "HOSTNAME" /etc/sysconfig/network | cut -d "=" -f 2 | tr -d [[:space:]])
+  elif [ -e /etc/hostname ]; then
+    hostname=$(cat /etc/hostname)
+  else
+    echo "get_hostname() WARNING: Unable to find hostname"
+  fi
 }
 
 
@@ -636,6 +679,44 @@ function install_xbps() {
 
 
 
+#######################################
+# check_systemd_dnsmasq
+#   Attempt to resolve any issues with systemd-resolved dns service conflicting with dnsmasq
+#
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   0. Success
+#
+#######################################
+function check_systemd_dnsmasq() {
+  if [ "$(command -v systemctl)" ]; then
+    if (systemctl -q is-active dnsmasq.service); then
+      echo "Dnsmasq successfully restarted"
+      return 0
+    fi
+    echo
+    echo "WARNING: Dnsmasq has failed to restart. This could be due to a conflict with systemd-resolved service running a stub dns server on port 53."
+    echo "This issue is known to affect Ubuntu 19.04"
+    echo
+    echo "I can fix the issue by adding DNSStubListener=no to /etc/systemd/resolved.conf"
+    
+    read -p "Do you want me to edit resolved.conf(Y/n)? " -n 1 -r
+    echo
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      echo "DNSStubListener=no" | sudo tee -a /etc/systemd/resolved.conf &> /dev/null
+      sudo systemctl restart systemd-resolved.service
+      sudo systemctl restart dnsmasq.service
+    else
+      return 1      
+    fi
+  fi
+}
+
+
 
 #--------------------------------------------------------------------
 # Setup Dnsmasq
@@ -649,11 +730,12 @@ function install_xbps() {
 #   None
 #--------------------------------------------------------------------
 function setup_dnsmasq() {
-  local hostname=""
-  
   echo "Configuring Dnsmasq"
   
   create_folder "/etc/dnsmasq.d"                 #Issue #94 dnsmasq folder not created
+  create_file "/var/log/notrack.log"             #File where DNS logs are stored until parsed in MariaDB table dnslogs by ntrk-parse
+  create_file "/etc/localhosts.list"             #File for user to add DNS entries for their network
+  create_file "/etc/dnsmasq.d/servers.conf"
   
   #Copy config files modified for NoTrack
   echo "Copying Dnsmasq config files from $INSTALL_LOCATION to /etc/conf"
@@ -661,39 +743,20 @@ function setup_dnsmasq() {
   sudo cp "$INSTALL_LOCATION/conf/dnsmasq.conf" /etc/dnsmasq.conf
   
   #Finish configuration of dnsmasq config
-  echo "Setting DNS Servers in /etc/dnsmasq.conf"
-  sudo sed -i "s/server=changeme1/server=$DNS_SERVER_1/" /etc/dnsmasq.conf
-  sudo sed -i "s/server=changeme2/server=$DNS_SERVER_2/" /etc/dnsmasq.conf
   sudo sed -i "s/interface=eth0/interface=$NETWORK_DEVICE/" /etc/dnsmasq.conf
-  echo "Creating file /etc/localhosts.list for Local Hosts"
   
-  sudo touch /etc/localhosts.list                #File for user to add DNS entries for their network
+  echo "Setting DNS Servers"
+  echo "server=$DNS_SERVER_1" | sudo tee -a /etc/dnsmasq.d/servers.conf
+  echo "server=$DNS_SERVER_2" | sudo tee -a /etc/dnsmasq.d/servers.conf
+
+  echo "Setting up your /etc/localhosts.list for Local Hosts"
   
-  if [ -e /etc/sysconfig/network ]; then         #Set first entry for localhosts
-    hostname=$(grep "HOSTNAME" /etc/sysconfig/network | cut -d "=" -f 2 | tr -d [[:space:]])
-  elif [ -e /etc/hostname ]; then
-    hostname=$(cat /etc/hostname)
-  else
-    echo "setup_dnsmasq() WARNING: Unable to find hostname"
-  fi
+  echo "Writing first entry for this system: $IP_ADDRESS - $hostname"
+  echo -e "$IP_ADDRESS\t$hostname" | sudo tee -a /etc/localhosts.list 
 
-  if [[ $hostname != "" ]]; then
-    echo "Writing first entry for this system: $IP_ADDRESS - $hostname"
-    echo -e "$IP_ADDRESS\t$hostname" | sudo tee -a /etc/localhosts.list 
-  fi
-
-  sudo touch /var/log/notrack.log                #Create log file for Dnsmasq
-  sudo chmod 664 /var/log/notrack.log            #Set permissions for log file
-
-  if [[ "$SETUP_DHCP" == true ]]; then           #Optional DHCP Setup
-    config_dnsmasq_dhcp_logging
-    config_dnsmasq_dhcp_authoritative_mode
-
-    if [[ "$IP_VERSION" == "$IP_V4" ]]; then
-      setup_dnsmasq_dhcp_ipv4
-    fi
-  fi
-
+  service_restart dnsmasq
+  check_systemd_dnsmasq
+  
   echo "Setup of Dnsmasq complete"
   echo "========================================================="
   echo
@@ -717,15 +780,16 @@ setup_lighttpd() {
   local group=""
 
   echo "Configuring Lighttpd"
-  if getent passwd www-data > /dev/null 2>&1; then  #default group is www-data
+
+  if getent passwd www-data > /dev/null 2>&1; then         #default group is www-data
     echo "Adding www-data rights to $(whoami)"
     sudo usermod -a -G www-data "$(whoami)"
     group="www-data"
-  elif getent passwd http > /dev/null 2>&1; then    #Arch uses group http
+  elif getent passwd http > /dev/null 2>&1; then           #Arch uses group http
     echo "Adding http rights to $(whoami)"
     sudo usermod -a -G http "$(whoami)"
     group="http"
-  elif getent passwd _lighttpd > /dev/null 2>&1; then    #void uses group _lighttpd
+  elif getent passwd _lighttpd > /dev/null 2>&1; then      #void uses group _lighttpd
     echo "Adding _lighttpd rights to $(whoami)"
     sudo usermod -a -G _lighttpd "$(whoami)"
     group="_lighttpd"
@@ -743,18 +807,49 @@ setup_lighttpd() {
   #Copy Config and change user name
   check_file_exists "$INSTALL_LOCATION/conf/lighttpd.conf" 24
   sudo cp "$INSTALL_LOCATION/conf/lighttpd.conf" /etc/lighttpd/lighttpd.conf
-  sudo sed -i "s/changeme/$group/" /etc/lighttpd/lighttpd.conf
-    
-  create_folder "/var/www"                       #/var/www/html should be created by lighty
-  create_folder "/var/www/html"
+  sudo sed -i "s/changegroup/$group/" /etc/lighttpd/lighttpd.conf
+  sudo sed -i "s/changehost/$hostname/" /etc/lighttpd/lighttpd.conf
   
-  delete_file "/var/www/html/admin"              #Remove old symlinks
+  #Fix for lighty 1.4.53 changing create-mime.assign and create-mime.conf
+  if [ -e "/usr/share/lighttpd/create-mime.assign.pl" ]; then
+    echo "Found create-mime.assign.pl, editing lighttpd.conf"
+    sudo sed -i 's!##include_shell "/usr/share/lighttpd/create-mime.assign.pl"!include_shell "/usr/share/lighttpd/create-mime.assign.pl"!' /etc/lighttpd/lighttpd.conf
+  fi
+  
+  if [ -e "/usr/share/lighttpd/create-mime.conf.pl" ]; then
+    echo "Found create-mime.conf.pl, editing lighttpd.conf"
+    sudo sed -i 's!##include_shell "/usr/share/lighttpd/create-mime.conf.pl"!include_shell "/usr/share/lighttpd/create-mime.conf.pl"!' /etc/lighttpd/lighttpd.conf
+  fi
+  
+  #Fix for lighty 1.4.53 moving from include-conf-enabled.pl to /etc/lighttpd/conf-enabled/*.conf
+  if [ -e "/usr/share/lighttpd/include-conf-enabled.pl" ]; then
+    echo "Found include-conf-enabled.pl"
+    if grep --quiet deprecated /usr/share/lighttpd/include-conf-enabled.pl; then
+      echo "deprecated version of include-conf-enabled.pl, using newer config setting"
+      #Deprecated exists in include-conf-enabled.pl, so use new method
+      sudo sed -i 's!##include "/etc/lighttpd/conf-enabled/\*.conf"!include "/etc/lighttpd/conf-enabled/*.conf"!' /etc/lighttpd/lighttpd.conf
+    else
+      #Deprecated doesn't exist, so go with old method
+      echo "legacy version of include-conf-enabled.pl, using older config setting"
+      sudo sed -i 's!##include_shell "/usr/share/lighttpd/include-conf-enabled.pl"!include_shell "/usr/share/lighttpd/include-conf-enabled.pl"!' /etc/lighttpd/lighttpd.conf
+    fi
+  else
+    echo "Unable to find include-conf-enabled.pl, assuming newer config setting"
+    sudo sed -i 's!##include "/etc/lighttpd/conf-enabled/*.conf"!include "/etc/lighttpd/conf-enabled/*.conf"!' /etc/lighttpd/lighttpd.conf
+  fi
+  
     
-  echo "Creating Sink Folder"                    #Create new sink folder
+  create_folder "/var/www"                                 #/var/www/html should be created by lighty
+  create_folder "/var/www/html"
+  delete_file "/var/www/html/index.lighttpd.html"          #Remove default lighty html file
+  
+  delete_file "/var/www/html/admin"                        #Remove old symlinks
+
+  echo "Creating Sink Folder"                              #Create new sink folder
   create_folder "/var/www/html/sink"
   echo "Setting Block message to 1x1 pixel"
   echo '<img src="data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=" alt="" />' | sudo tee /var/www/html/sink/index.html &> /dev/null
-  
+
   echo "Changing ownership of sink folder to $group"
   sudo chown -hR "$group":"$group" /var/www/html/sink
   sudo chmod -R 775 /var/www/html/sink
@@ -809,7 +904,7 @@ function setup_mariadb() {
   
   #Check to see if ntrk user has been added
   if [[ ! `sudo mysql -sN --user=root --password="$rootpass" -e "SELECT User FROM mysql.user"` =~ ntrk[[:space:]]root ]]; then
-    error_exit "MariaDB command failed, have you entered wrong incorrect root password?" "35"
+    error_exit "MariaDB command failed, have you entered incorrect root password?" "35"
   fi
   
   echo "Creating Database ntrkdb"
@@ -822,14 +917,17 @@ function setup_mariadb() {
   sudo mysql --user=root --password="$rootpass" -e "FLUSH PRIVILEGES;"
   
   echo "Creating Tables"
-  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE live (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, dns_result CHAR(1));"
-  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE historic (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, dns_result CHAR(1));" 
+  #dnslog
+  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE dnslog (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, dns_result CHAR(1));"
+  #users (not yet used)
   mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE users (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, user TINYTEXT, pass TEXT, level CHAR(1));"
+  #blocklist
   mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE blocklist (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, bl_source TINYTEXT, site TINYTEXT, site_status BOOLEAN, comment TEXT);"
-  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE lightyaccess (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, site TINYTEXT, http_method CHAR(4), uri_path TEXT, referrer TEXT, user_agent TEXT, remote_host TEXT);"
-  
-  echo "Creating CRON job for Log Parser"
-  echo -e "*/7 * * * *\troot\t/usr/local/sbin/ntrk-parse" | sudo tee /etc/cron.d/ntrk-parse &> /dev/null
+  #weblog
+  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE weblog (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, site TINYTEXT, http_method CHAR(4), uri_path TEXT, referrer TEXT, user_agent TEXT, remote_host TEXT);"
+
+  echo "Creating cron job for Log Parser in /etc/cron.d"
+  echo -e "*/4 * * * *\troot\t/usr/local/sbin/ntrk-parse" | sudo tee /etc/cron.d/ntrk-parse &> /dev/null
 
   echo "MariaDB setup complete"
   echo "========================================================="
@@ -838,39 +936,38 @@ function setup_mariadb() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Setup NoTrack
-#   Copy notrack.sh and do initial setup of notrack.conf
+#   1. Initial setup of notrack.conf
+#   2. Create cron jobs
+#
 # Globals:
 #   INSTALL_LOCATION, IP_VERSION, NETWORK_DEVICE
 # Arguments:
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#
+#######################################
 function setup_notrack() {
-  #Setup Tracker list downloader
   echo "Setting up NoTrack block list downloader"
-     
-  echo "Creating daily cron job in /etc/cron.daily/"
-  if [ -e /etc/cron.daily/notrack ]; then        #Remove old symlink
-    echo "Removing old file: /etc/cron.daily/notrack"
-    sudo rm /etc/cron.daily/notrack
-  fi
-  #Create cron daily job with a symlink to notrack script
-  sudo ln -s /usr/local/sbin/notrack /etc/cron.daily/notrack
-    
+
   create_folder "/etc/notrack"
-    
-  if [ -e /etc/notrack/notrack.conf ]; then      #Remove old config file
-    echo "Removing old file: /etc/notrack/notrack.conf"
-    sudo rm /etc/notrack/notrack.conf
-  fi
-  echo "Creating NoTrack config file: /etc/notrack/notrack.conf"
-  sudo touch /etc/notrack/notrack.conf           #Create Config file
+  create_file "/etc/notrack/notrack.conf"                  #Create Config file
+
   echo "Writing initial config"
   echo "IPVersion = $IP_VERSION" | sudo tee /etc/notrack/notrack.conf
   echo "NetDev = $NETWORK_DEVICE" | sudo tee -a /etc/notrack/notrack.conf
+
+  delete_file "/etc/cron.daily/notrack"                    #Remove old symlinks
+  delete_file "/etc/cron.hourly/ntrk-analytics"
+
+  echo "Creating daily cron job in /etc/cron.daily/"
+  sudo ln -s /usr/local/sbin/notrack /etc/cron.daily/notrack
+
+  echo "Creating hourly cron job for ntrk-analytics in /etc/cron.hourly"
+  sudo ln -s /usr/local/sbin/ntrk-analytics /etc/cron.hourly/ntrk-analytics
+
   echo
   echo "NoTrack configuration complete"
   echo "========================================================="
@@ -879,9 +976,8 @@ function setup_notrack() {
 }
 
 
-
 #FirewallD-----------------------------------------------------------
-Setup_FirewallD() {
+setup_firewalld() {
   #Configure FirewallD to Work With Dnsmasq
   echo "Creating Firewall Rules Using FirewallD"
   
@@ -1052,7 +1148,7 @@ prompt_dns_server() {
   
   case "$?" in
     1)                                           #OpenDNS
-      if [[ $1 == $IP_V6 ]]; then
+      if [[ $1 == "$IP_V6" ]]; then
         DNS_SERVER_1="2620:0:ccc::2"
         DNS_SERVER_2="2620:0:ccd::2"
       else
@@ -1061,7 +1157,7 @@ prompt_dns_server() {
       fi
     ;;
     2)                                           #Google
-      if [[ $1 == $IP_V6 ]]; then
+      if [[ $1 == "$IP_V6" ]]; then
         DNS_SERVER_1="2001:4860:4860::8888"
         DNS_SERVER_2="2001:4860:4860::8844"
       else
@@ -1069,8 +1165,8 @@ prompt_dns_server() {
         DNS_SERVER_2="8.8.4.4"
       fi
     ;;
-    3)                                           #DNSWatch
-      if [[ $1 == $IP_V6 ]]; then
+    3)                                                     #DNSWatch
+      if [[ $1 == "$IP_V6" ]]; then
         DNS_SERVER_1="2001:1608:10:25::1c04:b12f"
         DNS_SERVER_2="2001:1608:10:25::9249:d69b"
       else
@@ -1078,8 +1174,8 @@ prompt_dns_server() {
         DNS_SERVER_2="84.200.70.40"
       fi
     ;;
-    4)                                           #Verisign
-      if [[ $1 == $IP_V6 ]]; then
+    4)                                                     #Verisign
+      if [[ $1 == "$IP_V6" ]]; then
         DNS_SERVER_1="2620:74:1b::1:1"
         DNS_SERVER_2="2620:74:1c::2:2"
       else
@@ -1087,16 +1183,16 @@ prompt_dns_server() {
         DNS_SERVER_2="64.6.65.6"
       fi
     ;;
-    5)                                           #Comodo
+    5)                                                     #Comodo
       DNS_SERVER_1="8.26.56.26"
       DNS_SERVER_2="8.20.247.20"
     ;;
-    6)                                           #FreeDNS
+    6)                                                     #FreeDNS
       DNS_SERVER_1="37.235.1.174"
       DNS_SERVER_2="37.235.1.177"
     ;;
-    7)                                           #Yandex
-      if [[ $1 == $IP_V6 ]]; then
+    7)                                                     #Yandex
+      if [[ $1 == "$IP_V6" ]]; then
         DNS_SERVER_1="2a02:6b8::feed:bad"
         DNS_SERVER_2="2a02:6b8:0:1::feed:bad"
       else
@@ -1105,7 +1201,7 @@ prompt_dns_server() {
       fi
     ;;
     8)
-      if [[ $1 == $IP_V6 ]]; then                #Cloudflare
+      if [[ $1 == "$IP_V6" ]]; then                        #Cloudflare
         DNS_SERVER_1="2606:4700:4700::1111"
         DNS_SERVER_2="2606:4700:4700::1001"
       else
@@ -1113,7 +1209,7 @@ prompt_dns_server() {
         DNS_SERVER_2="1.0.0.1"
       fi
     ;;
-    9)                                           #Other
+    9)                                                     #Other
       echo -en "DNS Server 1: "
       read -r DNS_SERVER_1
       echo -en "DNS Server 2: "
@@ -1148,11 +1244,11 @@ get_gateway_address() {
 #   None
 #######################################
 get_ip_address() {
-  if [[ $1 == $IP_V4 ]]; then
+  if [[ $1 == "$IP_V4" ]]; then
     echo "Reading IPv4 Address from $2"
     IP_ADDRESS=$(ip addr list "$2" |grep "inet " |cut -d' ' -f6|cut -d/ -f1)
     
-  elif [[ $1 == $IP_V6 ]]; then
+  elif [[ $1 == "$IP_V6" ]]; then
     echo "Reading IPv6 Address from $2"
     IP_ADDRESS=$(ip addr list "$2" |grep "inet6 " |cut -d' ' -f6|cut -d/ -f1)    
   else
@@ -1306,7 +1402,7 @@ set_static_ip_dhcpcd(){
   sudo sed -i -e "\$a\ " $DHCPCD_CONF_PATH
   sudo sed -i -e "\$a#Static Ip Address" $DHCPCD_CONF_PATH
   sudo sed -i -e "\$ainterface $NETWORK_DEVICE" $DHCPCD_CONF_PATH
-  if [[ $IP_VERSION = $IP_V4 ]]; then
+  if [[ $IP_VERSION == "$IP_V4" ]]; then
     sudo sed -i -e "\$astatic ip_address=$IP_ADDRESS/24" $DHCPCD_CONF_PATH
   else
     sudo sed -i -e "\$astatic ip_address=$IP_ADDRESS/64" $DHCPCD_CONF_PATH
@@ -1355,23 +1451,17 @@ set_static_ip_network_interfaces(){
 get_static_ip_address_info(){
   prompt_ip_version
 
-  if [[ $IP_VERSION == $IP_V6 ]]; then
+  if [[ $IP_VERSION == "$IP_V6" ]]; then
     error_exit "Only IPv4 supported for now" 12
     # TODO: Add support for setting static IPv6 address in /etc/network/interfaces
   fi
 
   prompt_network_device
-
-  prompt_dns_server $IP_VERSION
-
-  get_ip_address $IP_VERSION $NETWORK_DEVICE
-
-  get_broadcast_address $NETWORK_DEVICE
-
-  get_netmask_address $NETWORK_DEVICE
-
-  get_network_start_address $IP_ADDRESS $NETMASK_ADDRESS
-
+  prompt_dns_server "$IP_VERSION"
+  get_ip_address "$IP_VERSION" "$NETWORK_DEVICE"
+  get_broadcast_address "$NETWORK_DEVICE"
+  get_netmask_address "$NETWORK_DEVICE"
+  get_network_start_address "$IP_ADDRESS" "$NETMASK_ADDRESS"
   get_gateway_address
 }
 
@@ -1482,196 +1572,9 @@ prompt_setup_static_ip_address(){
     3)
       error_exit "Aborting install" 1
     ;;
-  esac  
-}
-
-
-#######################################
-# Promt if to setup DHCP server
-# Globals:
-#   SETUP_DHCP
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-prompt_setup_dhcp(){
-  menu "Setup NoTrack DHCP Server?\n\nThis would make any device connecting to your network using DHCP automatically protected by NoTrack" "Yes, setup NoTrack DHCP" "No"
-
-  if [[ "$?" == 1 ]]; then
-    SETUP_DHCP=true
-  fi
-}
-
-
-
-#######################################
-# Configures dnsmasq dhcp server for ipv4
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-setup_dnsmasq_dhcp_ipv4(){
-  config_dnsmasq_dhcp_option_ipv4
-  config_dnsmasq_dhcp_range_ipv4
-}
-
-
-#######################################
-# Configures dnsmasq logging
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-config_dnsmasq_dhcp_logging(){
-  #Logging is currently enabled by default
-  echo "Configuring Dnsmasq logging"
-  echo
-}
-
-
-#######################################
-# Configures dnsmasq dhcp authoritative mode
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-config_dnsmasq_dhcp_authoritative_mode(){
-  echo "Configuring authoritative mode"
-  sudo sed -i "s/#dhcp-authoritative/dhcp-authoritative/" $DNSMASQ_CONF_PATH
-  echo
-}
-
-
-#######################################
-# Configures dnsmasq option for ipv4
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-config_dnsmasq_dhcp_option_ipv4(){
-  echo "Configuring Dnsmasq internet gateway"
-  sudo sed -i "s/#dhcp-option-replace-token-ipv4/dhcp-option=3,$GATEWAY_ADDRESS/" $DNSMASQ_CONF_PATH
-  echo
-}
-
-
-#######################################
-# Configures dnsmasq dhcp range for ipv4
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-config_dnsmasq_dhcp_range_ipv4(){
-  echo "Configuring Dnsmasq dhcp range"
-  sudo sed -i "s/#dhcp-range-replace-token-ipv4/dhcp-range=$DHCP_RANGE_START,$DHCP_RANGE_END,$DHCP_LEASE_TIME/" $DNSMASQ_CONF_PATH
-  echo
-}
-
-
-#######################################
-# Gets a default dhcp range start address
-# Globals:
-#   None
-# Arguments:
-#   Ip address
-#   Netmask
-# Returns:
-#   None
-#######################################
-get_dhcp_range_start_address(){
-  IFS=. read -r i1 i2 i3 i4 <<< "$1"
-  IFS=. read -r m1 m2 m3 m4 <<< "$2"
-  DHCP_RANGE_START="$((i1 & m1)).$((i2 & m2)).$((i3 & m3)).1"
-}
-
-
-#######################################
-# Prompts for dhcp range start address
-# Globals:
-#   DHCP_RANGE_START
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-prompt_dhcp_range_start_address(){
-  clear
-  read -p "Enter DHCP range start address: " -i $DHCP_RANGE_START -e DHCP_RANGE_START
-}
-
-
-#######################################
-# Gets a default dhcp range end address
-# Globals:
-#   None
-# Arguments:
-#   Ip address
-#   Netmask
-# Returns:
-#   None
-#######################################
-get_dhcp_range_end_address(){
-  IFS=. read -r i1 i2 i3 i4 <<< "$1"
-  IFS=. read -r m1 m2 m3 m4 <<< "$2"
-  DHCP_RANGE_END="$((i1 & m1)).$((i2 & m2)).$((i3 & m3)).254"
-}
-
-
-#######################################
-# Prompts for dhcp range end address
-# Globals:
-#   DHCP_RANGE_END
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-prompt_dhcp_range_end_address(){
-  clear
-  read -p "Enter DHCP range end address: " -i $DHCP_RANGE_END -e DHCP_RANGE_END
-}
-
-
-#######################################
-# Prompts for dhcp lease time
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-prompt_dhcp_lease(){
-  menu "DHCP lease time" "6h" "12h" "24h"
-
-  case "$?" in
-    1) 
-      DHCP_LEASE_TIME="6h"
-    ;;
-    2) 
-      DHCP_LEASE_TIME="12h"
-    ;;
-    3)
-      DHCP_LEASE_TIME="24h"
-    ;;  
   esac
 }
+
 
 
 #######################################
@@ -1701,7 +1604,7 @@ function show_welcome() {
 #######################################
 # Finish Screen
 # Globals:
-#   INSTALL_LOCATION
+#   INSTALL_LOCATION, REBOOT_REQUIRED, hostname
 # Arguments:
 #   None
 # Returns:
@@ -1718,7 +1621,11 @@ function show_finish() {
   echo -e "\t    Run: /usr/bin/mysql_secure_installation"
   echo
   echo -e "\t\u2022 Create HTTPS Certificate"
-  echo -e "\t    bash $INSTALL_LOCATION/create-ssl-cert.sh"
+  echo -e "\t    bash $INSTALL_LOCATION/scripts/create-ssl-cert.sh"
+  echo
+  echo -e "\t\u2022 Enable DHCP"
+  echo -e "\t    http://$(hostname)/dhcp"
+  echo
   echo
   echo "========================================================="
   echo
@@ -1749,18 +1656,13 @@ if [ $1 ]; then
     echo "If it does make a note of it, as you will need it later"
     echo "Press any key to continue"
     read -rn1
-    
-    echo "Running ntrk-upgrade"
-    sudo /usr/local/sbin/ntrk-upgrade            #Run Ntrk-Upgrade first
-    sudo rm /etc/logrotate.d/notrack             #Remove old log rotator
+
     install_packages
     setup_mariadb
-    
+
     service_restart dnsmasq
     service_restart lighttpd
-    
-    sudo /usr/local/sbin/ntrk-parse
-    sudo /usr/local/sbin/notrack
+
     show_finish
     exit
   fi
@@ -1801,45 +1703,17 @@ if [[ $DNS_SERVER_1 == "" ]]; then
   prompt_dns_server $IP_VERSION
 fi
 
-
-# DHCP setup only for IPv4 for now
-if [[ $IP_VERSION == $IP_V4 ]]; then
-  prompt_setup_dhcp
-fi
-
-if [[ "$SETUP_DHCP" == true ]]; then
-  if [[ -z "$NETMASK_ADDRESS" ]]; then
-    get_netmask_address $NETWORK_DEVICE
-  fi
-
-  if [[ -z "$GATEWAY_ADDRESS" ]]; then
-    get_gateway_address
-    prompt_gateway_address
-  fi
-
-  get_dhcp_range_start_address $IP_ADDRESS $NETMASK_ADDRESS
-  prompt_dhcp_range_start_address
-
-  get_dhcp_range_end_address $IP_ADDRESS $NETMASK_ADDRESS
-  prompt_dhcp_range_end_address
-
-  prompt_dhcp_lease
-fi
+get_hostname
 
 clear
 echo "Installing to: $INSTALL_LOCATION"          #Final report before Installing
 echo "Network Device set to: $NETWORK_DEVICE"
 echo "IP version set to: $IP_VERSION"
-echo "System IP address $IP_ADDRESS"
+echo "IP address: $IP_ADDRESS"
+echo "Hostname: $hostname"
 echo "Primary DNS server set to: $DNS_SERVER_1"
 echo "Secondary DNS server set to: $DNS_SERVER_2"
-
-if [[ "$SETUP_DHCP" == true ]]; then
-  echo "DHCP range start: $DHCP_RANGE_START"
-  echo "DHCP range end: $DHCP_RANGE_END"
-  echo "DHCP lease time: $DHCP_LEASE_TIME"
-fi
-echo 
+echo
 
 seconds=$((8))
 while [ $seconds -gt 0 ]; do
@@ -1870,10 +1744,9 @@ setup_mariadb
 setup_notrack
 
 if [ "$(command -v firewall-cmd)" ]; then        #Check FirewallD exists
-  Setup_FirewallD
+  setup_firewalld
 fi
 
-service_restart dnsmasq
 service_restart lighttpd
 
 echo "========================================================="

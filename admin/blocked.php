@@ -9,11 +9,12 @@ ensure_active_session();
 <html>
 <head>
   <meta charset="UTF-8">
-  <link href="./css/master.css" rel="stylesheet" type="text/css">  
+  <link href="./css/master.css" rel="stylesheet" type="text/css">
+  <link href="./css/chart.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/menu.js"></script>
   <script src="./include/queries.js"></script>
-  <title>NoTrack - Sites Blocked</title>  
+  <title>NoTrack - Sites Blocked</title>
 </head>
 
 <body>
@@ -73,99 +74,90 @@ function draw_subnav() {
 /********************************************************************
  *  Get User Agent 
  *    Identifies OS and Browser
+ *    1. Find OS using various regex matches
+ *    2. Find Browser string using regex to match with corresponding image file
  *  Params:
  *    UserAgent String
  *  Return:
  *    OS and Browser
- 
-1st Capturing Group (Mozilla|Dalvik|Opera)
-2nd Capturing Group (Linux|X11|Android|Windows|compatible|iPad|iPhone|Macintosh|IE 11\.0)
-3rd Capturing Group (MSIE|Android|Windows)?
-Non-capturing group (?:KHTML|Gecko|AppleWebKit)?
-4th Capturing Group (Firefox|Iceweasel|PaleMoon|SeaMonkey|\(KHTML\,\slike\sGecko\)\s)?
-5th Capturing Group (Chrome|Version|min|brave)?
-6th Capturing Group (Mobile|Safari)?
-7th Capturing Group (Edge|OPR|Vivaldi)?
  */
 function get_useragent($user_agent) {
   $matches = array();
   $ua = array('unknown', 'unknown');
-  $pattern = '/^(Mozilla|Dalvik|Opera)\/\d\.\d\.?\d?\s\((Linux|X11|Android|Windows|compatible|iPad|iPhone|Macintosh|IE 11\.0).\s?(MSIE|Android|Windows)?[^\)]+\)\s?(?:KHTML|Gecko|AppleWebKit)?[\/\d\.\+]*\s?(Firefox|Iceweasel|PaleMoon|SeaMonkey|\(KHTML\,\slike\sGecko\)\s)?(Chrome|Version|min|brave)?[\/\d\.\s]*(Mobile|Safari)?[\/\d\.\s]*(Edge|OPR|Vivaldi)?/';
   
-  if (preg_match($pattern, $user_agent, $matches) > 0) {
-    switch($matches[1]) {                        //Usually Mozilla
-      case 'Dalvik': $ua[1] = 'android'; break;  //Android apps
-      case 'Opera': $ua[1] = 'opera'; break;     //Opera prior to Blink
-    }    
+  //Find OS
   
-    switch($matches[2]) {                        //Most OS's or IE 11
-      case 'Linux':
-      case 'X11':
-        $ua[0] = 'linux';
-        break;
-      case 'Android':
-        $ua[0] = 'android';
-        break;
-      case 'Windows':
-      case 'compatible':
-        $ua[0] = 'windows';
-        break;
-      case 'iPad':
-      case 'iPhone':
-      case 'Macintosh':
-        $ua[0] = 'apple';
-        break;
-      case 'IE 11.0':
-        $ua[0] = 'windows';
-        $ua[1] = 'internet-explorer';
-        break;
-    }
-   
-    if (isset($matches[3])) {                    //Android or IE
-      switch($matches[3]) {
-        case 'MSIE': $ua[1] = 'internet-explorer'; break;
-        case 'Android': $ua[0] = 'android'; break;
-        case 'Windows': $ua[0] = 'windows'; break;
-      }      
-    }
-    
-    if (isset($matches[4])) {                    //Gecko rendered Mozilla browsers
-      switch($matches[4]) {
-        case 'Firefox': $ua[1] = 'firefox'; break;
-        case '(KHTML, like Gecko):': $ua[1] = 'chrome'; break;
-        case 'Iceweasel': $ua[1] = 'iceweasel'; break;
-        case 'PaleMoon': $ua[1] = 'palemoon'; break;
-        case 'SeaMonkey': $ua[1] = 'seamonkey'; break;
-      }
-    }
-    
-    if (isset($matches[5])) {
-      switch($matches[5]) {
-        case 'Chrome': $ua[1] = 'chrome'; break;
-        case 'min': $ua[1] = 'min'; break;
-        case 'brave': $ua[1] = 'brave'; break;
-      }
-    }
-    
-    if (isset($matches[6])) {                    //Safari or Safari compliant
-      if ($matches[5] == 'Version') {            //Backtrack to Group5 to check if actually Safari
-        $ua[1] = 'safari';
-      }
-    }
-    
-    if (isset($matches[7])) {
-      switch($matches[7]) {
-        case 'Edge': $ua[1] = 'edge'; break;
-        case 'OPR': $ua[1] = 'opera'; break;
-        case 'Vivaldi': $ua[1] = 'vivaldi'; break;
-      }
-    }    
+  //Android----------------------------
+  //  •Group 1 - Mozilla or Dalvik
+  //  •Group 2 - U (optional)
+  if (preg_match('/^(Mozilla|Dalvik)\/\d\.\d\.?\d?\s\(Linux;\s(U;\s)?Android/', $user_agent, $matches) > 0) {
+    $ua[0] = 'android';
   }
-  //Subsequent regex statements are too dificult to implement above
+  //Windows----------------------------
+  //  •Group 1 - compatible;
+  //  •Group 2 - MSIE version
+  //  •Group 3 - NT Kernel version
+  elseif (preg_match('/^Mozilla\/\d\.\d\s\((compatible;\s)?(MSIE\s\d\.\d;\s)?Windows\sNT\s(\d\d?)\./', $user_agent, $matches) > 0) {
+    $ua[0] = 'windows';
+    if (isset($matches[2])) {                              //Internet Explorer old versions are in Group 2
+      if (substr($matches[2], 0, 4) == 'MSIE') {
+        $ua[1] = 'internet-explorer';
+        return $ua;
+      }
+    }
+    if (strpos($user_agent, 'Edge') !== false) {           //No group 2 will mean Edge or IE 11
+      $ua[1] = 'edge';
+      return $ua;
+    }
+    elseif (strpos($user_agent, 'Trident') !== false) {    //Trident = IE unless Edge is specifically mentioned
+      $ua[1] = 'internet-explorer';
+      return $ua;
+    }
+  }
+  //Apple------------------------------
+  elseif (preg_match('/^Mozilla\/\d\.\d\s\(iPad|iPhone|Macintosh/', $user_agent, $matches) > 0) {
+    $ua[0] = 'apple';
+    if (strpos($user_agent, 'Safari') !== false) {         //TODO Confirm this
+      $ua[1] = 'Safari';
+      return $ua;
+    }
+  }
+  //Linux------------------------------
+  //  •Group1 - X11 or Wayland
+  elseif (preg_match('/^Mozilla\/\d\.\d\s\((X11|Wayland);/', $user_agent, $matches) > 0) {
+    $ua[0] = 'linux';
+  }
+  //Microsoft Metadata retrieval-------
+  elseif (preg_match('/^MICROSOFT_DEVICE_METADATA_RETRIEVAL_CLIENT$/', $user_agent, $matches) > 0) {
+    $ua = array('windows', 'microsoft');
+    return $ua;
+  }
+  //Microsoft Windows Update-----------
+  elseif (preg_match('/^Windows\-Update\-Agent\/\d/', $user_agent, $matches) > 0) {
+    $ua = array('windows', 'upgrade');
+    return $ua;
+  }
+  //Python-----------------------------
   elseif(preg_match('/^Python\-urllib\/\d\.\d\d?/', $user_agent, $matches) > 0) {
     $ua = array('unknown', 'python');
-  }    
+  }
+  //Avast Antivirus--------------------
+  elseif (preg_match('/^avast!\s/', $user_agent, $matches) > 0) {
+    $ua = array('windows', 'avast');
+    return $ua;
+  }
   
+  //Try and find agent-----------------
+  if (preg_match('/(Firefox|Chromium|OPR|Epiphany|Brave|Colibri|Midori|Min|Vivaldi)\/(\d[\d\.]\d?)/', $user_agent, $matches) > 0) {
+    $ua[1] = strtolower($matches[1]);
+  }
+  //Many browsers contain Chrome as a user agent, so we need to search for Chrome after the above regex
+  elseif (preg_match('/(Chrome)\/(\d\d\d?)/', $user_agent, $matches) > 0) {
+    $ua[1] = strtolower($matches[1]);
+  }
+
+  //TODO SeaMonkey, Palemoon, and Waterfox are included with Firefox in UA string
+  //TODO add Spotify Spotify/105800573 Win32/0 (PC laptop) Spotify/8.4.9 Android/25 (Nexus 5X)
   return $ua;
 }
 
@@ -191,11 +183,11 @@ function highlight_url($url) {
   $full = array();
   $domain = array();
     
-  if (preg_match('/^(https?:\/\/|ftp:\/\/)?(?:www\.)?([^\/]+)?(.*)$/', $url, $full) > 0) {    
-    if (preg_match('/([\w\d\-\_]+)\.(co\.|com\.|gov\.|org\.)?([\w\d\-\_]+)$/', $full[2], $domain) > 0) {      
+  if (preg_match('/^(https?:\/\/|ftp:\/\/)?(?:www\.)?([^\/]+)?(.*)$/', $url, $full) > 0) {
+    if (preg_match('/([\w\d\-\_]+)\.(co\.|com\.|gov\.|org\.)?([\w\d\-\_]+)$/', $full[2], $domain) > 0) {
       $highlighted = '<span class="gray">'.$full[1].substr($full[2], 0, 0 -strlen($domain[0])).'</span>'.$domain[0].'<span class="gray">'.$full[3].'</span>';
     }
-  }  
+  }
   return $highlighted;
 }
 
@@ -222,27 +214,29 @@ function show_accesstable() {
   echo '<div class="sys-group">'.PHP_EOL;
   if ($view == 'group') {                                  //Group view
     echo '<h6>Sorted by Unique Site</h6>'.PHP_EOL;
-    $rows = count_rows('SELECT COUNT(DISTINCT site) FROM lightyaccess');
+    $rows = count_rows('SELECT COUNT(DISTINCT site) FROM weblog');
     if ((($page-1) * ROWSPERPAGE) > $rows) $page = 1;
     
-    $query = 'SELECT * FROM lightyaccess GROUP BY site ORDER BY UNIX_TIMESTAMP(log_time) '.$sort.' LIMIT '.ROWSPERPAGE.' OFFSET '.(($page-1) * ROWSPERPAGE);
+    $query = 'SELECT * FROM weblog GROUP BY site ORDER BY UNIX_TIMESTAMP(log_time) '.$sort.' LIMIT '.ROWSPERPAGE.' OFFSET '.(($page-1) * ROWSPERPAGE);
   }
   elseif ($view == 'time') {                               //Time View
     echo '<h6>Sorted by Time last seen</h6>'.PHP_EOL;
-    $rows = count_rows('SELECT COUNT(*) FROM lightyaccess');
+    $rows = count_rows('SELECT COUNT(*) FROM weblog');
     if ((($page-1) * ROWSPERPAGE) > $rows) $page = 1;
-    
-    $query = 'SELECT * FROM lightyaccess ORDER BY UNIX_TIMESTAMP(log_time) '.$sort.' LIMIT '.ROWSPERPAGE.' OFFSET '.(($page-1) * ROWSPERPAGE);
-  }  
-      
+
+    $query = 'SELECT * FROM weblog ORDER BY UNIX_TIMESTAMP(log_time) '.$sort.' LIMIT '.ROWSPERPAGE.' OFFSET '.(($page-1) * ROWSPERPAGE);
+  }
+
   if(!$result = $db->query($query)){
-    die('There was an error running the query'.$db->error);
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo 'show_accesstable: '.$db->error;
+    echo '</div>'.PHP_EOL;
+    die();
   }
   
-    
   if ($result->num_rows == 0) {                            //Leave if nothing found
     $result->free();
-    echo 'No sites found in Access List'.PHP_EOL;
+    echo '<h4><img src=./svg/emoji_sad.svg>No Results Found</h4>'.PHP_EOL;
     echo '</div>';
     return false;
   }
@@ -259,35 +253,17 @@ function show_accesstable() {
     else {
       $http_method = '<span class="violet">POST</span>';
     }
-    
-        
-    //Temporary situation until v0.8.3
-    if (array_key_exists('referrer', $row)) {
-      $referrer = $row['referrer'];
-    }
-    else {
-      $referrer = '';
-    }
-    
-    if (array_key_exists('user_agent', $row)) {
-      $user_agent = $row['user_agent'];
-    }
-    else {
-      $user_agent = '';
-    }
-    
-    if (array_key_exists('remote_host', $row)) {
-      $remote_host = $row['remote_host'];
-    }
-    else {
-      $remote_host = '';
-    }
-        
+
+    $referrer = $row['referrer'];
+    $user_agent = $row['user_agent'];
+    $remote_host = $row['remote_host'];
+
     $user_agent_array = get_useragent($user_agent);        //Get OS and Browser from UserAgent
     
     //Build up the table row
     $table_row = '<tr><td>'.$row['log_time'].'</td><td>'.$http_method.'</td>';
     
+    //DEBUG $table_row .='<td title="'.$user_agent.'"><div class="centered"><img src="./images/useragent/'.$user_agent_array[0].'.png" alt=""><img src="./images/useragent/'.$user_agent_array[1].'.png" alt="">'.$user_agent.'</div></td>';
     $table_row .='<td title="'.$user_agent.'"><div class="centered"><img src="./images/useragent/'.$user_agent_array[0].'.png" alt=""><img src="./images/useragent/'.$user_agent_array[1].'.png" alt=""></div></td>';
     
     $table_row .= '<td>'.highlight_url(htmlentities($row['site'].$row['uri_path'])).'<br>Referrer: '.highlight_url(htmlentities($referrer)).'<br>Requested By: '.$remote_host.'</td></tr>';
@@ -334,17 +310,20 @@ function show_visualisation() {
   echo '</ul></div>'.PHP_EOL;
   
   
-  $total = count_rows('SELECT COUNT(*) FROM lightyaccess WHERE log_time >= (NOW() - INTERVAL '.$last.' '.$unit.')');
+  $total = count_rows('SELECT COUNT(*) FROM weblog WHERE log_time >= (NOW() - INTERVAL '.$last.' '.$unit.')');
   
-  $query = 'SELECT site, COUNT(*) AS count FROM lightyaccess WHERE log_time >= (NOW() - INTERVAL '.$last.' '.$unit.') GROUP BY site ORDER BY count DESC LIMIT 20';
+  $query = 'SELECT site, COUNT(*) AS count FROM weblog WHERE log_time >= (NOW() - INTERVAL '.$last.' '.$unit.') GROUP BY site ORDER BY count DESC LIMIT 20';
   
   if(!$result = $db->query($query)){
-    die('There was an error running the query'.$db->error);
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo 'show_visualisation: '.$db->error;
+    echo '</div>'.PHP_EOL;
+    die();
   }
   
   if ($result->num_rows == 0) {                            //Leave if nothing found
     $result->free();
-    echo 'No sites found in Access List'.PHP_EOL;
+    echo '<h4><img src=./svg/emoji_sad.svg>No Results Found</h4>'.PHP_EOL;
     echo '</div>';
     return false;
   }
@@ -364,17 +343,18 @@ function show_visualisation() {
   
   $numsites = count($site_names);
   
+  echo '<div class="piechart-container">'.PHP_EOL;
   echo '<svg width="100%" height="90%" viewbox="0 0 1500 1100">'.PHP_EOL;
-  echo piechart($site_count, 500, 540, 490, $CHARTCOLOURS);
-  echo '<circle cx="500" cy="540" r="120" stroke="#00000A" stroke-width="2" fill="#f7f7f7" />'.PHP_EOL;
+  piechart($site_names, $site_count, 500, 540, 490, $CHARTCOLOURS);
+  echo '<circle cx="500" cy="540" r="90" stroke="#00000A" stroke-width="2" fill="#f7f7f7" />'.PHP_EOL;   //Small overlay circle
   
   for ($i = 0; $i < $numsites; $i++) {
     echo '<rect x="1015" y="'.(($i*43)+90).'" rx="5" ry="5" width="38" height="38" style="fill:'.$CHARTCOLOURS[$i].'; stroke:#00000A; stroke-width=3" />';
-    echo '<text x="1063" y="'.(($i*43)+118).'" style="font-family: Arial; font-size: 26px; fill:#00000A">'.$site_names[$i].': '.number_format(floatval($site_count[$i])).'</text>'.PHP_EOL;
+    echo '<text x="1063" y="'.(($i*43)+118).'" style="font-family: Arial; font-size: 22px; fill:#00000A">'.$site_names[$i].': '.number_format(floatval($site_count[$i])).'</text>'.PHP_EOL;
   }
   
   echo '</svg>'.PHP_EOL;
-    
+  echo '</div>'.PHP_EOL;                                   //End piechart-container
   echo '</div>'.PHP_EOL;                                   //End Sys-group div
   
   $result->free();
@@ -422,7 +402,7 @@ elseif ($view == 'visualisation') {
 
 ?>
 </div>
-<div id="scrollup" class="button-scroll" onclick="ScrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
-<div id="scrolldown" class="button-scroll" onclick="ScrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
+<div id="scrollup" class="button-scroll" onclick="scrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
+<div id="scrolldown" class="button-scroll" onclick="scrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
 </body>
 </html>

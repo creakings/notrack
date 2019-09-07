@@ -1,1 +1,32 @@
-nginx
+analytics.php
+Add Resolve and delete to popup menu
+Add view switcher to show resolved
+
+queries.php:
+*Improve Time search
+*Add Search buttons
+*Add more SVG-icons
+
+Config
+*Convert users Block/Allow form to POST
+*Remove PNG icons from Block/Allow page and use SVG-icons instead
+*Split config options into seperate pages
+
+menu.php
+*Add number of alerts to Alerts button
+
+blocked.php
+*Expand number of user agents
+
+notrack.sh
+*Add more blocklists
+https://isc.sans.edu/suspicious_domains.html - dshild low, medium, high
+https://firebog.net/ - nice list and layout
+
+
+*Create new script to get statistics of number of malicious sites queried.
+ Maybe look for unusual patterns in high / low number of sites queried.
+
+*Login page
+Keep track of IP's attempting to log in, and throttle exponentially
+

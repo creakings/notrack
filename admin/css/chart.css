@@ -1,26 +1,42 @@
 @charset "utf-8";
 /*CSS to cover the extra items in charts*/
 .linechart-container {
-  margin: 1.5em 0.8em;
-  width: 98%;
+  margin: 0.8rem auto;
+  padding: 0.1rem 0.2rem 0 0;
+  width: 93%;
+  max-width: 100rem;
+  background-color: #f7f7f7;
+  border-radius: 2px;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+.linechart-container h2 {
+  margin: 0.3rem 2rem;
+  font-size: 1.6rem;
+}
+.piechart-container {
+  margin: 2.5rem auto;
+  width: 95%;
+  max-width: 85em;
 }
 .axistext {
-  font-family: Arial; 
-  font-size: 34px; 
-  fill: #202020;
+  font-family: Arial;
+  font-size: calc(32px - 0.5vw);
+  fill: #00000a;
 }
 .axisline {
-  fill:none;
-  stroke:#666666;
-  stroke-width:3;
-  stroke-opacity:1;
+  fill: none;
+  stroke: #666;
+  stroke-width: 4;
+  stroke-opacity: 1;
 }
 .gridline {
-  fill:none;
-  stroke:#888888;
-  stroke-width:1;
-  stroke-opacity:0.9;
+  fill: none;
+  stroke: #888;
+  stroke-width: 1;
+  stroke-opacity: 0.9;
 }
-.shadow {
-  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
+@media only screen and (max-width:480px), only screen and (max-device-width:480px) {
+  .linechart-container h2 {
+    font-size: 1rem;
+  }
 }

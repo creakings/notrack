@@ -6,7 +6,7 @@ define('STATUS_INCOGNITO', 8);
 define('STATUS_NOTRACKRUNNING', 64);
 define('STATUS_ERROR', 128);
 
-define('VERSION', '0.8.11');
+define('VERSION', '0.9.2');
 define('SERVERNAME', 'localhost');
 define('USERNAME', 'ntrk');
 define('PASSWORD', 'ntrkpass');
@@ -14,23 +14,32 @@ define('DBNAME', 'ntrkdb');
 
 define('ROWSPERPAGE', 200);
 
-$FileBlackList = '/etc/notrack/blacklist.txt';
-$FileWhiteList = '/etc/notrack/whitelist.txt';
-$FileTLDBlackList = '/etc/notrack/domain-blacklist.txt';
-$FileTLDWhiteList = '/etc/notrack/domain-whitelist.txt';
 $LogLightyAccess = '/var/log/lighttpd/access.log';
 
 define('DIR_TMP', '/tmp/');
 define('ACCESSLOG', '/var/log/ntrk-admin.log');
 define('CONFIGFILE', '/etc/notrack/notrack.conf');
 define('CONFIGTEMP', '/tmp/notrack.conf');
-define('TLD_FILE', './include/tld.csv');
+define('DNS_LOG', '/var/log/notrack.log');
+define('TLD_CSV', '../include/tld.csv');
 define('NTRK_EXEC', 'sudo /usr/local/sbin/ntrk-exec ');
 define('NOTRACK_LIST', '/etc/dnsmasq.d/notrack.list');
-define('REGEX_DATE', '/^2[0-1][0-9][0-9]\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])$/');
-define('REGEX_TIME', '/([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/');
-define('REGEX_DATETIME', '/^2[0-1][0-9][0-9]\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])\s([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/');
-define('REGEX_DOMAIN', '/[\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-\_]+$/');
+define('BLACKLIST_FILE', '/etc/notrack/blacklist.txt');
+define('WHITELIST_FILE', '/etc/notrack/whitelist.txt');
+define('REGEX_DATETIME', '/^2\d\d\d\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])\s([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/');
+
+//VALIDAPI is any length of hexadecimal lowercase from start to end
+define('REGEX_VALIDAPI', '/^[a-f0-9]*$/');
+
+//IPCIDR = Check for valid IP/CIDR - e.g. 192.168.0.1/24
+//         Reject leading zeros - e.g. 10.00.00.009/02
+//Group 1 - First three octets with following zero - (222.) * 3 - 250-255, 200-249, 100-199, 10-99, 0-9
+//Group 2 - Fourth octets
+//Forward slash /
+//Group 3 - CIDR notation 30-32, 10/20-19/29, 0-9
+define('REGEX_IPCIDR', '/^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/(3[0-2]|[1-2][0-9]|[0-9])$/');
+
+define('REGEX_URLSEARCH', '/[^\w\d\.\_\-\*]/');    //Valid leters for URL search
 
 $Config=array();
 
@@ -48,7 +57,7 @@ $DEFAULTCONFIG = array(
   'Password' => '',
   'Delay' => 30,
   'Suppress' => '',
-  'ParsingTime' => 10,
+  'ParsingTime' => 4,
   'unpausetime' => 0,
   'bl_custom' => '',
   'bl_notrack' => 1,
@@ -73,8 +82,8 @@ $DEFAULTCONFIG = array(
   'bl_someonewhocares' => 0,
   'bl_spam404' => 0,
   'bl_swissransom' => 0,
-  'bl_swisszeus' => 0,
   'bl_winhelp2002' => 0,
+  'bl_windowsspyblocker' => 0,
   //Region Specific BlockLists
   'bl_areasy' => 0,
   'bl_chneasy' => 0,
@@ -101,6 +110,8 @@ $DEFAULTCONFIG = array(
   'bl_viefb' => 0,
   'bl_fblatin' => 0,
   'bl_yhosts' => 0,
+  'api_key' => '',
+  'api_readonly' => '',
   'LatestVersion' => VERSION
 );
 
@@ -129,7 +140,7 @@ $BLOCKLISTNAMES = array(
   'bl_pglyoyo' => 'Peter Lowe&rsquo;s Ad List',
   'bl_spam404'=> 'Spam 404',
   'bl_swissransom' => 'Swiss Security Ransomware',
-  'bl_swisszeus' => 'Swiss Security ZeuS',
+  'bl_windowsspyblocker' => 'Windows Spy Blocker',
   'bl_areasy' => 'AR Easy List',
   'bl_chneasy' => 'CHN Easy List',
   'bl_yhosts' => 'CHN Yhosts',
@@ -154,17 +165,67 @@ $BLOCKLISTNAMES = array(
   'bl_fblatin' => 'Latin Easy List',
 );
 
+$BLOCKLISTEVENT = array(
+  'custom' => 'custom',
+  'bl_tld' => 'tld',
+  'bl_notrack' => 'notrack',
+  'bl_notrack_malware' => 'malware',
+  'bl_cbl_all' => 'cryptocoin',
+  'bl_cbl_browser' => 'cryptocoin',
+  'bl_cbl_opt' => 'cryptocoin',
+  'bl_cedia' => 'malware',
+  'bl_cedia_immortal' => 'malware',
+  'bl_someonewhocares' => 'misc',
+  'bl_disconnectmalvertising' => 'malware',
+  'bl_easylist' => 'advert',
+  'bl_easyprivacy' => 'tracker',
+  'bl_fbannoyance' => 'misc',
+  'bl_fbenhanced' => 'tracker',
+  'bl_fbsocial' => 'misc',
+  'bl_hexxium' => 'malware',
+  'bl_hphosts' => 'advert',
+  'bl_malwaredomainlist' => 'malware',
+  'bl_malwaredomains' => 'malware',
+  'bl_winhelp2002' => 'advert',
+  'bl_pglyoyo' => 'advert',
+  'bl_spam404'=> 'misc',
+  'bl_swissransom' => 'malware',
+  'bl_windowsspyblocker' => 'tracker',
+  'bl_areasy' => 'advert',
+  'bl_chneasy' => 'advert',
+  'bl_yhosts' => 'advert',
+  'bl_deueasy' => 'advert',
+  'bl_dnkeasy' => 'advert',
+  'bl_fraeasy' => 'advert',
+  'bl_grceasy' => 'advert',
+  'bl_huneasy' => 'advert',
+  'bl_idneasy' => 'advert',
+  'bl_itaeasy' => 'advert',
+  'bl_jpneasy' => 'advert',
+  'bl_koreasy' => 'advert',
+  'bl_korfb' => 'advert',
+  'bl_koryous' => 'advert',
+  'bl_ltueasy' => 'advert',
+  'bl_nldeasy' => 'advert',
+  'bl_ruseasy' => 'advert',
+  'bl_spaeasy' => 'advert',
+  'bl_svneasy' => 'advert',
+  'bl_sweeasy' => 'advert',
+  'bl_viefb' => 'advert',
+  'bl_fblatin' => 'advert',
+);
 
 $SEARCHENGINELIST = array(
   'Baidu' => 'https://www.baidu.com/s?wd=',
   'Bing' => 'https://www.bing.com/search?q=',
   'DuckDuckGo' => 'https://duckduckgo.com/?q=',
+  'Ecosia' =>'https://www.ecosia.org/search?q=',
   'Exalead' => 'https://www.exalead.com/search/web/results/?q=',
   'Gigablast' => 'https://www.gigablast.com/search?q=',
   'Google' => 'https://www.google.com/search?q=',
-  'Ixquick' => 'https://ixquick.eu/do/search?q=',
   'Qwant' => 'https://www.qwant.com/?q=',
   'StartPage' => 'https://startpage.com/do/search?q=',
+  'WolframAlpha' => 'https://www.wolframalpha.com/input/?i=',
   'Yahoo' => 'https://search.yahoo.com/search?p=',
   'Yandex' => 'https://www.yandex.com/search/?text='
 );
@@ -177,7 +238,7 @@ $WHOISLIST = array(
 
 
 if (!extension_loaded('memcache')) {
-  die('NoTrack requires memcached, php-memcache and php-memcached to be installed');
+  die('NoTrack requires memcached and php-memcached to be installed');
 }
 
 $mem = new Memcache;                             //Initiate Memcache

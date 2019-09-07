@@ -1,4 +1,9 @@
 <?php
+/*A different view is displayed depending how user enters this page
+* 1. No arguments set - Show searchbox
+* 2. Domain set - display whois, and graph
+* 3. Domain and time set - display surrounding queries, whois, and graph
+*/
 require('./include/global-vars.php');
 require('./include/global-functions.php');
 require('./include/menu.php');
@@ -15,7 +20,7 @@ ensure_active_session();
   <link href="./css/chart.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/menu.js"></script>
-  <script src="./include/queries.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=0.9">
   <title>NoTrack - Investigate</title>
 </head>
 
@@ -28,22 +33,15 @@ echo '<div id="main">'.PHP_EOL;
 /************************************************
 *Constants                                      *
 ************************************************/
-DEFINE('DEF_FILTER', 'all');
-DEFINE('DEF_SYSTEM', 'all');
-DEFINE('DEF_SDATE', date("Y-m-d", time() - 172800));  //Start Date of Historic -2d
-DEFINE('DEF_EDATE', date("Y-m-d", time() - 86400));   //End Date of Historic   -1d
-
-$FILTERLIST = array('all' => 'All Requests',
-                    'allowed' => 'Allowed Only',
-                    'blocked' => 'Blocked Only',
-                    'local' => 'Local Only');
 
 
 /************************************************
 *Global Variables                               *
 ************************************************/
 $datetime = '';
+$domain = '';
 $site = '';
+$showraw = false;
 
 $whois_date = '';
 $whois_record = '';
@@ -51,14 +49,10 @@ $whois_record = '';
 /************************************************
 *Arrays                                         *
 ************************************************/
-$syslist = array();
-$TLDBlockList = array();
-
 
 /********************************************************************
  *  Create Who Is Table
  *    Run sql query to create whois table
- *    TODO Causes unknown error - Should be fixed now removing error check
  *  Params:
  *    None
  *  Return:
@@ -66,10 +60,10 @@ $TLDBlockList = array();
  */
 function create_whoistable() {
   global $db;
-    
+
   $query = "CREATE TABLE whois (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, save_time DATETIME, site TINYTEXT, record MEDIUMTEXT)";
-  
-  $db->query($query);    
+
+  $db->query($query);
 }
 
 
@@ -83,15 +77,34 @@ function create_whoistable() {
  */
 function draw_searchbar() {
   global $site;
-  
-  echo '<div class="sys-group">'.PHP_EOL;
+
+  echo '<div id="menu-lower">'.PHP_EOL;
   echo '<form method="GET">'.PHP_EOL;
-  echo '<input type="text" name="site" class="input-conf" placeholder="Search domain" value="'.$site.'">&nbsp;'.PHP_EOL;
-  echo '<input type="submit" class="button-blue" value="Investigate">'.PHP_EOL;
+  echo '<input type="text" name="site" class="input-conf" placeholder="Search domain" value="'.$site.'">'.PHP_EOL;
+  echo '<button type="submit">Investigate</button>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
 }
 
+
+/********************************************************************
+ *  Draw Search Box
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function draw_searchbox() {
+  global $site;
+
+  echo '<div id="search-box"><div>'.PHP_EOL;
+  echo '<form method="GET">'.PHP_EOL;
+  echo '<input type="text" name="site" placeholder="Search domain" value="'.$site.'">&nbsp;'.PHP_EOL;
+  echo '<input type="submit" value="Investigate">'.PHP_EOL;
+  echo '</form>'.PHP_EOL;
+  echo '</div></div>'.PHP_EOL;
+}
 
 
 /********************************************************************
@@ -105,20 +118,21 @@ function draw_searchbar() {
 
 function get_blocklistname($bl) {
   global $BLOCKLISTNAMES;
-  
+
   if (array_key_exists($bl, $BLOCKLISTNAMES)) {
     return $BLOCKLISTNAMES[$bl];
   }
-  
+
   return $bl;
 }
 /********************************************************************
  *  Search Block Reason
- *    1. Search $site in bl_source for Blocklist name
- *    2. Use regex match to extract (site).(tld)
- *    3. Search site.tld in bl_source
- *    4. On fail search for .tld in bl_source
- *    5. On fail return ''
+ *    Searches for $site in bl_source to get blocklist name
+ *    1. Try for $site
+ *    2. Try for .tld
+ *    3. Try for site.co.uk
+ *    4. Try for subdomain.site.co.uk
+ *    5. Don't go any further through subdomains as there aren't many / any in the blocklists
  *
  *  Params:
  *    $site - Site to search
@@ -127,56 +141,27 @@ function get_blocklistname($bl) {
  */
 function search_blockreason($site) {
   global $db;
-  
-  $result = $db->query('SELECT bl_source site FROM blocklist WHERE site = \''.$site.'\'');
-  if ($result->num_rows > 0) {
-    return $result->fetch_row()[0];
-  }
-  
-    
-  //Try to find LIKE site ending with site.tld
-  if (preg_match('/([\w\d\-\_]+)\.([\w\d\-\_]+)$/', $site,  $matches) > 0) {
-    $result = $db->query('SELECT bl_source site FROM blocklist WHERE site LIKE \'%'.$matches[1].'.'.$matches[2].'\'');
 
-    if ($result->num_rows > 0) {
-      return $result->fetch_row()[0];
-    }    
-    else {                                      //On fail try for site = .tld
-      $result = $db->query('SELECT bl_source site FROM blocklist WHERE site = \'.'.$matches[2].'\'');
-      if ($result->num_rows > 0) {
-        return $result->fetch_row()[0];
-      }
-    }
-  }
-  
-  return '';                                     //Don't know at this point    
-}
+  $result = $db->query("SELECT bl_source site FROM blocklist WHERE site = '.$site.'");
+  if ($result->num_rows > 0) return $result->fetch_row()[0];
 
-/********************************************************************
- *  Search Systems
- *  
- *  1. Find unique sys values in table
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function search_systems() {
-  global $db, $mem, $syslist;
-  
-  $syslist = $mem->get('syslist');
-  
-  if (empty($syslist)) {
-    if (! $result = $db->query("SELECT DISTINCT sys FROM live ORDER BY sys")) {
-      die('search_systems(): There was an error running the query'.$db->error);
-    }
-    while($row = $result->fetch_assoc()) {                 //Read each row of results
-      $syslist[] = $row['sys'];                            //Add row value to $syslist
-    }
-    $result->free();
-    $mem->set('syslist', $syslist, 0, 600);                //Save for 10 Mins
-  }    
+  //Use regex to get domain and tld (site.co.uk)
+  if (preg_match('/([\w\-_]+)(\.co|\.com|\.org|\.gov)?\.([\w\-]+)$/', $site,  $matches) > 0) {
+    $result = $db->query("SELECT bl_source site FROM blocklist WHERE site = '.$matches[3]'");
+
+    if ($result->num_rows > 0) return $result->fetch_row()[0];
+
+    $result = $db->query("SELECT bl_source site FROM blocklist WHERE site = '$matches[0]'");
+    if ($result->num_rows > 0) return $result->fetch_row()[0];
+  }
+
+  //Try for subdomain.site.co.uk
+  if (preg_match('/([\w\-_]+)\.([\w\-_]+)(\.co|\.com|\.org|\.gov)?\.([\w\-]+)$/', $site,  $matches) > 0) {
+    $result = $db->query("SELECT bl_source site FROM blocklist WHERE site = '$matches[0]'");
+    if ($result->num_rows > 0) return $result->fetch_row()[0];
+  }
+
+  return '';                                               //Don't know at this point
 }
 
 
@@ -190,48 +175,46 @@ function search_systems() {
  *    false when nothing found, true on success
  */
 function show_time_view() {
-  global $db, $datetime, $site, $sys, $Config, $TLDBlockList;
-    
+  global $db, $datetime, $site, $sys, $Config;
+
   $rows = 0;
   $row_class = '';
   $query = '';
   $action = '';
   $blockreason = '';
-  
-  $query = "SELECT *, DATE_FORMAT(log_time, '%H:%i:%s') AS formatted_time FROM live WHERE sys = '$sys' AND log_time > SUBTIME('$datetime', '00:00:05') AND log_time < ADDTIME('$datetime', '00:00:03') ORDER BY UNIX_TIMESTAMP(log_time)";
-  
-    
+
+  $query = "SELECT *, DATE_FORMAT(log_time, '%H:%i:%s') AS formatted_time FROM dnslog WHERE sys = '$sys' AND log_time > SUBTIME('$datetime', '00:00:05') AND log_time < ADDTIME('$datetime', '00:00:03') ORDER BY UNIX_TIMESTAMP(log_time)";
+
+  echo '<div class="sys-group">'.PHP_EOL;
+
   if(!$result = $db->query($query)){
-    die('There was an error running the query'.$db->error);
-  }
-  
-  if ($result->num_rows == 0) {                  //Leave if nothing found
-    $result->free();
-    echo "Nothing found for the selected dates";
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo 'show_time_view: '.$db->error;
+    echo '</div>'.PHP_EOL;
     return false;
   }
-  
-  echo '<div class="sys-group">'.PHP_EOL;
-  //draw_viewbuttons();
-  
+
+  if ($result->num_rows == 0) {                  //Leave if nothing found
+    echo '<h4><img src=./svg/emoji_sad.svg>No results found for selected time</h4>'.PHP_EOL;
+    echo '</div>'.PHP_EOL;
+    $result->free();
+    return false;
+  }
+
   echo '<table id="query-time-table">'.PHP_EOL;
-  echo '<tr><th>Time</th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;  
-  
+  echo '<tr><th>Time</th><th>System</th><th>Site</th></tr>'.PHP_EOL;
+
   while($row = $result->fetch_assoc()) {         //Read each row of results
-    $action = '<a target="_blank" href="'.$Config['SearchUrl'].$row['dns_request'].'"><img class="icon" src="./images/search_icon.png" alt="G" title="Search"></a>&nbsp;<a target="_blank" href="'.$Config['WhoIsUrl'].$row['dns_request'].'"><img class="icon" src="./images/whois_icon.png" alt="W" title="Whois"></a>&nbsp;';
     if ($row['dns_result'] == 'A') {             //Allowed
       $row_class='';
-      $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', false, true)"></span>';
     }
     elseif ($row['dns_result'] == 'B') {         //Blocked
-      $row_class = ' class="blocked"';      
-      $blockreason = search_blockreason($row['dns_request']);      
+      $row_class = ' class="blocked"';
+      $blockreason = search_blockreason($row['dns_request']);
       if ($blockreason == 'bl_notrack') {        //Show Report icon on NoTrack list
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
         $blockreason = '<p class="small">Blocked by NoTrack list</p>';
       }
       elseif ($blockreason == 'custom') {        //Users blacklist, show report icon
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
         $blockreason = '<p class="small">Blocked by Black list</p>';
       }
       elseif ($blockreason == '') {              //No reason is probably IP or Search request
@@ -240,26 +223,24 @@ function show_time_view() {
       }
       else {
         $blockreason = '<p class="small">Blocked by '.get_blocklistname($blockreason).'</p>';
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, false)"></span>';
-      }    
+      }
     }
     elseif ($row['dns_result'] == 'L') {         //Local
       $row_class = ' class="local"';
-      $action = '&nbsp;';
     }
-    
+
     if ($site == $row['dns_request']) {
       $row_class = ' class="cyan"';
     }
-    
-    echo '<tr'.$row_class.'><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td><td>'.$row['dns_request'].$blockreason.'</td><td>'.$action.'</td></tr>'.PHP_EOL;
+
+    echo '<tr'.$row_class.'><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td><td>'.$row['dns_request'].$blockreason.'</td></tr>'.PHP_EOL;
     $blockreason = '';
   }
-  
+
   echo '</table>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
-  
+
   $result->free();
   return true;
 }
@@ -292,35 +273,38 @@ function get_whoisdata($site, $apikey) {
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
   $json_response = curl_exec($ch);
   $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  
+
   if ($status == 400) {                                    //Bad request domain doesn't exist
-    echo '<div class="sys-group"><div class="sys-title">'.PHP_EOL;
-    echo '<h5>Domain Information</h5></div>'.PHP_EOL;
+    echo '<div class="sys-group">'.PHP_EOL;
+    echo '<h5>Domain Information</h5>'.PHP_EOL;
     echo '<div class="sys-items">'.PHP_EOL;
     echo $site.' does not exist'.PHP_EOL;
-    echo '</div></div>'.PHP_EOL;
+    echo '</div>'.PHP_EOL;
     curl_close($ch);
     return false;
   }
-  
+
   if ($status >= 300) {                                    //Other HTTP Error
-    echo "Error: call to URL $url failed with status $status, response $json_response";
+    echo '<div class="sys-group">'.PHP_EOL;
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo "Call to URL $url failed with status $status, response $json_response";
+    echo '</div>'.PHP_EOL;
     curl_close($ch);
     return false;
   }
-  
+
   curl_close($ch);
 
-  
+
   //Save whois record into whois table
   $cmd = "INSERT INTO whois (id, save_time, site, record) VALUES ('NULL', '$whois_date', '$site', '".$db->real_escape_string($json_response)."')";
   if ($db->query($cmd) === false) {
     echo 'get_whoisdata() Error adding data to whois table: '.$db->error;
   }
-  
+
   $whois_record = json_decode($json_response, true);
-  
-  return true;  
+
+  return true;
 }
 
 
@@ -336,29 +320,68 @@ function get_whoisdata($site, $apikey) {
  */
 function search_whois($site) {
   global $db, $whois_date, $whois_record;
-  
+
   $query = "SELECT * FROM whois WHERE site = '$site'";
-      
+
   if(!$result = $db->query($query)){
     die('search_whois() There was an error running the query: '.$db->error);
   }
-  
+
   if ($result->num_rows == 0) {                            //Leave if nothing found
     $result->free();
     return false;
   }
-    
+
   $row = $result->fetch_assoc();                           //Read one row of results
-  
+
   $whois_date = $row['save_time'];
   $whois_record = json_decode($row['record'], true);
 
   $result->free();
-  
+
   return true;
 }
+
+
+/********************************************************************
+ *  Extract Emails from Raw $whois_record
+ *    Regex match for Registrant, Abuse, and Tech emails
+ *    Don't add Tech email if it matches Registrant
+ *
+ *  Params:
+ *    $whois_data['raw']
+ *  Return:
+ *    Array of emails found on success
+ *    or false if nothing found
+ */
+function extractemails($rawdata) {
+  $abuse = '';
+  $registrant = '';
+  $tech = '';
+  $emails = array();
   
+   if (preg_match('/Registrant\sEmail:\s([\w\.\-\_\+]+@[\w\.\-\_\+]+)/', $rawdata, $matches) > 0) {
+    $registrant = strtolower($matches[1]);
+    $emails['Registrant Email'] = $registrant;
+  }
+
+  if (preg_match('/Abuse\sContact\sEmail:\s([\w\.\-\_\+]+@[\w\.\-\_\+]+)/', $rawdata, $matches) > 0) {
+    $abuse = strtolower($matches[1]);
+    $emails['Abuse Contact'] = $abuse;
+  }
+
+  if (preg_match('/Tech\sEmail:\s([\w\.\-\_\+]+@[\w\.\-\_\+]+)/', $rawdata, $matches) > 0) {
+    $tech = strtolower($matches[1]);
+    if ($tech != $registrant) $emails['Tech Email'] = $tech;
+  }
  
+  if (count($emails) == 0) return false;
+  
+  return $emails;
+}
+
+
+
 /********************************************************************
  *  Show Who Is Data
  *    Displays data from $whois_record
@@ -369,35 +392,54 @@ function search_whois($site) {
  *    None
  */
 function show_whoisdata() {
-  global $whois_date, $whois_record;
+  global $site, $whois_date, $whois_record;
   
+  $blockreason = '';
+  $notrack_row = '';
+
   if ($whois_record == null) return null;                  //Any data in the array?
-  
+
   //TODO give user a chance to reload data
   if (isset($whois_record['error'])) {
-    echo '<div class="sys-group"><div class="sys-title">'.PHP_EOL;
-    echo '<h5>Domain Information</h5></div>'.PHP_EOL;
-    echo '<div class="sys-items">'.PHP_EOL;
+    echo '<div class="sys-group">'.PHP_EOL;
+    echo '<h5>Domain Information</h5>'.PHP_EOL;
     echo $whois_record['error'].PHP_EOL;
-    echo '</div></div>'.PHP_EOL;
+    echo '</div>'.PHP_EOL;
     return null;
   }
-  
+
+  $emails = extractemails($whois_record['raw']);
+  $blockreason = search_blockreason($site);
+  if ($blockreason != '') {
+    $notrack_row = 'Blocked by '.get_blocklistname($blockreason);
+  }
+  else {
+    $notrack_row = 'Allowed';
+  }
+
   draw_systable('Domain Information');
-  draw_sysrow('Domain Name', $whois_record['domain']);
-  draw_sysrow('Name', $whois_record['registrar']['name']);
-  draw_sysrow('Status', ucfirst($whois_record['status']));
+  draw_sysrow('Domain Name', $whois_record['domain'].'<span class="investigatelink"><a href="?site='.$site.'&amp;v=raw">View Raw</a></span>');
+  draw_sysrow('Status on NoTrack', $notrack_row);
   draw_sysrow('Created On', substr($whois_record['created_on'], 0, 10));
   draw_sysrow('Updated On', substr($whois_record['updated_on'], 0, 10));
   draw_sysrow('Expires On', substr($whois_record['expires_on'], 0, 10));
+  draw_sysrow('Status', ucfirst($whois_record['status']));
+  draw_sysrow('Registrar', $whois_record['registrar']['name']);
+  
+  if ($emails !== false) {
+    foreach ($emails as $key => $value) {
+      draw_sysrow($key, $value);
+    }
+  }
+  
   if (isset($whois_record['nameservers'][0])) draw_sysrow('Name Servers', $whois_record['nameservers']['0']['name']);
   if (isset($whois_record['nameservers'][1])) draw_sysrow('', $whois_record['nameservers']['1']['name']);
   if (isset($whois_record['nameservers'][2])) draw_sysrow('', $whois_record['nameservers']['2']['name']);
   if (isset($whois_record['nameservers'][3])) draw_sysrow('', $whois_record['nameservers']['3']['name']);
   draw_sysrow('Last Retrieved', $whois_date);
-  echo '</table></div></div>'.PHP_EOL;
-  
-  if (isset($whois_record['registrant_contacts'][0])) {
+  echo '</table></div>'.PHP_EOL;
+
+  /*if (isset($whois_record['registrant_contacts'][0])) {
     draw_systable('Registrant Contact');
     draw_sysrow('Name', $whois_record['registrant_contacts']['0']['name']);
     draw_sysrow('Organisation', $whois_record['registrant_contacts']['0']['organization']);
@@ -409,12 +451,37 @@ function show_whoisdata() {
     if (isset($whois_record['registrant_contacts'][0]['phone'])) draw_sysrow('Phone', $whois_record['registrant_contacts']['0']['phone']);
     if (isset($whois_record['registrant_contacts'][0]['fax'])) draw_sysrow('Fax', $whois_record['registrant_contacts']['0']['fax']);
     if (isset($whois_record['registrant_contacts'][0]['email'])) draw_sysrow('Email', strtolower($whois_record['registrant_contacts']['0']['email']));
-    echo '</table></div></div>'.PHP_EOL;
-  }
-  
-  //print_r($whois_record);
+    echo '</table></div>'.PHP_EOL;
+  }*/
+
 }
 
+/********************************************************************
+ *  Show Raw Who Is Data
+ *    Displays contents of raw item in $whois_record
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function show_rawwhoisdata() {
+  global $whois_date, $whois_record;
+
+  if ($whois_record == null) return null;                  //Any data in the array?
+
+  if (isset($whois_record['error'])) {
+    echo '<div class="sys-group">'.PHP_EOL;
+    echo '<h5>Domain Information</h5>'.PHP_EOL;
+    echo $whois_record['error'].PHP_EOL;
+    echo '</div>'.PHP_EOL;
+    return null;
+  }
+  
+  echo '<pre>'.PHP_EOL;
+  echo $whois_record['raw'];
+  echo '</pre>'.PHP_EOL;
+}
 /********************************************************************
  *  Show Who Is Error when no API is set
  *
@@ -424,133 +491,92 @@ function show_whoisdata() {
  *    None
  */
 function show_whoiserror() {
-  echo '<div class="sys-group"><div class="sys-title">'.PHP_EOL;
-  echo '<h5>Domain Information</h5></div>'.PHP_EOL;
-  echo '<div class="sys-items">'.PHP_EOL;
+  echo '<div class="sys-group">'.PHP_EOL;
+  echo '<h5>Domain Information</h5>'.PHP_EOL;
   echo '<p>Error: No WhoIs API key set. In order to use this feature you will need to add a valid JsonWhois API key to NoTrack config</p>'.PHP_EOL;
   echo '<p>Instructions:</p>'.PHP_EOL;
   echo '<ol>'.PHP_EOL;
-  echo '<li>Sign up to <a href="https://jsonwhois.com/">JsonWhois</a></li>'.PHP_EOL;
-  echo '<li> Add your API key to NoTrack <a href="./config.php?v=general">config</a></li>'.PHP_EOL;
+  echo '<li>Sign up to <a href="https://jsonwhois.com/">JsonWhois.com</a></li>'.PHP_EOL;
+  echo '<li> Add your API key to NoTrack <a href="./config.php?v=general">Config</a></li>'.PHP_EOL;
   echo '</ol>'.PHP_EOL;
-  echo '</div></div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
 }
 
+
 /********************************************************************
- *  Traffic Graph
- *    Live Table runs from 04:00 to 03:59
- *    1. Adjust values for today and tomorrow depending if time is (04:00 to 23:59) or (00:00 to 03:59)
- *    2. Create xlabels
- *    3. Load allowed 'a' results from live table for values per hour
- *    4. Load blocked 'b' results from live table for values per hour
- *    5. Send data to linechart()
+ *  Count Queries
+ *    1. log_date by day, dns_result for site for past 30 days count and grouped by day
+ *    2. Create associative array for each day (to account for days when no queries are made
+ *    3. Copy known count values into associative array
+ *    4. Move associative values into index array
+ *    5. Draw line chart
  *
  *  Params:
  *    None
  *  Return:
  *    None
  */
-function trafficgraph() {
-  global $site;
-    
-  $allowed_values = array();
-  $blocked_values = array();
-  $xlabels = array();
-  
-    
-  if ((date('H') >= 0) && (date('H') < 4)) {               //Is 'today' yesterday in terms of log data?
-    $today = date("Y-m-d", strtotime('yesterday'));
-    $tomorrow = date('Y-m-d');    
-  }
-  else {                                                   //No, 'today' is today in terms of log data
-    $today = date('Y-m-d');
-    $tomorrow = date("Y-m-d", strtotime('+1 day'));
-  }
-  
-  $xlabels[] = '04';                                       //Create xlabels
-  $xlabels[] = '05';
-  $xlabels[] = '06';
-  $xlabels[] = '07';
-  $xlabels[] = '08';
-  $xlabels[] = '09';
-  $xlabels[] = '10';
-  $xlabels[] = '11';
-  $xlabels[] = '12';
-  $xlabels[] = '13';
-  $xlabels[] = '14';
-  $xlabels[] = '15';
-  $xlabels[] = '16';
-  $xlabels[] = '17';
-  $xlabels[] = '18';
-  $xlabels[] = '19';
-  $xlabels[] = '20';
-  $xlabels[] = '21';
-  $xlabels[] = '22';
-  $xlabels[] = '23';
-  $xlabels[] = '00';
-  $xlabels[] = '01';
-  $xlabels[] = '02';
-  $xlabels[] = '03';
-  
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 04:00:00' AND log_time < '$today 05:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 05:00:00' AND log_time < '$today 06:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 06:00:00' AND log_time < '$today 07:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 07:00:00' AND log_time < '$today 08:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 08:00:00' AND log_time < '$today 09:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 09:00:00' AND log_time < '$today 10:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 10:00:00' AND log_time < '$today 11:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 11:00:00' AND log_time < '$today 12:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 12:00:00' AND log_time < '$today 13:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 13:00:00' AND log_time < '$today 14:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 14:00:00' AND log_time < '$today 15:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 15:00:00' AND log_time < '$today 16:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 16:00:00' AND log_time < '$today 17:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 17:00:00' AND log_time < '$today 18:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 18:00:00' AND log_time < '$today 19:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 19:00:00' AND log_time < '$today 20:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 20:00:00' AND log_time < '$today 21:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 21:00:00' AND log_time < '$today 22:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 22:00:00' AND log_time < '$today 23:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$today 23:00:00' AND log_time < '$tomorrow 00:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$tomorrow 00:00:00' AND log_time < '$tomorrow 01:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$tomorrow 01:00:00' AND log_time < '$tomorrow 02:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$tomorrow 02:00:00' AND log_time < '$tomorrow 03:00:00'");
-  $allowed_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'a' AND log_time >= '$tomorrow 03:00:00' AND log_time < '$tomorrow 04:00:00'");
-  
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 04:00:00' AND log_time < '$today 05:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 05:00:00' AND log_time < '$today 06:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 06:00:00' AND log_time < '$today 07:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 07:00:00' AND log_time < '$today 08:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 08:00:00' AND log_time < '$today 09:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 09:00:00' AND log_time < '$today 10:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 10:00:00' AND log_time < '$today 11:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 11:00:00' AND log_time < '$today 12:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 12:00:00' AND log_time < '$today 13:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 13:00:00' AND log_time < '$today 14:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 14:00:00' AND log_time < '$today 15:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 15:00:00' AND log_time < '$today 16:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 16:00:00' AND log_time < '$today 17:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 17:00:00' AND log_time < '$today 18:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 18:00:00' AND log_time < '$today 19:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 19:00:00' AND log_time < '$today 20:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 20:00:00' AND log_time < '$today 21:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 21:00:00' AND log_time < '$today 22:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 22:00:00' AND log_time < '$today 23:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$today 23:00:00' AND log_time < '$tomorrow 00:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$tomorrow 00:00:00' AND log_time < '$tomorrow 01:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$tomorrow 01:00:00' AND log_time < '$tomorrow 02:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$tomorrow 02:00:00' AND log_time < '$tomorrow 03:00:00'");
-  $blocked_values[] = count_rows("SELECT COUNT(*) FROM live WHERE dns_request LIKE '%$site' AND dns_result = 'b' AND log_time >= '$tomorrow 03:00:00' AND log_time < '$tomorrow 04:00:00'");
-  
-    
-  /*print_r($allowed_values);                              //For debugging
-  echo '<br>';
-  print_r($blocked_values);*/
-  echo '<div class="home-nav-container">'.PHP_EOL;
-  linechart($allowed_values, $blocked_values, $xlabels);   //Draw the line chart
-  echo '</div>'.PHP_EOL;
-}  
+function count_queries() {
+  global $db, $domain, $site;
 
+  $allowed_arr = array();
+  $blocked_arr = array();
+  $chart_labels = array();
+  $link_labels = array();
+  $currenttime = 0;
+  $datestr = '';
+  $query = '';
+
+  $currenttime = time();
+
+  $starttime = strtotime('-30 days');
+  $endtime = strtotime('+1 days');
+
+  if ($domain != $site) {
+    $query = "SELECT date_format(log_time, '%m-%d') as log_date, dns_result, COUNT(1) as count FROM dnslog WHERE dns_request LIKE '%$domain' GROUP BY dns_result, log_date";
+  }
+  else {
+    $query = "SELECT date_format(log_time, '%m-%d') as log_date, dns_result, COUNT(1) as count FROM dnslog WHERE dns_request LIKE '%$site' GROUP BY dns_result, log_date";
+  }
+
+  if(!$result = $db->query($query)){
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo 'count_queries: '.$db->error;
+    echo '</div>'.PHP_EOL;
+    die();
+  }
+
+  for ($i = $starttime; $i < $endtime; $i += 86400) {      //Increase by 1 day from -30 days to today
+    $datestr = date('m-d', $i);
+    $allowed_arr[$datestr] = 0;
+    $blocked_arr[$datestr] = 0;
+    $chart_labels[] = $datestr;
+    $link_labels[] = date('Y-m-d 00:00:00', $i);
+  }
+
+  if ($result->num_rows == 0) {                            //Leave if nothing found
+    $result->free();
+    //echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
+    return false;
+  }
+
+  while($row = $result->fetch_assoc()) {                   //Read each row of results
+
+    if (! array_key_exists($row['log_date'], $allowed_arr)) continue;
+
+    if ($row['dns_result'] == 'A') {
+      $allowed_arr[$row['log_date']] = $row['count'];
+    }
+    elseif ($row['dns_result'] == 'B') {
+      $blocked_arr[$row['log_date']] = $row['count'];
+    }
+  }
+
+  $result->free();
+
+  linechart(array_values($allowed_arr), array_values($blocked_arr), $chart_labels, $link_labels, 'dtrange=24:00:00&amp;searchbox=*'.$domain, 'Queries over past 30 days');   //Draw the line chart
+  return null;
+}
 
 /********************************************************************
  *Main
@@ -558,74 +584,67 @@ function trafficgraph() {
 
 $db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);  //Open MariaDB connection
 
-search_systems();                                          //Need to find out systems are on live table
-
 if (isset($_GET['sys'])) {                                 //Any system set?
-  if (in_array($_GET['sys'], $syslist)) $sys = $_GET['sys'];
+  if (filter_var($_GET['sys'], FILTER_VALIDATE_IP)) {
+    $sys = $_GET['sys'];                                   //Just check for valid IP rather than if system is in dnslog
+  }
 }
 
 if (isset($_GET['datetime'])) {                            //Filter for hh:mm:ss
-  if (preg_match(REGEX_TIME, $_GET['datetime']) > 0) {
-    $datetime = date('Y-m-d ').$_GET['datetime'];
+  if (preg_match(REGEX_DATETIME, $_GET['datetime']) > 0) {
+    $datetime = $_GET['datetime'];
   }
 }
 
 if (isset($_GET['site'])) {
-  if (filter_url($_GET['site'])) {
-    $site = $_GET['site'];
+  if (filter_domain(trim($_GET['site']))) {
+    $site = trim($_GET['site']);
+    $domain = extract_domain($site);
+  }
+}
+
+if (isset($_GET['v'])) {
+  if ($_GET['v'] == 'raw') {
+    $showraw = true;
   }
 }
 
 if (!table_exists('whois')) {                              //Does whois sql table exist?
   create_whoistable();                                     //If not then create it
-  sleep(2);                                                //Delay to wait for MariaDB to create the table
+  sleep(1);                                                //Delay to wait for MariaDB to create the table
 }
 
-if ($Config['whoisapi'] == '') {                           //Has user set an API key?              
+if ($Config['whoisapi'] == '') {                           //Has user set an API key?
   show_whoiserror();                                       //No - Don't go any further
   $db->close();
   exit;
 }
 
-draw_searchbar();
-
-if ($datetime != '') show_time_view();                     //Show time view if datetime in parameters
 
 
-if ($site != '') {                                         //Load whois data?
-  $site = extract_domain($site);                           //Can only search for TLD
-  if (! search_whois($site)) {                             //Attempt to search whois table
-    get_whoisdata($site, $Config['whoisapi']);             //No record found - download it from JsonWhois
+if ($domain != '') {                                       //Load whois data?
+  draw_searchbar();
+  if ($datetime != '') show_time_view();                   //Show time view if datetime in parameters
+
+  if (! search_whois($domain)) {                           //Attempt to search whois table
+    get_whoisdata($domain, $Config['whoisapi']);           //No record found - download it from JsonWhois
   }
-  show_whoisdata();                                        //Display data from table / JsonWhois
   
-  trafficgraph();                                          //Draw traffic graph
+  if ($showraw) {
+    show_rawwhoisdata();
+  }
+  else {
+    show_whoisdata();                                      //Display fancy whois data
+    count_queries();                                       //Show log data for last 30 days
+  }
+}
+else {
+  draw_searchbox();
 }
 
 $db->close();
 
 ?>
-
 </div>
-
-<div id="scrollup" class="button-scroll" onclick="ScrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
-<div id="scrolldown" class="button-scroll" onclick="ScrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
-
-<div id="stats-box">
-<div class="dialog-bar">Report</div>
-<span id="sitename">site</span>
-<span id="statsmsg">something</span>
-<span id="statsblock1"><a class="button-blue" href="#">Block Whole</a> Block whole domain</span>
-<span id="statsblock2"><a class="button-blue" href="#">Block Sub</a> Block just the subdomain</span>
-<form name="reportform" action="https://quidsup.net/notrack/report.php" method="post" target="_blank">
-<input type="hidden" name="site" id="siterep" value="none">
-<span id="statsreport"><input type="submit" class="button-blue" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
-</form>
-
-<br>
-<div class="centered"><h6 class="button-grey" onclick="HideStatsBox()">Cancel</h6></div>
-<div class="close-button" onclick="HideStatsBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
-</div>
-
 </body>
 </html>

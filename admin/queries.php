@@ -12,10 +12,12 @@ ensure_active_session();
 <head>
   <meta charset="UTF-8">
   <link href="./css/master.css" rel="stylesheet" type="text/css">
+  <link href="./css/icons.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/menu.js"></script>
   <script src="./include/queries.js"></script>
   <title>NoTrack - DNS Queries</title>
+  <meta name="viewport" content="width=device-width, initial-scale=0.7">
 </head>
 
 <body>
@@ -29,69 +31,294 @@ echo '<div id="main">'.PHP_EOL;
 ************************************************/
 DEFINE('DEF_FILTER', 'all');
 DEFINE('DEF_SYSTEM', 'all');
-DEFINE('DEF_SDATE', date("Y-m-d", time() - 172800));  //Start Date of Historic -2d
-DEFINE('DEF_EDATE', date("Y-m-d", time() - 86400));   //End Date of Historic   -1d
 
 $FILTERLIST = array('all' => 'All Requests',
-                    'allowed' => 'Allowed Only',
-                    'blocked' => 'Blocked Only',
-                    'local' => 'Local Only');
+                    'A' => 'Allowed Only',
+                    'B' => 'Blocked Only',
+                    'L' => 'Local Only');
 
-$VIEWLIST = array('livegroup', 'livetime', 'historicgroup', 'historictime');
+$GROUPLIST = array('name' => 'Site Name',
+                   'time' => 'Time');
 
-$COMMONSITESLIST = array('cloudfront.net',
-                         'googleusercontent.com',
-                         'googlevideo.com',
-                         'cedexis-radar.net',
-                         'gvt1.com',
-                         'deviantart.net',
-                         'deviantart.com',
-                         'ampproject.net',
-                         'steamcontent.com',
-                         'userstorage.mega.co.nz',
-                         'tumblr.com');
-//CommonSites referres to websites that have a lot of subdomains which aren't necessarily relivent. In order to improve user experience we'll replace the subdomain of these sites with "*"
+$TIMELIST = array('1 HOUR' => '1 Hour',
+                  '4 HOUR' => '4 Hours',
+                  '12 HOUR' => '12 Hours',
+                  '1 DAY' => '1 Day',
+                  '7 DAY' => '7 Days',
+                  '30 DAY' => '30 Days');
+
+$VIEWLIST = array('name', 'time');
+
 
 /************************************************
 *Global Variables                               *
 ************************************************/
 $page = 1;
 $filter = DEF_FILTER;
-$view = 'livegroup';
+$datetime = '';
+$dtrange = '';
+$groupby = 'name';
+$searchbox = '';
+$searchtime = '1 DAY';
 $sort = 'DESC';
-$sys = DEF_SYSTEM;
-
-$datestart = DEF_SDATE;
-$dateend = DEF_EDATE;
-$sqltable = 'live';
+$sysip = DEF_SYSTEM;
 
 /************************************************
 *Arrays                                         *
 ************************************************/
-$syslist = array();
 $TLDBlockList = array();
-$CommonSites = array();                          //Merge Common sites list with Users Suppress list
 
 
 /********************************************************************
- *  Add Date Vars to SQL Search
+ *  Build Link Text
+ *    Returns a HTML link containing parameters used on the page
+ *    Used to create the links for sort and pagination
  *
  *  Params:
  *    None
  *  Return:
- *    SQL Query string
+ *    String of parameters
  */
-function add_datestr() {
-  global $sqltable, $filter, $sys, $datestart, $dateend;
-  
-  if ($sqltable == 'live') return '';
-  
-  $searchstr = ' WHERE ';
-  if (($filter != DEF_FILTER) || ($sys != DEF_SYSTEM)) $searchstr = ' AND ';
-  
-  $searchstr .= 'log_time BETWEEN \''.$datestart.'\' AND \''.$dateend.' 23:59\'';
-  
-  return $searchstr;
+function buildlink() {
+  global $datetime, $dtrange, $filter, $groupby, $searchbox, $searchtime, $sysip;
+
+  $link = "groupby=$groupby";
+
+  $link .= ($datetime != '') ? "&amp;datetime=".rawurlencode($datetime) : "&amp;searchtime=$searchtime";
+  $link .= ($dtrange != '') ? "&amp;dtrange=$dtrange" : '';
+  $link .= ($filter != DEF_FILTER) ? "&amp;filter=$filter" : '';
+  $link .= ($sysip != DEF_SYSTEM) ? "&amp;sysip=$sysip" : '';
+  $link .= ($searchbox != '') ? "&amp;searchbox=$searchbox" : '';
+
+  return $link;
+}
+
+
+/********************************************************************
+ *  Get CIDR Range
+ *    Returns Start and End IP of a given IP/CIDR range
+ *
+ *  Params:
+ *    IP/CIDR - e.g. 192.168.0.0/24
+ *  Return:
+ *    Array of Start and End IP range
+ */
+function cidr($cidr) {
+  list($ip, $mask) = explode('/', $cidr);
+
+  $maskBinStr =str_repeat("1", $mask ) . str_repeat("0", 32-$mask );          //net mask binary string
+  $inverseMaskBinStr = str_repeat("0", $mask ) . str_repeat("1",  32-$mask ); //inverse mask
+
+  $ipLong = ip2long( $ip );
+  $ipMaskLong = bindec( $maskBinStr );
+  $inverseIpMaskLong = bindec( $inverseMaskBinStr );
+  $netWork = $ipLong & $ipMaskLong;
+
+  $start = long2ip($netWork);
+  $end = long2ip(($netWork | $inverseIpMaskLong));
+
+  //echo "start $start end $end";                          //Uncomment to Debug
+  return array($start, $end);
+}
+
+
+/********************************************************************
+ *  Get DNS Search
+ *    Checks for various combinations of allowable searches for IP address
+ *    1. IP/CIDR
+ *    2. IPv4 / IPv6
+ *
+ *  Params:
+ *    sysip GET parameter
+ *  Return:
+ *    Trimmed input if valid
+ *    Otherwise return DEF_SYSTEM
+ */
+function filter_ipaddress($value) {
+  $userinput = trim($value);
+
+  if (preg_match(REGEX_IPCIDR, $userinput) > 0) {          //Check if valid IP/CIDR
+    return $userinput;
+  }
+
+  else {
+    if (filter_var($userinput, FILTER_VALIDATE_IP)) {      //Or single IPv4 / IPv6
+      return $userinput;
+    }
+  }
+
+  return DEF_SYSTEM;
+}
+
+/********************************************************************
+ *  Get DNS Search
+ *    Returns formatted SQL query for searching dns_request from dnsqueries table based on various search inputs
+ *
+ *  Params:
+ *    Users search
+ *  Return:
+ *    SQL Search string for DNS Request
+ */
+function get_dnssearch($urlsearch) {
+  $sqlsearch = '';
+  $url = '';
+
+  $url = preg_replace('/\*/', '', $urlsearch);
+
+  if (preg_match('/^\*[\w\d\.\-_]+\*$/', $urlsearch) > 0) {
+    $sqlsearch = "AND dns_request LIKE '%$url%' ";
+    //echo '1';
+  }
+  elseif (preg_match('/^\*[\w\d\.\-_]+\.[\w\d\-]+$/', $urlsearch) > 0) {
+    $sqlsearch = "AND dns_request LIKE '%$url' ";
+    //echo '2';
+  }
+  elseif (preg_match('/^[\w\d\.\-_]+\*$/', $urlsearch) > 0) {
+    $sqlsearch = "AND dns_request LIKE '$url%' ";
+    //echo '3';
+  }
+  elseif (preg_match('/^[\w\d\.\-_]+\.[\w\d\-]+$/', $urlsearch) > 0) {
+    $sqlsearch = "AND dns_request = '$url' ";
+    //echo '4';
+  }
+  elseif (preg_match('/^\*$/', $urlsearch) > 0) {          //* Only = all grouped requests
+    $sqlsearch = "AND dns_request LIKE '*%' ";
+    //echo '5';
+  }
+  else {
+    $sqlsearch = "AND dns_request LIKE '%$url%' ";
+    //echo '6';
+  }
+
+
+  return $sqlsearch;
+}
+
+
+/********************************************************************
+ *  Get IP Search
+ *    Returns formatted SQL query for searching sys (IP) from dnsqueries table based on various search inputs
+ *
+ *  Params:
+ *    User search string
+ *  Return:
+ *    SQL Search string
+ */
+function get_ipsearch($ipsearch) {
+  $sqlsearch = '';
+  $ipstart = 0;
+  $ipend = 0;
+
+  if (preg_match(REGEX_IPCIDR, $ipsearch) > 0) {
+    list($ipstart, $ipend) = cidr($ipsearch);
+    $sqlsearch = " AND INET_ATON(sys) BETWEEN INET_ATON('$ipstart') AND INET_ATON('$ipend') ";
+  }
+  else {
+    $sqlsearch = " AND sys = '$ipsearch' ";
+  }
+  return $sqlsearch;
+}
+
+
+/********************************************************************
+ *  Draw Filter Box
+ *    Reset form is dealt with by queries.js function resetQueriesForm()
+ *    Show current value first in <select>, and then read through respective array to output values
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function draw_filterbox() {
+  global $sysiplist, $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby, $datetime, $dtrange;
+  global $FILTERLIST, $TIMELIST;
+
+  $line = '';
+
+  echo '<form method="get">'.PHP_EOL;
+  echo '<div id="dnsfilter-container">'.PHP_EOL;                    //Start Div Group
+
+  echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
+  echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
+  echo '<input type="hidden" name="groupby" value="'.$groupby.'">'.PHP_EOL;
+  if ($datetime != '') {
+    echo '<input type="hidden" name="datetime" value="'.$datetime.'">'.PHP_EOL;
+  }
+  if ($dtrange != '') {
+    echo '<input type="hidden" name="dtrange" value="'.$dtrange.'">'.PHP_EOL;
+  }
+
+  echo '<div><input type="text" name="searchbox" id="filtersearch" value="'.$searchbox.'" placeholder="site.com"></div>'.PHP_EOL;
+
+  if ($sysip == DEF_SYSTEM) {
+    echo '<div><input type="text" name="sysip" id="filtersys" placeholder="192.168.0.1/24"></div>'.PHP_EOL;
+  }
+  else {
+    echo '<div><input type="text" name="sysip" id="filtersys" value="'.$sysip.'" placeholder="192.168.0.1/24"></div>'.PHP_EOL;
+  }
+
+  echo '<div><select name="searchtime" id="filtertime" onchange="submit()">';
+  echo '<option value="'.$searchtime.'">'.$TIMELIST[$searchtime].'</option>'.PHP_EOL;
+  foreach ($TIMELIST as $key => $line) {
+    if ($key != $searchtime) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
+  }
+  echo '</select></div>'.PHP_EOL;                          //End Search Time
+
+  echo '<div><select name="filter" id="filtertype" onchange="submit()">';
+  echo '<option value="'.$filter.'">'.$FILTERLIST[$filter].'</option>'.PHP_EOL;
+  foreach ($FILTERLIST as $key => $line) {
+    if ($key != $filter) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
+  }
+  echo '</select></div>'.PHP_EOL;                          //End Filter List
+
+  echo '<input type="submit" value="Search">&nbsp;&nbsp;';
+  echo '<button type="button" class="button-grey mobile-hide" onclick="resetQueriesForm()">Reset</button>';
+
+  echo '</div>'.PHP_EOL;                                   //End Div Group
+  echo '</form>'.PHP_EOL;
+
+}
+
+
+/********************************************************************
+ *  Draw Group By Buttons
+ *    groupby is a form which contains hidden elements from draw_filterbox
+ *    Selection between Site / Time is made using radio box, which is missing the input box
+ *    Radio box labels are styled to look like pag-nav
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function draw_groupby() {
+  global $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby, $datetime, $dtrange;
+
+  $domainactive = '';
+  $timeactive = '';
+
+  $domainactive = ($groupby == 'name') ? 'checked="checked"' : '';
+  $timeactive = ($groupby == 'time') ? 'checked="checked"' : '';
+
+  echo '<form method="get">';
+  echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
+  echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
+  echo '<input type="hidden" name="searchbox" value="'.$searchbox.'">'.PHP_EOL;
+  if ($datetime != '') {
+    echo '<input type="hidden" name="datetime" value="'.$datetime.'">'.PHP_EOL;
+  }
+  else {
+    echo '<input type="hidden" name="searchtime" value="'.$searchtime.'">'.PHP_EOL;
+  }
+  if ($dtrange != '') {
+    echo '<input type="hidden" name="dtrange" value="'.$dtrange.'">'.PHP_EOL;
+  }
+  echo '<input type="hidden" name="sys" value="'.$sysip.'">'.PHP_EOL;
+  echo '<input type="hidden" name="filter" value="'.$filter.'">'.PHP_EOL;
+  echo '<div id="groupby-container">'.PHP_EOL;
+  echo '<input type="radio" id="gbtab1" name="groupby" value="name" onchange="submit()" '.$domainactive.'><label for="gbtab1">Site</label>'.PHP_EOL;
+  echo '<input type="radio" id="gbtab2" name="groupby" value="time" onchange="submit()" '.$timeactive.'><label for="gbtab2">Time</label>'.PHP_EOL;
+  echo '</div></form>';
 }
 
 
@@ -104,279 +331,187 @@ function add_datestr() {
  *    SQL Query string
  */
 function add_filterstr() {
-  global $filter, $sys;
-  
-  $searchstr = " WHERE ";
-  
-  if (($filter == DEF_FILTER) && ($sys == DEF_SYSTEM)) {   //Nothing to add
-    return '';
+  global $datetime, $dtrange, $searchbox, $searchtime, $filter, $sysip;
+
+  if (($datetime != '') && ($dtrange == '')) {             //No date-time range specified, use fixed -1m to +3m
+    $searchstr = " WHERE log_time > SUBTIME('$datetime', '00:01:00') AND log_time < ADDTIME('$datetime', '00:03:00')";
   }
-  
-  if ($sys != DEF_SYSTEM) {
-    $searchstr .= "sys = '$sys'";
+  elseif (($datetime != '') && ($dtrange != '')) {         //Date-time range specified by user1
+    $searchstr = " WHERE log_time > '$datetime' AND log_time < ADDTIME('$datetime', '$dtrange')";
+  }
+  else {
+    $searchstr = " WHERE log_time >= DATE_SUB(NOW(), INTERVAL $searchtime) ";
+  }
+
+  if ($searchbox != '') {
+    $searchstr .= get_dnssearch($searchbox);
+  }
+
+  if ($sysip != DEF_SYSTEM) {
+    //$searchstr .= "AND sys = '$sysip'";
+    $searchstr .= get_ipsearch($sysip);
   }
   if ($filter != DEF_FILTER) {
-    if ($sys != DEF_SYSTEM) {
-      $searchstr .= " AND dns_result=";
-    }    
-    else {
-      $searchstr .= " dns_result=";
-    }    
-    
-    switch($filter) {
-      case 'allowed':
-        $searchstr .= "'a'";
-        break;
-      case 'blocked':
-        $searchstr .= "'b'";
-        break;
-      case 'local':
-        $searchstr .= "'l'";
-        break;
-    }
+    $searchstr .= " AND dns_result = '$filter'";
   }
-  return $searchstr;        
+
+  //echo $searchstr;                                       //Uncomment to debug sql query
+  return $searchstr;
 }
 
 
 /********************************************************************
- *  Count rows in table and save result to memcache
- *  
- *  1. Attempt to load value from Memcache
- *  2. Check if same query is being run
- *  3. If that fails then run query
+ *  Search Block Reason
+ *    1. Search site.com in blocklist table
+ *    2. Search .tld in blocklist table
+ *    3. Search for like site.com in blocklist table
+ *    4. On fail return ''
  *
  *  Params:
- *    Query String
+ *    $domain - Domain to search
  *  Return:
- *    Number of Rows
+ *    blocklist name
  */
-function count_rows_save($query) {
-  global $db, $mem;
-  
-  $rows = 0;
-  
-  if ($mem->get('rows')) {                       //Does rows exist in memcache?
-    if ($query == $mem->get('oldquery')) {       //Is this query same as old query?
-      $rows = $mem->get('rows');                 //Use stored value      
-      return $rows;
+function search_blockreason($domain) {
+  global $db;
+  $res = '';
+
+  preg_match('/[\w\-_]+(\.co|\.com|\.org|\.gov)?\.([\w\-]+)$/', $domain, $matches);
+
+  //Search for site.com
+  //Negate whitelist to prevent stupid results
+  $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '".$matches[0]."' AND bl_source != 'whitelist'");
+  if ($result->num_rows > 0) {
+    $res = $result->fetch_row()[0];
+  }
+  else {
+    $result->free();
+    //Search for .tld
+    $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '.".$matches[2]."' AND bl_source = 'bl_tld'");
+    if ($result->num_rows > 0) {
+      $res = $result->fetch_row()[0];
+    }
+    else {
+      $result->free();
+      //Search for like site.com (possibly prone to misidentifying bl_source)
+      $result = $db->query("SELECT bl_source FROM blocklist WHERE site LIKE '%.".$matches[0]."' AND bl_source != 'whitelist'");
+      if ($result->num_rows > 0) {
+        $res = $result->fetch_row()[0];
+      }
     }
   }
-  
-  if(!$result = $db->query($query)){
-    die('There was an error running the query '.$db->error);
-  }
-  
-  $rows = $result->fetch_row()[0];               //Extract value from array
-  $result->free();    
-  $mem->set('oldquery', $query, 0, 600);         //Save for 10 Mins
-      
-  return $rows;
-}
 
-
-/********************************************************************
- *  Draw Filter Box
- *  
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function draw_filterbox() {
-  global $FILTERLIST, $syslist, $filter, $page, $sqltable, $sort, $sys, $view;
-  global $datestart, $dateend;
-  
-  $hidden_date_vars = '';
-  $line = '';
-  
-  if ($sqltable == 'historic') {
-    $hidden_date_vars = '<input type="hidden" name="datestart" value="'.$datestart.'"><input type="hidden" name="dateend" value="'.$dateend.'">'.PHP_EOL;
-  }
-  
-  echo '<div class="sys-group">'.PHP_EOL;
-  echo '<h5>DNS Queries</h5>'.PHP_EOL;
-  echo '<div class="row"><div class="col-half">'.PHP_EOL;
-  echo '<form method="get">'.PHP_EOL;
-  echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
-  echo '<input type="hidden" name="view" value="'.$view.'">'.PHP_EOL;
-  echo '<input type="hidden" name="filter" value="'.$filter.'">'.PHP_EOL;
-  echo '<input type="hidden" name="sort" value="'.strtolower($sort).'">'.PHP_EOL;
-  echo $hidden_date_vars;
-  echo '<span class="filter">System:</span><select name="sys" onchange="submit()">';
-    
-  if ($sys == DEF_SYSTEM) {
-    echo '<option value="all">All</option>'.PHP_EOL;
-  }
-  else {
-    echo '<option value="1">'.$sys.'</option>'.PHP_EOL;
-    echo '<option value="all">All</option>'.PHP_EOL;
-  }
-  foreach ($syslist as $line) {
-    if ($line != $sys) echo '<option value="'.$line.'">'.$line.'</option>'.PHP_EOL;
-  }
-  echo '</select></form>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
-  
-  echo '<div class="col-half">'.PHP_EOL;
-  echo '<form method="get">'.PHP_EOL;
-  echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
-  echo '<input type="hidden" name="view" value="'.$view.'">'.PHP_EOL;
-  echo '<input type="hidden" name="sort" value="'.strtolower($sort).'">'.PHP_EOL;
-  echo '<input type="hidden" name="sys" value="'.$sys.'">'.PHP_EOL;
-  echo $hidden_date_vars;
-  echo '<span class="filter">Filter:</span><select name="filter" onchange="submit()">';
-  echo '<option value="'.$filter.'">'.$FILTERLIST[$filter].'</option>'.PHP_EOL;
-  foreach ($FILTERLIST as $key => $line) {
-    if ($key != $filter) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
-  }
-  echo '</select></form>'.PHP_EOL;
-  echo '</div></div>'.PHP_EOL;
-  
-  if ($sqltable == 'historic') {
-    echo '<div class="row">'.PHP_EOL;
-    echo '<form method="get">'.PHP_EOL;
-    echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
-    echo '<input type="hidden" name="view" value="'.$view.'">'.PHP_EOL;
-    echo '<input type="hidden" name="sort" value="'.strtolower($sort).'">'.PHP_EOL;
-    echo '<input type="hidden" name="filter" value="'.$filter.'">'.PHP_EOL;
-    echo '<input type="hidden" name="sys" value="'.$sys.'">'.PHP_EOL;
-    echo '<div class="col-half">'.PHP_EOL;
-    echo '<span class="filter">Start Date: </span><input name="datestart" type="date" value="'.$datestart.'" onchange="submit()"/>'.PHP_EOL;
-    echo '</div>'.PHP_EOL;
-    echo '<div class="col-half">'.PHP_EOL;
-    echo '<span class="filter">End Date: </span><input name="dateend" type="date" value="'.$dateend.'" onchange="submit()"/>'.PHP_EOL;
-    echo '</div>'.PHP_EOL;
-    echo '</form>'.PHP_EOL;
-    echo '</div>'.PHP_EOL;
-  }
-  
-  echo '</div>'.PHP_EOL;
-}
-
-
-/********************************************************************
- *  Draw View Buttons
- *    [Today][Historic][Group][Time]
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function draw_viewbuttons() {
-  global $sqltable, $view;
-    
-  echo '<div class="pag-nav float-right"><ul>'.PHP_EOL;
-  if ($sqltable == 'live') {
-    echo '<li class="active"><a class="pag-wide" href="?view=livegroup">Today</a></li>'.PHP_EOL;
-    echo '<li><a class="pag-wide" href="?view=historicgroup">Historic</a></li>'.PHP_EOL;
-  }
-  else {
-    echo '<li><a class="pag-wide" href="?view=livegroup">Today</a></li>'.PHP_EOL;
-    echo '<li class="active"><a class="pag-wide" href="?view=historicgroup">Historic</a></li>'.PHP_EOL;
-  }  
-  if (($view == 'livetime') || ($view == 'historictime')) {
-    echo '<li><a class="pag-wide" href="?view='.$sqltable.'group">Group</a></li>'.PHP_EOL;
-    echo '<li class="active"><a class="pag-wide" href="?view='.$sqltable.'time">Time</a></li>'.PHP_EOL;    
-  }
-  elseif (($view == 'livegroup') || ($view == 'historicgroup')) {
-    echo '<li class="active pag-wide"><a class="pag-wide" href="?view='.$sqltable.'group">Group</a></li>'.PHP_EOL;
-    echo '<li><a class="pag-wide" href="?view='.$sqltable.'time">Time</a></li>'.PHP_EOL;    
-  }
-  echo '</ul></div>'.PHP_EOL; 
+  $result->free();
+  return $res;
 }
 
 
 /********************************************************************
  *  Get Block List Name
  *    Returns the name of block list if it exists in the names array
+ *
  *  Params:
  *    $bl - bl_name
  *  Return:
  *    Full block list name
+ *    Or what it has been named as
  */
-
 function get_blocklistname($bl) {
   global $BLOCKLISTNAMES;
-  
+
   if (array_key_exists($bl, $BLOCKLISTNAMES)) {
     return $BLOCKLISTNAMES[$bl];
   }
-  
+
   return $bl;
 }
+
+
 /********************************************************************
- *  Search Block Reason
- *    1. Search $site in bl_source for Blocklist name
- *    2. Use regex match to extract (site).(tld)
- *    3. Search site.tld in bl_source
- *    4. On fail search for .tld in bl_source
- *    5. On fail return ''
+ *  Get Block List Event
+ *    Returns the name of block list event if it exists in the event array
  *
  *  Params:
- *    $site - Site to search
+ *    $bl - bl_name
  *  Return:
- *    blocklist name
+ *    event value
  */
-function search_blockreason($site) {
-  global $db;
-  
-  $result = $db->query('SELECT bl_source site FROM blocklist WHERE site = \''.$site.'\'');
-  if ($result->num_rows > 0) {
-    return $result->fetch_row()[0];
-  }
-  
-    
-  //Try to find LIKE site ending with site.tld
-  if (preg_match('/([\w\d\-\_]+)\.([\w\d\-\_]+)$/', $site,  $matches) > 0) {
-    $result = $db->query('SELECT bl_source site FROM blocklist WHERE site LIKE \'%'.$matches[1].'.'.$matches[2].'\'');
+function get_blocklistevent($bl) {
+  global $BLOCKLISTEVENT;
 
-    if ($result->num_rows > 0) {
-      return $result->fetch_row()[0];
-    }    
-    else {                                      //On fail try for site = .tld
-      $result = $db->query('SELECT bl_source site FROM blocklist WHERE site = \'.'.$matches[2].'\'');
-      if ($result->num_rows > 0) {
-        return $result->fetch_row()[0];
-      }
-    }
+  if (array_key_exists($bl, $BLOCKLISTEVENT)) {
+    return $BLOCKLISTEVENT[$bl];
   }
-  
-  return '';                                     //Don't know at this point    
+  elseif (substr($bl, 0, 6) == 'custom') {                 //Could be a custom_x list
+    return 'custom';
+  }
+
+  return $bl;                                              //Shouldn't get to here
 }
 
-//Need to ammend for historic view TODO
 /********************************************************************
- *  Search Systems
- *  
- *  1. Find unique sys values in table
+ *  Format Row
+ *    Returns the action, blockreason, event, and severity in an array
  *
  *  Params:
- *    None
+ *    domain, dns_result(allowed, blocked, local)
+ *
  *  Return:
- *    None
+ *    Array of variables to be taken using list()
  */
-function search_systems() {
-  global $db, $mem, $syslist;
+function format_row($domain, $dns_result) {
+  $action = '';
+  $blocklist = '';
+  $blockreason = '';
+  $event = '';
+  $severity = '1';
   
-  $syslist = $mem->get('syslist');
-  
-  if (empty($syslist)) {
-    if (! $result = $db->query("SELECT DISTINCT sys FROM live ORDER BY sys")) {
-      die('There was an error running the query'.$db->error);
+  if ($dns_result == 'A') {
+    $action = '<button class="icon-boot button-grey" onclick="reportSite(\''.$domain.'\', false, true)">Block</button>';
+    $event = 'allowed1';
+  }
+  elseif ($dns_result == 'B') {         //Blocked
+    $blocklist = search_blockreason($domain);
+    $severity = '2';
+      
+    if ($blocklist == 'bl_notrack') {        //Show Report icon on NoTrack list
+      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, true)">Allow</button>';
+      $blockreason = '<p class="small grey">Blocked by NoTrack list</p>';
+      $event = 'tracker2'; //TODO change image
     }
-    while($row = $result->fetch_assoc()) {       //Read each row of results
-      $syslist[] = $row['sys'];                  //Add row value to $syslist
+    elseif ($blocklist == 'custom') {        //Users blacklist
+      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, false)">Allow</button>';
+      $blockreason = '<p class="small grey">Blocked by Custom Black list</p>';
+      $event = 'custom2';
     }
-    $result->free();
-    $mem->set('syslist', $syslist, 0, 600);      //Save for 10 Mins
-  }    
+    elseif ($blocklist != '') {
+      $blockreason = '<p class="small grey">Blocked by '.get_blocklistname($blocklist).'</p>';
+      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, false)">Allow</button>';
+
+      $event = get_blocklistevent($blocklist);
+
+      if ($event == 'malware') {
+        $severity = '3';
+      }
+      $event .= $severity;
+
+    }
+    else {  //No reason is probably IP or Search request
+      $blockreason = '<p class="small">Invalid request</p>';
+      $event = 'invalid2';
+    }
+  }
+  elseif ($dns_result == 'L') {
+    $event = 'local1';
+  }
+
+  return array($action, $blockreason, $event, $severity);
 }
 
 
 /********************************************************************
  *  Show Group View
- *    Show results from either Live or Historic table in Group order
+ *    Show results grouped by name
  *
  *  Params:
  *    None
@@ -384,91 +519,73 @@ function search_systems() {
  *    false when nothing found, true on success
  */
 function show_group_view() {
-  global $db, $sqltable, $page, $sort, $filter, $sys, $view, $Config, $TLDBlockList;
-  global $datestart, $dateend;
-  
-  $i = (($page - 1) * ROWSPERPAGE) + 1;
-  $rows = 0;
-  $row_class = '';
+  global $db, $Config, $TLDBlockList;
+  global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
+
+  $i = 0;
+  $k = 1;                                                  //Count within ROWSPERPAGE
   $action = '';
   $blockreason = '';
+  $event = '';
+  $severity = 1;
   $query = '';
+  $domain = '';
   $site_cell = '';
-  
-  $linkstr = "&amp;filter=$filter&amp;sys=$sys"; //Default link string
-  
-  if ($sqltable == 'historic') {                 //Add date search to link in histroic view
-    $linkstr .= "&amp;datestart=$datestart&amp;dateend=$dateend";
-  }
-  
-  $rows = count_rows_save("SELECT COUNT(DISTINCT dns_request) FROM $sqltable " .add_filterstr().add_datestr());
-  $query = "SELECT sys, dns_request, dns_result, COUNT(*) AS count FROM $sqltable" .add_filterstr().add_datestr()." GROUP BY dns_request ORDER BY count $sort LIMIT ".ROWSPERPAGE." OFFSET ".(($page-1) * ROWSPERPAGE);
-  
+
+  $sortlink = "?page=$page&amp;".buildlink();
+  $paginationlink = buildlink()."&amp;sort=$sort";
+
+  $query = "SELECT sys, dns_request, dns_result, COUNT(*) AS count FROM dnslog".add_filterstr()." GROUP BY dns_request ORDER BY count $sort";
+
   if(!$result = $db->query($query)){
-    die('There was an error running the query'.$db->error);
-  } 
-  
-  if ($result->num_rows == 0) {                 //Leave if nothing found
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo 'show_group_view: '.$db->error;
+    echo '</div>'.PHP_EOL;
+    die();
+  }
+
+  if ($result->num_rows == 0) {                            //Leave if nothing found
     $result->free();
-    echo 'Nothing Found';
+    echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
     return false;
   }
-  
-  if ((($page-1) * ROWSPERPAGE) > $rows) $page = 1;
-  
-  echo '<div class="sys-group">'.PHP_EOL;
-  pagination($rows, 'view='.$view.'&amp;sort='.strtolower($sort).$linkstr);
-  draw_viewbuttons();
-  
-  echo '<table id="query-group-table">'.PHP_EOL;
-  
-  echo '<tr><th>#</th><th>Site</th><th>Action</th><th>Requests<a class="blue" href="?page='.$page.'&amp;view='.$view.'&amp;sort=desc'.$linkstr.'">&#x25BE;</a><a class="blue" href="?page='.$page.'&amp;view='.$view.'&amp;sort=asc'.$linkstr.'">&#x25B4;</a></th></tr>'.PHP_EOL;  
-  
-  while($row = $result->fetch_assoc()) {         //Read each row of results
-    $action = '<a target="_blank" href="'.$Config['SearchUrl'].$row['dns_request'].'"><img class="icon" src="./images/search_icon.png" alt="G" title="Search"></a>&nbsp;<a target="_blank" href="'.$Config['WhoIsUrl'].$row['dns_request'].'"><img class="icon" src="./images/whois_icon.png" alt="W" title="Whois"></a>&nbsp;';
-    
-    if ($row['dns_result'] == 'A') {             //Row colouring
-      $row_class='';
-      $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', false, true)"></span>';
-    }
-    elseif ($row['dns_result'] == 'B') {         //Blocked
-      $row_class = ' class="blocked"';
-      $blockreason = search_blockreason($row['dns_request']);
-      if ($blockreason == 'bl_notrack') {        //Show Report icon on NoTrack list
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
-        $blockreason = '<p class="small">Blocked by NoTrack list</p>';
-      }
-      elseif ($blockreason == 'custom') {        //Users blacklist, show report icon
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
-        $blockreason = '<p class="small">Blocked by Black list</p>';
-      }
-      elseif ($blockreason == '') {              //No reason is probably IP or Search request
-        $row_class = ' class="invalid"';
-        $blockreason = '<p class="small">Invalid request</p>';
-      }
-      else {
-        $blockreason = '<p class="small">Blocked by '.get_blocklistname($blockreason).'</p>';
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, false)"></span>';
-      }      
-    }
-    elseif ($row['dns_result'] == 'L') {
-      $row_class = ' class="local"';
-      $action = '&nbsp;';
-    }
-    
-    //Make entire site cell clickable with link going to Investigate
-    $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?site='.$row['dns_request'].'\', \'_blank\')"><a href="./investigate.php?site='.$row['dns_request'].'" class="black" target="_blank">'.$row['dns_request'].$blockreason.'</a></td>';
-        
-    echo '<tr'.$row_class.'><td>'.$i.'</td>'.$site_cell.'<td>'.$action.'</td><td>'.$row['count'].'</td></tr>'.PHP_EOL;
-    $blockreason = '';
-    $i++;
+
+  //Page needs to be reduced by one to account for array position starting at zero vs human readable starting page at one
+  if ((($page-1) * ROWSPERPAGE) > $result->num_rows) {     //Prevent page being greater than number of rows
+    $page = 1;
   }
-  
+
+  if ($page > 1) {                                         //Move seek point if currrent page is greater than one
+    $result->data_seek(($page - 1) * ROWSPERPAGE);
+  }
+  $i = (($page - 1) * ROWSPERPAGE) + 1;                    //Friendly table position
+
+  pagination($result->num_rows, $paginationlink);
+  draw_groupby();
+
+  echo '<table id="query-group-table">'.PHP_EOL;
+
+  echo '<tr><th>&nbsp;</th><th>#</th><th>Site</th><th>Action</th><th>Requests<a class="primarydark" href="'.$sortlink.'&amp;sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'&amp;sort=ASC">&#x25B4;</a></th></tr>'.PHP_EOL;
+
+  while($row = $result->fetch_assoc()) {         //Read each row of results
+    $domain = $row['dns_request'];
+    list($action, $blockreason, $event, $severity) = format_row($domain, $row['dns_result']);
+
+    //Make entire site cell clickable with link going to Investigate
+    $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?site='.$domain.'\', \'_blank\')"><a href="./investigate.php?site='.$domain.'" class="black" target="_blank">'.$domain.$blockreason.'</a></td>';
+
+    echo '<tr><td><img src="./svg/events/'.$event.'.svg" alt=""></td><td>'.$i.'</td>'.$site_cell.'<td>'.$action.'</td><td>'.$row['count'].'</td></tr>'.PHP_EOL;
+    $blockreason = '';
+
+    $i++;
+    $k++;
+    if ($k > ROWSPERPAGE) break;
+  }
+
   echo '</table>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
-  pagination($rows, 'view='.$view.'&amp;sort='.strtolower($sort).$linkstr);
-  
-  echo '</div>'.PHP_EOL;
+  pagination($result->num_rows, $paginationlink);
+
   $result->free();
 
   return true;
@@ -485,107 +602,78 @@ function show_group_view() {
  *    false when nothing found, true on success
  */
 function show_time_view() {
-  global $db, $page, $sort, $filter, $sys, $view, $datestart, $dateend, $Config, $TLDBlockList;
-  global $datestart, $dateend;
-  
-  $rows = 0;
-  $row_class = '';
-  $pagination_link = '';
-  $query = '';
+  global $db, $Config, $TLDBlockList;
+  global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
+
+  $i = 0;
+  $k = 1;                                                  //Count within ROWSPERPAGE
   $action = '';
   $blockreason = '';
-  $investigate = '';
+  $event = '';
+  $severity = 1;
+  $query = '';
+  $domain = '';
   $site_cell = '';
-  
-  if ($view == 'livetime') {
-    $rows = count_rows_save('SELECT COUNT(*) FROM live'.add_filterstr());
-    if ((($page-1) * ROWSPERPAGE) > $rows) {
-      $page = 1;    
-    }
-    $query = "SELECT *, DATE_FORMAT(log_time, '%H:%i:%s') AS formatted_time FROM live ".add_filterstr(). " ORDER BY UNIX_TIMESTAMP(log_time) $sort LIMIT ".ROWSPERPAGE." OFFSET ".(($page-1) * ROWSPERPAGE);
-    $pagination_link = "view=$view&amp;sort=".strtolower($sort)."&amp;filter=$filter&amp;sys=$sys";
-  }
-  else {    
-    $rows = count_rows_save("SELECT COUNT(*) FROM historic".add_filterstr().add_datestr());
-    if ((($page-1) * ROWSPERPAGE) > $rows) {
-      $page = 1;
-    }
-    $query = "SELECT *, DATE_FORMAT(log_time, '%Y-%m-%d %H:%i:%s') AS formatted_time FROM historic".add_filterstr().add_datestr(). " ORDER BY UNIX_TIMESTAMP(log_time) $sort LIMIT ".ROWSPERPAGE." OFFSET ".(($page-1) * ROWSPERPAGE);
-    $pagination_link = "view=$view&amp;sort=".strtolower($sort)."&amp;filter=$filter&amp;sys=$sys&amp;datestart=$datestart&amp;dateend=$dateend";
-  }
-  
+
+  $sortlink = "?page=$page&amp;".buildlink();
+  $paginationlink = buildlink()."&amp;sort=$sort";
+
+  $query = "SELECT *, DATE_FORMAT(log_time, '%Y-%m-%d %H:%i:%s') AS formatted_time FROM dnslog ".add_filterstr(). " ORDER BY UNIX_TIMESTAMP(log_time) $sort";
+
   if(!$result = $db->query($query)){
-    die('There was an error running the query'.$db->error);
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo 'show_time_view: '.$db->error;
+    echo '</div>'.PHP_EOL;
+    die();
   }
-  
-  if ($result->num_rows == 0) {                  //Leave if nothing found
+
+  if ($result->num_rows == 0) {                            //Leave if nothing found
     $result->free();
-    echo "Nothing found for the selected dates";
+    echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
     return false;
   }
-  
-  echo '<div class="sys-group">'.PHP_EOL;
-  pagination($rows, $pagination_link);
-  draw_viewbuttons();
-  
+
+  //Page needs to be reduced by one to account for array position starting at zero vs human readable starting page at one
+  if ((($page-1) * ROWSPERPAGE) > $result->num_rows) {     //Prevent page being greater than number of rows
+    $page = 1;
+  }
+
+  if ($page > 1) {                                         //Move seek point if currrent page is greater than one
+    $result->data_seek(($page - 1) * ROWSPERPAGE);
+  }
+  $i = (($page - 1) * ROWSPERPAGE) + 1;                    //Friendly table position
+
+  pagination($result->num_rows, $paginationlink);
+  draw_groupby();
+
   echo '<table id="query-time-table">'.PHP_EOL;
-  echo '<tr><th>Time<a class="blue" href="?'.htmlspecialchars('page='.$page.'&view='.$view.'&sort=desc&filter='.$filter.'&sys='.$sys.'&datestart='.$datestart.'&dateend='.$dateend).'">&#x25BE;</a><a class="blue" href="?'.htmlspecialchars('page='.$page.'&view='.$view.'&sort=asc&filter='.$filter.'&sys='.$sys.'&datestart='.$datestart.'&dateend='.$dateend).'">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
-  
+  echo '<tr><th>&nbsp</th><th>Time<a class="primarydark" href="'.$sortlink.'&amp;sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'&amp;sort=ASC">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
+
   while($row = $result->fetch_assoc()) {         //Read each row of results
-    $action = '<a target="_blank" href="'.$Config['SearchUrl'].$row['dns_request'].'"><img class="icon" src="./images/search_icon.png" alt="G" title="Search"></a>&nbsp;<a target="_blank" href="'.$Config['WhoIsUrl'].$row['dns_request'].'"><img class="icon" src="./images/whois_icon.png" alt="W" title="Whois"></a>&nbsp;';
-    
-    if ($row['dns_result'] == 'A') {             //Allowed
-      $row_class='';
-      $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', false, true)"></span>';
-    }
-    elseif ($row['dns_result'] == 'B') {         //Blocked
-      $row_class = ' class="blocked"';      
-      $blockreason = search_blockreason($row['dns_request']);      
-      if ($blockreason == 'bl_notrack') {        //Show Report icon on NoTrack list
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
-        $blockreason = '<p class="small">Blocked by NoTrack list</p>';
-      }
-      elseif ($blockreason == 'custom') {        //Users blacklist, show report icon
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, true)"></span>';
-        $blockreason = '<p class="small">Blocked by Black list</p>';
-      }
-      elseif ($blockreason == '') {              //No reason is probably IP or Search request
-        $row_class = ' class="invalid"';
-        $blockreason = '<p class="small">Invalid request</p>';
-      }
-      else {
-        $blockreason = '<p class="small">Blocked by '.get_blocklistname($blockreason).'</p>';
-        $action .= '<span class="pointer"><img src="./images/report_icon.png" alt="Rep" title="Report Site" onclick="reportSite(\''.$row['dns_request'].'\', true, false)"></span>';
-      }    
-    }
-    elseif ($row['dns_result'] == 'L') {         //Local
-      $row_class = ' class="local"';
-      $action = '&nbsp;';
-    }
-    
-        
+    $domain = $row['dns_request'];
+    list($action, $blockreason, $event, $severity) = format_row($domain, $row['dns_result']);
+
     //Make entire site cell clickable with link going to Investigate
     //Add in datetime and system into investigate link
-    $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$row['dns_request'].'&amp;sys='.$row['sys'].'\', \'_blank\')"><a href="./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$row['dns_request'].'&amp;sys='.$row['sys'].'" class="black" target="_blank">'.$row['dns_request'].$blockreason.'</a></td>';
-        
-    echo '<tr'.$row_class.'><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td>'.$site_cell.'<td>'.$action.$investigate.'</td></tr>'.PHP_EOL;
+    $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$domain.'&amp;sys='.$row['sys'].'\', \'_blank\')"><a href="./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$domain.'&amp;sys='.$row['sys'].'" class="black" target="_blank">'.$domain.$blockreason.'</a></td>';
+
+    echo '<tr><td><img src="./svg/events/'.$event.'.svg" alt=""><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td>'.$site_cell.'<td>'.$action.'</td></tr>'.PHP_EOL;
     $blockreason = '';
+
+    $k++;
+    if ($k > ROWSPERPAGE) break;
   }
-  
+
   echo '</table>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
-  pagination($rows,  $pagination_link);
-  echo '</div>'.PHP_EOL;
-  
+  pagination($result->num_rows,  $paginationlink);
+
   $result->free();
   return true;
 }
 
 //Main---------------------------------------------------------------
-
 $db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
-
-search_systems();                                //Need to find out systems on live table
 
 if (isset($_GET['page'])) {
   $page = filter_integer($_GET['page'], 1, PHP_INT_MAX, 1);
@@ -596,72 +684,85 @@ if (isset($_GET['filter'])) {
 }
 
 if (isset($_GET['sort'])) {
-  if ($_GET['sort'] == 'asc') $sort = 'ASC';
+  if ($_GET['sort'] == 'ASC') $sort = 'ASC';
 }
 
-if (isset($_GET['sys'])) {
-  if (in_array($_GET['sys'], $syslist)) $sys = $_GET['sys'];
+if (isset($_GET['sysip'])) {                               //sysip uses custom function to verify valid search
+  $sysip = filter_ipaddress($_GET['sysip']);
 }
 
-if (isset($_GET['view'])) {  
-  if (in_array($_GET['view'], $VIEWLIST)) $view = $_GET['view'];
-  if (($view == 'historicgroup') || ($view == 'historictime')) $sqltable = 'historic';
+if (isset($_GET['groupby'])) {
+  if (array_key_exists($_GET['groupby'], $GROUPLIST)) $groupby = $_GET['groupby'];
 }
 
-if (isset($_GET['datestart'])) {                 //Filter for yyyy-mm-dd
-  if (preg_match(REGEX_DATE, $_GET['datestart']) > 0) $datestart = $_GET['datestart'];
-}
-if (isset($_GET['dateend'])) {                   //Filter for yyyy-mm-dd
-  if (preg_match(REGEX_DATE, $_GET['dateend']) > 0) $dateend = $_GET['dateend'];  
+if (isset($_GET['searchtime'])) {
+  if (array_key_exists($_GET['searchtime'], $TIMELIST)) $searchtime = $_GET['searchtime'];
 }
 
-if ($sqltable == 'historic') {                   //Check to see if dates are valid
-  if (strtotime($dateend) > time()) $dateend = DEF_EDATE;
-  if (strtotime($datestart) > strtotime($dateend)) {
-    $datestart = DEF_SDATE;
-    $dateend = DEF_EDATE;
+if (isset($_GET['searchbox'])) {                           //searchbox uses preg_replace to remove invalid characters
+  $searchbox = preg_replace(REGEX_URLSEARCH, '', $_GET['searchbox']);
+}
+
+if (isset($_GET['datetime'])) {
+  if (preg_match(REGEX_DATETIME, $_GET['datetime'])) {
+    $datetime = $_GET['datetime'];
+  }
+}
+if (isset($_GET['dtrange'])) {
+  if (preg_match('/^([0-1][0-9]:|2[0-4]:|[0-9]:)?([0-5]?[0-9]):([0-5][0-9])$/', $_GET['dtrange'])) {
+    $dtrange = $_GET['dtrange'];
   }
 }
 
+draw_filterbox();                                          //Draw filters
 
-draw_filterbox();                                //Draw filters
-
-if ($view == 'livetime') {
+echo '<div class="sys-group">'.PHP_EOL;                    //Start Div Group
+if ($groupby == 'time') {
   show_time_view();
 }
-elseif ($view == 'livegroup') {
-  show_group_view();
-}
-elseif ($view == 'historictime') {
-  show_time_view();
-}
-elseif ($view == 'historicgroup') {
+elseif ($groupby == 'name') {
   show_group_view();
 }
 
+echo '</div>'.PHP_EOL;                                     //End Div Group
 $db->close();
 
 ?>
 </div>
 
-<div id="scrollup" class="button-scroll" onclick="ScrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
-<div id="scrolldown" class="button-scroll" onclick="ScrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
+<div id="scrollup" class="button-scroll" onclick="scrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
+<div id="scrolldown" class="button-scroll" onclick="scrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
 
-<div id="stats-box">
-<div class="dialog-bar">Report</div>
-<span id="sitename">site</span>
-<span id="statsmsg">something</span>
-<span id="statsblock1"><a class="button-blue" href="#">Block Whole</a> Block whole domain</span>
-<span id="statsblock2"><a class="button-blue" href="#">Block Sub</a> Block just the subdomain</span>
+<div id="queries-box">
+<h2 id="sitename">site</h2>
+<span id="reportmsg">something</span>
+<form action="./investigate.php" method="get" target="_blank">
+<span id="searchitem"></span>
+<span id="invitem"></span>
+</form>
+<form action="./config/customblocklist.php" method="POST" target="_blank">
+<input type="hidden" name="v" id="reportv" value="none">
+<input type="hidden" name="action" id="reportaction" value="none">
+<input type="hidden" name="status" value="add">
+<input type="hidden" name="comment" value="">
+<span id="reportitem1"></span>
+<span id="reportitem2"></span>
+</form>
 <form name="reportform" action="https://quidsup.net/notrack/report.php" method="post" target="_blank">
 <input type="hidden" name="site" id="siterep" value="none">
-<span id="statsreport"><input type="submit" class="button-blue" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
+<span id="reportitem3"><input type="submit" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
 </form>
 
 <br>
-<div class="centered"><h6 class="button-grey" onclick="HideStatsBox()">Cancel</h6></div>
-<div class="close-button" onclick="HideStatsBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
+<div class="centered"><button class="button-grey" onclick="hideQueriesBox()">Cancel</button></div>
+<div class="close-button" onclick="hideQueriesBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
 </div>
-
+<script>
+const SEARCHNAME = <?php echo json_encode($Config['Search'])?>;
+const SEARCHURL = <?php echo json_encode($Config['SearchUrl'])?>;
+const WHOISNAME = <?php echo json_encode($Config['WhoIs'])?>;
+const WHOISURL = <?php echo json_encode($Config['WhoIsUrl'])?>;
+const WHOISAPI = <?php echo ($Config['whoisapi'] == '') ? 0 : 1;?>;
+</script>
 </body>
 </html>
