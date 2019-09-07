@@ -296,8 +296,8 @@ get_whitelist
 [ -n "${blocklists['bl_malwaredomainlist']}" ] && check_malware "bl_malwaredomainlist"
 [ -n "${blocklists['bl_malwaredomains']}" ] && check_malware "bl_malwaredomains"
 [ -n "${blocklists['bl_swissransom']}" ] && check_malware "bl_swissransom"
-[ -n "${blocklists['bl_swisszeus']}" ] && check_malware "bl_swisszeus"
 
+check_tracking "analytics"
 check_tracking "pixel"
 check_tracking "tracking"
 check_tracking "trk"
