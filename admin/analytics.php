@@ -3,9 +3,9 @@
   TODO: Add view switcher to show resolved*/
 require('./include/global-vars.php');
 require('./include/global-functions.php');
+require('./include/config.php');
 require('./include/menu.php');
 
-load_config();
 ensure_active_session();
 
 ?>
@@ -127,7 +127,7 @@ function update_value($id, $logdate, $logtime, $action) {
  *    HTML code for popup menu
  */
 function popupmenu($domain, $blocked, $showreport) {
-  global $Config, $INVESTIGATE, $INVESTIGATEURL;
+  global $config, $INVESTIGATE, $INVESTIGATEURL;
 
   $str = '';
   $str .= '<div class="dropdown-container"><span class="dropbtn"></span><div class="dropdown">';
@@ -139,7 +139,7 @@ function popupmenu($domain, $blocked, $showreport) {
     $str .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
   }
   $str .= '<a href="'.$INVESTIGATEURL.$domain.'">'.$INVESTIGATE.'</a>';
-  $str .= '<a href="'.$Config['SearchUrl'].$domain.'" target="_blank">'.$Config['Search'].'</a>';
+  $str .= '<a href="'.$config->settings['SearchUrl'].$domain.'" target="_blank">'.$config->settings['Search'].'</a>';
   $str .= '<a href="https://www.virustotal.com/en/domain/'.$domain.'/information/" target="_blank">VirusTotal</a>';
   $str .= '</div></div>';                                  //End dropdown-container
 
@@ -262,9 +262,9 @@ if (isset($_POST['action'])) {                             //Any POST actions to
   }
 }
 
-if ($Config['whoisapi'] == '') {                           //Setup Investigate / Whois for popupmenu
-  $INVESTIGATE = $Config['WhoIs'];
-  $INVESTIGATEURL = $Config['WhoIsUrl'];
+if ($config->settings['whoisapi'] == '') {                 //Setup Investigate / Whois for popupmenu
+  $INVESTIGATE = $config->settings['WhoIs'];
+  $INVESTIGATEURL = $config->settings['WhoIsUrl'];
 }
 else {
   $INVESTIGATE = 'Investigate';
@@ -307,11 +307,11 @@ $db->close();
 <div class="close-button" onclick="hideQueriesBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
 </div>
 <script>
-const SEARCHNAME = <?php echo json_encode($Config['Search'])?>;
-const SEARCHURL = <?php echo json_encode($Config['SearchUrl'])?>;
-const WHOISNAME = <?php echo json_encode($Config['WhoIs'])?>;
-const WHOISURL = <?php echo json_encode($Config['WhoIsUrl'])?>;
-const WHOISAPI = <?php echo ($Config['whoisapi'] == '') ? 0 : 1;?>;
+const SEARCHNAME = <?php echo json_encode($config->settings['Search'])?>;
+const SEARCHURL = <?php echo json_encode($config->settings['SearchUrl'])?>;
+const WHOISNAME = <?php echo json_encode($config->settings['WhoIs'])?>;
+const WHOISURL = <?php echo json_encode($config->settings['WhoIsUrl'])?>;
+const WHOISAPI = <?php echo ($config->settings['whoisapi'] == '') ? 0 : 1;?>;
 
 
 /********************************************************************

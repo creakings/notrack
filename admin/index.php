@@ -1,9 +1,9 @@
 <?php
 require('./include/global-vars.php');
 require('./include/global-functions.php');
+require('./include/config.php');
 require('./include/menu.php');
 
-load_config();
 ensure_active_session();
 ?>
 <!DOCTYPE html>
@@ -147,7 +147,7 @@ function home_queries() {
  *    None
  */
 function home_status() {
-  global $Config;
+  global $config;
 
   $currenttime = time();
   $date_bgcolour = '';
@@ -183,16 +183,16 @@ function home_status() {
     }
   }  
   else {
-    if ($Config['status'] & STATUS_ENABLED) {
+    if ($config->status & STATUS_ENABLED) {
       $status_msg = '<h3 class="darkgray">Block List Missing</h3>';
       $date_msg = '<h3 class="darkgray">Unknown</h3>';
       $date_bgcolour = 'home-bgred';
     }
   }
 
-  if ((VERSION != $Config['LatestVersion']) && check_version($Config['LatestVersion'])) {
+  if ((VERSION != $config->settings['LatestVersion']) && check_version($config->settings['LatestVersion'])) {
     $date_msg = '<h3 class="darkgray">Upgrade</h3>';
-    $date_submsg = '<p>New version available: v'.$Config['LatestVersion'].'</p>';
+    $date_submsg = '<p>New version available: v'.$config->settings['LatestVersion'].'</p>';
     
     echo '<a class="home-bggreen" href="./upgrade.php"><span><h2>Status</h2>'.$date_msg.$date_submsg.'</span></a>'.PHP_EOL;
     //TODO Image for upgrade

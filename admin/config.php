@@ -9,10 +9,10 @@ All other config functions are in ./include/config-functions.php
 
 require('./include/global-vars.php');
 require('./include/global-functions.php');
+require('./include/config.php');
 require('./include/menu.php');
 require('./include/config-functions.php');
 
-load_config();
 ensure_active_session();
 
 /************************************************
@@ -43,7 +43,7 @@ if (isset($_POST['action'])) {
   switch($_POST['action']) {
     case 'advanced':
       if (update_advanced()) {                   //Are users settings valid?
-        save_config();                           //If ok, then save the Config file        
+        $config->save();                         //If ok, then save the Config file        
         sleep(1);                                //Short pause to prevent race condition
         exec(NTRK_EXEC.'--parsing');             //Update ParsingTime value in Cron job
       }      
@@ -55,12 +55,12 @@ if (isset($_POST['action'])) {
       break;
     case 'webserver':
       update_webserver_config();
-      save_config();
+      $config->save();
       header('Location: ?');
       break;
     case 'stats':
       if (update_stats_config()) {
-        save_config();
+        $config->save();
         sleep(1);                                //Short pause to prevent race condition
         header('Location: ?v=general');
       }
@@ -111,20 +111,20 @@ echo '<div id="main">';
  */
 function update_advanced() {
   
-  global $Config;
+  global $config;
   
   $suppress = '';
   $suppresslist = array();
   $validlist = array();
   
   if (isset($_POST['parsing'])) {
-    $Config['ParsingTime'] = filter_integer($_POST['parsing'], 1, 60, 7);
+    $config['ParsingTime'] = filter_integer($_POST['parsing'], 1, 60, 7);
   }
   
   if (isset($_POST['suppress'])) {
     $suppress = preg_replace('#\s+#',',',trim($_POST['suppress'])); //Split array
     if (strlen($suppress) <= 2) {                //Is string too short?
-      $Config['Suppress'] = '';
+      $config['Suppress'] = '';
       return true;
     }
     
@@ -134,8 +134,8 @@ function update_advanced() {
         $validlist[] = strip_tags($site);
       }
     }
-    if (sizeof($validlist) == 0) $Config['Suppress'] = '';
-    else $Config['Suppress'] = implode(',', $validlist);
+    if (sizeof($validlist) == 0) $config['Suppress'] = '';
+    else $config['Suppress'] = implode(',', $validlist);
   }
   
   return true;
@@ -151,22 +151,22 @@ function update_advanced() {
  *    True if change has been made or False if nothing changed
  */
 function update_stats_config() {
-  global $Config, $SEARCHENGINELIST, $WHOISLIST;
+  global $config;
   
   $updated = false;
-  print_r($_POST);
+
   if (isset($_POST['search'])) {
-    if (array_key_exists($_POST['search'], $SEARCHENGINELIST)) {      
-      $Config['Search'] = $_POST['search'];
-      $Config['SearchUrl'] = $SEARCHENGINELIST[$Config['Search']];
+    if (array_key_exists($_POST['search'], $config::SEARCHENGINELIST)) {      
+      $config->settings['Search'] = $_POST['search'];
+      $config->settings['SearchUrl'] = $config::SEARCHENGINELIST[$_POST['search']];
       $updated = true;
     }
   }
   
   if (isset($_POST['whois'])) {    
-    if (array_key_exists($_POST['whois'], $WHOISLIST)) {
-      $Config['WhoIs'] = $_POST['whois'];
-      $Config['WhoIsUrl'] = $WHOISLIST[$Config['WhoIs']];
+    if (array_key_exists($_POST['whois'], $config::WHOISLIST)) {
+      $config->settings['WhoIs'] = $_POST['whois'];
+      $config->settings['WhoIsUrl'] = $config::WHOISLIST[$_POST['whois']];
       $updated = true;
     }
   }
@@ -174,11 +174,11 @@ function update_stats_config() {
   if (isset($_POST['whoisapi'])) {                         //Validate whoisapi
     if (strlen($_POST['whoisapi']) < 50) {                 //Limit input length
       if (ctype_xdigit($_POST['whoisapi'])) {              //Is input hexadecimal?
-        $Config['whoisapi'] = $_POST['whoisapi'];
+        $config->settings['whoisapi'] = $_POST['whoisapi'];
         $updated = true;
       }
       else {
-        $Config['whoisapi'] = '';
+        $config->settings['whoisapi'] = '';
       }
     }
   }  
@@ -275,16 +275,16 @@ function update_config_record($config_type, $option_name, $option_value, $option
  *    None
  */
 function update_webserver_config() {
-  global $Config;  
+  global $config;  
   
   if (isset($_POST['block'])) {
     switch ($_POST['block']) {
       case 'message':
-        $Config['BlockMessage'] = 'message';
+        $config->settings['BlockMessage'] = 'message';
         exec(NTRK_EXEC.'--bm-msg');
         break;
       case 'pixel':
-        $Config['BlockMessage'] = 'pixel';
+        $config->settings['BlockMessage'] = 'pixel';
         exec(NTRK_EXEC.'--bm-pxl');
         break;      
     }
@@ -317,7 +317,7 @@ if (isset($_GET['blrad'])) {
     $blradio = 'all';
     $showblradio = true;
   }
-  elseif (array_key_exists($_GET['blrad'], $BLOCKLISTNAMES)) {
+  elseif (array_key_exists($_GET['blrad'], $config::BLOCKLISTNAMES)) {
     $blradio = $_GET['blrad'];
     $showblradio = true;
   }

@@ -6,9 +6,8 @@
 */
 require('./include/global-vars.php');
 require('./include/global-functions.php');
+require('./include/config.php');
 require('./include/menu.php');
-
-load_config();
 ensure_active_session();
 
 ?>
@@ -175,7 +174,7 @@ function search_blockreason($site) {
  *    false when nothing found, true on success
  */
 function show_time_view() {
-  global $db, $datetime, $site, $sys, $Config;
+  global $config, $db, $datetime, $site, $sys;
 
   $rows = 0;
   $row_class = '';
@@ -581,7 +580,6 @@ function count_queries() {
 /********************************************************************
  *Main
  */
-
 $db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);  //Open MariaDB connection
 
 if (isset($_GET['sys'])) {                                 //Any system set?
@@ -614,7 +612,7 @@ if (!table_exists('whois')) {                              //Does whois sql tabl
   sleep(1);                                                //Delay to wait for MariaDB to create the table
 }
 
-if ($Config['whoisapi'] == '') {                           //Has user set an API key?
+if ($config->settings['whoisapi'] == '') {                 //Has user set an API key?
   show_whoiserror();                                       //No - Don't go any further
   $db->close();
   exit;
@@ -627,7 +625,7 @@ if ($domain != '') {                                       //Load whois data?
   if ($datetime != '') show_time_view();                   //Show time view if datetime in parameters
 
   if (! search_whois($domain)) {                           //Attempt to search whois table
-    get_whoisdata($domain, $Config['whoisapi']);           //No record found - download it from JsonWhois
+    get_whoisdata($domain, $config->settings['whoisapi']); //No record found - download it from JsonWhois
   }
   
   if ($showraw) {

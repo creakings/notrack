@@ -75,9 +75,9 @@ function is_active_session() {
 }
 
 function is_password_protection_enabled() {
-  global $Config;
+  global $config;
   
-  if ($Config['Password'] != '') return true;
+  if ($config->settings['Password'] != '') return true;
   return false;
 }
 
@@ -170,7 +170,7 @@ function extract_domain($url) {
  *    true or false
  */
 function filter_bool($value) {
-  if ($value == 'true') {
+  if (($value == 'true') || ($value == '1')) {
     return true;
   }
   else {
@@ -461,51 +461,6 @@ function pagination($totalrows, $linktext) {
 
 
 /********************************************************************
- *  Save Config
- *    1. Check if Latest Version is less than Current Version
- *    2. Open Temp Config file for writing
- *    3. Loop through Config Array
- *    4. Write all values, except for "Status = Enabled"
- *    5. Close Config File
- *    6. Delete Config Array out of Memcache, in order to force reload
- *    7. Onward process is to Display appropriate config view
- *  Params:
- *    None
- *  Return:
- *    SQL Query string
- */
-function save_config() {
-  global $Config, $mem;
-  
-  $key = '';
-  $value = '';
-  
-  //Prevent wrong version being written to config file if user has just upgraded and old LatestVersion is still stored in Memcache
-  if (check_version($Config['LatestVersion'])) {
-    $Config['LatestVersion'] = VERSION;
-  }
-  
-  $fh = fopen(CONFIGTEMP, 'w');                  //Open temp config for writing
-  
-  foreach ($Config as $key => $value) {          //Loop through Config array
-    if ($key == 'Status') {
-      if ($value != 'Enabled') {
-        fwrite($fh, $key.' = '.$value.PHP_EOL);  //Write Key & Value
-      }
-    }
-    else {
-      fwrite($fh, $key.' = '.$value.PHP_EOL);    //Write Key & Value
-    }
-  }
-  fclose($fh);                                   //Close file
-  
-  $mem->delete('Config');                        //Delete config from Memcache
-  
-  exec(NTRK_EXEC.'--save-conf');
-}
-
-
-/********************************************************************
  *  Check SQL Table Exists
  *    Uses LIKE to check for table name in order to avoid error message.
  *  Params:
@@ -526,86 +481,6 @@ function table_exists($table) {
   
   $result->free();
   return $exists;
-}
-
-
-/********************************************************************
- *  Load Config File
- *    1. Attempt to load Config from Memcache
- *    2. Write DefaultConfig to Config, incase any variables are missing
- *    3. Read Config File
- *    4. Split Line between: (Var = Value)
- *    5. Certain values need filtering to prevent XSS
- *    6. For other values, check if key exists, then replace with new value
- *    7. Setup SearchUrl
- *    8. Write Config to Memcache
- *  Params:
- *    Description, Value
- *  Return:
- *    None
- */
-function load_config() {
-  global $Config, $mem, $DEFAULTCONFIG, $SEARCHENGINELIST, $WHOISLIST;
-  $line = '';
-  $splitline = array();
-  
-  $Config=$mem->get('Config');                   //Load Config array from Memcache
-  if (! empty($Config)) {
-    return null;                                 //Did it load from memory?
-  }
-  
-  $Config = $DEFAULTCONFIG;                      //Firstly Set Default Config
-  
-  if (file_exists(CONFIGFILE)) {                 //Check file exists
-    $fh= fopen(CONFIGFILE, 'r');
-    while (!feof($fh)) {
-      $line = trim(fgets($fh));                  //Read Line of LogFile
-      $splitline = explode('=', $line);
-      if (count($splitline) == 2) {
-        $splitline[0] = trim($splitline[0]);
-        $splitline[1] = trim($splitline[1]);
-        switch (trim($splitline[0])) {
-          case 'Delay':
-            $Config['Delay'] = filter_integer($splitline[1], 0, 3600, 30);
-            break;
-          case 'ParsingTime':
-            $Config['ParsingTime'] = filter_integer($splitline[1], 1, 60, 7);
-            break;
-          default:
-            if (array_key_exists($splitline[0], $Config)) {
-              $Config[$splitline[0]] = strip_tags($splitline[1]);
-            }
-            break;
-        }
-      }
-    }
-    
-    fclose($fh);
-  }
-  
-  //Set SearchUrl if User hasn't configured a custom string via notrack.conf
-  if ($Config['SearchUrl'] == '') {
-    if (array_key_exists($Config['Search'], $SEARCHENGINELIST)) {
-      $Config['SearchUrl'] = $SEARCHENGINELIST[$Config['Search']];
-    }
-    else {
-      $Config['SearchUrl'] = $SEARCHENGINELIST['DuckDuckGo'];
-    }
-  }
-   
-  //Set WhoIsUrl if User hasn't configured a custom string via notrack.conf
-  if ($Config['WhoIsUrl'] == '') {      
-    if (array_key_exists($Config['WhoIs'], $WHOISLIST)) {
-      $Config['WhoIsUrl'] = $WHOISLIST[$Config['WhoIs']];
-    } 
-    else {
-      $Config['WhoIsUrl'] = $WHOISLIST['Who.is'];
-    }
-  }
-  
-  $mem->set('Config', $Config, 0, 1200);
-  
-  return null;
 }
 
 

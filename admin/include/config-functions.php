@@ -28,7 +28,7 @@ function add_searches() {
 
 /********************************************************************
  *  Draw Blocklist Radio Form
- *    Radio list is made up of the items in $BLOCKLISTNAMES array
+ *    Radio list is made up of the items in config::BLOCKLISTNAMES array
  *
  *  Params:
  *    None
@@ -36,7 +36,7 @@ function add_searches() {
  *    None
  */
 function draw_blradioform() {
-  global $BLOCKLISTNAMES, $showblradio, $blradio, $page, $searchbox;
+  global $config, $showblradio, $blradio, $page, $searchbox;
   
   if ($showblradio) {                            //Are we drawing Form or Show button?
     echo '<form name = "blradform" method="GET">'.PHP_EOL;   //Form for Radio List
@@ -53,7 +53,7 @@ function draw_blradioform() {
       echo '<span class="blradiolist"><input type="radio" name="blrad" value="all" onclick="document.blradform.submit()">All</span>'.PHP_EOL;
     }
   
-    foreach ($BLOCKLISTNAMES as $key => $value) { //Use BLOCKLISTNAMES for Radio items
+    foreach ($config::BLOCKLISTNAMES as $key => $value) { //Use BLOCKLISTNAMES for Radio items
       if ($key == $blradio) {                    //Should current item be checked?
         echo '<span class="blradiolist"><input type="radio" name="blrad" value="'.$key.'" checked="checked" onclick="document.blradform.submit()">'.$value.'</span>'.PHP_EOL;
       }
@@ -82,12 +82,12 @@ function draw_blradioform() {
  *    None
  */
 function show_advanced() {
-  global $Config;
+  global $config;
   echo '<form action="?v=advanced" method="post">'.PHP_EOL;
   echo '<input type="hidden" name="action" value="advanced">';
   draw_systable('Advanced Settings');
-  draw_sysrow('DNS Log Parsing Interval', '<input type="number" class="fixed10" name="parsing" min="1" max="60" value="'.$Config['ParsingTime'].'" title="Time between updates in Minutes">');
-  draw_sysrow('Suppress Domains <div class="help-icon" title="Group together certain domains on the Stats page"></div>', '<textarea rows="5" name="suppress">'.str_replace(',', PHP_EOL, $Config['Suppress']).'</textarea>');
+  draw_sysrow('DNS Log Parsing Interval', '<input type="number" class="fixed10" name="parsing" min="1" max="60" value="'.$config->settings['ParsingTime'].'" title="Time between updates in Minutes">');
+  draw_sysrow('Suppress Domains <div class="help-icon" title="Group together certain domains on the Stats page"></div>', '<textarea rows="5" name="suppress">'.str_replace(',', PHP_EOL, $config->settings['Suppress']).'</textarea>');
   echo '<tr><td>&nbsp;</td><td><input type="submit" value="Save Changes"></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
@@ -106,9 +106,8 @@ function show_advanced() {
  *    None
  */
 function show_full_blocklist() {
-  global $db, $page, $searchbox, $blradio, $showblradio;
-  global $BLOCKLISTNAMES;
-  
+  global $config, $db, $page, $searchbox, $blradio, $showblradio;
+
   $key = '';
   $value ='';
   $rows = 0;
@@ -171,8 +170,8 @@ function show_full_blocklist() {
       $row_class = '';
     }
     
-    if (array_key_exists($row['bl_source'], $BLOCKLISTNAMES)) { //Convert bl_name to Actual Name
-      $bl_source = $BLOCKLISTNAMES[$row['bl_source']];
+    if (array_key_exists($row['bl_source'], $config::BLOCKLISTNAMES)) { //Convert bl_name to Actual Name
+      $bl_source = $config::BLOCKLISTNAMES[$row['bl_source']];
     }
     else {
       $bl_source = $row['bl_source'];
@@ -201,7 +200,7 @@ function show_full_blocklist() {
  *    None
  */
 function show_general() {
-  global $Config, $SEARCHENGINELIST, $WHOISLIST;
+  global $config;
   
   $key = '';
   $value = '';
@@ -218,13 +217,13 @@ function show_general() {
   
   draw_systable('Server');
   draw_sysrow('Name', gethostname());
-  draw_sysrow('Network Device', $Config['NetDev']);
-  if (($Config['IPVersion'] == 'IPv4') || ($Config['IPVersion'] == 'IPv6')) {
-    draw_sysrow('Internet Protocol', $Config['IPVersion']);
+  draw_sysrow('Network Device', $config->settings['NetDev']);
+  if (($config->settings['IPVersion'] == 'IPv4') || ($config->settings['IPVersion'] == 'IPv6')) {
+    draw_sysrow('Internet Protocol', $config->settings['IPVersion']);
     draw_sysrow('IP Address', $_SERVER['SERVER_ADDR']);
   }
   else {
-    draw_sysrow('IP Address', $Config['IPVersion']);
+    draw_sysrow('IP Address', $config->settings['IPVersion']);
   }
   
   draw_sysrow('Sysload', $sysload[0].' | '.$sysload[1].' | '.$sysload[2]);
@@ -257,7 +256,7 @@ function show_general() {
   draw_sysrow('Started On', $pid_lighttpd[2]);
   //draw_sysrow('Cpu', $pid_lighttpd[3]);
   draw_sysrow('Memory Used', $pid_lighttpd[3].' MB');
-  if ($Config['BlockMessage'] == 'pixel') draw_sysrow('Block Message', '<input type="radio" name="block" value="pixel" checked onclick="document.blockmsg.submit()">1x1 Blank Pixel (default)<br><input type="radio" name="block" value="message" onclick="document.blockmsg.submit()">Message - Blocked by NoTrack<br>');
+  if ($config->settings['BlockMessage'] == 'pixel') draw_sysrow('Block Message', '<input type="radio" name="block" value="pixel" checked onclick="document.blockmsg.submit()">1x1 Blank Pixel (default)<br><input type="radio" name="block" value="message" onclick="document.blockmsg.submit()">Message - Blocked by NoTrack<br>');
   else draw_sysrow('Block Message', '<input type="radio" name="block" value="pixel" onclick="document.blockmsg.submit()">1x1 Blank Pixel (default)<br><input type="radio" name="block" value="messge" checked onclick="document.blockmsg.submit()">Message - Blocked by NoTrack<br>');  
   echo '</table></div></form>'.PHP_EOL;
 
@@ -269,9 +268,9 @@ function show_general() {
   draw_systable('Domain Stats');
   echo '<tr><td>Search Engine: </td>'.PHP_EOL;
   echo '<td><select name="search" class="input-conf" onchange="submit()">'.PHP_EOL;
-  echo '<option value="'.$Config['Search'].'">'.$Config['Search'].'</option>'.PHP_EOL;
-  foreach ($SEARCHENGINELIST as $key => $value) {
-    if ($key != $Config['Search']) {
+  echo '<option value="'.$config->settings['Search'].'">'.$config->settings['Search'].'</option>'.PHP_EOL;
+  foreach ($config::SEARCHENGINELIST as $key => $value) {
+    if ($key != $config->settings['Search']) {
       echo '<option value="'.$key.'">'.$key.'</option>'.PHP_EOL;
     }
   }
@@ -279,14 +278,14 @@ function show_general() {
   
   echo '<tr><td>Who Is Lookup: </td>'.PHP_EOL;
   echo '<td><select name="whois" class="input-conf" onchange="submit()">'.PHP_EOL;
-  echo '<option value="'.$Config['WhoIs'].'">'.$Config['WhoIs'].'</option>'.PHP_EOL;
-  foreach ($WHOISLIST as $key => $value) {
-    if ($key != $Config['WhoIs']) {
+  echo '<option value="'.$config->settings['WhoIs'].'">'.$config->settings['WhoIs'].'</option>'.PHP_EOL;
+  foreach ($config::WHOISLIST as $key => $value) {
+    if ($key != $config->settings['WhoIs']) {
       echo '<option value="'.$key.'">'.$key.'</option>'.PHP_EOL;
     }
   }
   echo '</select></td></tr>'.PHP_EOL;
-  draw_sysrow('JsonWhois API <a href="https://jsonwhois.com/"><div class="help-icon"></div></a>', '<input type="text" name="whoisapi" class="input-conf" value="'.$Config['whoisapi'].'">');
+  draw_sysrow('JsonWhois API <a href="https://jsonwhois.com/"><div class="help-icon"></div></a>', '<input type="text" name="whoisapi" class="input-conf" value="'.$config->settings['whoisapi'].'">');
   echo '</table></div></form>'.PHP_EOL;                    //End Stats
   
   return null;
