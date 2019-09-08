@@ -280,11 +280,11 @@ function update_webserver_config() {
   if (isset($_POST['block'])) {
     switch ($_POST['block']) {
       case 'message':
-        $config->settings['BlockMessage'] = 'message';
+        $config->settings['blockmessage'] = 'message';
         exec(NTRK_EXEC.'--bm-msg');
         break;
       case 'pixel':
-        $config->settings['BlockMessage'] = 'pixel';
+        $config->settings['blockmessage'] = 'pixel';
         exec(NTRK_EXEC.'--bm-pxl');
         break;      
     }

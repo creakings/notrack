@@ -130,8 +130,8 @@ class MySqliDb {
    *    Config Status
    */
   public function get_status() {
-    global $Config;
-    return $Config['status'];
+    global $config;
+    return $config->status;
   }
 
 

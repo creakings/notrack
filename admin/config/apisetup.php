@@ -1,9 +1,9 @@
 <?php
 require('../include/global-vars.php');
 require('../include/global-functions.php');
+require('../include/config.php');
 require('../include/menu.php');
 
-load_config();
 ensure_active_session();
 
 /************************************************
@@ -29,15 +29,15 @@ ensure_active_session();
  *    None
  */
 function draw_form() {
-  global $Config;
+  global $config;
 
   echo '<form method="POST">'.PHP_EOL;
   
   echo '<div class="sys-group">'.PHP_EOL;                  //Start sys-group box
   echo '<h5>API Setup</h5>'.PHP_EOL;
   echo '<table class="sys-table">'.PHP_EOL;
-  echo '<tr><td>API Key</td><td><input type="text" name="apikey" id="apikey" value="'.$Config['api_key'].'">&nbsp;<button class="button-grey icon-generate" type="button" onclick="generateKey(\'apikey\')">Generate</button></td></tr>'.PHP_EOL;
-  echo '<tr><td>Read Only</td><td><input type="text" name="apireadonly" id="apireadonly" value="'.$Config['api_readonly'].'">&nbsp;<button class="button-grey icon-generate" type="button" onclick="generateKey(\'apireadonly\')">Generate</button></td></tr>'.PHP_EOL;
+  echo '<tr><td>API Key</td><td><input type="text" name="apikey" id="apikey" value="'.$config->settings['api_key'].'">&nbsp;<button class="button-grey icon-generate" type="button" onclick="generateKey(\'apikey\')">Generate</button></td></tr>'.PHP_EOL;
+  echo '<tr><td>Read Only</td><td><input type="text" name="apireadonly" id="apireadonly" value="'.$config->settings['api_readonly'].'">&nbsp;<button class="button-grey icon-generate" type="button" onclick="generateKey(\'apireadonly\')">Generate</button></td></tr>'.PHP_EOL;
   
   echo '<tr><td colspan="2"><div class="centered"><button class="icon-tick" type="submit">Save Changes</button></div></td></tr>'.PHP_EOL;
   
@@ -61,7 +61,7 @@ function draw_form() {
  *    None
  */
 function save_changes() {
-  global $Config;
+  global $config;
 
   $apikey = '';
   $apireadonly = '';
@@ -72,15 +72,15 @@ function save_changes() {
 
   //Carry out input validation of apikey
   if (preg_match(REGEX_VALIDAPI, $apikey)) {
-    $Config['api_key'] = $apikey;
+    $config->settings['api_key'] = $apikey;
   }
 
   //Carry out input validation of apireadonly
   if (preg_match(REGEX_VALIDAPI, $apireadonly)) {
-    $Config['api_readonly'] = $apireadonly;
+    $config->settings['api_readonly'] = $apireadonly;
   }
 
-  save_config();
+  $config->save();
 }
 ?>
 <!DOCTYPE html>

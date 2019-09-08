@@ -3,7 +3,7 @@
  *    Update pause-timer, pause-button, menu-side-blocking based on new status value
  *    TODO Home-Nav box to update
  *  Params:
- *    New Status (output from API $Config['status'])
+ *    New Status (output from API $config->status)
  *  Return:
  *    None
  */

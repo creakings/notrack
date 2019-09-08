@@ -3,7 +3,7 @@
 //Description : Controls loin for NoTrack, validating username and password, and throttling password attemtps
 //Author : QuidsUp
 //Date : 2015-03-25
-//Password attempts are throttled by use of Memcache, a variable is placed in there with the duration set by $Config['Delay']. If this variable is present then no checking will take place until the variable is cleared.
+//Password attempts are throttled by use of Memcache, a variable is placed in there with the duration set by $config->settings['Delay']. If this variable is present then no checking will take place until the variable is cleared.
 
 //1. Start Session
 //2. Check if session is already active then return to index.php
@@ -14,7 +14,7 @@
 //4ai. If yes then set $message to wait and don't evaluate logon attempt, jump to 5.
 //4b. Username is optional, check if it has been set in HTTP POST, otherwise set it to blank
 //4c. Create access log file if it doesn't exist
-//4d. Use PHP password_verify function to check hashed version of user input with hash in $Config['Password']
+//4d. Use PHP password_verify function to check hashed version of user input with hash in $config->settings['Password']
 //4ei. If username and password match set SESSION['sid'] to 1 (Future version may use a random number, to make it even harder to hijack a session)
 //4eii. On failure write Delay into Memcache and show message of Incorrect Username or Password
 //      Add entry into ntrk-access.log to allow functionality with Fail2ban

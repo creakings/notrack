@@ -41,9 +41,8 @@ function api_enable_notrack() {
     $config->status -= STATUS_DISABLED;
     $config->status += STATUS_ENABLED;
   }
-  //sleep(1);                                              //Prevent race condition
+
   $mem->delete('conf-settings');                           //Force reload of config
-  //load_config();
   $response['status'] = $config->status;
 }
 
@@ -51,6 +50,7 @@ function api_enable_notrack() {
 /********************************************************************
  *  Pause NoTrack
  *    Pause NoTrack with time parsed in POST mins
+ *    Delete conf-settings from memcache so we force a load of config next page user views
  *
  *  Params:
  *    None
@@ -80,7 +80,7 @@ function api_pause_notrack() {
   }
   //sleep(1);
   $mem->delete('conf-settings');                           //Force reload of config
-  //load_config();
+  //$config->load();
   $response['status'] = $config->status;
   $response['unpausetime'] = date('H:i', (time() + ($mins * 60)));
   

@@ -1,5 +1,15 @@
 <?php
 /*Class for NoTrack config
+ *  Holds the users settings from /etc/notrack/notrack.conf
+ *  Values are split between two arrays: settings and blocklists
+ *  All blocklists, except for bl_custom are held in the blocklists array.
+ *  (Most blocklists are either enabled - true or disabled - false, with the exception of bl_custom which can be a list of addresses / files)
+ *
+ *  settings and blocklists are stored in Memcache to improve performance.
+ *
+ *  New blocklists should be added to DEFAULTBLOCKLISTS, BLOCKLISTNAMES, and BLOCKLISTEVENT
+ *
+ *
  */
 
 class Config {
@@ -9,7 +19,7 @@ class Config {
   public $DEFAULTCONFIG = array(
     'NetDev' => 'eth0',
     'IPVersion' => 'IPv4',
-    'BlockMessage' => 'pixel',
+    'blockmessage' => 'pixel',
     'Search' => 'DuckDuckGo',
     'SearchUrl' => '',
     'WhoIs' => 'Who.is',
@@ -25,60 +35,62 @@ class Config {
     'LatestVersion' => VERSION,
     'bl_custom' => '',
   );
-  
-  public $blocklists = array(
-    'bl_notrack' => 1,
-    'bl_notrack_malware' => 1,
-    'bl_tld' => 1,    
-    'bl_hexxium' => 1,
-    'bl_cbl_all' => 0,
-    'bl_cbl_browser' => 0,
-    'bl_cbl_opt' => 0,
-    'bl_cedia' => 0,
-    'bl_cedia_immortal' => 1,
-    'bl_disconnectmalvertising' => 0,
-    'bl_easylist' => 0,
-    'bl_easyprivacy' => 0,
-    'bl_fbannoyance' => 0,
-    'bl_fbenhanced' => 0,
-    'bl_fbsocial' => 0,
-    'bl_hphosts' => 0,
-    'bl_malwaredomainlist' => 0,
-    'bl_malwaredomains' => 0,    
-    'bl_pglyoyo' => 0,    
-    'bl_someonewhocares' => 0,
-    'bl_spam404' => 0,
-    'bl_swissransom' => 0,
-    'bl_winhelp2002' => 0,
-    'bl_windowsspyblocker' => 0,
+
+  //Single word code of blocklists
+  private $DEFAULTBLOCKLISTS = array(
+    'bl_notrack' => true,
+    'bl_notrack_malware' => true,
+    'bl_tld' => true,
+    'bl_hexxium' => true,
+    'bl_cbl_all' => false,
+    'bl_cbl_browser' => false,
+    'bl_cbl_opt' => false,
+    'bl_cedia' => false,
+    'bl_cedia_immortal' => true,
+    'bl_disconnectmalvertising' => false,
+    'bl_easylist' => false,
+    'bl_easyprivacy' => false,
+    'bl_fbannoyance' => false,
+    'bl_fbenhanced' => false,
+    'bl_fbsocial' => false,
+    'bl_hphosts' => false,
+    'bl_malwaredomainlist' => false,
+    'bl_malwaredomains' => false,
+    'bl_pglyoyo' => false,
+    'bl_someonewhocares' => false,
+    'bl_spam404' => false,
+    'bl_swissransom' => false,
+    'bl_winhelp2002' => false,
+    'bl_windowsspyblocker' => false,
     //Region Specific BlockLists
-    'bl_areasy' => 0,
-    'bl_chneasy' => 0,
-    'bl_deueasy' => 0,
-    'bl_dnkeasy' => 0,
-    'bl_fraeasy' => 0,
-    'bl_grceasy' => 0,
-    'bl_huneasy' => 0,
-    'bl_idneasy' => 0,
-    'bl_isleasy' => 0,
-    'bl_itaeasy' => 0,
-    'bl_jpneasy' => 0,
-    'bl_koreasy' => 0,
-    'bl_korfb' => 0,
-    'bl_koryous' => 0,
-    'bl_ltueasy' => 0,
-    'bl_lvaeasy' => 0,
-    'bl_nldeasy' => 0,
-    'bl_poleasy' => 0,
-    'bl_ruseasy' => 0,
-    'bl_spaeasy' => 0,
-    'bl_svneasy' => 0,
-    'bl_sweeasy' => 0,
-    'bl_viefb' => 0,
-    'bl_fblatin' => 0,
-    'bl_yhosts' => 0,
+    'bl_areasy' => false,
+    'bl_chneasy' => false,
+    'bl_deueasy' => false,
+    'bl_dnkeasy' => false,
+    'bl_fraeasy' => false,
+    'bl_grceasy' => false,
+    'bl_huneasy' => false,
+    'bl_idneasy' => false,
+    'bl_isleasy' => false,
+    'bl_itaeasy' => false,
+    'bl_jpneasy' => false,
+    'bl_koreasy' => false,
+    'bl_korfb' => false,
+    'bl_koryous' => false,
+    'bl_ltueasy' => false,
+    'bl_lvaeasy' => false,
+    'bl_nldeasy' => false,
+    'bl_poleasy' => false,
+    'bl_ruseasy' => false,
+    'bl_spaeasy' => false,
+    'bl_svneasy' => false,
+    'bl_sweeasy' => false,
+    'bl_viefb' => false,
+    'bl_fblatin' => false,
+    'bl_yhosts' => false,
   );
 
+  //Legible names of each blocklist code
   const BLOCKLISTNAMES = array(
     'custom' => 'Custom',
     'bl_tld' => 'Top Level Domain',
@@ -129,6 +141,7 @@ class Config {
     'bl_fblatin' => 'Latin Easy List',
   );
 
+  //What type of data is in each blocklist
   const BLOCKLISTEVENT = array(
     'custom' => 'custom',
     'bl_tld' => 'tld',
@@ -201,37 +214,58 @@ class Config {
   );
 
   public $settings = array();
+  public $blocklists = array();
+
+
   /********************************************************************
    *  Load Config File
-   *    1. Attempt to load Config from Memcache
-   *    2. Write DefaultConfig to Config, incase any variables are missing
+   *    1. Attempt to load settings and blocklist arrays from Memcache
+   *    2. Write default values to settings and blocklist arrays
    *    3. Read Config File
-   *    4. Split Line between: (Var = Value)
+   *    4. Split Line into "key" = "value" using regex
+   *       matches[1] = key, matches[2] = value
    *    5. Certain values need filtering to prevent XSS
    *    6. For other values, check if key exists, then replace with new value
    *    7. Setup SearchUrl
    *    8. Write Config to Memcache
+   *
    *  Params:
-   *    Description, Value
+   *    None
    *  Return:
    *    None
    */
   public function load() {
     global $mem;
+
     $line = '';
-  
-    /*$Config=$mem->get('Config');                   //Load Config array from Memcache
-    if (! empty($Config)) {
-      return null;                                 //Did it load from memory?
-    }*/
-  
-    $this->settings = $this->DEFAULTCONFIG;                      //Firstly Set Default Config
-  
-    if (file_exists(CONFIGFILE)) {                 //Check file exists
-      $fh= fopen(CONFIGFILE, 'r');
+    $matches = array();
+
+    //Attempt to load settings and blocklists arrays from Memcache
+    $this->settings = $mem->get('conf-settings');
+    $this->blocklists = $mem->get('conf-blocklists');
+    if ((! empty($this->settings)) && (! empty($this->blocklists))) {
+      return null;
+    }
+
+    //Nothing loaded from Memcache
+    //Firstly Set settings and blocklists arrays to their default values
+    $this->settings = $this->DEFAULTCONFIG;
+    $this->blocklists = $this->DEFAULTBLOCKLISTS;
+
+    if (file_exists(CONFIGFILE)) {                         //Check config file exists
+      $fh= fopen(CONFIGFILE, 'r');                         //Open config
       while (!feof($fh)) {
-        $line = fgets($fh);                  //Read Line of LogFile
-        if (preg_match('/(\w+)\s+=\s+([\S]+)/', $line, $matches)) {
+        $line = fgets($fh);                                //Read Line of LogFile
+
+        //Check if the line matches a blocklist (excluding bl_custom)
+        if (preg_match('/^(bl_(?!custom)\[a-z_]{5,25}) = (0|1)/', $line, $matches)) {
+          if (array_key_exists($matches[1], $this->blocklists)) {
+            $this->blocklists[$matches[1]] = (bool)$matches[2];
+          }
+        }
+
+        //Match any other config line. #Comments are ignored
+        elseif (preg_match('/(\w+)\s+=\s+([\S]+)/', $line, $matches)) {
           switch ($matches[1]) {
             case 'Delay':
               $this->settings['Delay'] = filter_integer($matches[2], 0, 3600, 30);
@@ -249,17 +283,14 @@ class Config {
               if (array_key_exists($matches[1], $this->settings)) {
                 $this->settings[$matches[1]] = strip_tags($matches[2]);
               }
-              elseif (array_key_exists($matches[1], $this->blocklists)) {
-                $this->blocklists[$matches[1]] = filter_bool($matches[2]);
-              }
               break;
           }
         }
       }
-      
+
       fclose($fh);
     }
-    
+
     //Set SearchUrl if User hasn't configured a custom string via notrack.conf
     if ($this->settings['SearchUrl'] == '') {
       if (array_key_exists($this->settings['Search'], self::SEARCHENGINELIST)) {
@@ -269,32 +300,32 @@ class Config {
         $this->settings['SearchUrl'] = self::SEARCHENGINELIST['DuckDuckGo'];
       }
     }
-     
+
     //Set WhoIsUrl if User hasn't configured a custom string via notrack.conf
-    if ($this->settings['WhoIsUrl'] == '') {      
+    if ($this->settings['WhoIsUrl'] == '') {
       if (array_key_exists($this->settings['WhoIs'], self::WHOISLIST)) {
         $this->settings['WhoIsUrl'] = self::WHOISLIST[$this->settings['WhoIs']];
-      } 
+      }
       else {
         $this->settings['WhoIsUrl'] = self::WHOISLIST['Who.is'];
       }
     }
-    
-    //$mem->set('conf-settings', $this->settings, 0, 1200);
-    //$mem->set('conf-blocklists', $this->blocklists, 0, 1200);
-    
-    return null;
+
+    $mem->set('conf-settings', $this->settings, 0, 1200);
+    $mem->set('conf-blocklists', $this->blocklists, 0, 1200);
   }
-    
+
+
   /********************************************************************
    *  Save Config
    *    1. Check if Latest Version is less than Current Version
    *    2. Open Temp Config file for writing
-   *    3. Loop through Config Array
-   *    4. Write all values, except for "Status = Enabled"
+   *    3. Loop through settings and blocklist arrays
+   *    4. Write other non-array values
    *    5. Close Config File
    *    6. Delete Config Array out of Memcache, in order to force reload
-   *    7. Onward process is to Display appropriate config view
+   *    7. Call ntrk-exec to replace old /etc/notrack/notrack.conf with temp config
+   *
    *  Params:
    *    None
    *  Return:
@@ -302,36 +333,42 @@ class Config {
    */
   public function save() {
     global $mem;
-    
+
     $key = '';
     $value = '';
-    
+
     //Prevent wrong version being written to config file if user has just upgraded and old LatestVersion is still stored in Memcache
     if (check_version($this->settings['LatestVersion'])) {
         $this->settings['LatestVersion'] = VERSION;
     }
-    
+
     $fh = fopen(CONFIGTEMP, 'w');                          //Open temp config for writing
-  
+
     //Write each value of settings array to temp config
     foreach ($this->settings as $key => $value) {
       fwrite($fh, $key.' = '.$value.PHP_EOL);
     }
-    
+
     //Write each value of blocklists array to temp config
     foreach ($this->blocklists as $key => $value) {
-      fwrite($fh, $key.' = '.$value.PHP_EOL);
+      if ($value) {
+        fwrite($fh, $key.' = 1'.PHP_EOL);
+      }
+      else {
+        fwrite($fh, $key.' = 0'.PHP_EOL);
+      }
     }
-    
+
     //Write other non-array items to temp config
     fwrite($fh, 'status = '.$this->status.PHP_EOL);
     fwrite($fh, 'unpausetime = '.$this->unpausetime.PHP_EOL);
-    fclose($fh);                                   //Close file
-  
-    $mem->delete('conf-settings');                        //Delete config from Memcache
-  
+    fclose($fh);                                           //Close temp file
+
+    $mem->delete('conf-settings');                         //Delete config from Memcache
+    $mem->delete('conf-blocklists');                       //Delete config from Memcache
+
     exec(NTRK_EXEC.'--save-conf');
-}
+  }
 
 
    /********************************************************************

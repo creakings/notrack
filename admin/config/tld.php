@@ -9,9 +9,9 @@ All other config functions are in ./include/config-functions.php
 
 require('../include/global-vars.php');
 require('../include/global-functions.php');
+require('../include/config.php');
 require('../include/menu.php');
 
-load_config();
 ensure_active_session();
 
 /************************************************
