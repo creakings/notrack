@@ -29,7 +29,7 @@
 
 require('./include/global-vars.php');
 require('./include/global-functions.php');
-load_config();
+require('./include/config.php');
 
 $message = '';
 $password = '';
@@ -60,24 +60,18 @@ if (isset($_POST['password'])) {
     if (isset($_POST['username'])) $username = $_POST['username'];
     else $username = '';
         
-    if (function_exists('password_hash')) {      //Is PHP version new enough?
-    //Use built in password_verify function to compare with $Config['Password'] hash
-      if (($username == $Config['Username']) && (password_verify($password, $Config['Password']))) {
-        activate_session();                      //Set session to enabled
-        header('Location: ./index.php');         //Redirect to index.php
-        exit;
-      }
-    }
-    else { 
-      if (($username == $Config['Username']) && (hash('sha256', $password) == $Config['Password'])) {
-        activate_session();                      //Set session to enabled
-        header('Location: ./index.php');         //Redirect to index.php
-        exit;
-      }
+    
+    //Use built in password_verify function to compare with $config->settings['Password'] hash
+    if (($username == $config->settings['Username']) && (password_verify($password, $config->settings['Password']))) {
+      activate_session();                      //Set session to enabled
+      header('Location: ./index.php');         //Redirect to index.php
+      exit;
     }
     
+    
+    
     //At this point the Password is Wrong
-    $mem->set('delay', $Config['Delay'], 0, $Config['Delay']);
+    $mem->set('delay', $config->settings['Delay'], 0, $config->settings['Delay']);
     $message = "Incorrect username or password";   //Deny attacker knowledge of whether username OR password is wrong
     
     //Output attempt to ACCESSLOG

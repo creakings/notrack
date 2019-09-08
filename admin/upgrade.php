@@ -5,8 +5,9 @@
 
 require('./include/global-vars.php');
 require('./include/global-functions.php');
+require('./include/config.php');
 require('./include/menu.php');
-load_config();
+
 ensure_active_session();
 ?>
 <!DOCTYPE html>
@@ -26,7 +27,8 @@ draw_sidemenu();
 
 echo '<div id="main">'.PHP_EOL;
 
-if (isset($_POST['doupgrade'])) {    //Check if we are running upgrade or displaying status
+//Check if we are running upgrade or displaying status
+if (isset($_POST['doupgrade'])) {
   echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>NoTrack Upgrade</h5>'.PHP_EOL;
 
@@ -41,10 +43,11 @@ if (isset($_POST['doupgrade'])) {    //Check if we are running upgrade or displa
   sleep(1);
 }
 
-else {                                                     //Just displaying status
+//Just displaying status
+else {
   echo '<form method="post">'.PHP_EOL;
   echo '<input type="hidden" name="doupgrade">'.PHP_EOL;
-  if (VERSION == $Config['LatestVersion']) {               //See if upgrade Needed
+  if (VERSION == $config->settings['LatestVersion']) {     //See if upgrade Needed
     draw_systable('NoTrack Upgrade');
     draw_sysrow('Status', 'Running the latest version v'.VERSION);
     draw_sysrow('Force Upgrade', '<input type="submit" class="button-danger" value="Upgrade"><br><i>Force upgrade to Development version of NoTrack</i>');
@@ -54,7 +57,7 @@ else {                                                     //Just displaying sta
   }
   else {
     draw_systable('NoTrack Upgrade');
-    draw_sysrow('Status', 'Running version v'.VERSION.'<br>Latest version available: v'.$Config['LatestVersion']);
+    draw_sysrow('Status', 'Running version v'.VERSION.'<br>Latest version available: v'.$config->settings['LatestVersion']);
     draw_sysrow('Commence Upgrade', '<input type="submit" value="Upgrade">');
     echo '</table>'.PHP_EOL;
     echo '</div>'.PHP_EOL;

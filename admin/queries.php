@@ -1,9 +1,9 @@
 <?php
 require('./include/global-vars.php');
 require('./include/global-functions.php');
+require('./include/config.php');
 require('./include/menu.php');
 
-load_config();
 ensure_active_session();
 
 ?>
@@ -407,49 +407,6 @@ function search_blockreason($domain) {
 
 
 /********************************************************************
- *  Get Block List Name
- *    Returns the name of block list if it exists in the names array
- *
- *  Params:
- *    $bl - bl_name
- *  Return:
- *    Full block list name
- *    Or what it has been named as
- */
-function get_blocklistname($bl) {
-  global $BLOCKLISTNAMES;
-
-  if (array_key_exists($bl, $BLOCKLISTNAMES)) {
-    return $BLOCKLISTNAMES[$bl];
-  }
-
-  return $bl;
-}
-
-
-/********************************************************************
- *  Get Block List Event
- *    Returns the name of block list event if it exists in the event array
- *
- *  Params:
- *    $bl - bl_name
- *  Return:
- *    event value
- */
-function get_blocklistevent($bl) {
-  global $BLOCKLISTEVENT;
-
-  if (array_key_exists($bl, $BLOCKLISTEVENT)) {
-    return $BLOCKLISTEVENT[$bl];
-  }
-  elseif (substr($bl, 0, 6) == 'custom') {                 //Could be a custom_x list
-    return 'custom';
-  }
-
-  return $bl;                                              //Shouldn't get to here
-}
-
-/********************************************************************
  *  Format Row
  *    Returns the action, blockreason, event, and severity in an array
  *
@@ -460,6 +417,8 @@ function get_blocklistevent($bl) {
  *    Array of variables to be taken using list()
  */
 function format_row($domain, $dns_result) {
+  global $config;
+
   $action = '';
   $blocklist = '';
   $blockreason = '';
@@ -485,10 +444,10 @@ function format_row($domain, $dns_result) {
       $event = 'custom2';
     }
     elseif ($blocklist != '') {
-      $blockreason = '<p class="small grey">Blocked by '.get_blocklistname($blocklist).'</p>';
+      $blockreason = '<p class="small grey">Blocked by '.$config->get_blocklistname($blocklist).'</p>';
       $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, false)">Allow</button>';
 
-      $event = get_blocklistevent($blocklist);
+      $event = $config->get_blocklistevent($blocklist);
 
       if ($event == 'malware') {
         $severity = '3';
@@ -519,7 +478,7 @@ function format_row($domain, $dns_result) {
  *    false when nothing found, true on success
  */
 function show_group_view() {
-  global $db, $Config, $TLDBlockList;
+  global $db, $TLDBlockList;
   global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
 
   $i = 0;
@@ -602,7 +561,7 @@ function show_group_view() {
  *    false when nothing found, true on success
  */
 function show_time_view() {
-  global $db, $Config, $TLDBlockList;
+  global $db, $TLDBlockList;
   global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
 
   $i = 0;
@@ -758,11 +717,11 @@ $db->close();
 <div class="close-button" onclick="hideQueriesBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
 </div>
 <script>
-const SEARCHNAME = <?php echo json_encode($Config['Search'])?>;
-const SEARCHURL = <?php echo json_encode($Config['SearchUrl'])?>;
-const WHOISNAME = <?php echo json_encode($Config['WhoIs'])?>;
-const WHOISURL = <?php echo json_encode($Config['WhoIsUrl'])?>;
-const WHOISAPI = <?php echo ($Config['whoisapi'] == '') ? 0 : 1;?>;
+const SEARCHNAME = <?php echo json_encode($config->settings['Search'])?>;
+const SEARCHURL = <?php echo json_encode($config->settings['SearchUrl'])?>;
+const WHOISNAME = <?php echo json_encode($config->settings['WhoIs'])?>;
+const WHOISURL = <?php echo json_encode($config->settings['WhoIsUrl'])?>;
+const WHOISAPI = <?php echo ($config->settings['whoisapi'] == '') ? 0 : 1;?>;
 </script>
 </body>
 </html>

@@ -11,9 +11,9 @@
 
 require('./include/global-vars.php');
 require('./include/global-functions.php');
+require('./include/config.php');
 require('./include/menu.php');
 
-load_config();
 ensure_active_session();
 
 //-------------------------------------------------------------------
@@ -57,11 +57,11 @@ echo '</div>'.PHP_EOL;
 
 <script>
 <?php
-echo 'const SEARCH = "'.$Config['Search'].'";'.PHP_EOL;
-echo 'const SEARCHURL = "'.$Config['SearchUrl'].'";'.PHP_EOL;
-if ($Config['whoisapi'] == '') {                           //Setup Investigate / Whois for popupmenu
-  echo 'const INVESTIGATE = "'.$Config['WhoIs'].'";'.PHP_EOL;
-  echo 'const INVESTIGATEURL = "'.$Config['WhoIsUrl'].'";'.PHP_EOL;
+echo 'const SEARCH = "'.$config->settings['Search'].'";'.PHP_EOL;
+echo 'const SEARCHURL = "'.$config->settings['SearchUrl'].'";'.PHP_EOL;
+if ($config->settings['whoisapi'] == '') {                           //Setup Investigate / Whois for popupmenu
+  echo 'const INVESTIGATE = "'.$config->settings['WhoIs'].'";'.PHP_EOL;
+  echo 'const INVESTIGATEURL = "'.$config->settings['WhoIsUrl'].'";'.PHP_EOL;
 }
 else {
   echo 'const INVESTIGATE = "Investigate";'.PHP_EOL;

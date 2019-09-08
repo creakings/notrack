@@ -332,7 +332,58 @@ class Config {
   
     exec(NTRK_EXEC.'--save-conf');
 }
-  
+
+
+   /********************************************************************
+   *  Get Block List Name
+   *    Returns the name of block list if it exists in the names array
+   *
+   *  Params:
+   *    $bl - bl_name
+   *  Return:
+   *    Full block list name
+   *    Or what it has been named as
+   */
+  public function get_blocklistname($bl) {
+
+    if (array_key_exists($bl, self::BLOCKLISTNAMES)) {
+      return self::BLOCKLISTNAMES[$bl];
+    }
+
+    return $bl;
+  }
+
+
+  /********************************************************************
+   *  Get Block List Event
+   *    Returns the name of block list event if it exists in the event array
+   *
+   *  Params:
+   *    $bl - bl_name
+   *  Return:
+   *    event value
+   */
+  function get_blocklistevent($bl) {
+
+    if (array_key_exists($bl, self::BLOCKLISTEVENT)) {
+      return self::BLOCKLISTEVENT[$bl];
+    }
+    elseif (substr($bl, 0, 6) == 'custom') {               //Could be a custom_x list
+      return 'custom';
+    }
+
+    return $bl;                                            //Shouldn't get to here
+  }
+
+
+  /********************************************************************
+   *  Constructor
+   *
+   *  Params:
+   *    None
+   *  Return:
+   *    None
+   */
   public function __construct() {
     $this->load();
   }

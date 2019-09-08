@@ -1,9 +1,9 @@
 <?php
 require('./include/global-vars.php');
 require('./include/global-functions.php');
+require('./include/config.php');
 require('./include/menu.php');
 
-load_config();
 ensure_active_session();
 
 ?>
@@ -19,21 +19,6 @@ ensure_active_session();
 
 <body>
 <?php
-
-/*
-div#container {
-        height: 400px;
-        width: 400px;
-        border:2px solid #000;
-        overflow: scroll;
-      }
-svg#sky {
-  height: 100px;
-  width: 1100px;
-  border:1px dotted #ccc;
-  background-color: #ccc;
-}
-*/
 
 /************************************************
 *Constants                                      *
