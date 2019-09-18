@@ -65,7 +65,43 @@ class MySqliDb {
     return $rows;
   }
 
+
+  public function blocklist_domains($blocklist, $searchstr) {
+    $validblocklist = '';
+    $validsearchstr = '';
+    
+    $query = "SELECT * FROM blocklist ";
+    
+    $validblocklist = (strlen($blocklist) < 50 ? $blocklist : 'all');
+    $validsearchstr = (strlen($searchstr) < 2 ? $searchstr : '');
+    
+    $validblocklist = preg_replace('/[^a-z_]/', '', $validblocklist);
+    $validsearchstr = preg_replace('/[^\w\.\-_]/', '', $validsearchstr);
+    
+    //if (! preg_match('/^(all|bl_[a-z]{4, 40})$/', $validblocklist) {
   
+    if (($validblocklist != 'all') && ($validsearchstr != '')) {
+      $query .= "WHERE site LIKE '%$validsearchstr%' AND bl_source = '$validblocklist' ";
+    }
+    elseif ($validblocklist != 'all') {
+      $query .= "WHERE bl_source = '$validblocklist' ";
+    }
+    elseif ($validsearchstr != '') {
+      $query .= "WHERE site LIKE '%$validsearchstr%' ";
+    }
+
+    $query .= "ORDER BY id";
+    echo "<h1>$query</h1>";
+
+    if (!$result = $this->db->query($query)) {
+      echo '<h4><img src=../svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+      echo 'blocklist_domains: '.$this->db->error;
+      echo '</div>'.PHP_EOL;
+      die;
+    }
+
+    return $result;
+  }
   /******************************************************************
    *  Count number of rows in Blocklist table
    *    Return the value from count_table_rows for Blocklist table

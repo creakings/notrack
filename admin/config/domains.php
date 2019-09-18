@@ -23,7 +23,7 @@ define('DOMAIN_WHITELIST', '/etc/notrack/domain-whitelist.txt');
 /************************************************
 *Global Variables                               *
 ************************************************/
-//$dbwrapper = new MySqliDb;
+$dbwrapper = new MySqliDb;
 $page = 1;
 $searchbox = '';
 $showblradio = false;
@@ -117,7 +117,7 @@ function draw_blradioform() {
  *    None
  */
 function show_full_blocklist() {
-  global $config, $db, $page, $searchbox, $blradio, $showblradio;
+  global $config, $dbwrapper, $page, $searchbox, $blradio, $showblradio;
 
   $i = 0;
   $k = 1;                                                  //Count within ROWSPERPAGE
@@ -133,7 +133,7 @@ function show_full_blocklist() {
       
   $query = 'SELECT * FROM blocklist '.add_searches().'ORDER BY id';
 
-  if(!$result = $db->query($query)) {
+  if (!$result = $dbwrapper->blocklist_domains($blradio, $searchbox)) {
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
     echo 'show_full_blocklist: '.$db->error;
     echo '</div>'.PHP_EOL;
