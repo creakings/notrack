@@ -93,6 +93,7 @@ class Config {
   //Legible names of each blocklist code
   const BLOCKLISTNAMES = array(
     'custom' => 'Custom',
+    'whitelist' => 'Whitelist',
     'bl_tld' => 'Top Level Domain',
     'bl_notrack' => 'NoTrack Block List',
     'bl_notrack_malware' => 'NoTrack Malware',

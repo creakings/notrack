@@ -65,21 +65,68 @@ class MySqliDb {
     return $rows;
   }
 
+  
+  /******************************************************************
+   *  Blocklist Active
+   *    Get list of distinct items in bl_source column of blocklist table
+   *     (The active blocklists)
+   *  Params:
+   *    None
+   *  Return:
+   *    Numeric array of items
+   *    False if nothing found
+   */
+  public function blocklist_active() {
+    $data = array();
+    $query = "SELECT DISTINCT bl_source FROM blocklist";
 
+    if (!$result = $this->db->query($query)) {
+      echo '<h4><img src=../svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+      echo 'blocklist_active: '.$this->db->error;
+      echo '</div>'.PHP_EOL;
+      die;
+    }
+    
+    if ($result->num_rows > 0) {
+      $data = $result->fetch_all(MYSQLI_NUM);
+      $result->free();
+    }
+    else {
+      $result->free();
+      return false;
+    }
+
+    return $data;
+  }
+
+  /******************************************************************
+   *  Blocklist Domains
+   *    Get list of domains from blocklist
+   *    1. Make sure supplied parameters are valid
+   *    2. Carry out SQL Query
+   *  Params:
+   *    blocklist - blocklist name
+   *    searchstr - Search value for domain or comment
+   *  Return:
+   *    mysqli result class
+   */
   public function blocklist_domains($blocklist, $searchstr) {
     $validblocklist = '';
     $validsearchstr = '';
-    
+
     $query = "SELECT * FROM blocklist ";
-    
+
+    //Only validate strings shorter than x to prevent resource exhaustion
     $validblocklist = (strlen($blocklist) < 50 ? $blocklist : 'all');
-    $validsearchstr = (strlen($searchstr) < 2 ? $searchstr : '');
-    
+    $validsearchstr = (strlen($searchstr) < 255 ? $searchstr : '');
+
+    //Remove invalid characters
     $validblocklist = preg_replace('/[^a-z_]/', '', $validblocklist);
     $validsearchstr = preg_replace('/[^\w\.\-_]/', '', $validsearchstr);
-    
-    //if (! preg_match('/^(all|bl_[a-z]{4, 40})$/', $validblocklist) {
-  
+
+    //if (! preg_match('/^(all|whitelist|bl_[a-z]{4, 40})$/', $validblocklist) {
+
+    //Build up query based on supplied parameters
     if (($validblocklist != 'all') && ($validsearchstr != '')) {
       $query .= "WHERE site LIKE '%$validsearchstr%' AND bl_source = '$validblocklist' ";
     }
@@ -87,11 +134,10 @@ class MySqliDb {
       $query .= "WHERE bl_source = '$validblocklist' ";
     }
     elseif ($validsearchstr != '') {
-      $query .= "WHERE site LIKE '%$validsearchstr%' ";
+      $query .= "WHERE site LIKE '%$validsearchstr%' OR comment LIKE '%$validsearchstr%'";
     }
 
     $query .= "ORDER BY id";
-    echo "<h1>$query</h1>";
 
     if (!$result = $this->db->query($query)) {
       echo '<h4><img src=../svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
@@ -102,6 +148,8 @@ class MySqliDb {
 
     return $result;
   }
+  
+  
   /******************************************************************
    *  Count number of rows in Blocklist table
    *    Return the value from count_table_rows for Blocklist table

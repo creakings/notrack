@@ -118,24 +118,24 @@ function update_advanced() {
   $validlist = array();
   
   if (isset($_POST['parsing'])) {
-    $config['ParsingTime'] = filter_integer($_POST['parsing'], 1, 60, 7);
+    $config->settings['ParsingTime'] = filter_integer($_POST['parsing'], 1, 60, 7);
   }
   
   if (isset($_POST['suppress'])) {
     $suppress = preg_replace('#\s+#',',',trim($_POST['suppress'])); //Split array
     if (strlen($suppress) <= 2) {                //Is string too short?
-      $config['Suppress'] = '';
+      $config->settings['Suppress'] = '';
       return true;
     }
     
     $suppresslist = explode(',', $suppress);     //Split string into array
     foreach ($suppresslist as $site) {           //Check if each item is a valid URL
-      if (filter_url($site)) {
+      if (filter_url($site)) {  //TODO FIX THIS!
         $validlist[] = strip_tags($site);
       }
     }
-    if (sizeof($validlist) == 0) $config['Suppress'] = '';
-    else $config['Suppress'] = implode(',', $validlist);
+    if (sizeof($validlist) == 0) $config->settings['Suppress'] = '';
+    else $config->settings['Suppress'] = implode(',', $validlist);
   }
   
   return true;
@@ -336,9 +336,6 @@ if (isset($_GET['v'])) {                         //What view to show?
   switch($_GET['v']) {
     case 'config':
       show_general();
-      break;
-    case 'full':
-      show_full_blocklist();
       break;
     case 'advanced':
       show_advanced();

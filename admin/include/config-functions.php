@@ -1,77 +1,5 @@
 <?php
 
-/********************************************************************
- *  Add Search Box String to SQL Search
- *
- *  Params:
- *    None
- *  Return:
- *    SQL Query string
- */
-function add_searches() {
-  global $blradio, $searchbox;
-  $searchstr = '';
-  
-  if (($blradio != 'all') && ($searchbox != '')) {
-    $searchstr = ' WHERE site LIKE \'%'.$searchbox.'%\' AND bl_source = \''.$blradio.'\' ';
-  }
-  elseif ($blradio != 'all') {
-    $searchstr = ' WHERE bl_source = \''.$blradio.'\' ';
-  }
-  elseif ($searchbox != '') {
-    $searchstr = ' WHERE site LIKE \'%'.$searchbox.'%\' ';
-  }
-  
-  return $searchstr;
-}
-
-
-/********************************************************************
- *  Draw Blocklist Radio Form
- *    Radio list is made up of the items in config::BLOCKLISTNAMES array
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function draw_blradioform() {
-  global $config, $showblradio, $blradio, $page, $searchbox;
-  
-  if ($showblradio) {                            //Are we drawing Form or Show button?
-    echo '<form name = "blradform" method="GET">'.PHP_EOL;   //Form for Radio List
-    echo '<input type="hidden" name="v" value="full">'.PHP_EOL;
-    echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
-    if ($searchbox != '') {
-      echo '<input type="hidden" name="s" value="'.$searchbox.'">'.PHP_EOL;
-    }    
-  
-    if ($blradio == 'all') {
-      echo '<span class="blradiolist"><input type="radio" name="blrad" value="all" checked="checked" onclick="document.blradform.submit()">All</span>'.PHP_EOL;
-    }
-    else {
-      echo '<span class="blradiolist"><input type="radio" name="blrad" value="all" onclick="document.blradform.submit()">All</span>'.PHP_EOL;
-    }
-  
-    foreach ($config::BLOCKLISTNAMES as $key => $value) { //Use BLOCKLISTNAMES for Radio items
-      if ($key == $blradio) {                    //Should current item be checked?
-        echo '<span class="blradiolist"><input type="radio" name="blrad" value="'.$key.'" checked="checked" onclick="document.blradform.submit()">'.$value.'</span>'.PHP_EOL;
-      }
-      else {
-        echo '<span class="blradiolist"><input type="radio" name="blrad" value="'.$key.'" onclick="document.blradform.submit()">'.$value.'</span>'.PHP_EOL;
-      }
-    }
-  }  
-  else {                                         //Draw Show button instead
-    echo '<form action="?v=full&amp;page='.$page.'" method="POST">'.PHP_EOL;
-    echo '<input type="hidden" name="showblradio" value="1">'.PHP_EOL;
-    echo '<input type="submit" value="Select Block List">'.PHP_EOL;
-  }
-  
-  echo '</form>'.PHP_EOL;                        //End of either form above
-  echo '<br>'.PHP_EOL;
-}
-
 
 /********************************************************************
  *  Show Advanced Page
@@ -94,100 +22,6 @@ function show_advanced() {
   echo '</form>'.PHP_EOL;
   
   //TODO Add reset
-}
-
-
-/********************************************************************
- *  Show Full Block List
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function show_full_blocklist() {
-  global $config, $db, $page, $searchbox, $blradio, $showblradio;
-
-  $key = '';
-  $value ='';
-  $rows = 0;
-  $row_class = '';
-  $bl_source = '';
-  $linkstr = '';
-  $i = 0;
-  
-  echo '<div class="sys-group">'.PHP_EOL;
-  echo '<h5>Sites Blocked</h5>'.PHP_EOL;
-    
-  $rows = count_rows('SELECT COUNT(*) FROM blocklist'.add_searches());
-    
-  if ((($page-1) * ROWSPERPAGE) > $rows) $page = 1;
-  $i = (($page-1) * ROWSPERPAGE) + 1;                      //Calculate count position
-    
-  $query = 'SELECT * FROM blocklist '.add_searches().'ORDER BY id LIMIT '.ROWSPERPAGE.' OFFSET '.(($page-1) * ROWSPERPAGE);
-  
-  if(!$result = $db->query($query)){                       //Run the Query
-    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
-    echo 'show_full_blocklist: '.$db->error;
-    echo '</div>'.PHP_EOL;
-  }
-  
-  draw_blradioform();                                      //Block List selector form
-  
-  echo '<form method="GET">'.PHP_EOL;                      //Form for Text Search
-  echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
-  echo '<input type="hidden" name="v" value="full">'.PHP_EOL;
-  echo '<input type="hidden" name="blrad" value="'.$blradio.'">'.PHP_EOL;
-  echo '<input type="text" name="s" id="search" value="'.$searchbox.'">&nbsp;&nbsp;';
-  echo '<input type="Submit" value="Search">'.PHP_EOL;
-  echo '</form></div>'.PHP_EOL;                            //End form for Text Search
-  
-  
-  if ($result->num_rows == 0) {                            //Leave if nothing found
-    $result->free();
-    echo '<div class="sys-group">'.PHP_EOL;
-    echo '<h4><img src=./svg/emoji_sad.svg>No sites found in Block List</h4>'.PHP_EOL;
-    echo '</div>'.PHP_EOL;
-    return false;
-  }
-  
-  if ($showblradio) {                                      //Add selected blocklist to pagination link string
-    $linkstr .= '&amp;blrad='.$blradio;
-  }  
-  
-  echo '<div class="sys-group">';                          //Now for the results
-  
-  pagination($rows, 'v=full'.$linkstr);                    //Draw Pagination box
-    
-  echo '<table id="block-table">'.PHP_EOL;
-  echo '<tr><th>#</th><th>Block List</th><th>Site</th><th>Comment</th></tr>'.PHP_EOL;
-   
-  while($row = $result->fetch_assoc()) {                   //Read each row of results
-    if ($row['site_status'] == 0) {                        //Is site enabled or disabled?
-      $row_class = ' class="dark"';
-    }
-    else {
-      $row_class = '';
-    }
-    
-    if (array_key_exists($row['bl_source'], $config::BLOCKLISTNAMES)) { //Convert bl_name to Actual Name
-      $bl_source = $config::BLOCKLISTNAMES[$row['bl_source']];
-    }
-    else {
-      $bl_source = $row['bl_source'];
-    }
-    echo '<tr'.$row_class.'><td>'.$i.'</td><td>'.$bl_source.'</td><td>'.$row['site'].'</td><td>'.$row['comment'].'</td></tr>'.PHP_EOL;
-    $i++;
-  }
-  echo '</table>'.PHP_EOL;                                 //End of table
-  
-  echo '<br>'.PHP_EOL;
-  pagination($rows, 'v=full'.$linkstr);                    //Draw second Pagination box
-  echo '</div>'.PHP_EOL; 
-  
-  $result->free();
-
-  return true;
 }
 
 
@@ -319,7 +153,7 @@ function show_menu() {
   echo '<a href="../admin/config/tld.php"><img src="./svg/menu_domain.svg"><span><h6>Top Level Domains</h6></span></a>'.PHP_EOL;
   echo '<a href="../admin/config/customblocklist.php?v=black"><img src="./svg/menu_black.svg"><span><h6>Custom Black List</h6></span></a>'.PHP_EOL;
   echo '<a href="../admin/config/customblocklist.php?v=white"><img src="./svg/menu_white.svg"><span><h6>Custom White List</h6></span></a>'.PHP_EOL;
-  echo '<a href="../admin/config.php?v=full"><img src="./svg/menu_sites.svg"><span><h6>View Sites Blocked</h6></span></a>'.PHP_EOL;
+  echo '<a href="../admin/config/domains.php"><img src="./svg/menu_sites.svg"><span><h6>View Domains Blocked</h6></span></a>'.PHP_EOL;
   echo '</div></div>'.PHP_EOL;                             //End Block lists
   
   echo '<div class="sys-group">'.PHP_EOL;                  //Advanced
