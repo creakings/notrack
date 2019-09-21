@@ -49,10 +49,6 @@ if (isset($_POST['action'])) {
       }      
       header('Location: ?v=advanced');           //Reload page
       break;
-    case 'dhcp':
-      update_dhcp();
-      header('Location: ?v=dhcp');               //Reload to DHCP
-      break;
     case 'webserver':
       update_webserver_config();
       $config->save();
@@ -340,13 +336,6 @@ if (isset($_GET['v'])) {                         //What view to show?
     case 'advanced':
       show_advanced();
       break;
-    case 'status':
-      show_status();
-      break;
-    /*case 'tld':
-      load_csv(TLD_FILE, 'csv_tld');
-      show_domain_list();     
-      break;*/
     default:
       show_general();
       break;
