@@ -55,9 +55,9 @@ class MySqliDb {
     $rows = 0;
   
     if(!$result = $this->db->query('SELECT COUNT(*) FROM '.$expr)){
-      die('mysqlidb->count_rows() error running the query '.$this->db->error);
+      die('count_table_rows: error running the query '.$this->db->error);
     }
-    
+
     //Extract count value from array
     $rows = $result->fetch_row()[0];
     $result->free();
@@ -175,6 +175,7 @@ class MySqliDb {
     return $this->count_table_rows("blocklist WHERE bl_source = '$blocklist'");
   }
 
+
   /******************************************************************
    *  Count queries for today
    *    Count number of Allowed, Blocked and Local queries for today
@@ -189,6 +190,19 @@ class MySqliDb {
     $local = $this->count_table_rows("dnslog WHERE log_time > CURDATE() AND dns_result = 'L'");
     $total = strval($allowed + $blocked + $local);
     return array('queries' => $total, 'allowed' => $allowed, 'blocked' => $blocked, 'local' => $local);
+  }
+
+
+  /******************************************************************
+   *  Count total queries
+   *    Count total number of queries in queries table
+   *  Params:
+   *    None
+   *  Return:
+   *    Number of queries
+   */
+  public function count_total_queries() {
+    return $this->count_table_rows("dnslog");
   }
 
 
@@ -255,5 +269,30 @@ class MySqliDb {
     $result->free();
 
     return $queries;
+  }
+
+
+  /******************************************************************
+   *  Queries Historical Days
+   *    Return recent DNS queries in an array
+   *    Increase interval time by 4 minutes as the cron job to collect DNS data
+   *     only runs every 4 minutes by default
+   *  Params:
+   *    Interval to look back in minutes
+   *  Return:
+   *    Config Status
+   */
+  public function queries_historical_days() {
+    $rows = 0;
+
+    if(!$result = $this->db->query('SELECT COUNT(DISTINCT(DATE(log_time))) FROM dnslog')){
+      die('queries_historical_days: error running the query '.$this->db->error);
+    }
+
+    //Extract count value from array
+    $rows = $result->fetch_row()[0];
+    $result->free();
+
+    return $rows;
   }
 }
