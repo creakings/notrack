@@ -1,4 +1,13 @@
 <?php
+/********************************************************************
+*  1. Deal with POST action requests first
+*     1a. Carry out necessary input validation
+*     1b. Save config
+*     1c. Sort pause of 0.25 seconds to prevent race condition of loading wrong conf
+*     1b. Reload the page to updated section
+*  2. Draw various sections with form including hidden action,
+      so we know where to return the user to
+********************************************************************/
 require('../include/global-vars.php');
 require('../include/global-functions.php');
 require('../include/config.php');
@@ -13,14 +22,17 @@ ensure_active_session();
 define('DNSLIST', ['dnsmasq', 'bind']);
 define('WEBLIST', ['lighttpd', 'apache', 'nginx']);
 
+
 /************************************************
 *Global Variables                               *
 ************************************************/
 $dbwrapper = new MySqliDb();
 
+
 /************************************************
 *Arrays                                         *
 ************************************************/
+
 
 /************************************************
 *POST REQUESTS                                  *
@@ -28,14 +40,13 @@ $dbwrapper = new MySqliDb();
 //Deal with POST actions first, that way we can reload the page and remove POST requests from browser history.
 if (isset($_POST['action'])) {
   switch($_POST['action']) {
-    /*case 'advanced':
-      if (update_advanced()) {                   //Are users settings valid?
-        $config->save();                         //If ok, then save the Config file
-        sleep(1);                                //Short pause to prevent race condition
-        exec(NTRK_EXEC.'--parsing');             //Update ParsingTime value in Cron job
-      }
-      header('Location: ?v=advanced');           //Reload page
-      break;*/
+    case 'dnsqueries':
+      update_dnsqueries();
+      $config->save();
+      usleep(25000);                             //Short pause to prevent race condition
+      exec(NTRK_EXEC.'--parsing');               //Update ParsingTime value in Cron job
+      header('Location: #dnsqueries');
+      break;
     case 'webserver':
       update_webserver_config();
       $config->save();
@@ -44,13 +55,22 @@ if (isset($_POST['action'])) {
     case 'server':
       update_server_config();
       $config->save();
-      sleep(1);                                  //Short pause to prevent race condition
+      usleep(25000);                             //Short pause to prevent race condition
       header('Location: #server');
       break;
     default:
       die('Unknown POST action');
   }
 }
+
+if (isset($_GET['action'])) {
+  if ($_GET['action'] == 'delete-history') {
+    exec(NTRK_EXEC.'--delete-history');
+    usleep(25000);                               //Short pause to prevent race condition
+    header('Location: ?#dns');
+  }
+}
+
 
 ?>
 <!DOCTYPE html>
@@ -81,13 +101,12 @@ function server_section() {
   $key = '';
   $value = '';
 
-  $sysload = sys_getloadavg();
   $freemem = preg_split('/\s+/', exec('free -m | grep Mem'));
   $uptime = exec('uptime -p');
 
   echo '<section id="server">'.PHP_EOL;
-  echo '<form name="server" method="post">';
-  echo '<input type="hidden" name="action" value="server">';
+  echo '<form name="server" method="post">'.PHP_EOL;
+  echo '<input type="hidden" name="action" value="server">'.PHP_EOL;
   draw_systable('Server');
   draw_sysrow('Name', gethostname());
   draw_sysrow('Network Device', $config->settings['NetDev']);
@@ -99,7 +118,6 @@ function server_section() {
     draw_sysrow('IP Address', $config->settings['IPVersion']);
   }
 
-  draw_sysrow('Sysload', $sysload[0].' | '.$sysload[1].' | '.$sysload[2]);
   draw_sysrow('Memory Used', $freemem[2].' MB');
   draw_sysrow('Free Memory', $freemem[3].' MB');
   draw_sysrow('Uptime', $uptime);
@@ -224,8 +242,8 @@ function web_section() {
   }
 
   echo '<section id="web">'.PHP_EOL;
-  echo '<form name="blockmsg" action="?" method="post">';
-  echo '<input type="hidden" name="action" value="webserver">';
+  echo '<form name="blockmsg" action="?" method="post">'.PHP_EOL;
+  echo '<input type="hidden" name="action" value="webserver">'.PHP_EOL;
   draw_systable('Web Server');
   draw_sysrow('Status', $pidarray[0]);
   draw_sysrow('Pid', $pidarray[1]);
@@ -239,6 +257,29 @@ function web_section() {
 }
 
 
+/********************************************************************
+ *  DNS Queries
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function dnsqueries_section() {
+  global $config;
+
+  echo '<section id="dnsqueries">'.PHP_EOL;
+  echo '<form action="?" method="post">'.PHP_EOL;
+  echo '<input type="hidden" name="action" value="dnsqueries">'.PHP_EOL;
+  draw_systable('DNS Queries');
+  draw_sysrow('DNS Log Parsing Interval', '<input type="number" class="fixed10" name="parsing" min="1" max="60" value="'.$config->settings['ParsingTime'].'" title="Time between updates in Minutes" onchange="submit()">');
+  draw_sysrow('Suppress Domains <div class="help-icon" title="Group together certain domains on the Stats page"></div>', '<textarea rows="5" name="suppress">'.str_replace(',', PHP_EOL, $config->settings['Suppress']).'</textarea>');
+  echo '<tr><td>&nbsp;</td><td><input type="submit" value="Save Changes"></td></tr>'.PHP_EOL;
+  echo '</table>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
+  echo '</form>'.PHP_EOL;
+  echo '</section>'.PHP_EOL;
+}
 
 /********************************************************************
  *  Update Server Config
@@ -247,6 +288,7 @@ function web_section() {
  *    3. Check if value exists in SEARCHENGINELIST / WHOISLIST
  *    4. Only except hexadecimal values for whoisapi
  *    5. Change values in config
+ *    6. Onward function is config->save()
  *
  *  Params:
  *    None
@@ -283,8 +325,10 @@ function update_server_config() {
 
 /********************************************************************
  *  Update Webserver Config
- *    Run ntrk-exec with appropriate change to Webserver setting
- *    Onward process is save_config function
+ *    1. Check POST value block is valid
+ *    2. Run ntrk-exec with appropriate change to Webserver setting
+ *    3. Onward function is config->save()
+ *
  *  Params:
  *    None
  *  Return:
@@ -307,6 +351,61 @@ function update_webserver_config() {
   }
 }
 
+
+/********************************************************************
+ *  Update DNS Queries
+ *    1. Update parsing time if valid
+ *    2. Make sure Suppress list is valid
+ *    3. Replace new line and space with commas (since list maybe in any format)
+ *    4. Copy Valid domains to a validarray
+ *    5. Write valid domains to Config suppress string seperated by commas
+ *    6. Onward function is config->save()
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function update_dnsqueries() {
+  global $config;
+
+  $domain = '';                                            //Each domain identified
+  $suppress = '';                                          //POST value suppress
+  $suppressarray = array();                                //Array of items in suppress
+  $validarray = array();                                   //Array of valid domains
+
+  if (isset($_POST['parsing'])) {
+    $config->settings['ParsingTime'] = filter_integer($_POST['parsing'], 1, 60, 4);
+  }
+
+  if (filter_string('suppress', 'POST', 4096)) {
+    $suppress = strip_tags($_POST['suppress']);
+
+    //Replace spaces / newlines with commas for processing below
+    $suppress = preg_replace('/\s+/',',', $suppress);
+
+    if (strlen($suppress) <= 2) {                //Is string too short?
+      $config->settings['Suppress'] = '';
+    }
+
+    $suppressarray = explode(',', $suppress);              //Split string into array
+    foreach ($suppressarray as $domain) {                  //Check if each item is a valid domain
+      if (filter_var($domain, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
+        $validarray[] = $domain;                           //Add valid domain to array
+      }
+    }
+
+    //Use a blank string for suppress if nothing is in validarray
+    if (sizeof($validarray) == 0) {
+      $config->settings['Suppress'] = '';
+    }
+    //Or implode validarray into comma seperated values
+    else {
+      $config->settings['Suppress'] = implode(',', $validarray);
+    }
+  }
+}
+
 /********************************************************************
  Main
 */
@@ -315,16 +414,11 @@ draw_sidemenu();
 
 echo '<div id="main">'.PHP_EOL;
 
-if (isset($_GET['action'])) {
-  if ($_GET['action'] == 'delete-history') {
-    //exec(NTRK_EXEC.'--delete-history');
-    echo "deleting";
-  }
-}
-
+//Draw all the sections
 server_section();
 dns_section();
 web_section();
+dnsqueries_section();
 
 echo '</div>'.PHP_EOL;                                     //End main
 ?>
