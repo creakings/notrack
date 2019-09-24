@@ -6,7 +6,7 @@
 *     1c. Sort pause of 0.25 seconds to prevent race condition of loading wrong conf
 *     1b. Reload the page to updated section
 *  2. Draw various sections with form including hidden action,
-      so we know where to return the user to
+*     so we know where to return the user to
 ********************************************************************/
 require('../include/global-vars.php');
 require('../include/global-functions.php');
@@ -82,7 +82,7 @@ if (isset($_GET['action'])) {
   <link rel="icon" type="image/png" href="../favicon.png">
   <script src="../include/menu.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=0.9">
-  <title>NoTrack - Status</title>
+  <title>NoTrack - General Config</title>
 </head>
 <?php
 
