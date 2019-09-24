@@ -47,7 +47,7 @@ echo '<pre>'.PHP_EOL;
 system('/usr/local/sbin/notrack --test');
 echo '</pre>'.PHP_EOL;
 echo '<div class="centered">'.PHP_EOL;
-echo '<a href="../config.php"><button>Back</button></a>'.PHP_EOL;
+echo '<a href="./"><button>Back</button></a>'.PHP_EOL;
 echo '</div>'.PHP_EOL;                                     //End Centered
 echo '</div>'.PHP_EOL;                                     //End sys-group
 
