@@ -1,3 +1,10 @@
+Development
+Underlying changes to config code
+Advanced config settings moved into General Config
+Styling improvements for Top Level Domain admin page
+
+
+*************************************************
 v0.9.2 Released 07 Sep 2019
 New styling for block list selector
 New features added to API to allow construction of notrack-lcd project
@@ -5,7 +12,6 @@ Added Windows Spy Blocker list
 
 *************************************************
 v0.9.1 Released 23 Jul 2019
-
 DNS Query Line charts are now clickable
 Modern styling for Live page
 Added Block / Investigate menu to Live page
