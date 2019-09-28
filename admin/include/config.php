@@ -295,7 +295,7 @@ class Config {
     //Set SearchUrl if User hasn't configured a custom string via notrack.conf
     if ($this->settings['SearchUrl'] == '') {
       if (array_key_exists($this->settings['Search'], self::SEARCHENGINELIST)) {
-        $this->settings['SearchUrl'] = self::SEARCHENGINELIST[self::settings['Search']];
+        $this->settings['SearchUrl'] = self::SEARCHENGINELIST[$this->settings['Search']];
       }
       else {
         $this->settings['SearchUrl'] = self::SEARCHENGINELIST['DuckDuckGo'];
