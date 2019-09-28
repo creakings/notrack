@@ -327,6 +327,27 @@ function draw_tabbedview($view) {
   echo '</div>'.PHP_EOL;                                   //End tabbed container
 }
 
+
+/********************************************************************
+ *  Draw Welcome
+ *    Draw Welcome is called when no value has been set for GET/POST argument "v"
+ *    Word Cloud images generated from https://www.jasondavies.com/wordcloud/
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function draw_welcome() {
+  echo '<div class="sys-group">'.PHP_EOL;
+  echo '<div class="bl-flex-container">'.PHP_EOL;
+  echo '<a href="?v=1"><img src="../svg/wordclouds/classic_wordcloud.svg" alt=""><h6>Old Generic</h6></a>'.PHP_EOL;
+  echo '<a href="?v=2"><img src="../svg/wordclouds/gtld_wordcloud.svg" alt=""><h6>New Generic</h6></a>'.PHP_EOL;
+  echo '<a href="?v=3"><img src="../svg/wordclouds/country_wordcloud.svg" alt=""><h6>Country</h6></a>'.PHP_EOL;
+  echo '<a href="?v=4"><img src="../svg/wordclouds/help_wordcloud.svg" alt=""><h6>Help</h6></a>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
+}
+
 /************************************************
 *POST REQUESTS                                  *
 ************************************************/
@@ -366,7 +387,7 @@ if (isset($_GET['v'])) {
   draw_tabbedview($_GET['v']);
 }
 else {
-  draw_tabbedview(2);
+  draw_welcome();
 }
 
 ?>
