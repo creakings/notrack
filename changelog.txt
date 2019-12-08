@@ -1,4 +1,4 @@
-Development
+v0.9.3 Released 08 Dec 2019
 Underlying changes to config code
 Advanced config settings moved into General Config
 Styling improvements for Top Level Domain admin page
