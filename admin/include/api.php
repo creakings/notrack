@@ -4,7 +4,7 @@ require('./global-functions.php');
 require('./config.php');
 require('./mysqlidb.php');
 
-header('1tent-Type: application/json; charset=UTF-8');
+header('content-Type: application/json; charset=UTF-8');
 
 /************************************************
 *Global Variables                               *
