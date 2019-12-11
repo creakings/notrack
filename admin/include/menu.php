@@ -8,12 +8,16 @@
  *    None
  */
 function draw_sidemenu() {
+  $alert_count = 0;
+
+  $alert_count = sidemenu_get_alert_count();
+
   echo '<nav><div id="menu-side">'.PHP_EOL;
   echo '<a href="/admin/"><img src="/admin/svg/smenu_dashboard.svg" alt="" title="Dashboard">Dashboard</a>'.PHP_EOL;
   echo '<a href="/admin/queries.php"><img src="/admin/svg/smenu_queries.svg" alt="" title="DNS Queries">DNS Queries</a>'.PHP_EOL;
   echo '<a href="/admin/dhcp.php"><img src="/admin/svg/smenu_dhcp.svg" alt="" title="Network DHCP">Network</a>'.PHP_EOL;
   echo '<a href="/admin/live.php"><img src="/admin/svg/smenu_live.svg" alt="" title="Live">Live</a>'.PHP_EOL;
-  echo '<a href="/admin/analytics.php"><img src="/admin/svg/smenu_analytics.svg" alt="" title="Alerts">Alerts</a>'.PHP_EOL;
+  echo '<a href="/admin/analytics.php"><img src="/admin/svg/smenu_analytics.svg" alt="" title="Alerts"><div class="alert-count">'.$alert_count.'</div>Alerts</a>'.PHP_EOL;
   echo '<a href="/admin/blocked.php"><img src="/admin/svg/smenu_blocked.svg" alt="" title="Sites Blocked">Sites Blocked</a>'.PHP_EOL;
   echo '<a href="/admin/investigate.php"><img src="/admin/svg/smenu_investigate.svg" alt="" title="Investigate">Investigate</a>'.PHP_EOL;
   echo '<a href="/admin/config"><img src="/admin/svg/smenu_config.svg" alt="" title="Config">Config</a>'.PHP_EOL;
@@ -132,6 +136,34 @@ function draw_topmenu($currentpage='') {
   echo '<div id="fade" onclick="hideOptions()"></div>'.PHP_EOL;
 }
 
+
+/********************************************************************
+ *  Side Menu Alert Count
+ *    1. Attempt to load alert_count value from Memcache
+ *    2. count_alert function is provided from $dbwrapper, but the current page may not contain that object
+ *    3. Once obtained store the value in Memcache for 1 hour
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    alert_count
+ */
+function sidemenu_get_alert_count() {
+  global $dbwrapper, $mem;
+
+  $alert_count = 0;
+
+  $alert_count = $mem->get('alert_count');
+
+  if (empty($alert_count)) {
+    if (isset($dbwrapper)) {
+      $alert_count = $dbwrapper->count_alerts();
+      $mem->set('alert_count', $alert_count, 0, 3600);
+    }
+  }
+
+  return $alert_count;
+}
 
 /********************************************************************
  *  Side Menu Status

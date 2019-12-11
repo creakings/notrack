@@ -786,6 +786,14 @@ span.key-green {
   display: inline-block;
   margin-top: 2rem;
 }
+#menu-side .alert-count {
+  position: absolute;
+  top: 10.4rem;
+  left: 1.4rem;
+  background: red;
+  border-radius: 10%;
+  padding: -1rem;
+}
 
 @media only screen and (max-width:1000px), only screen and (max-device-width:1000px) {
   /*Half window view - Display side menu in icon-only form, allowing onmouseover (hover) to expand menu out to show text as well*/
