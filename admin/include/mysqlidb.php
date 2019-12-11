@@ -149,7 +149,20 @@ class MySqliDb {
     return $result;
   }
   
-  
+
+  /******************************************************************
+   *  Count Alerts
+   *    Return number of alerts unresolved in analytics table
+   *  Params:
+   *    None
+   *  Return:
+   *    Number of rows
+   */
+  public function count_alerts() {
+    return $this->count_table_rows("analytics WHERE ack = 'FALSE'");
+  }
+
+
   /******************************************************************
    *  Count number of rows in Blocklist table
    *    Return the value from count_table_rows for Blocklist table
@@ -272,6 +285,45 @@ class MySqliDb {
   }
 
 
+  /******************************************************************
+   *  Queries Count Hourly
+   *    Return Array of DNS Query count per rounded 30 min period for last 24 hours
+   *
+   *  Params:
+   *    Current Time to start from
+   *  Return:
+   *    False when nothing found
+   *    Array of single dns_results with round_time
+   */
+  public function queries_count_hourly($currenttime) {
+    $values = array();                                     //Array of values to be returned
+    $starttime = 0;
+    $endtime = 0;
+
+    $starttime = date('Y-m-d H:00:00', $currenttime - 84600); //Start Minus 24 Hours from Current Time
+    $endtime = date('Y-m-d H:59:59');                         //End at this hour
+
+    //Only taking rounded time (to 30 min block) and each dns_result
+    $query = "SELECT SEC_TO_TIME((TIME_TO_SEC(log_time) DIV 1800) * 1800) AS round_time, dns_result FROM dnslog WHERE log_time >= '{$starttime}' AND log_time <= '{$endtime}'";
+
+    if (!$result = $this->db->query($query)){
+      echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+      echo 'count_queries: '.$this->db->error;
+      echo '</div>'.PHP_EOL;
+      die();
+    }
+
+    //Leave if nothing found and return false
+    if ($result->num_rows == 0) {
+      $result->free();
+      return false;
+    }
+
+    $values = $result->fetch_all(MYSQLI_ASSOC);            //Get associative array of values from MariaDB result
+    $result->free();
+
+    return $values;
+  }
   /******************************************************************
    *  Queries Historical Days
    *    Return recent DNS queries in an array
