@@ -17,7 +17,15 @@ function draw_sidemenu() {
   echo '<a href="/admin/queries.php"><img src="/admin/svg/smenu_queries.svg" alt="" title="DNS Queries">DNS Queries</a>'.PHP_EOL;
   echo '<a href="/admin/dhcp.php"><img src="/admin/svg/smenu_dhcp.svg" alt="" title="Network DHCP">Network</a>'.PHP_EOL;
   echo '<a href="/admin/live.php"><img src="/admin/svg/smenu_live.svg" alt="" title="Live">Live</a>'.PHP_EOL;
-  echo '<a href="/admin/analytics.php"><img src="/admin/svg/smenu_analytics.svg" alt="" title="Alerts"><div class="alert-count">'.$alert_count.'</div>Alerts</a>'.PHP_EOL;
+
+  //Only display an alert count if its above zero
+  if ($alert_count == 0) {
+    echo '<a href="/admin/analytics.php"><img src="/admin/svg/smenu_analytics.svg" alt="" title="Alerts">Alerts</a>'.PHP_EOL;
+  }
+  else {
+    echo '<a href="/admin/analytics.php"><img src="/admin/svg/smenu_analytics.svg" alt="" title="Alerts"><div class="alert-count">'.formatnumber($alert_count).'</div>Alerts</a>'.PHP_EOL;
+  }
+
   echo '<a href="/admin/blocked.php"><img src="/admin/svg/smenu_blocked.svg" alt="" title="Sites Blocked">Sites Blocked</a>'.PHP_EOL;
   echo '<a href="/admin/investigate.php"><img src="/admin/svg/smenu_investigate.svg" alt="" title="Investigate">Investigate</a>'.PHP_EOL;
   echo '<a href="/admin/config"><img src="/admin/svg/smenu_config.svg" alt="" title="Config">Config</a>'.PHP_EOL;
