@@ -30,7 +30,6 @@ $CHARTCOLOURS = array('#00c2c8', '#b1244a', '#93a0ff');
 /************************************************
 *Global Variables                               *
 ************************************************/
-//$db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
 $dbwrapper = new MySqliDb;
 
 $day_allowed = 0;
