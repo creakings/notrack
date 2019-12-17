@@ -776,6 +776,7 @@ span.key-green {
 }
 #menu-side div > img {
   width: 1.5rem;
+  min-width: 1.5rem;
   height: 1.5rem;
   margin: 0 1.1rem 0 0.7rem;
 }
