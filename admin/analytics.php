@@ -5,6 +5,7 @@ require('./include/global-vars.php');
 require('./include/global-functions.php');
 require('./include/config.php');
 require('./include/menu.php');
+require('./include/mysqlidb.php');
 
 ensure_active_session();
 
@@ -24,10 +25,6 @@ ensure_active_session();
 
 <body>
 <?php
-draw_topmenu('Alerts');
-draw_sidemenu();
-echo '<div id="main">'.PHP_EOL;
-
 /************************************************
 *Constants                                      *
 ************************************************/
@@ -38,7 +35,7 @@ $INVESTIGATEURL = '';
 *Global Variables                               *
 ************************************************/
 $view = false;
-
+$dbwrapper = new MySqliDb;
 /************************************************
 *Arrays                                         *
 ************************************************/
@@ -57,6 +54,8 @@ $view = false;
  *    None
  */
 function do_action($action) {
+  global $dbwrapper;
+
   $boxstr = '';
   $boxes = array();
   $box = '';
@@ -72,48 +71,9 @@ function do_action($action) {
 
   foreach($boxes as $box) {
     if (preg_match('/(\d+)_(\d{4}\-\d\d-\d\d)_(\d\d:\d\d:\d\d)/', $box, $matches) > 0) {
-      update_value($matches[1], $matches[2], $matches[3], $action);
+      $dbwrapper->analytics_update_value($matches[1], $matches[2], $matches[3], $action);
     }
   }
-}
-
-
-/********************************************************************
- *  Update Value
- *    Update value in analytics table based on action
- *    Prevent malicious changes by checking time and id matches
- *    1. Search for value based on id and log_time
- *    2. Zero results means malicious change, so drop out silently
- *    3. Carry out update action
- *
- *  Params:
- *    id, logdate, logtime, action
- *  Return:
- *    None
- */
-function update_value($id, $logdate, $logtime, $action) {
-  global $db;
-  $cmd = '';
-
-  $cmd = "SELECT * FROM analytics WHERE id = '$id' AND log_time = '$logdate $logtime'";
-
-  if(!$result = $db->query($cmd)){
-    return false;
-  }
-  if ($result->num_rows == 0) {
-    $result->free();
-    return false;
-  }
-  $result->free();
-
-  if ($action == 'resolve') {
-    $cmd = "UPDATE analytics SET ack = TRUE WHERE id = '$id'";
-  }
-  elseif ($action == 'delete') {
-    $cmd = "DELETE FROM analytics WHERE id = '$id'";
-  }
-
-  $db->query($cmd);
 }
 
 
@@ -158,7 +118,8 @@ function popupmenu($domain, $blocked, $showreport) {
  *    false when nothing found, true on success
  */
 function show_analytics() {
-  global $db, $view;
+  global $dbwrapper, $view;
+
   $action = '';
   $log_time = '';
   $sys = '';
@@ -173,19 +134,12 @@ function show_analytics() {
   $severity = 2;
   $event = '';
 
-  $query = "SELECT * FROM analytics WHERE ack = '$view' ORDER BY log_time DESC";
 
   echo '<div class="sys-group">'.PHP_EOL;
 
-  if(!$result = $db->query($query)){
-    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
-    echo 'show_analytics: '.$db->error;
-    echo '</div>'.PHP_EOL;
-    die();
-  }
+  $analyticsdata = $dbwrapper->analytics_get_data($view);
 
-  if ($result->num_rows == 0) {                            //Leave if nothing found
-    $result->free();
+  if ($analyticsdata === false) {                         //Leave if nothing found
     echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
     return false;
   }
@@ -201,7 +155,7 @@ function show_analytics() {
   echo '<table id="analytics-table">'.PHP_EOL;             //Start table
   echo '<tr><th>&nbsp;</th><th>&nbsp;</th><th>Site</th><th>System</th><th>Time</th><th>&nbsp;</th></tr>'.PHP_EOL;
 
-  while($row = $result->fetch_assoc()) {                   //Read each row of results
+  foreach ($analyticsdata as $row) {                       //Read each row of results
     $log_time = $row['log_time'];
     $sys = $row['sys'];
     $dns_request = $row['dns_request'];
@@ -241,7 +195,6 @@ function show_analytics() {
   echo '</table>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
   echo '</div>'.PHP_EOL;                                   //End sys-group
-  $result->free();
 
   return true;
 }
@@ -249,7 +202,6 @@ function show_analytics() {
 /********************************************************************
  *Main
  */
-$db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
 
 if (isset($_POST['action'])) {                             //Any POST actions to carry out?
   switch($_POST['action']) {
@@ -260,7 +212,14 @@ if (isset($_POST['action'])) {                             //Any POST actions to
       do_action('delete');
       break;
   }
+  //Reload page to prevent repeat action browser alert
+  header('Location: analytics.php');
+  exit;
 }
+
+draw_topmenu('Alerts');
+draw_sidemenu();
+echo '<div id="main">'.PHP_EOL;
 
 if ($config->settings['whoisapi'] == '') {                 //Setup Investigate / Whois for popupmenu
   $INVESTIGATE = $config->settings['WhoIs'];
@@ -274,7 +233,6 @@ else {
 show_analytics();
 
 //echo '</div>'.PHP_EOL;                                   //End Div Group
-$db->close();
 
 ?>
 </div>

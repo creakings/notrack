@@ -54,8 +54,8 @@ class MySqliDb {
 
     $rows = 0;
   
-    if(!$result = $this->db->query('SELECT COUNT(*) FROM '.$expr)){
-      die('count_table_rows: error running the query '.$this->db->error);
+    if (!$result = $this->db->query('SELECT COUNT(*) FROM '.$expr)){
+      $this->display_error('count_table_rows');
     }
 
     //Extract count value from array
@@ -65,7 +65,112 @@ class MySqliDb {
     return $rows;
   }
 
-  
+
+  /******************************************************************
+   *  Display Error
+   *    Sad Emoji with db error message
+   *
+   *  Params:
+   *    None
+   *  Return:
+   *    None
+   */
+  private function display_error($parentfunction) {
+    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
+    echo $parentfunction.': '.$this->db->error;
+    echo '</div>'.PHP_EOL;
+    die();
+  }
+
+
+  /******************************************************************
+   *  Count Alerts
+   *    Return number of alerts unresolved in analytics table
+   *  Params:
+   *    None
+   *  Return:
+   *    Number of rows
+   */
+  public function analytics_count() {
+    return $this->count_table_rows("analytics WHERE ack = 'FALSE'");
+  }
+
+  /******************************************************************
+   *  Analytics Get Data
+   *    Return Array of results from analytics table
+   *
+   *  Params:
+   *    Acknowledge view - true or false
+   *  Return:
+   *    False when nothing found
+   *    Associative Array of results
+   */
+  public function analytics_get_data($view) {
+    $values = array();                                     //Array of values to be returned
+
+    $query = "SELECT * FROM analytics WHERE ack = '{$view}' ORDER BY log_time DESC";
+
+    if (!$result = $this->db->query($query)){
+      $this->display_error('analytics_get_data');
+    }
+
+    //Leave if nothing found and return false
+    if ($result->num_rows == 0) {
+      $result->free();
+      return false;
+    }
+
+    $values = $result->fetch_all(MYSQLI_ASSOC);            //Get associative array of values from MariaDB result
+    $result->free();
+
+    return $values;
+  }
+
+
+  /********************************************************************
+   *  Update Value
+   *    Update value in analytics table based on action
+   *    Prevent malicious changes by checking time and id matches
+   *    1. Search for value based on id and log_time
+   *    2. Zero results means malicious change, so drop out silently
+   *    3. Carry out update action
+   *    4. Decrease alert_count value in memcache
+   *
+   *  Params:
+   *    id, logdate, logtime, action
+   *  Return:
+   *    False on Failure or if inputs don't match an entry in analytics table
+   *    True on Success
+   */
+  function analytics_update_value($id, $logdate, $logtime, $action) {
+    global $mem;
+
+    $cmd = '';
+
+    //There should only be one matching record
+    if ($this->count_table_rows("analytics WHERE id = '{$id}' AND log_time = '{$logdate} {$logtime}'") != 1) {
+      return false;
+    }
+
+    if ($action == 'resolve') {
+      $cmd = "UPDATE analytics SET ack = TRUE WHERE id = '{$id}'";
+    }
+    elseif ($action == 'delete') {
+      $cmd = "DELETE FROM analytics WHERE id = '{$id}'";
+    }
+
+    if ($this->db->query($cmd) === false) {
+      echo 'Error updating record '.$this->db->error;
+      return false;
+    }
+
+    //Decrease alert_count (count value from this table) in memcache
+    $mem->decrement('alert_count', 1);
+    return true;
+  }
+
+
+
   /******************************************************************
    *  Blocklist Active
    *    Get list of distinct items in bl_source column of blocklist table
@@ -149,19 +254,6 @@ class MySqliDb {
     return $result;
   }
   
-
-  /******************************************************************
-   *  Count Alerts
-   *    Return number of alerts unresolved in analytics table
-   *  Params:
-   *    None
-   *  Return:
-   *    Number of rows
-   */
-  public function count_alerts() {
-    return $this->count_table_rows("analytics WHERE ack = 'FALSE'");
-  }
-
 
   /******************************************************************
    *  Count number of rows in Blocklist table
