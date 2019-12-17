@@ -165,7 +165,7 @@ function sidemenu_get_alert_count() {
 
   if (empty($alert_count)) {
     if (isset($dbwrapper)) {
-      $alert_count = $dbwrapper->count_alerts();
+      $alert_count = $dbwrapper->analytics_count();
       $mem->set('alert_count', $alert_count, 0, 3600);
     }
   }
