@@ -130,7 +130,7 @@ function show_analytics() {
   $list = '';
   $query = '';
   $checkboxid = '';
-  $queryurl = '';                                          //URL to queries.php
+  $investigateurl = '';                                    //URL to investigate.php
   $severity = 2;
   $event = '';
 
@@ -186,10 +186,11 @@ function show_analytics() {
       }
     }
 
-    $queryurl = './queries.php?groupby=time&amp;sort=ASC&amp;sysip='.$sys.'&amp;datetime='.$log_time;
+    //$investigateurl = './queries.php?groupby=time&amp;sort=ASC&amp;sysip='.$sys.'&amp;datetime='.$log_time;
+    $investigateurl = "./investigate.php?datetime={$log_time}&amp;site={$dns_request}&amp;sys={$sys}";
 
     echo '<tr'.$row_colour.'><td><img src="./svg/events/'.$event.$severity.'.svg" alt=""></td><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
-    echo '<td class="pointer" onclick="window.open(\''.$queryurl.'\')">'.$issue.'</td><td>'.$sys.'</td><td>'.simplified_time($log_time).'</td><td>'.$action.'</td></tr>'.PHP_EOL;
+    echo '<td class="pointer" onclick="window.open(\''.$investigateurl.'\')">'.$issue.'</td><td>'.$sys.'</td><td>'.simplified_time($log_time).'</td><td>'.$action.'</td></tr>'.PHP_EOL;
   }
 
   echo '</table>'.PHP_EOL;
