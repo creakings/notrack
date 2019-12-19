@@ -485,7 +485,8 @@ function show_group_view() {
   $k = 1;                                                  //Count within ROWSPERPAGE
   $action = '';
   $blockreason = '';
-  $event = '';
+  $event = '';                                             //Image event
+  $investigateurl = '';                                    //URL to investigate page
   $severity = 1;
   $query = '';
   $domain = '';
@@ -530,8 +531,11 @@ function show_group_view() {
     $domain = $row['dns_request'];
     list($action, $blockreason, $event, $severity) = format_row($domain, $row['dns_result']);
 
+    //Create URL to investigate page
+    $investigateurl = './investigate.php?site='.$domain;
+
     //Make entire site cell clickable with link going to Investigate
-    $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?site='.$domain.'\', \'_blank\')"><a href="./investigate.php?site='.$domain.'" class="black" target="_blank">'.$domain.$blockreason.'</a></td>';
+    $site_cell = '<td class="pointer" onclick="window.open(\''.$investigateurl.'\', \'_blank\')">'.$domain.$blockreason.'</td>';
 
     echo '<tr><td><img src="./svg/events/'.$event.'.svg" alt=""></td><td>'.$i.'</td>'.$site_cell.'<td>'.$action.'</td><td>'.$row['count'].'</td></tr>'.PHP_EOL;
     $blockreason = '';
@@ -568,7 +572,8 @@ function show_time_view() {
   $k = 1;                                                  //Count within ROWSPERPAGE
   $action = '';
   $blockreason = '';
-  $event = '';
+  $event = '';                                             //Image event
+  $investigateurl = '';                                    //URL to investigate page
   $severity = 1;
   $query = '';
   $domain = '';
@@ -612,9 +617,11 @@ function show_time_view() {
     $domain = $row['dns_request'];
     list($action, $blockreason, $event, $severity) = format_row($domain, $row['dns_result']);
 
+    //Create URL to investigate page with system and date time
+    $investigateurl = './investigate.php?datetime='.$row['log_time'].'&amp;site='.$domain.'&amp;sys='.$row['sys'];
+
     //Make entire site cell clickable with link going to Investigate
-    //Add in datetime and system into investigate link
-    $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$domain.'&amp;sys='.$row['sys'].'\', \'_blank\')"><a href="./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$domain.'&amp;sys='.$row['sys'].'" class="black" target="_blank">'.$domain.$blockreason.'</a></td>';
+    $site_cell = '<td class="pointer" onclick="window.open(\''.$investigateurl.'\', \'_blank\')">'.$domain.$blockreason.'</td>';
 
     echo '<tr><td><img src="./svg/events/'.$event.'.svg" alt=""><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td>'.$site_cell.'<td>'.$action.'</td></tr>'.PHP_EOL;
     $blockreason = '';
