@@ -575,6 +575,7 @@ span.key-green {
 #query-group-table img,
 #query-time-table img {
   width: 2.4rem;
+  margin-bottom: -0.1rem;  /*Fix bottom alignment offset in Chrome*/
 }
 /* DHCP Table on dhcp.php
    ========================================================================== */
