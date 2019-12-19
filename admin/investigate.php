@@ -20,6 +20,7 @@ ensure_active_session();
   <link href="./css/chart.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/menu.js"></script>
+  <script src="./include/queries.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=0.9">
   <title>NoTrack - Investigate</title>
 </head>
@@ -144,63 +145,112 @@ function extract_emails($raw) {
   return $emails;
 }
 
-/********************************************************************
- *  Get Block List Name
- *    Returns the name of block list if it exists in the names array
- *  Params:
- *    $bl - bl_name
- *  Return:
- *    Full block list name
- */
 
-function get_blocklistname($bl) {
-  global $BLOCKLISTNAMES;
-
-  if (array_key_exists($bl, $BLOCKLISTNAMES)) {
-    return $BLOCKLISTNAMES[$bl];
-  }
-
-  return $bl;
-}
 /********************************************************************
  *  Search Block Reason
- *    Searches for $subdomain in bl_source to get blocklist name
- *    1. Try for $subdomain
- *    2. Try for .tld
- *    3. Try for site.co.uk
- *    4. Try for subdomain.site.co.uk
- *    5. Don't go any further through subdomains as there aren't many / any in the blocklists
+ *    1. Search site.com in blocklist table
+ *    2. Search .tld in blocklist table
+ *    3. Search for like site.com in blocklist table
+ *    4. On fail return ''
  *
  *  Params:
- *    $subdomain - Site to search
+ *    $domain - Domain to search
  *  Return:
  *    blocklist name
  */
-function search_blockreason($subdomain) {
+function search_blockreason($domain) {
   global $db;
+  $res = '';
 
-  $result = $db->query("SELECT bl_source site FROM blocklist WHERE site = '.$subdomain.'");
-  if ($result->num_rows > 0) return $result->fetch_row()[0];
+  preg_match('/[\w\-_]+(\.co|\.com|\.org|\.gov)?\.([\w\-]+)$/', $domain, $matches);
 
-  //Use regex to get domain and tld (site.co.uk)
-  if (preg_match('/([\w\-_]+)(\.co|\.com|\.org|\.gov)?\.([\w\-]+)$/', $subdomain,  $matches) > 0) {
-    $result = $db->query("SELECT bl_source site FROM blocklist WHERE site = '.$matches[3]'");
-
-    if ($result->num_rows > 0) return $result->fetch_row()[0];
-
-    $result = $db->query("SELECT bl_source site FROM blocklist WHERE site = '$matches[0]'");
-    if ($result->num_rows > 0) return $result->fetch_row()[0];
+  //Search for site.com
+  //Negate whitelist to prevent stupid results
+  $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '".$matches[0]."' AND bl_source != 'whitelist'");
+  if ($result->num_rows > 0) {
+    $res = $result->fetch_row()[0];
+  }
+  else {
+    $result->free();
+    //Search for .tld
+    $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '.".$matches[2]."' AND bl_source = 'bl_tld'");
+    if ($result->num_rows > 0) {
+      $res = $result->fetch_row()[0];
+    }
+    else {
+      $result->free();
+      //Search for like site.com (possibly prone to misidentifying bl_source)
+      $result = $db->query("SELECT bl_source FROM blocklist WHERE site LIKE '%.".$matches[0]."' AND bl_source != 'whitelist'");
+      if ($result->num_rows > 0) {
+        $res = $result->fetch_row()[0];
+      }
+    }
   }
 
-  //Try for subdomain.site.co.uk
-  if (preg_match('/([\w\-_]+)\.([\w\-_]+)(\.co|\.com|\.org|\.gov)?\.([\w\-]+)$/', $subdomain,  $matches) > 0) {
-    $result = $db->query("SELECT bl_source site FROM blocklist WHERE site = '$matches[0]'");
-    if ($result->num_rows > 0) return $result->fetch_row()[0];
-  }
-
-  return '';                                               //Don't know at this point
+  $result->free();
+  return $res;
 }
 
+/********************************************************************
+ *  Format Row
+ *    Returns the action, blockreason, event, and severity in an array
+ *
+ *  Params:
+ *    domain, dns_result(allowed, blocked, local)
+ *
+ *  Return:
+ *    Array of variables to be taken using list()
+ */
+function format_row($domain, $dns_result) {
+  global $config;
+
+  $action = '';
+  $blocklist = '';
+  $blockreason = '';
+  $event = '';
+  $severity = '1';
+
+  if ($dns_result == 'A') {
+    $action = '<button class="icon-boot button-grey" onclick="reportSite(\''.$domain.'\', false, true)">Block</button>';
+    $event = 'allowed1';
+  }
+  elseif ($dns_result == 'B') {         //Blocked
+    $blocklist = search_blockreason($domain);
+    $severity = '2';
+
+    if ($blocklist == 'bl_notrack') {        //Show Report icon on NoTrack list
+      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, true)">Allow</button>';
+      $blockreason = '<p class="small grey">Blocked by NoTrack list</p>';
+      $event = 'tracker2'; //TODO change image
+    }
+    elseif ($blocklist == 'custom') {        //Users blacklist
+      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, false)">Allow</button>';
+      $blockreason = '<p class="small grey">Blocked by Custom Black list</p>';
+      $event = 'custom2';
+    }
+    elseif ($blocklist != '') {
+      $blockreason = '<p class="small grey">Blocked by '.$config->get_blocklistname($blocklist).'</p>';
+      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, false)">Allow</button>';
+
+      $event = $config->get_blocklistevent($blocklist);
+
+      if ($event == 'malware') {
+        $severity = '3';
+      }
+      $event .= $severity;
+
+    }
+    else {  //No reason is probably IP or Search request
+      $blockreason = '<p class="small">Invalid request</p>';
+      $event = 'invalid2';
+    }
+  }
+  elseif ($dns_result == 'L') {
+    $event = 'local1';
+  }
+
+  return array($action, $blockreason, $event, $severity);
+}
 
 /********************************************************************
  *  Show Time View
@@ -214,17 +264,21 @@ function search_blockreason($subdomain) {
 function show_time_view() {
   global $config, $db, $datetime, $subdomain, $sys;
 
-  $rows = 0;
-  $row_class = '';
-  $query = '';
   $action = '';
   $blockreason = '';
+  $domain = '';
+  $event = '';                                             //Image event
+  $investigateurl = '';                                    //URL back to investigate
+  $row_class = '';                                         //Optional row highlighting
+  $severity = 1;
+  $query = '';
+  $site_cell = '';
 
-  $query = "SELECT *, DATE_FORMAT(log_time, '%H:%i:%s') AS formatted_time FROM dnslog WHERE sys = '$sys' AND log_time > SUBTIME('$datetime', '00:00:05') AND log_time < ADDTIME('$datetime', '00:00:03') ORDER BY UNIX_TIMESTAMP(log_time)";
+  $query = "SELECT *, DATE_FORMAT(log_time, '%H:%i:%s') AS formatted_time FROM dnslog WHERE sys = '$sys' AND log_time > SUBTIME('$datetime', '00:00:04') AND log_time < ADDTIME('$datetime', '00:00:03') ORDER BY UNIX_TIMESTAMP(log_time)";
 
   echo '<div class="sys-group">'.PHP_EOL;
 
-  if(!$result = $db->query($query)){
+  if (!$result = $db->query($query)){
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
     echo 'show_time_view: '.$db->error;
     echo '</div>'.PHP_EOL;
@@ -239,43 +293,30 @@ function show_time_view() {
   }
 
   echo '<table id="query-time-table">'.PHP_EOL;
-  echo '<tr><th>Time</th><th>System</th><th>Site</th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp</th><th>Time</th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
-    if ($row['dns_result'] == 'A') {             //Allowed
-      $row_class='';
-    }
-    elseif ($row['dns_result'] == 'B') {         //Blocked
-      $row_class = ' class="blocked"';
-      $blockreason = search_blockreason($row['dns_request']);
-      if ($blockreason == 'bl_notrack') {        //Show Report icon on NoTrack list
-        $blockreason = '<p class="small">Blocked by NoTrack list</p>';
-      }
-      elseif ($blockreason == 'custom') {        //Users blacklist, show report icon
-        $blockreason = '<p class="small">Blocked by Black list</p>';
-      }
-      elseif ($blockreason == '') {              //No reason is probably IP or Search request
-        $row_class = ' class="invalid"';
-        $blockreason = '<p class="small">Invalid request</p>';
-      }
-      else {
-        $blockreason = '<p class="small">Blocked by '.get_blocklistname($blockreason).'</p>';
-      }
-    }
-    elseif ($row['dns_result'] == 'L') {         //Local
-      $row_class = ' class="local"';
-    }
+    $domain = $row['dns_request'];
+    list($action, $blockreason, $event, $severity) = format_row($domain, $row['dns_result']);
 
-    if ($subdomain == $row['dns_request']) {
+    //Make entire site cell clickable with link going to Investigate
+    //Add in datetime and system into investigate link
+    $investigateurl = './investigate.php?datetime='.$row['log_time'].'&amp;site='.$domain.'&amp;sys='.$row['sys'];
+
+    $site_cell = '<td class="pointer" onclick="window.open(\''.$investigateurl.'\', \'_blank\')">'.$domain.$blockreason.'</a></td>';
+
+    if ($subdomain == $row['dns_request']) {               //Highlight row if it matches the subdomain requested
       $row_class = ' class="cyan"';
     }
+    else {
+      $row_class = '';
+    }
 
-    echo '<tr'.$row_class.'><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td><td>'.$row['dns_request'].$blockreason.'</td></tr>'.PHP_EOL;
+    echo '<tr'.$row_class.'><td><img src="./svg/events/'.$event.'.svg" alt=""><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td>'.$site_cell.'<td>'.$action.'</td></tr>'.PHP_EOL;
     $blockreason = '';
   }
 
   echo '</table>'.PHP_EOL;
-  echo '<br>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
 
   $result->free();
@@ -293,7 +334,7 @@ function show_time_view() {
  *    None
  */
 function show_whoisdata($whois_date, $whois_record) {
-  global $subdomain;
+  global $config, $subdomain;
   
   $blockreason = '';
   $notrack_row = '';
@@ -311,7 +352,7 @@ function show_whoisdata($whois_date, $whois_record) {
   $emails = extract_emails($whois_record['raw']);
   $blockreason = search_blockreason($subdomain);
   if ($blockreason != '') {
-    $notrack_row = 'Blocked by '.get_blocklistname($blockreason);
+    $notrack_row = 'Blocked by '.$config->get_blocklistname($blockreason);
   }
   else {
     $notrack_row = 'Allowed';
@@ -555,5 +596,36 @@ $db->close();
 
 ?>
 </div>
+<div id="queries-box">
+<h2 id="sitename">site</h2>
+<span id="reportmsg">something</span>
+<form action="./investigate.php" method="get" target="_blank">
+<span id="searchitem"></span>
+<span id="invitem"></span>
+</form>
+<form action="./config/customblocklist.php" method="POST" target="_blank">
+<input type="hidden" name="v" id="reportv" value="none">
+<input type="hidden" name="action" id="reportaction" value="none">
+<input type="hidden" name="status" value="add">
+<input type="hidden" name="comment" value="">
+<span id="reportitem1"></span>
+<span id="reportitem2"></span>
+</form>
+<form name="reportform" action="https://quidsup.net/notrack/report.php" method="post" target="_blank">
+<input type="hidden" name="site" id="siterep" value="none">
+<span id="reportitem3"><input type="submit" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
+</form>
+
+<br>
+<div class="centered"><button class="button-grey" onclick="hideQueriesBox()">Cancel</button></div>
+<div class="close-button" onclick="hideQueriesBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
+</div>
+<script>
+const SEARCHNAME = <?php echo json_encode($config->settings['Search'])?>;
+const SEARCHURL = <?php echo json_encode($config->settings['SearchUrl'])?>;
+const WHOISNAME = <?php echo json_encode($config->settings['WhoIs'])?>;
+const WHOISURL = <?php echo json_encode($config->settings['WhoIsUrl'])?>;
+const WHOISAPI = <?php echo ($config->settings['whoisapi'] == '') ? 0 : 1;?>;
+</script>
 </body>
 </html>
