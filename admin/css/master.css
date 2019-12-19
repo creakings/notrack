@@ -386,23 +386,23 @@ tr {
 tr:hover {
   filter: brightness(90%);
 }
-tr.blocked,
+/*tr.blocked, DEPRECATED with modern styling
 td.blocked {
   background-color: #eb5d66;
-}
+}*/
 /*tr.invalid,*/
 td.red,
 span.key-red {
   background-color: #ee202b;
 }
-tr.local,
+/*tr.local, DEPRECATED with modern styling
 td.local {
   background-color: #93a0ff;
-}
+}*/
 tr.dark {
   background-color: #999;
 }
-tr.cyan {
+tr.cyan {  /*Used on investigate.php*/
   background-color: #00eaee;
 }
 tr.gray {
