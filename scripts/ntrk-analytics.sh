@@ -188,17 +188,17 @@ function check_malware() {
 # Globals:
 #   DBNAME, PASSWORD, USER
 # Arguments:
-#   1. subdomain
+#   1. regular expression
 # Returns:
 #   None
 #
 #######################################
 function check_tracking() {
-  local subdomain="$1"
+  local pattern="$1"
   results=()                                               #Clear results array
 
-  echo "Searching for trackers with subdomain of $subdomain.*"
-  mapfile results < <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -N --batch -e "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request LIKE '$subdomain.%' AND dns_result='A' GROUP BY(dns_request) ORDER BY id asc;")
+  echo "Searching for trackers with regular expression $pattern"
+  mapfile results < <(mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -N --batch -e "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request REGEXP '$pattern' AND dns_result='A' GROUP BY(dns_request) ORDER BY id asc;")
 
   if [ ${#results[@]} -gt 0 ]; then
     review_results "Tracker"
@@ -287,8 +287,9 @@ echo "NoTrack Analytics"
 check_running
 create_sqltables
 
-get_blocklists
+get_blocklists                                             #Check which blocklists are in use
 get_whitelist
+#Check if any sites from the following blocklists have been accessed
 [ -n "${blocklists['bl_notrack_malware']}" ] && check_malware "bl_notrack_malware"
 [ -n "${blocklists['bl_hexxium']}" ] && check_malware "bl_hexxium"
 [ -n "${blocklists['bl_cedia']}" ] && check_malware "bl_cedia"
@@ -297,8 +298,20 @@ get_whitelist
 [ -n "${blocklists['bl_malwaredomains']}" ] && check_malware "bl_malwaredomains"
 [ -n "${blocklists['bl_swissransom']}" ] && check_malware "bl_swissransom"
 
-check_tracking "analytics"
-check_tracking "pixel"
-check_tracking "tracking"
-check_tracking "trk"
-check_tracking "ads"
+#Regular expression checks for past hour of domains accessed
+#Note: Two backslashes are required for MariaDB and A third backslash is required for bash
+
+#Checks for Pixels, Telemetry, and Trackers
+check_tracking "^log\\\."                        #log as a subdomain (exclude login.)
+check_tracking "^pxl?\\\."                       #px, optional l, as a subdomain
+check_tracking "pixel[^\\\.]{0,8}\\\."           #pixel, followed by 0 to 8 non-dot chars anywhere
+check_tracking "telemetry"                       #telemetry anywhere
+check_tracking "trk[^\\\.]{0,3}\\\."             #trk, followed by 0 to 3 non-dot chars anywhere
+check_tracking "track(ing|\\\-[a-z]{2,8})?\\\."    #track, tracking, track-eu as a subdomain / domain.
+#Have to exclude tracker. (bittorent), security-tracker (Debian), and tracking-protection (mozilla)
+
+#Checks for Advertising
+check_tracking "^ads\\\."
+check_tracking "^adserver"
+check_tracking "^advert"
+
