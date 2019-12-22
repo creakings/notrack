@@ -299,7 +299,7 @@ get_whitelist
 [ -n "${blocklists['bl_swissransom']}" ] && check_malware "bl_swissransom"
 
 #Regular expression checks for past hour of domains accessed
-#Note: Two backslashes are required for MariaDB and A third backslash is required for bash
+#Note: Two backslashes are required for MariaDB and a third backslash is required for bash
 
 #Checks for Pixels, Telemetry, and Trackers
 check_tracking "^log\\\."                        #log as a subdomain (exclude login.)
@@ -307,8 +307,8 @@ check_tracking "^pxl?\\\."                       #px, optional l, as a subdomain
 check_tracking "pixel[^\\\.]{0,8}\\\."           #pixel, followed by 0 to 8 non-dot chars anywhere
 check_tracking "telemetry"                       #telemetry anywhere
 check_tracking "trk[^\\\.]{0,3}\\\."             #trk, followed by 0 to 3 non-dot chars anywhere
-check_tracking "track(ing|\\\-[a-z]{2,8})?\\\."    #track, tracking, track-eu as a subdomain / domain.
-#Have to exclude tracker. (bittorent), security-tracker (Debian), and tracking-protection (mozilla)
+check_tracking "track(ing|\\\-[a-z]{2,8})?\\\."  #track, tracking, track-eu as a subdomain / domain.
+#Have to exclude tracker. (bittorent), security-tracker (Debian), and tracking-protection (Mozilla)
 
 #Checks for Advertising
 check_tracking "^ads\\\."

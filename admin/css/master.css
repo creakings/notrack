@@ -1395,3 +1395,16 @@ span.key {
   border-radius: 4px;
   display: block;
 }
+
+#copymsg {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 0);
+  z-index: 60;
+  background-color: #555;
+  color: #f7f7f7;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  display: none;
+}

@@ -121,6 +121,7 @@ function show_analytics() {
   global $dbwrapper, $view;
 
   $action = '';
+  $clipboard = '';
   $log_time = '';
   $sys = '';
   $dns_request = '';
@@ -164,33 +165,43 @@ function show_analytics() {
     $severity = 2;
 
     $checkboxid = $row['id'].'_'.str_replace(' ', '_', $log_time);
-    if ($dns_result != 'B') {                              //Setup Action Button
-      $action = popupmenu($dns_request, false, 'true');
-    }
-
-    if (($row['issue'] == 'Tracker') || ($row['issue'] == 'Advert')) {
-      $issue = $row['issue'].' Accessed - '.$dns_request;
-      $event = 'tracker';
-    }
-    else {                                                 //Setup Malware Alert
-      $list = ucwords(str_replace('_', ' ', substr($row['issue'], 11)));
-      $event = 'malware';
-      $action = ($list == 'Notrack Malware') ? popupmenu($dns_request, true, 'true') : popupmenu($dns_request, true, 'false');
-      
-      if ($dns_result == 'B') {
-        $issue = 'Malware Blocked - '.$dns_request.'<p class="small grey">Blocked by '.$list.'</p>';
-      }
-      else {
-        $issue = '<span class="red">Malware Accessed</span> - '.$dns_request.'<p class="small grey">Identified by '.$list.'</p>';
-        $severity = 3;
-      }
-    }
 
     //$investigateurl = './queries.php?groupby=time&amp;sort=ASC&amp;sysip='.$sys.'&amp;datetime='.$log_time;
     $investigateurl = "./investigate.php?datetime={$log_time}&amp;site={$dns_request}&amp;sys={$sys}";
 
+    //Create clipboard image and text
+    $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
+
+
+    //Setup Popup menu Button for blocked malware site
+    if ($dns_result != 'B') {
+      $action = popupmenu($dns_request, false, 'true');
+    }
+
+    //Setup $issue for Tracker or Advert accessed
+    if (($row['issue'] == 'Tracker') || ($row['issue'] == 'Advert')) {
+      $issue = '<a href="'.$investigateurl.'">'.$row['issue'].' Accessed - '.$dns_request.'</a>'.$clipboard;
+      $event = 'tracker';
+    }
+
+    //Setup $issue for Malware blocked or allowed
+    else {
+      $list = ucwords(str_replace('_', ' ', substr($row['issue'], 11)));
+      $event = 'malware';
+      $action = ($list == 'Notrack Malware') ? popupmenu($dns_request, true, 'true') : popupmenu($dns_request, true, 'false');
+      
+      if ($dns_result == 'B') {                            //Malware Blocked
+        $issue = '<a href="'.$investigateurl.'">Malware Blocked - '.$dns_request.'</a>'.$clipboard.'<p class="small grey">Blocked by '.$list.'</p>';
+      }
+      else {                                               //Malware Accessed
+        $issue = '<a href="'.$investigateurl.'"><span class="red">Malware Accessed</span> - '.$dns_request.'</a>'.$clipboard.'<p class="small grey">Identified by '.$list.'</p>';
+        $severity = 3;
+      }
+    }
+
+    //Output table row
     echo '<tr'.$row_colour.'><td><img src="./svg/events/'.$event.$severity.'.svg" alt=""></td><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
-    echo '<td class="pointer" onclick="window.open(\''.$investigateurl.'\')">'.$issue.'</td><td>'.$sys.'</td><td>'.simplified_time($log_time).'</td><td>'.$action.'</td></tr>'.PHP_EOL;
+    echo '<td>'.$issue.'</td><td>'.$sys.'</td><td>'.simplified_time($log_time).'</td><td>'.$action.'</td></tr>'.PHP_EOL;
   }
 
   echo '</table>'.PHP_EOL;
@@ -240,6 +251,10 @@ show_analytics();
 
 <div id="scrollup" class="button-scroll" onclick="scrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
 <div id="scrolldown" class="button-scroll" onclick="scrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
+
+<div id="copymsg">
+Domain copied to clipboard
+</div>
 
 <div id="queries-box">
 <h2 id="sitename">site</h2>
@@ -361,6 +376,7 @@ function submitForm() {
 
   document.getElementById('selectedCheckboxes').value = itemsChecked;
 }
+
 </script>
 </body>
 </html>

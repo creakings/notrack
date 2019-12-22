@@ -1,5 +1,7 @@
 Development
 Side menu now shows number of alerts
+Add Clipboard to Alerts page
+Improve Alerts feature to find more elusive tracking domains
 Styling improvements on Investigate page
 
 *************************************************

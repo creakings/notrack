@@ -115,6 +115,36 @@ function simplfyDomainTitle(site) {
   }
 }
 
+/********************************************************************
+ *  Set Clipboard Data
+ *    Fills in supplied data into clipboard
+ *    Show popup copymsg for 3 seconds
+ *    Hide copymsg
+ *
+ *  Params:
+ *    Domain
+ *  Return:
+ *    None
+ */
+
+function setClipboard(domain) {
+  function handler (event){
+    event.clipboardData.setData('text/plain', domain);
+    event.preventDefault();
+    document.removeEventListener('copy', handler, true);
+  }
+
+  document.addEventListener('copy', handler, true);
+  document.execCommand('copy');
+
+  //Show copymsg element
+  document.getElementById('copymsg').style.display = 'block';
+
+  //Delay for 3 seconds, then Hide  copymsg element
+  setTimeout(function(){
+    document.getElementById('copymsg').style.display = 'none';
+  },3000);
+}
 
 /********************************************************************
  *  Set Span Contents
