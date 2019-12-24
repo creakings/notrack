@@ -1024,7 +1024,7 @@ span.key-green {
   flex-wrap: wrap;
 }
 .conf-nav > a {
-  flex-basis: 29.4%;
+  flex-basis: 28%;
   flex-grow: 0;
   height: 3rem;
   margin: 0.5rem 1%;
@@ -1053,7 +1053,7 @@ span.key-green {
     flex-wrap: wrap;
   }
   .conf-nav > a {
-    flex-basis: 44%;
+    flex-basis: 41%;
   }
 }
 @media only screen and (max-width:480px), only screen and (max-device-width:480px) {    /*Mobile view for Conf Nav*/
@@ -1106,11 +1106,28 @@ span.key-green {
   }
 }
 
+
+/* ==========================================================================
+   Domain Copied Message
+   ========================================================================== */
+#copymsg {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 0);
+  z-index: 60;
+  background-color: #555;
+  color: #f7f7f7;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  display: none;
+}
+
 /* ==========================================================================
    Popups for Top Menu
    ========================================================================== */
 #fade {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -1122,7 +1139,10 @@ span.key-green {
 }
 #options-box,
 #queries-box {
-  position: absolute;
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, 0);
   background-color: #f7f7f7;
   border: 3px solid #00b7ba;
   border-radius: 5px;
@@ -1131,7 +1151,7 @@ span.key-green {
 #queries-box {
   width: 36rem;
   height: auto;
-  margin: -14rem 0 0 -18rem;
+/*   margin: -14rem 0 0 -18rem; */
   padding-bottom: 2rem;
   z-index: 501;
 }
@@ -1163,7 +1183,7 @@ span.key-green {
 #options-box {
   width: 24rem;
   height: 16rem;
-  margin: -12rem 0 0 -12rem;
+/*   margin: -12rem 0 0 -12rem; */
   z-index: 502;
 }
 #options-box h2,
@@ -1394,17 +1414,4 @@ span.key {
   border: 1px solid #00000a;
   border-radius: 4px;
   display: block;
-}
-
-#copymsg {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translate(-50%, 0);
-  z-index: 60;
-  background-color: #555;
-  color: #f7f7f7;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
-  display: none;
 }

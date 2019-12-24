@@ -226,20 +226,20 @@ function updateBlocklist() {
 
 /********************************************************************
  *  Show Options Box
- *    Set top position of fade, then set display as block
- *    Set screen centre position of options box, then set display as block
+ *    Show fade and options-box
+ *    Hide queries-box if exists
  *  Params:
  *    None
  *  Return:
  *    None
  */
 function showOptions() {
-  document.getElementById("fade").style.top=window.pageYOffset+"px";
   document.getElementById("fade").style.display = "block";
-    
-  document.getElementById("options-box").style.top = (window.pageYOffset + (window.innerHeight / 2))+"px";
-  document.getElementById("options-box").style.left = (window.innerWidth / 2)+"px";
   document.getElementById("options-box").style.display = "block";
+
+  if (document.getElementById("queries-box")) {
+    document.getElementById("queries-box").style.display = "none";
+  }
 }
 
 

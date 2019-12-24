@@ -278,12 +278,8 @@ function reportSite(site, blocked, showreport) {
     document.getElementById('siterep').value = report;
   }
 
-  //Position Fade and Stats box
-  document.getElementById('fade').style.top = window.pageYOffset+'px';
+  //Display fade and queries-box
   document.getElementById('fade').style.display = 'block';
-
-  document.getElementById('queries-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+'px';
-  document.getElementById('queries-box').style.left = (window.innerWidth / 2)+'px';
   document.getElementById('queries-box').style.display = 'block';
 }
 
@@ -361,8 +357,8 @@ window.onscroll = function() {                             //OnScroll Event
   }
 
   //Lock Stats box and Fade in place if visible
-  if (document.getElementById('queries-box').style.display == 'block') {
-    document.getElementById('fade').style.top=window.pageYOffset+'px';
+  /*if (document.getElementById('queries-box').style.display == 'block') {
+    //document.getElementById('fade').style.top=window.pageYOffset+'px'; DEPRECATED
 
     document.getElementById('queries-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+'px';
     document.getElementById('queries-box').style.left = (window.innerWidth / 2)+'px';
@@ -374,6 +370,6 @@ window.onscroll = function() {                             //OnScroll Event
 
     document.getElementById('options-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+'px';
     document.getElementById('options-box').style.left = (window.innerWidth / 2)+'px';
-  }
+  }*/
 }
 
