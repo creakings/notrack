@@ -1,9 +1,5 @@
 <?php
 /********************************************************************
-config.php handles setting of Global variables, GET, and POST requests
-It also houses the functions for POST requests.
-
-All other config functions are in ./include/config-functions.php
 
 ********************************************************************/
 
@@ -72,15 +68,15 @@ function draw_blradioform() {
   echo '<input type="hidden" name="s" value="'.$searchbox.'">'.PHP_EOL;
   
   //Start with 'All' radio item
-  $checked = ($blradio == 'all' ? ' checked="checked"' : '');
+  $checked = ($blradio == 'all' ? 'checked="checked" ' : '');
   echo '<span class="blradiolist"><input type="radio" name="blrad" value="all"'.$checked.' onclick="document.blradform.submit()">All</span>'.PHP_EOL;
 
   //List of active items for radio list
   foreach ($activelist as $item) {
     //Should current item be checked?
-    $checked = ($item[0] == $blradio ? ' checked="checked"' : '');
+    $checked = ($item[0] == $blradio ? 'checked="checked" ' : '');
 
-    echo '<span class="blradiolist"><input type="radio" name="blrad" value="'.$item[0].'"'.$checked. 'onclick="document.blradform.submit()">'.$config->get_blocklistname($item[0]).'</span>'.PHP_EOL;
+    echo '<span class="blradiolist"><input type="radio" name="blrad" value="'.$item[0].'" '.$checked. 'onclick="document.blradform.submit()">'.$config->get_blocklistname($item[0]).'</span>'.PHP_EOL;
   }
 
   echo '</form>'.PHP_EOL;                                  //End of form
@@ -100,6 +96,8 @@ function show_full_blocklist() {
 
   $i = 0;                                                  //Friendly table position
   $k = 1;                                                  //Count within ROWSPERPAGE
+  $clipboard = '';                                         //Div for Clipboard
+  $domain = '';
   $row_class = '';
   $bl_source = '';
   $linkstr = '';
@@ -150,9 +148,14 @@ function show_full_blocklist() {
   pagination($result->num_rows, $linkstr);
     
   echo '<table id="block-table">'.PHP_EOL;
-  echo '<tr><th>#</th><th>Block List</th><th>Site</th><th>Comment</th></tr>'.PHP_EOL;
+  echo '<tr><th>#</th><th>Block List</th><th>Domain</th><th>Comment</th></tr>'.PHP_EOL;
    
   while($row = $result->fetch_assoc()) {                   //Read each row of results
+    $domain = $row['site'];
+
+    //Create clipboard image and text
+    $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$domain.'\')" title="Copy domain">&nbsp;</div>';
+
     if ($row['site_status'] == 0) {                        //Is site enabled or disabled?
       $row_class = ' class="dark"';
     }
@@ -167,7 +170,9 @@ function show_full_blocklist() {
     else {
       $bl_source = $row['bl_source'];
     }
-    echo '<tr'.$row_class.'><td>'.$i.'</td><td>'.$bl_source.'</td><td>'.$row['site'].'</td><td>'.$row['comment'].'</td></tr>'.PHP_EOL;
+
+    //Output table row
+    echo "<tr{$row_class}><td>{$i}</td><td>{$bl_source}</td><td>{$domain}{$clipboard}</td><td>{$row['comment']}</td></tr>".PHP_EOL;
     
     $i++;
     $k++;
@@ -191,9 +196,11 @@ function show_full_blocklist() {
 <head>
   <meta charset="UTF-8">
   <link href="../css/master.css" rel="stylesheet" type="text/css">
+  <link href="../css/icons.css" rel="stylesheet" type="text/css">
   <link href="../css/tabbed.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="../favicon.png">
   <script src="../include/menu.js"></script>
+  <script src="../include/queries.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=0.9">
   <title>NoTrack - Domains Blocked</title>
 </head>
@@ -233,7 +240,7 @@ if (isset($_GET['blrad'])) {
 echo '<div id="main">'.PHP_EOL;
 
 show_full_blocklist();
-
+draw_copymsg();
 ?>
 
 </div>
