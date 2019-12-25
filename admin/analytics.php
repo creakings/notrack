@@ -121,7 +121,7 @@ function show_analytics() {
   global $dbwrapper, $view;
 
   $action = '';
-  $clipboard = '';
+  $clipboard = '';                                         //Div for Clipboard
   $log_time = '';
   $sys = '';
   $dns_request = '';
@@ -243,7 +243,7 @@ else {
 }
 
 show_analytics();
-
+draw_copymsg();
 //echo '</div>'.PHP_EOL;                                   //End Div Group
 
 ?>
@@ -251,10 +251,6 @@ show_analytics();
 
 <div id="scrollup" class="button-scroll" onclick="scrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
 <div id="scrolldown" class="button-scroll" onclick="scrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
-
-<div id="copymsg">
-Domain copied to clipboard
-</div>
 
 <div id="queries-box">
 <h2 id="sitename">site</h2>

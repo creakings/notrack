@@ -32,6 +32,19 @@ function draw_sysrow($description, $value) {
   return null;
 }
 
+/********************************************************************
+ *  Draw Copy Message
+ *    Div for Domain Copied Message
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function draw_copymsg() {
+  echo '<div id="copymsg">'.PHP_EOL;
+  echo 'Domain copied to clipboard'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
+}
 
 /********************************************************************
  *  Activate Session
