@@ -4,19 +4,27 @@
    https://www.materialui.co/icons
    https://materialdesignicons.com/
    ========================================================================== */
+
+.material-icon-centre {
+  /*Icon in centre of button with no text*/
+  background-repeat: no-repeat;
+  background-size: 1.2rem;
+  background-position: 50% 50%;
+}
 .material-icon-inline {
+  /*Icon next to text*/
   display: inline-block;
   width: 1.5rem;
   height: 1.3rem;
   background-size: 1.5rem;
   background-repeat: no-repeat;
 }
-
 .icon-boot,
 .icon-delete,
 .icon-generate,
 .icon-save,
 .icon-tick {
+  /*Icon in left-hand side of button with next next to it*/
   background-repeat: no-repeat;
   background-size: 1.2rem;
   background-position: 10% 50%;
@@ -30,14 +38,15 @@
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zM2 16h8v-2H2v2zm19.5-4.5L23 13l-6.99 7-4.51-4.5L13 14l3.01 3 5.49-5.5z" fill="rgb(0,0,10)" fill-opacity="1"/></svg>');
 }
 .icon-clipboard {
+  /*Inline icon, but different sizes to the others*/
   display: inline-block;
-  width: 1.2rem;
   height: 1.2rem;
-  background-size: 1.2rem;
-  background-repeat: no-repeat;
+  width: 1.2rem;
   margin-left: 0.4rem;
+  background-repeat: no-repeat;
+  background-size: 1.2rem;
   cursor: pointer;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7Z" fill="rgb(0,0,10)" fill-opacity="1"/></svg>');
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M19,3H14.82C14.4,1.84 13.3,1 12,1C10.7,1 9.6,1.84 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7Z" fill="rgb(102,102,102)" fill-opacity="1"/></svg>');
 }
 .icon-delete {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="rgb(0,0,10)" fill-opacity="1"/></svg>');
@@ -45,7 +54,8 @@
 .icon-delete-all {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M15 16h4v2h-4zm0-8h7v2h-7zm0 4h6v2h-6zM3 18c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2V8H3v10zM14 5h-3l-1-1H6L5 5H2v2h12z" fill="rgb(0,0,10)" fill-opacity="1"/></svg>');
 }
-.icon-download {
+.icon-export {
+  /*Download icon*/
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="rgb(0,0,10)" fill-opacity="1"/></svg>');
 }
 .icon-power {
