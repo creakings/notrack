@@ -94,7 +94,6 @@ function load_list($filename, $listname) {
  */
 function tld_help() {
   echo '<div>'.PHP_EOL;                                    //Start tab 4 div
-  echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Domain Blocking</h5>'.PHP_EOL;
   echo '<p>NoTrack has the ability to block certain top-level domains, this comes in useful against certain domains which are abused by malicious actors. Sites can be created very quickly with the purpose of hosting malware and phishing sites, which can inflict a significant amount of damage before the security community can identify and block them.</p>'.PHP_EOL;
   echo '<p>Domains are categorised by a risk level: High, Medium, Low, and Negligible. The risk level has been taken from <u><a href="https://www.spamhaus.org/statistics/tlds/">Spamhaus</a></u>, <u><a href="https://krebsonsecurity.com/tag/top-20-shady-top-level-domains/">Krebs on Security</a></u>, <u><a href="https://www.symantec.com/blogs/feature-stories/top-20-shady-top-level-domains">Symantec</a></u>, and my own experience of dealing with Malware and Phishing campaigns in an Enterprise environment</p>'.PHP_EOL;
@@ -116,7 +115,6 @@ function tld_help() {
   echo '<p>These domains are not open to the public, and therefore extremely unlikely to contain malicious sites.</p>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
 
-  echo '</div>'.PHP_EOL;
   echo '</div>'.PHP_EOL;                                   //End tab 4 div
 
 }
@@ -155,7 +153,7 @@ function show_domain_list() {
   }
 
   echo '<div>'.PHP_EOL;                                    //Start Tab
-  echo '<div class="sys-group">'.PHP_EOL;
+
   if ($listsize == 0) {                                    //Is List blank?
     echo '<h4><img src=./svg/emoji_sad.svg>No sites found in Block List</h4>'.PHP_EOL;
     echo '</div>';
@@ -163,9 +161,7 @@ function show_domain_list() {
   }
 
   echo '<h5>Old Generic Domains</h5>'.PHP_EOL;
-  echo '<form name="tld" action="?" method="post">'.PHP_EOL;
   echo '<input type="hidden" name="action" value="tld">'.PHP_EOL;
-  echo '<input type="hidden" name="v" value="'.$view.'">'.PHP_EOL;
   echo '<table class="tld-table">'.PHP_EOL;                //Start tld-table
 
   foreach ($list as $line) {
@@ -176,19 +172,13 @@ function show_domain_list() {
 
     //Risk score of zero means draw new table
     if ($line[2] == 0) {
+      echo '<tr><td colspan="3"><button type="submit" name="v" value="'.$view.'">Save Changes</button></td></tr>'.PHP_EOL;
       echo '</table>'.PHP_EOL;                             //End current tld-table
-      echo '<input type="submit" value="Save Changes">'.PHP_EOL;
-      echo '</form>'.PHP_EOL;                              //End form
-      echo '</div>'.PHP_EOL;                               //End sys-group
       echo '</div>'.PHP_EOL;                               //End Tab
 
       $view++;
       echo '<div>'.PHP_EOL;                                //Start new Tab
-      echo '<div class="sys-group">'.PHP_EOL;              //Start new sys-group
       echo '<h5>'.$line[1].'</h5>'.PHP_EOL;                //Title
-      echo '<form name="tld" action="?" method="post">'.PHP_EOL;
-      echo '<input type="hidden" name="action" value="tld">'.PHP_EOL;
-      echo '<input type="hidden" name="v" value="'.$view.'">'.PHP_EOL;
       echo '<table class="tld-table">'.PHP_EOL;            //Start new tld-table
       continue;                                            //Jump to end of loop
     }
@@ -233,11 +223,9 @@ function show_domain_list() {
 
   }
 
-  echo '</table>'.PHP_EOL;
-  echo '<input type="submit" value="Save Changes">'.PHP_EOL;
-  echo '</form>'.PHP_EOL;                                  //End form
+  echo '<tr><td colspan="3"><button type="submit" name="v" value="'.$view.'">Save Changes</button></td></tr>'.PHP_EOL;
+  echo '</table>'.PHP_EOL;                                 //End final table
 
-  echo '</div>'.PHP_EOL;                                   //End last sys-group
   echo '</div>'.PHP_EOL;                                   //End Tab
 }
 
@@ -312,6 +300,10 @@ function draw_tabbedview($view) {
   $checkedtabs = array('', '', '', '', '');
   $checkedtabs[$tab] = ' checked';
 
+  echo '<form name="tld" action="?" method="post">'.PHP_EOL;
+  echo '<input type="hidden" name="action" value="tld">'.PHP_EOL;
+
+  echo '<div class="sys-group">'.PHP_EOL;
   echo '<div id="tabbed">'.PHP_EOL;                        //Start tabbed container
 
   echo '<input type="radio" name="tabs" id="tab-nav-1"'.$checkedtabs[1].'><label for="tab-nav-1">Old Generic</label>'.PHP_EOL;
@@ -325,6 +317,8 @@ function draw_tabbedview($view) {
   tld_help();
   echo '</div>'.PHP_EOL;                                   //End tabs
   echo '</div>'.PHP_EOL;                                   //End tabbed container
+  echo '</div>'.PHP_EOL;                                   //End sys-group
+  echo '</form>'.PHP_EOL;                                   //End form
 }
 
 
