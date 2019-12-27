@@ -37,7 +37,7 @@ $selectedbl = 'all';
  *  Return:
  *    None
  */
-function draw_domain_filter() {
+function draw_filter_toolbar() {
   global $config, $dbwrapper;
   global $page, $searchbox, $selectedbl;
 
@@ -133,7 +133,7 @@ function show_full_blocklist() {
 
   echo '<div class="sys-group">';                          //Now for the results
 
-  draw_domain_filter();                                    //Block List selector form
+  draw_filter_toolbar();                                    //Block List selector form
 
   if ($result->num_rows == 0) {                            //Leave if nothing found
     $result->free();

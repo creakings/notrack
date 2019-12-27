@@ -101,8 +101,7 @@ function draw_blocklist_row($bl, $bl_name, $msg, $url) {
  *    None
  */
 function tracking_blocklists() {
-  echo '<div>'.PHP_EOL;                                    //Start Tab
-  echo '<div class="sys-group">'.PHP_EOL;
+  echo '<div id="tab-content-1">'.PHP_EOL;                                    //Start Tab
   echo '<h5>Tracker Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
@@ -118,10 +117,7 @@ function tracking_blocklists() {
 
   echo '<tr><td colspan="3"><button type="submit" name="v" value="1">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
-  echo '</div>'.PHP_EOL;                                   //End sys-group
   echo '</div>'.PHP_EOL;                                   //End Tab
-
-  return null;
 }
 
 
@@ -135,7 +131,6 @@ function tracking_blocklists() {
  */
 function advertising_blocklists() {
   echo '<div>'.PHP_EOL;                                    //Start Tab
-  echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Advertising Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
@@ -145,10 +140,7 @@ function advertising_blocklists() {
 
   echo '<tr><td colspan="3"><button type="submit" name="v" value="2">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
-  echo '</div>'.PHP_EOL;                                   //End sys-group
   echo '</div>'.PHP_EOL;                                   //End Tab
-
-  return null;
 }
 
 
@@ -162,7 +154,6 @@ function advertising_blocklists() {
  */
 function malware_blocklists() {
   echo '<div>'.PHP_EOL;                                    //Start Tab
-  echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Malware Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
@@ -186,10 +177,7 @@ function malware_blocklists() {
 
   echo '<tr><td colspan="3"><button type="submit" name="v" value="3">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
-  echo '</div>'.PHP_EOL;                                   //End sys-group
   echo '</div>'.PHP_EOL;                                   //End Tab
-
-  return null;
 }
 
 /********************************************************************
@@ -202,7 +190,6 @@ function malware_blocklists() {
  */
 function cryptocoin_blocklists() {
   echo '<div>'.PHP_EOL;                                    //Start Tab
-  echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Crypto Coin Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
@@ -214,10 +201,7 @@ function cryptocoin_blocklists() {
 
   echo '<tr><td colspan="3"><button type="submit" name="v" value="4">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
-  echo '</div>'.PHP_EOL;                                   //End sys-group
   echo '</div>'.PHP_EOL;                                   //End Tab
-
-  return null;
 }
 
 
@@ -231,7 +215,6 @@ function cryptocoin_blocklists() {
  */
 function social_blocklists() {
   echo '<div>'.PHP_EOL;                                    //Start Tab
-  echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Social Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
@@ -241,10 +224,7 @@ function social_blocklists() {
 
   echo '<tr><td colspan="3"><button type="submit" name="v" value="5">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
-  echo '</div>'.PHP_EOL;                                   //End sys-group
   echo '</div>'.PHP_EOL;                                   //End Tab
-
-  return null;
 }
 
 
@@ -258,7 +238,6 @@ function social_blocklists() {
  */
 function multipurpose_blocklists() {
   echo '<div>'.PHP_EOL;                                    //Start Tab
-  echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Multipurpose Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
@@ -273,10 +252,7 @@ function multipurpose_blocklists() {
 
   echo '<tr><td colspan="3"><button type="submit" name="v" value="6">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
-  echo '</div>'.PHP_EOL;                                   //End sys-group
   echo '</div>'.PHP_EOL;                                   //End Tab
-
-  return null;
 }
 
 
@@ -290,7 +266,6 @@ function multipurpose_blocklists() {
  */
 function regional_blocklists() {
   echo '<div>'.PHP_EOL;                                    //Start Tab
-  echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Regional Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
@@ -342,10 +317,7 @@ function regional_blocklists() {
 
   echo '<tr><td colspan="3"><button type="submit" name="v" value="7">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
-  echo '</div>'.PHP_EOL;                                   //End sys-group
   echo '</div>'.PHP_EOL;                                   //End Tab
-
-  return null;
 }
 
 
@@ -361,20 +333,15 @@ function custom_blocklists() {
   global $config;
 
   echo '<div>'.PHP_EOL;                                    //Start Tab
-  echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Custom Block Lists</h5>'.PHP_EOL;
 
-  echo '<table class="sys-table">'.PHP_EOL;
   echo '<tr><td>&nbsp;</td><td><p>Use either Downloadable or Localy stored Block Lists</p><textarea rows="18" name="bl_custom">'.str_replace(',', PHP_EOL, $config->settings['bl_custom']).'</textarea></td></tr>';
   echo '</table>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
   echo '<tr><td colspan="3"><button type="submit" name="v" value="8">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
-  echo '</div>'.PHP_EOL;                                   //End sys-group
   echo '</div>'.PHP_EOL;                                   //End Tab
-
-  return null;
 }
 
 
@@ -465,6 +432,7 @@ function draw_tabbedview($view) {
   echo '<input type="hidden" name="action" value="blocklists">'.PHP_EOL;
   echo '<input type="hidden" name="v" value="'.$tab.'">'.PHP_EOL;
 
+  echo '<div class="sys-group">';
   echo '<div id="tabbed">'.PHP_EOL;                        //Start tabbed container
 
   echo '<input type="radio" name="tabs" id="tab-nav-1"'.$checkedtabs[1].'><label for="tab-nav-1">Tracking</label>'.PHP_EOL;
@@ -489,6 +457,7 @@ function draw_tabbedview($view) {
 
   echo '</div>'.PHP_EOL;                                   //End tabs
   echo '</div>'.PHP_EOL;                                   //End tabbed container
+  echo '</div>'.PHP_EOL;                                   //End sys-group
   echo '</form>'.PHP_EOL;                                  //End form
 }
 
