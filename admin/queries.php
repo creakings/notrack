@@ -222,6 +222,7 @@ function get_ipsearch($ipsearch) {
 
 /********************************************************************
  *  Draw Filter Box
+ *    Populates filter bar with Search Boxes, Search Button
  *    Reset form is dealt with by queries.js function resetQueriesForm()
  *    Show current value first in <select>, and then read through respective array to output values
  *  Params:
@@ -229,14 +230,14 @@ function get_ipsearch($ipsearch) {
  *  Return:
  *    None
  */
-function draw_filterbox() {
+function draw_filter_toolbar() {
   global $sysiplist, $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby, $datetime, $dtrange;
   global $FILTERLIST, $TIMELIST;
 
   $line = '';
 
   echo '<form method="get">'.PHP_EOL;
-  echo '<div id="dnsfilter-container">'.PHP_EOL;                    //Start Div Group
+  echo '<div class="filter-toolbar queries-filter-toolbar">'.PHP_EOL;
 
   echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
   echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
@@ -247,6 +248,13 @@ function draw_filterbox() {
   if ($dtrange != '') {
     echo '<input type="hidden" name="dtrange" value="'.$dtrange.'">'.PHP_EOL;
   }
+
+  //Column Headers
+  echo '<div><h3>Domain</h3></div>'.PHP_EOL;
+  echo '<div><h3>IP</h3></div>'.PHP_EOL;
+  echo '<div><h3>Time</h3></div>'.PHP_EOL;
+  echo '<div><h3>Request Type</h3></div>'.PHP_EOL;
+  echo '<div></div>'.PHP_EOL;
 
   echo '<div><input type="text" name="searchbox" id="filtersearch" value="'.$searchbox.'" placeholder="site.com"></div>'.PHP_EOL;
 
@@ -271,8 +279,8 @@ function draw_filterbox() {
   }
   echo '</select></div>'.PHP_EOL;                          //End Filter List
 
-  echo '<input type="submit" value="Search">&nbsp;&nbsp;';
-  echo '<button type="button" class="button-grey mobile-hide" onclick="resetQueriesForm()">Reset</button>';
+  echo '<div><input type="submit" value="Search">&nbsp;&nbsp;';
+  echo '<button type="button" class="button-grey mobile-hide" onclick="resetQueriesForm()">Reset</button></div>';
 
   echo '</div>'.PHP_EOL;                                   //End Div Group
   echo '</form>'.PHP_EOL;
@@ -282,8 +290,8 @@ function draw_filterbox() {
 
 /********************************************************************
  *  Draw Group By Buttons
- *    groupby is a form which contains hidden elements from draw_filterbox
- *    Selection between Site / Time is made using radio box, which is missing the input box
+ *    groupby is a form which contains hidden elements from draw_filter_toolbar
+ *    Selection between Domain / Time is made using radio box, which is missing the input box
  *    Radio box labels are styled to look like pag-nav
  *
  *  Params:
@@ -316,7 +324,7 @@ function draw_groupby() {
   echo '<input type="hidden" name="sys" value="'.$sysip.'">'.PHP_EOL;
   echo '<input type="hidden" name="filter" value="'.$filter.'">'.PHP_EOL;
   echo '<div id="groupby-container">'.PHP_EOL;
-  echo '<input type="radio" id="gbtab1" name="groupby" value="name" onchange="submit()" '.$domainactive.'><label for="gbtab1">Site</label>'.PHP_EOL;
+  echo '<input type="radio" id="gbtab1" name="groupby" value="name" onchange="submit()" '.$domainactive.'><label for="gbtab1">Domain</label>'.PHP_EOL;
   echo '<input type="radio" id="gbtab2" name="groupby" value="time" onchange="submit()" '.$timeactive.'><label for="gbtab2">Time</label>'.PHP_EOL;
   echo '</div></form>';
 }
@@ -520,12 +528,14 @@ function show_group_view() {
   }
   $i = (($page - 1) * ROWSPERPAGE) + 1;                    //Friendly table position
 
+  echo '<div class="table-toolbar">'.PHP_EOL;              //Start table-toolbar
   pagination($result->num_rows, $paginationlink);
   draw_groupby();
+  echo '</div>'.PHP_EOL;                                   //End table-toolbar
 
   echo '<table id="query-group-table">'.PHP_EOL;
 
-  echo '<tr><th>&nbsp;</th><th>#</th><th>Site</th><th>Action</th><th>Requests<a class="primarydark" href="'.$sortlink.'&amp;sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'&amp;sort=ASC">&#x25B4;</a></th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp;</th><th>#</th><th>Domain</th><th>Action</th><th>Requests<a class="primarydark" href="'.$sortlink.'&amp;sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'&amp;sort=ASC">&#x25B4;</a></th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
     $domain = $row['dns_request'];
@@ -607,11 +617,13 @@ function show_time_view() {
   }
   $i = (($page - 1) * ROWSPERPAGE) + 1;                    //Friendly table position
 
+  echo '<div class="table-toolbar">'.PHP_EOL;              //Start table-toolbar
   pagination($result->num_rows, $paginationlink);
   draw_groupby();
+  echo '</div>'.PHP_EOL;                                   //End table-toolbar
 
   echo '<table id="query-time-table">'.PHP_EOL;
-  echo '<tr><th>&nbsp</th><th>Time<a class="primarydark" href="'.$sortlink.'&amp;sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'&amp;sort=ASC">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp</th><th>Time<a class="primarydark" href="'.$sortlink.'&amp;sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'&amp;sort=ASC">&#x25B4;</a></th><th>System</th><th>Domain</th><th>Action</th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
     $domain = $row['dns_request'];
@@ -680,9 +692,8 @@ if (isset($_GET['dtrange'])) {
   }
 }
 
-draw_filterbox();                                          //Draw filters
-
 echo '<div class="sys-group">'.PHP_EOL;                    //Start Div Group
+draw_filter_toolbar();                                     //Draw filter-toolbar
 if ($groupby == 'time') {
   show_time_view();
 }
