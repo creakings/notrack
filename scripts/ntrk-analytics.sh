@@ -309,7 +309,7 @@ check_tracking "^pxl?\\\."                       #px, pxl, as a subdomain
 check_tracking "pixel[^\\\.]{0,8}\\\."           #pixel, followed by 0 to 8 non-dot chars anywhere
 check_tracking "telemetry"                       #telemetry anywhere
 check_tracking "trk[^\\\.]{0,3}\\\."             #trk, followed by 0 to 3 non-dot chars anywhere
-check_tracking "track(er|ing|\\\-[a-z]{2,8})?\\\." #track, tracker, tracking, track-eu as a subdomain / domain.
+check_tracking "track(ing|\\\-[a-z]{2,8})?\\\."  #track, tracking, track-eu as a subdomain / domain.
 #Have to exclude tracker. (bittorent), security-tracker (Debian), and tracking-protection (Mozilla)
 check_tracking "^v?stats?\\\."                   #vstat, stat, stats as a subdomain
 
