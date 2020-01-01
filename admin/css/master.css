@@ -303,6 +303,9 @@ button:active {
 .analytics-filter-toolbar {
   grid-template-columns: auto;
 }
+.custombl-filter-toolbar {
+  grid-template-columns: 50% fit-content(6rem);
+}
 .domains-filter-toolbar {
   grid-template-columns: 40% auto 30%;
 }
@@ -385,7 +388,7 @@ a.pag-exwide {                                                       /*Wide butt
    ========================================================================== */
 
 #groupby-container {
-  margin: 0 0.1em 0.4em;
+  margin: 0 0.6rem;
   float: right;
 }
 #groupby-container > input {
@@ -413,14 +416,13 @@ a.pag-exwide {                                                       /*Wide butt
 #groupby-container > input:checked + label {
   background-color: #00c2c8;
 }
-#groupby-container:after {
+/*#groupby-container:after {
   clear: both;
-}
+}*/
 
 /* Table Toolbar Options
    ========================================================================== */
 .table-toolbar-options {
-  margin-right: 0.5rem;
   padding-left: 0.8rem;
   border-left: 1px solid #bdbdbd;
   float: right;
@@ -492,13 +494,13 @@ span.key-green {
   width: 4.2rem;
   text-align: center;
 }
-#access-table th:nth-child(3), #access-table th:nth-child(3) {
+#access-table td:nth-child(3), #access-table th:nth-child(3) {
   width: 5.2rem;
   text-align: center;
 }
-#access-table th:nth-child(4), #access-table th:nth-child(4) {
+#access-table td:nth-child(4), #access-table th:nth-child(4) {
   width: 58%;
-  overflow: auto;
+  overflow-x: auto;
 }
 #access-table td img {
   width: 2.5rem;
@@ -522,26 +524,26 @@ span.key-green {
 }
 
 
-/* Cfg Custom Table on customblocklist.php
+/* Custom BL Table on customblocklist.php
    ========================================================================== */
-#cfg-custom-table {
-  margin-top: 2rem;
-}
-#cfg-custom-table td:nth-child(1), #cfg-custom-table th:nth-child(1) {
+
+#custombl-table td:nth-child(1), #custombl-table th:nth-child(1) {
   width: 8%;
   text-align: center;
 }
-#cfg-custom-table td:nth-child(2), #cfg-custom-table th:nth-child(2) {
+#custombl-table td:nth-child(2), #custombl-table th:nth-child(2) {
   width: 34%;
 }
-#cfg-custom-table td:nth-child(3), #cfg-custom-table th:nth-child(3) {
+#custombl-table td:nth-child(3), #custombl-table th:nth-child(3) {
   width: 34%;
 }
-#cfg-custom-table td:nth-child(4), #cfg-custom-table th:nth-child(4) {
+#custombl-table td:nth-child(4), #custombl-table th:nth-child(4) {
   width: 14%;
-  text-align: center;
+  text-align: right;
 }
-
+#custombl-table input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
 
 /* Live Table on live.php
    ========================================================================== */
