@@ -23,8 +23,10 @@ ensure_active_session();
 <head>
   <meta charset="UTF-8">
   <link href="./css/master.css" rel="stylesheet" type="text/css">
+  <link href="./css/icons.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/menu.js"></script>
+  <script src="./include/queries.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=0.8">
   <title>NoTrack - Live</title>
 </head>
@@ -33,14 +35,16 @@ ensure_active_session();
 <?php
 draw_topmenu('Live');
 draw_sidemenu();
+draw_copymsg();
 echo '<div id="main">'.PHP_EOL;
-echo '<div id="menu-lower">'.PHP_EOL;
-echo '<input type="text" id="ipaddressbox" value="" placeholder="192.168.0.1">';
-echo '<img src="./svg/lmenu_pause.svg" id="pausequeueimg" class="pointer" onclick="pauseQueue()" alt="">';
-echo '<img src="./svg/lmenu_clear.svg" id="clearqueueimg" class="pointer" onclick="clearQueue()" alt="">';
-echo '</div>'.PHP_EOL;
 
 echo '<div class="sys-group">'.PHP_EOL;
+echo '<div class="filter-toolbar live-filter-toolbar">'.PHP_EOL;
+echo '<div><input type="text" id="ipaddressbox" value="" placeholder="192.168.0.1"></div>';
+echo '<div><button onclick="pauseQueue()"><img src="./svg/lmenu_pause.svg" id="pausequeueimg" alt=""></button>&nbsp;&nbsp;';
+echo '<button class="button-grey" onclick="clearQueue()"><img src="./svg/lmenu_clear.svg" id="clearqueueimg" alt=""></div>';
+echo '</div>'.PHP_EOL;
+
 echo '<table id="livetable">'.PHP_EOL;
 echo '</table>'.PHP_EOL;
 echo '</div>'.PHP_EOL;
@@ -381,6 +385,7 @@ function popupMenu(domain, blocked) {
 function displayRequests() {
   let queuesize = requestReady.length;
   let liveTable = document.getElementById('livetable');
+  let clipboard = '';                                      //Div for Clipboard
   let domain = '';
   let currentRow = 0;
 
@@ -388,6 +393,8 @@ function displayRequests() {
 
   for (let i = queuesize - 1; i > 0; i--) {                //Start with latest first
     domain = simplifyDomain(requestReady[i][1]);
+    clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''+domain+'\')" title="Copy domain">&nbsp;</div>';
+
     if (requestReady[i][3] == 'A') {
       liveTable.rows[currentRow].cells[0].innerHTML = '<img src="./svg/events/allowed1.svg" alt="" title="Ok (Forwarded)">';
     }
@@ -402,7 +409,7 @@ function displayRequests() {
     }
 
     liveTable.rows[currentRow].cells[1].innerHTML = getTime(requestReady[i][0]);
-    liveTable.rows[currentRow].cells[2].innerHTML = domain
+    liveTable.rows[currentRow].cells[2].innerHTML = domain+clipboard;
     liveTable.rows[currentRow].cells[3].innerHTML = requestReady[i][2];
     liveTable.rows[currentRow].cells[4].innerHTML = popupMenu(domain, requestReady[i][3]);
     currentRow++;
