@@ -78,6 +78,25 @@ function do_action($action) {
 
 
 /********************************************************************
+ *  Draw Filter Toolbar
+ *    Populates filter bar with Mark resolved
+ *    TODO more filters needed for showing resolved and severity
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function draw_filter_toolbar() {
+  echo '<div class="filter-toolbar analytics-filter-toolbar">'.PHP_EOL;
+  echo '<div>'.PHP_EOL;                                    //Start Group 1
+  echo '<input type="hidden" id="selectedCheckboxes" name="selectedCheckboxes" value="">'.PHP_EOL;
+  echo '<input type="checkbox" id="topCheckbox" onClick="checkAll(this)">'.PHP_EOL;
+  echo '<button type="submit" name="action" value="resolve" onClick="submitForm()">Mark Resolved</button>&nbsp;'.PHP_EOL;
+  echo '<button type="submit" class="button-grey" name="action" value="delete" onClick="submitForm()">Delete</button>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;                                   //End Group 1
+  echo '</div>'.PHP_EOL;                                   //End filter-toolbar
+}
+/********************************************************************
  *  Popup Menu
  *    Prepare popup menu and contents
  *
@@ -145,13 +164,8 @@ function show_analytics() {
     return false;
   }
 
-  //Draw form and buttons
   echo '<form method="POST" name="analyticsForm">'.PHP_EOL;
-  echo '<input type="hidden" id="selectedCheckboxes" name="selectedCheckboxes" value="">'.PHP_EOL;
-  echo '<input type="checkbox" id="topCheckbox" onClick="checkAll(this)">'.PHP_EOL;
-  echo '<button type="submit" name="action" value="resolve" onClick="submitForm()">Mark Resolved</button>'.PHP_EOL;
-  echo '<button type="submit" class="button-grey" name="action" value="delete" onClick="submitForm()">Delete</button>'.PHP_EOL;
-  echo '<p></p>'.PHP_EOL;
+  draw_filter_toolbar();
 
   echo '<table id="analytics-table">'.PHP_EOL;             //Start table
   echo '<tr><th>&nbsp;</th><th>&nbsp;</th><th>Site</th><th>System</th><th>Time</th><th>&nbsp;</th></tr>'.PHP_EOL;
@@ -167,7 +181,7 @@ function show_analytics() {
     $checkboxid = $row['id'].'_'.str_replace(' ', '_', $log_time);
 
     //$investigateurl = './queries.php?groupby=time&amp;sort=ASC&amp;sysip='.$sys.'&amp;datetime='.$log_time;
-    $investigateurl = "./investigate.php?datetime={$log_time}&amp;site={$dns_request}&amp;sys={$sys}";
+    $investigateurl = "./investigate.php?datetime=".rawurlencode($log_time)."&amp;site={$dns_request}&amp;sys={$sys}";
 
     //Create clipboard image and text
     $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
