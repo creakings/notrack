@@ -303,9 +303,18 @@ button:active {
 .domains-filter-toolbar {
   grid-template-columns: 40% auto 30%;
 }
+.live-filter-toolbar {
+  grid-template-columns: auto auto;
+}
+.live-filter-toolbar img {
+  height: 1.1rem;
+  width: 1.1rem;
+  margin-bottom: -0.15rem;
+}
 .queries-filter-toolbar {
   grid-template-columns: 25% auto auto auto fit-content(12rem);
 }
+
 
 /* ==========================================================================
    Table Toolbar
@@ -585,12 +594,12 @@ span.key-green {
 }
 #query-group-table td:nth-child(4),
 #query-group-table th:nth-child(4) {
-  width: 13%;
+  width: 15%;
   text-align: center;
 }
 #query-group-table td:nth-child(5),
 #query-group-table th:nth-child(5) {
-  width: 15%;
+  width: 2rem;
   text-align: center;
 }
 
@@ -611,8 +620,8 @@ span.key-green {
 }
 #query-time-table td:nth-child(5),
 #query-time-table th:nth-child(5) {
-  width: 14%;
-  text-align: center;
+  width: 2rem;
+/*   text-align: center; */
 }
 #query-group-table th a, #query-time-table th a {
   font-size: 1.4rem;
