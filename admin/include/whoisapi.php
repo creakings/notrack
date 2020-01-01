@@ -70,7 +70,7 @@ class WhoisApi {
     }
 
     if ($status >= 300) {                                  //Other HTTP Error
-      echo '<div class="sys-group">'.PHP_EOL;
+      //echo '<div class="sys-group">'.PHP_EOL;
       echo '<h4><img src=./svg/emoji_sad.svg>Error running Whois lookup</h4>'.PHP_EOL;
       echo 'Server returned status: '.$status.', response '.$rawdata;
       echo '</div>'.PHP_EOL;
