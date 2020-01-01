@@ -228,7 +228,7 @@ function get_ipsearch($ipsearch) {
 
 
 /********************************************************************
- *  Draw Filter Box
+ *  Draw Filter Toolbar
  *    Populates filter bar with Search Boxes, Search Button
  *    Reset form is dealt with by queries.js function resetQueriesForm()
  *    Show current value first in <select>, and then read through respective array to output values
@@ -510,7 +510,7 @@ function show_group_view() {
   $blockreason = '';
   $clipboard = '';                                         //Div for Clipboard
   $event = '';                                             //Image event
-  $popupmenu = '';                                         //HTML Code for popup menu
+  $popupmenu = '';                                         //Div for popup menu
   $severity = 1;
   $query = '';
   $dns_request = '';
@@ -600,7 +600,7 @@ function show_time_view() {
   $blockreason = '';
   $clipboard = '';                                         //Div for Clipboard
   $event = '';                                             //Image event
-  $popupmenu = '';                                         //HTML Code for popup menu
+  $popupmenu = '';                                         //Div for popup menu
   $severity = 1;
   $query = '';
   $dns_request = '';
@@ -650,7 +650,7 @@ function show_time_view() {
     $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
 
     //Contents of domain cell with more specific url for investigate
-    $domain_cell = "<a href=\"/investigate.php?datetime={$row['log_time']}&amp;site={$dns_request}&amp;sys={$row['sys']}\" target=\"_blank\">{$dns_request}</a>{$clipboard}{$blockreason}";
+    $domain_cell = "<a href=\"./investigate.php?datetime={$row['log_time']}&amp;site={$dns_request}&amp;sys={$row['sys']}\" target=\"_blank\">{$dns_request}</a>{$clipboard}{$blockreason}";
 
     //Output table row
     echo "<tr><td><img src=\"./svg/events/{$event}.svg\" alt=\"\"><td>{$row['formatted_time']}</td><td>{$row['sys']}</td><td>{$domain_cell}</td><td>{$popupmenu}</td></tr>".PHP_EOL;
