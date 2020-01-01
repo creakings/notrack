@@ -300,6 +300,9 @@ button:active {
   width: 100%;
 }
 
+.analytics-filter-toolbar {
+  grid-template-columns: auto;
+}
 .domains-filter-toolbar {
   grid-template-columns: 40% auto 30%;
 }
@@ -1007,70 +1010,6 @@ span.key-green {
   #main {
     margin: 0;
   }
-}
-
-
-/* ==========================================================================
-   Lower Top Menu DEPRECATED
-   ========================================================================== */
-
-#menu-lower,
-#dnsfilter-container {
-  height: 2.6rem;
-  margin-top: -0.6rem;
-  padding: 0.2rem 0.5rem 0 0.8rem;
-  background-color: rgba(0, 110, 116, 0.95);
-}
-#menu-lower img {
-  width: 2rem;
-  height: 2rem;
-  padding: 0.1rem;
-  margin: 0 0.3rem;
-  border-radius: 4px;
-  background-color: rgba(1, 90, 96, 0.98);
-  box-shadow: inset 0 0 4px #222;
-  display: inline;
-  float: left;
-}
-#menu-lower input[type="text"] {
-  display: inline;
-  float: left;
-  margin-right: 1rem;
-  width: 16rem;
-  max-width: 35%;
-  background-color: #eee;
-}
-#menu-lower img:hover {
-  box-shadow: inset 0 0 4px #00c2c8;
-}
-#menu-lower img:active {
-  background-color: rgba(1, 63, 65, 0.98);
-  box-shadow: inset 0 0 4px #00c2c8;
-}
-
-#dnsfilter-container {
-  display: flex;
-  flex-direction: row;
-/*   justify-content: flex-start; */
-  align-items: stretch;
-}
-
-#dnsfilter-container div:nth-of-type(1) { 
-  flex: 3 1 auto;
-}
-#dnsfilter-container div { 
-  display: inline-flex;
-  flex: 1 1 auto;
-}
-#dnsfilter-container select,
-#dnsfilter-container input[type="text"] {
-  width: 100%;
-  margin-right: 0.5rem;
-}
-#menu-lower button,
-#dnsfilter-container button,
-#dnsfilter-container input[type="submit"] {
-  height: 2.3rem;
 }
 
 
