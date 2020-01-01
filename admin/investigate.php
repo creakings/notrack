@@ -18,6 +18,7 @@ ensure_active_session();
   <meta charset="UTF-8">
   <link href="./css/master.css" rel="stylesheet" type="text/css">
   <link href="./css/chart.css" rel="stylesheet" type="text/css">
+  <link href="./css/icons.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="./favicon.png">
   <script src="./include/menu.js"></script>
   <script src="./include/queries.js"></script>
@@ -68,17 +69,17 @@ function create_whoistable() {
 
 
 /********************************************************************
- *  Draw Search Bar
+ *  Draw Filter Toolbar
  *
  *  Params:
  *    None
  *  Return:
  *    None
  */
-function draw_searchbar() {
+function draw_filter_toolbar() {
   global $subdomain;
 
-  echo '<div id="menu-lower">'.PHP_EOL;
+  echo '<div class="filter-toolbar analytics-filter-toolbar">'.PHP_EOL;
   echo '<form method="GET">'.PHP_EOL;
   echo '<input type="text" name="site" class="input-conf" placeholder="Search domain" value="'.$subdomain.'">'.PHP_EOL;
   echo '<button type="submit">Investigate</button>'.PHP_EOL;
@@ -204,35 +205,38 @@ function search_blockreason($domain) {
 function format_row($domain, $dns_result) {
   global $config;
 
-  $action = '';
   $blocklist = '';
   $blockreason = '';
   $event = '';
   $severity = '1';
+  $popupmenu = '';
+
+
+  $popupmenu = '<div class="dropdown-container"><span class="dropbtn"></span><div class="dropdown">';
 
   if ($dns_result == 'A') {
-    $action = '<button class="icon-boot button-grey" onclick="reportSite(\''.$domain.'\', false, true)">Block</button>';
     $event = 'allowed1';
+    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
   }
   elseif ($dns_result == 'B') {         //Blocked
     $blocklist = search_blockreason($domain);
     $severity = '2';
 
     if ($blocklist == 'bl_notrack') {        //Show Report icon on NoTrack list
-      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, true)">Allow</button>';
       $blockreason = '<p class="small grey">Blocked by NoTrack list</p>';
       $event = 'tracker2'; //TODO change image
+      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, true)">Allow</span>';
     }
     elseif ($blocklist == 'custom') {        //Users blacklist
-      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, false)">Allow</button>';
       $blockreason = '<p class="small grey">Blocked by Custom Black list</p>';
       $event = 'custom2';
+      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
     }
     elseif ($blocklist != '') {
       $blockreason = '<p class="small grey">Blocked by '.$config->get_blocklistname($blocklist).'</p>';
-      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, false)">Allow</button>';
-
       $event = $config->get_blocklistevent($blocklist);
+
+      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
 
       if ($event == 'malware') {
         $severity = '3';
@@ -243,13 +247,18 @@ function format_row($domain, $dns_result) {
     else {  //No reason is probably IP or Search request
       $blockreason = '<p class="small">Invalid request</p>';
       $event = 'invalid2';
+      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
     }
   }
   elseif ($dns_result == 'L') {
     $event = 'local1';
   }
 
-  return array($action, $blockreason, $event, $severity);
+  $popupmenu .= '<a href="'.$config->settings['SearchUrl'].$domain.'" target="_blank">'.$config->settings['Search'].'</a>';
+  $popupmenu .= '<a href="https://www.virustotal.com/en/domain/'.$domain.'/information/" target="_blank">VirusTotal</a>';
+  $popupmenu .= '</div></div>';                                  //End dropdown-container
+
+  return array($blockreason, $event, $severity, $popupmenu);
 }
 
 /********************************************************************
@@ -266,17 +275,17 @@ function show_time_view() {
 
   $action = '';
   $blockreason = '';
-  $domain = '';
+  $clipboard = '';                                         //Div for Clipboard
+  $dns_request = '';
   $event = '';                                             //Image event
-  $investigateurl = '';                                    //URL back to investigate
+  $popupmenu = '';                                         //Div for popup menu
   $row_class = '';                                         //Optional row highlighting
   $severity = 1;
   $query = '';
-  $site_cell = '';
+  $domain_cell = '';
 
   $query = "SELECT *, DATE_FORMAT(log_time, '%H:%i:%s') AS formatted_time FROM dnslog WHERE sys = '$sys' AND log_time > SUBTIME('$datetime', '00:00:04') AND log_time < ADDTIME('$datetime', '00:00:03') ORDER BY UNIX_TIMESTAMP(log_time)";
 
-  echo '<div class="sys-group">'.PHP_EOL;
 
   if (!$result = $db->query($query)){
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
@@ -286,24 +295,24 @@ function show_time_view() {
   }
 
   if ($result->num_rows == 0) {                  //Leave if nothing found
+    $result->free();
     echo '<h4><img src=./svg/emoji_sad.svg>No results found for selected time</h4>'.PHP_EOL;
     echo '</div>'.PHP_EOL;
-    $result->free();
     return false;
   }
 
   echo '<table id="query-time-table">'.PHP_EOL;
-  echo '<tr><th>&nbsp</th><th>Time</th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp</th><th>Time</th><th>System</th><th>Site</th><th></th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
-    $domain = $row['dns_request'];
-    list($action, $blockreason, $event, $severity) = format_row($domain, $row['dns_result']);
+    $dns_request = $row['dns_request'];
+    list($blockreason, $event, $severity, $popupmenu) = format_row($dns_request, $row['dns_result']);
 
-    //Make entire site cell clickable with link going to Investigate
-    //Add in datetime and system into investigate link
-    $investigateurl = './investigate.php?datetime='.$row['log_time'].'&amp;site='.$domain.'&amp;sys='.$row['sys'];
+    //Create clipboard image and text
+    $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
 
-    $site_cell = '<td class="pointer" onclick="window.open(\''.$investigateurl.'\', \'_blank\')">'.$domain.$blockreason.'</a></td>';
+    //Contents of domain cell with more specific url for investigate
+    $domain_cell = "<a href=\"./investigate.php?datetime={$row['log_time']}&amp;site={$dns_request}&amp;sys={$row['sys']}\" target=\"_blank\">{$dns_request}</a>{$clipboard}{$blockreason}";
 
     if ($subdomain == $row['dns_request']) {               //Highlight row if it matches the subdomain requested
       $row_class = ' class="cyan"';
@@ -312,7 +321,8 @@ function show_time_view() {
       $row_class = '';
     }
 
-    echo '<tr'.$row_class.'><td><img src="./svg/events/'.$event.'.svg" alt=""><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td>'.$site_cell.'<td>'.$action.'</td></tr>'.PHP_EOL;
+    //Output table row
+    echo "<tr{$row_class}><td><img src=\"./svg/events/{$event}.svg\" alt=\"\"><td>{$row['formatted_time']}</td><td>{$row['sys']}</td><td>{$domain_cell}</td><td>{$popupmenu}</td></tr>".PHP_EOL;
     $blockreason = '';
   }
 
@@ -342,7 +352,7 @@ function show_whoisdata($whois_date, $whois_record) {
   if ($whois_record == null) return null;                  //Any data in the array?
 
   if (isset($whois_record['error'])) {
-    echo '<div class="sys-group">'.PHP_EOL;
+    //echo '<div class="sys-group">'.PHP_EOL;
     echo '<h5>Domain Information</h5>'.PHP_EOL;
     echo $whois_record['error'].PHP_EOL;
     echo '</div>'.PHP_EOL;
@@ -358,7 +368,9 @@ function show_whoisdata($whois_date, $whois_record) {
     $notrack_row = 'Allowed';
   }
 
-  draw_systable('Domain Information');
+  //draw_systable('Domain Information');
+  echo '<h5>Domain Information</h5>'.PHP_EOL;
+  echo '<table class="sys-table">'.PHP_EOL;
   draw_sysrow('Domain Name', $whois_record['domain'].'<span class="investigatelink"><a href="?site='.$subdomain.'&amp;v=raw">View Raw</a></span>');
   draw_sysrow('Status on NoTrack', $notrack_row);
   draw_sysrow('Created On', substr($whois_record['created_on'], 0, 10));
@@ -418,6 +430,7 @@ function show_rawwhoisdata($whois_record) {
     return null;
   }
   
+  echo '</div>'.PHP_EOL;                                   //End sys-group from filter-toolbar
   echo '<pre>'.PHP_EOL;
   echo $whois_record['raw'];
   echo '</pre>'.PHP_EOL;
@@ -433,7 +446,7 @@ function show_rawwhoisdata($whois_record) {
  *    None
  */
 function show_whoiserror() {
-  echo '<div class="sys-group">'.PHP_EOL;
+  //echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Domain Information</h5>'.PHP_EOL;
   echo '<p>Error: No WhoIs API key set. In order to use this feature you will need to add a valid JsonWhois API key to NoTrack config</p>'.PHP_EOL;
   echo '<p>Instructions:</p>'.PHP_EOL;
@@ -570,9 +583,14 @@ if ($domain == '') {                                       //No domain set, just
   draw_searchbox();
 }
 else {                                                     //Load whois data?
+  echo '<div class="sys-group">'.PHP_EOL;
+  draw_filter_toolbar();
+
   $whois = new WhoisApi($config->settings['whoisapi'], $domain);
-  draw_searchbar();
-  if ($datetime != '') show_time_view();                   //Show time view if datetime in parameters
+  if ($datetime != '') {                                   //Show time view if datetime in parameters
+    show_time_view();
+    echo '<div class="sys-group">'.PHP_EOL;
+  }
 
   if ($forceupdate) {                                      //Are we deleting the old record?
     $whois->delete_whoisrecord();
@@ -591,7 +609,7 @@ else {                                                     //Load whois data?
   }
 }
 
-
+draw_copymsg();
 $db->close();
 
 ?>
