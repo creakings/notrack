@@ -126,8 +126,12 @@ function show_custom_list($view) {
   echo '<form method="get">';                              //Filter Toolbar
   echo '<div class="filter-toolbar custombl-filter-toolbar">'.PHP_EOL;
 
+  //Column Headers
+  echo '<div><h3>Search Domain</h3></div>'.PHP_EOL;
+  echo '<div></div>'.PHP_EOL;
+
   echo '<input type="hidden" name="v" value="'.$view.'">';
-  echo '<div><input type="text" name="s" id="searchbox" value="'.$searchbox.'"></div>';
+  echo '<div><input type="text" name="s" id="searchbox" placeholder="site.com" value="'.$searchbox.'"></div>';
   echo '<div><button type="submit">Search</button></div>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
