@@ -22,6 +22,7 @@ readonly FILE_EXEC="/tmp/ntrk-exec.txt"
 readonly TEMP_CONFIG="/tmp/notrack.conf"
 readonly DNSMASQ_CONF="/etc/dnsmasq.conf"
 readonly DHCP_CONFIG="/etc/dnsmasq.d/dhcp.conf"
+readonly LOCALHOSTS="/etc/localhosts.list"
 
 readonly USER="ntrk"
 readonly PASSWORD="ntrkpass"
@@ -460,6 +461,56 @@ function write_dhcp() {
 }
 
 
+
+#--------------------------------------------------------------------
+# Write Static Hosts Config
+#   1: Check localhosts.list exists in /tmp
+#   2: Change ownership and permissions
+#   3: Copy to /etc/dnsmasq.d/dhcp.conf
+#   4: Restart Dnsmasq TODO
+#
+# Globals:
+#   LOCALHOSTS
+# Arguments:
+#   None
+# Returns:
+#   None
+
+#--------------------------------------------------------------------
+function write_localhosts() {
+  local localhosts_temp="/tmp/localhosts.list"
+  local hostname=""
+  local hostip=""
+
+  #Retrive this system from localhosts file
+  if [ -e /etc/sysconfig/network ]; then
+    hostname=$(grep "HOSTNAME" /etc/sysconfig/network | cut -d "=" -f 2 | tr -d [[:space:]])
+  elif [ -e /etc/hostname ]; then
+    hostname=$(cat /etc/hostname)
+  fi
+
+  #Get the full line from localhosts if the hostname has been found
+  if [[ -n $hostname ]]; then
+    hostip=$(grep "$hostname" "$LOCALHOSTS")
+  fi
+
+  #Check temp file exists
+  if [ -e "$localhosts_temp" ]; then
+    chown root:root "$localhosts_temp"
+    chmod 644 "$localhosts_temp"
+    echo "Copying $localhosts_temp to $LOCALHOSTS"
+    mv "$localhosts_temp" "$LOCALHOSTS"
+
+    #Add the full line of hostip and hostname to the end of localhosts
+    if [[ -n $hostip ]]; then
+      echo "Adding $hostip back to $LOCALHOSTS"
+      echo "$hostip" | sudo tee -a "$LOCALHOSTS" &> /dev/null
+    fi
+  fi
+}
+
+
+
 #--------------------------------------------------------------------
 # Write Dnsmasq Config
 #
@@ -606,6 +657,8 @@ if [ "$1" ]; then                         #Have any arguments been given
           write_dnsmasq
         elif [[ $2 == "'dhcp'" ]]; then
           write_dhcp
+        elif [[ $2 == "'localhosts'" ]]; then
+          write_localhosts
         fi
       ;;
       (--) shift; break;;
