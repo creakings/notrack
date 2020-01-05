@@ -142,7 +142,7 @@ function show_custom_list($view) {
 
   if (is_array($list)) {
     foreach ($list as $listitem) {
-      $delete = '<button class="icon-delete button-grey" onclick="deleteSite(\''.$listitem[0].'\')" title="Delete">Del</button>';
+      $delete = '<button class="button-grey material-icon-centre icon-delete" onclick="deleteSite(\''.$listitem[0].'\')" title="Delete">&nbsp;</button>';
       if ($listitem[2] == true) {
         $checkbox = '<input type="checkbox" name="'.$listitem[0].'" onclick="changeSite(this)" checked="checked">';
         $rowclass = '<tr>';
