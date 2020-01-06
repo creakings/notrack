@@ -1,4 +1,6 @@
 Development
+Complete overhaul to DHCP page.
+Adding a static host will also add it to DNS localhosts list
 Side menu now shows number of alerts
 Add Clipboard to Alerts page
 Improve Alerts feature to find more elusive tracking domains
