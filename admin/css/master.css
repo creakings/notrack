@@ -25,7 +25,7 @@ a:hover {
   text-decoration: none;
 }
 code {
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 img {
   border: none;
@@ -35,7 +35,7 @@ img.full {
 }
 p {
   margin: 0 0 0.5em 0;
-  font-size: 1rem;
+/*   font-size: 1rem; */
 }
 p.indent {
   margin: 0 0 1.2rem 1.5em;
@@ -117,6 +117,21 @@ pre {
   pre {width: 96%}
 }
 
+/* ==========================================================================
+   Content Editable
+   ========================================================================== */
+[contenteditable="true"] {
+  border: 2px solid #fbfbfb;
+  border-radius: 4px;
+/*   padding: 1px; */
+  min-height: 1.1rem;
+}
+[contenteditable="true"]:active,
+[contenteditable="true"]:focus{
+  border: 2px solid #00c2c8;
+  outline: none;
+  overflow-x: hidden;
+}
 
 /* ==========================================================================
    Form Items
@@ -645,23 +660,47 @@ span.key-green {
 }
 /* DHCP Table on dhcp.php
    ========================================================================== */
-#dhcp-table td:nth-child(1), #dhcp-table th:nth-child(1) {
+.dhcp-table td:nth-child(1),
+.dhcp-table th:nth-child(1) {
   width: 21%;
+  text-align: left;
+}
+.dhcp-table td:nth-child(2),
+.dhcp-table th:nth-child(2) {
+  width: 2rem;
+}
+.dhcp-table td:nth-child(3),
+.dhcp-table th:nth-child(3) {
+  width: 32%;
+}
+.dhcp-table td:nth-child(4),
+.dhcp-table th:nth-child(4) {
+  width: 20%;
   text-align: center;
 }
-#dhcp-table td:nth-child(2), #dhcp-table th:nth-child(2) {
-  width: 34%;
-}
-#dhcp-table td:nth-child(3), #dhcp-table th:nth-child(3) {
-  width: 22%;
+.dhcp-table td:nth-child(5),
+.dhcp-table th:nth-child(5) {
+  width: 18%;
   text-align: center;
 }
-#dhcp-table td:nth-child(4), #dhcp-table th:nth-child(4) {
-  width: 17%;
-  text-align: center;
+.dhcp-table td:nth-child(6),
+.dhcp-table th:nth-child(6) {
+  width: 3rem;
+/*   text-align: center; */
 }
-
-
+.dhcp-table td:nth-child(1) > button {
+  display: block;
+  margin: 0 auto;
+}
+.dhcp-table td:nth-child(2) > div {                        /*Device icon div*/
+  width: 2rem;
+  height: 2rem;
+  background-repeat: no-repeat;
+  background-size: 1.8rem;
+  background-position: 50% 50%;
+  border-radius: 4px;
+  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5), inset 0 0 4px #666;
+}
 /* Alerts Table on analytics.php
    ========================================================================== */
 #analytics-table td:nth-child(1),
