@@ -27,11 +27,14 @@ ensure_active_session();
 ************************************************/
 define('DHCP_CONF', '/etc/dnsmasq.d/dhcp.conf');
 define('LEASES_FILE', '/var/lib/misc/dnsmasq.leases');
-define('REGEX_DEVICEICONS', '(computer|nas|server|tv)');
+define('REGEX_DEVICEICONS', '(computer|laptop|nas|phone|raspberrypi|server|tv)');
 
 define('DEVICE_ICON_NAMES', [
  'computer' => 'Computer',
+ 'laptop' => 'Laptop',
  'nas' => 'NAS',
+ 'phone' => 'Phone',
+ 'raspberrypi' => 'Raspberry Pi',
  'server' => 'Server',
  'tv' => 'TV']
 );
@@ -679,7 +682,10 @@ function iconMenu() {
   menu = '';
   menu = '<select onclick="setIcon(this)">';
   menu += '<option value="computer">Computer</option>';
+  menu += '<option value="laptop">Laptop</option>';
   menu += '<option value="nas">NAS</option>';
+  menu += '<option value="phone">Phone</option>';
+  menu += '<option value="raspberrypi">Raspberry Pi</option>';
   menu += '<option value="server">Server</option>';
   menu += '<option value="tv">TV</option>';
   menu += '</select>';

@@ -143,7 +143,7 @@ input[type="password"] {
   width: 24rem;
   max-width: 95%;
   height: 1.5rem;
-  margin: 0.2rem 0;
+  margin: 0.2rem 0 0.1rem;
   padding-left: 0.2rem;
   color: #00000a;
   background-color: #fafafa;
@@ -693,13 +693,14 @@ span.key-green {
   margin: 0 auto;
 }
 .dhcp-table td:nth-child(2) > div {                        /*Device icon div*/
-  width: 2rem;
-  height: 2rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  /*   margin-bottom: -0.1rem;  Fix bottom alignment offset in Chrome*/
   background-repeat: no-repeat;
-  background-size: 1.8rem;
+  background-size: 1.9rem;
   background-position: 50% 50%;
-  border-radius: 4px;
-  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5), inset 0 0 4px #666;
+  border-radius: 3px;
+/*   box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5), inset 0 0 4px #666; */
 }
 /* Alerts Table on analytics.php
    ========================================================================== */
