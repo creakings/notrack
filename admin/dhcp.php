@@ -29,16 +29,6 @@ define('DHCP_CONF', '/etc/dnsmasq.d/dhcp.conf');
 define('LEASES_FILE', '/var/lib/misc/dnsmasq.leases');
 define('REGEX_DEVICEICONS', '(computer|laptop|nas|phone|raspberrypi|server|tv)');
 
-define('DEVICE_ICON_NAMES', [
- 'computer' => 'Computer',
- 'laptop' => 'Laptop',
- 'nas' => 'NAS',
- 'phone' => 'Phone',
- 'raspberrypi' => 'Raspberry Pi',
- 'server' => 'Server',
- 'tv' => 'TV']
-);
-
 /************************************************
 *Global Variables                               *
 ************************************************/
@@ -240,19 +230,18 @@ function add_statichosts() {
  *  Return:
  *    code for a select box
  */
-function get_iconmenu($currenticon) {
+function get_iconmenu() {
   $menu = '';
-  $key = '';
-  $value = '';
 
-  $menu = '<select onclick="setIcon(this)">';
-  $menu .= '<option value = '.$currenticon.'">'.DEVICE_ICON_NAMES[$currenticon].'</option>';
-  foreach (DEVICE_ICON_NAMES as $key => $value) {
-    //if ($currenticon != $key) {
-      $menu .= '<option value="'.$key.'">'.$value.'</option>';
-    //}
-  }
-  $menu .= '</select>'.PHP_EOL;
+  $menu = '<ul>';
+  $menu .= '<li class="device-computer" title="Computer" onclick="setIcon(this)"></li>';
+  $menu .= '<li class="device-laptop" title="Laptop" onclick="setIcon(this)"></li>';
+  $menu .= '<li class="device-nas" title="NAS" onclick="setIcon(this)"></li>';
+  $menu .= '<li class="device-server" title="Server" onclick="setIcon(this)"></li>';
+  $menu .= '<li class="device-phone" title="Phone" onclick="setIcon(this)"></li>';
+  $menu .= '<li class="device-raspberrypi" title="Raspberry Pi" onclick="setIcon(this)"></li>';
+  $menu .= '<li class="device-tv" title="TV" onclick="setIcon(this)"></li>';
+  $menu .= '</ul>'.PHP_EOL;
 
   return $menu;
 }
@@ -441,7 +430,7 @@ function show_leases() {
   natsort($iplist);                                        //Sort IP's with natural sort
 
   echo '<table class="dhcp-table">'.PHP_EOL;               //Start DHCP Table
-  echo '<tr><th>IP Allocated</th><th></th><th>Device Name</th><th>MAC Address</th><th colspan="2">Valid Until</th>'.PHP_EOL;
+  echo '<tr><th>IP Allocated</th><th></th><th>Device Name</th><th>MAC Address</th><th>Valid Until</th>'.PHP_EOL;
 
   foreach ($iplist as $ip) {                               //Go through sorted iplist
 
@@ -460,7 +449,7 @@ function show_leases() {
     }
 
     //Output the table row
-    echo "<tr{$rowclass}><td>{$ip}</td><td>{$icon}</td><td>{$leases[$ip]['name']}</td><td>{$leases[$ip]['mac']}</td><td colspan=\"2\">{$valid_until}</td></tr>".PHP_EOL;
+    echo "<tr{$rowclass}><td>{$ip}</td><td>{$icon}</td><td>{$leases[$ip]['name']}</td><td>{$leases[$ip]['mac']}</td><td>{$valid_until}</td></tr>".PHP_EOL;
   }
 
   echo '</table>'.PHP_EOL;                                 //End DHCP Table
@@ -489,13 +478,15 @@ function show_statichosts()
   $icon = '';                                              //Code for icon div and class
   $iconmenu = '';                                          //Code for icon menu
 
+  $iconmenu = get_iconmenu();
+
   $iplist = array_keys($statichosts);                      //Get list of IP Addresses
   natsort($iplist);                                        //Sort IP's with natural sort
 
-  echo '<div id="tab-content-3">'.PHP_EOL;                 //Start Tab 3
+  echo '<div id="tab-content-2">'.PHP_EOL;                 //Start Tab 2
 
   echo '<table id="hostsTable" class="dhcp-table">'.PHP_EOL;
-  echo '<tr><th>IP Allocated</th><th></th><th>Device Name</th><th>MAC Address</th><th></th><th></th>'.PHP_EOL;
+  echo '<tr><th>IP Allocated</th><th></th><th>Device Name</th><th>MAC Address</th><th></th>'.PHP_EOL;
 
   foreach ($iplist as $ip) {                               //Go through sorted iplist
 
@@ -503,11 +494,10 @@ function show_statichosts()
     $delbutton = '<button class="button-grey material-icon-centre icon-delete" type="button" onclick="deleteRow(this)">&nbsp;</button>';
 
     //Create icon div and device class
-    $icon = '<div class="device-'.$statichosts[$ip]['icon'].'">&nbsp;</div>';
-    $iconmenu = get_iconmenu($statichosts[$ip]['icon']);
+    $icon = '<button type="button" class="device-'.$statichosts[$ip]['icon'].'">';
 
     //Output table row
-    echo '<tr><td><div contenteditable="true">'.$ip.'</div></td><td>'.$icon.'</td><td><div contenteditable="true">'.$statichosts[$ip]['name'].'</div></td><td><div contenteditable="true">'.$statichosts[$ip]['mac'].'</div></td><td>'.$iconmenu.'<td>'.$delbutton.'</td></tr>'.PHP_EOL;
+    echo '<tr><td><div contenteditable="true">'.$ip.'</div></td><td>'.$icon.$iconmenu.'</button></td><td><div contenteditable="true">'.$statichosts[$ip]['name'].'</div></td><td><div contenteditable="true">'.$statichosts[$ip]['mac'].'</div></td><td>'.$delbutton.'</td></tr>'.PHP_EOL;
   }
 
   //Add blank row to table
@@ -515,13 +505,13 @@ function show_statichosts()
   $delbutton = '<button class="button-grey material-icon-centre icon-plus" type="button" onclick="addRow(this)">&nbsp;</button>';
 
   //Set icon menu to be a computer
-  $iconmenu = get_iconmenu('computer');
+  $icon = '<button type="button" class="device-computer">';
 
   //Output blank table row
-  echo '<tr><td><div contenteditable="true"></div></td><td><div class="device-computer"></div></td><td><div contenteditable="true"></div></td><td><div contenteditable="true"></div></td><td>'.$iconmenu.'<td>'.$delbutton.'</td></tr>'.PHP_EOL;
+  echo '<tr><td><div contenteditable="true"></div></td><td>'.$icon.$iconmenu.'</td><td><div contenteditable="true"></div></td><td><div contenteditable="true"></div></td><td>'.$delbutton.'</td></tr>'.PHP_EOL;
 
   //Save button
-  echo '<tr><td colspan="6"><button type="button" onclick=submitForm(3)>Save Changes</button></td></tr>'.PHP_EOL;
+  echo '<tr><td colspan="5"><button type="button" onclick=submitForm(2)>Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End contenteditable table
   echo '</div>'.PHP_EOL;                                   //End Tab
 }
@@ -539,7 +529,7 @@ function show_statichosts()
 function show_dhcpconfig() {
   global $dhcpconfig;
 
-  echo '<div id="tab-content-2">'.PHP_EOL;                 //Start Tab 2
+  echo '<div id="tab-content-3">'.PHP_EOL;                 //Start Tab 3
 
   echo '<table class="sys-table">';
   draw_sysrow('Enabled', '<input type="checkbox" name="enabled" id="enabledBox" '.is_checked($dhcpconfig['dhcp_enabled']).'>');
@@ -556,7 +546,7 @@ function show_dhcpconfig() {
 
   //echo '<tr id="confRow6"><td>Static Hosts:</td><td><p class="light"><code>System.name,MAC Address,IP to allocate</code><br><code>e.g. nas.local,11:22:33:aa:bb:cc,192.168.0.5</code></p>';
   //echo '<textarea rows="10" name="static">'.$dhcpconfig['static_hosts'].'</textarea></td></tr>'.PHP_EOL;
-  echo '<tr><td colspan="2"><div class="centered"><button type="button" onclick=submitForm(2)>Save Changes</button></div></td></tr>'.PHP_EOL;
+  echo '<tr><td colspan="2"><div class="centered"><button type="button" onclick=submitForm(3)>Save Changes</button></div></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;
   echo '</div>'.PHP_EOL;                                    //End Tab
 }
@@ -610,14 +600,14 @@ function draw_tabbedview($view) {
   echo '<div id="tabbed">'.PHP_EOL;                        //Start tabbed container
 
   echo '<input type="radio" name="tabs" id="tab-nav-1"'.$checkedtabs[1].'><label for="tab-nav-1">DHCP Leases</label>'.PHP_EOL;
-  echo '<input type="radio" name="tabs" id="tab-nav-2"'.$checkedtabs[2].'><label for="tab-nav-2">DHCP Config</label>'.PHP_EOL;
-  echo '<input type="radio" name="tabs" id="tab-nav-3"'.$checkedtabs[3].'><label for="tab-nav-3">Static Hosts</label>'.PHP_EOL;
+  echo '<input type="radio" name="tabs" id="tab-nav-2"'.$checkedtabs[2].'><label for="tab-nav-2">Static Hosts</label>'.PHP_EOL;
+  echo '<input type="radio" name="tabs" id="tab-nav-3"'.$checkedtabs[3].'><label for="tab-nav-3">DHCP Config</label>'.PHP_EOL;
 
   echo '<div id="tabs">'.PHP_EOL;                          //Start Tabs
 
   show_leases();
-  show_dhcpconfig();
   show_statichosts();
+  show_dhcpconfig();
 
   echo '</div>'.PHP_EOL;                                   //End tabs
   echo '</div>'.PHP_EOL;                                   //End tabbed container
@@ -632,7 +622,6 @@ draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;
 
 if (count($_POST) > 2) {                                   //Anything in POST array?
-
   //Set value for view from POST value
   if (isset($_POST['view'])) {
     $view = filter_integer($_POST['view'], 1, 3, 1);
@@ -680,15 +669,18 @@ echo '</div>';
  */
 function iconMenu() {
   menu = '';
-  menu = '<select onclick="setIcon(this)">';
-  menu += '<option value="computer">Computer</option>';
-  menu += '<option value="laptop">Laptop</option>';
-  menu += '<option value="nas">NAS</option>';
-  menu += '<option value="phone">Phone</option>';
-  menu += '<option value="raspberrypi">Raspberry Pi</option>';
-  menu += '<option value="server">Server</option>';
-  menu += '<option value="tv">TV</option>';
-  menu += '</select>';
+
+  menu = '<button class="device-computer" type="button">';
+  menu += '<ul>';
+  menu += '<li class="device-computer" title="Computer" onclick="setIcon(this)"></li>';
+  menu += '<li class="device-laptop" title="Laptop" onclick="setIcon(this)"></li>';
+  menu += '<li class="device-nas" title="NAS" onclick="setIcon(this)"></li>';
+  menu += '<li class="device-server" title="Server" onclick="setIcon(this)"></li>';
+  menu += '<li class="device-phone" title="Phone" onclick="setIcon(this)"></li>';
+  menu += '<li class="device-raspberrypi" title="Raspberry Pi" onclick="setIcon(this)"></li>';
+  menu += '<li class="device-tv" title="TV" onclick="setIcon(this)"></li>';
+  menu += '</ul>';
+  menu += '</button>';
 
   return menu;
 }
@@ -722,15 +714,13 @@ function addRow(btn) {
   let c2 = newRow.insertCell(2);
   let c3 = newRow.insertCell(3);
   let c4 = newRow.insertCell(4);
-  let c5 = newRow.insertCell(5);
 
   //Set contents of the cells
   c0.innerHTML = '<div contenteditable="true"></div>';     //IP
-  c1.innerHTML = '<div class="device-computer"></div>';    //Icon
+  c1.innerHTML = iconMenu();                               //Icon
   c2.innerHTML = '<div contenteditable="true"></div>';     //Name
   c3.innerHTML = '<div contenteditable="true"></div>';     //MAC
-  c4.innerHTML = iconMenu();
-  c5.innerHTML = '<button class="button-grey material-icon-centre icon-plus" type="button" onclick="addRow(this)">&nbsp;</button>';
+  c4.innerHTML = '<button class="button-grey material-icon-centre icon-plus" type="button" onclick="addRow(this)">&nbsp;</button>';
 
 }
 /********************************************************************
@@ -762,15 +752,20 @@ function deleteRow(btn) {
  *  Return:
  *    None
  */
-function setIcon(menu) {
-  let regexDevice = /^<?php echo REGEX_DEVICEICONS?>$/;
+function setIcon(item) {
+  /*let regexDevice = /^$/;
   let p = menu.parentNode.parentNode;
 
   //Check if selected menu value is one of the Device Icons
   if (regexDevice.test(menu.value)) {
     p.children[1].innerHTML = '<div class="device-'+menu.value+'"></div>';
   }
+*/
+  let p = item.parentNode.parentNode;
+  p.className = item.className;
 
+  p.blur()
+  //console.log(item.parentNode.parentNode);
 }
 
 
@@ -790,7 +785,7 @@ function setIcon(menu) {
  *    None
  */
 function submitForm(returnTab) {
-  let regexDevice = /^<div class="device\-<?php echo REGEX_DEVICEICONS?>">/;
+  let regexDevice = /^<button type=\"button\" class="device\-<?php echo REGEX_DEVICEICONS?>">/;
   let tbl = document.getElementById('hostsTable');
 
   let deviceIcon = '';
@@ -824,7 +819,7 @@ function submitForm(returnTab) {
     host += deviceIcon + '\n';                             //Device Icon
     hostList.push(host);
   }
-
+  //console.log(tbl);
   document.getElementById('newHosts').value = JSON.stringify(hostList);
   document.getElementById('viewTab').value = returnTab;
 
