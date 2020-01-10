@@ -128,11 +128,15 @@ pre {
 }
 [contenteditable="true"]:active,
 [contenteditable="true"]:focus{
+  background: white;
   border: 2px solid #00c2c8;
   outline: none;
   overflow-x: hidden;
 }
-
+[contenteditable=true]:empty::before {
+  color: grey;
+  content: attr(placeholder);
+}
 /* ==========================================================================
    Form Items
    ========================================================================== */

@@ -497,7 +497,7 @@ function show_statichosts()
     $icon = '<button type="button" class="device-'.$statichosts[$ip]['icon'].'">';
 
     //Output table row
-    echo '<tr><td><div contenteditable="true">'.$ip.'</div></td><td>'.$icon.$iconmenu.'</button></td><td><div contenteditable="true">'.$statichosts[$ip]['name'].'</div></td><td><div contenteditable="true">'.$statichosts[$ip]['mac'].'</div></td><td>'.$delbutton.'</td></tr>'.PHP_EOL;
+    echo '<tr><td><div contenteditable="true" placeholder="192.168.0.2">'.$ip.'</div></td><td>'.$icon.$iconmenu.'</button></td><td><div contenteditable="true" placeholder="new.host">'.$statichosts[$ip]['name'].'</div></td><td><div contenteditable="true" placeholder="11:22:33:aa:bb:cc">'.$statichosts[$ip]['mac'].'</div></td><td>'.$delbutton.'</td></tr>'.PHP_EOL;
   }
 
   //Add blank row to table
@@ -508,7 +508,7 @@ function show_statichosts()
   $icon = '<button type="button" class="device-computer">';
 
   //Output blank table row
-  echo '<tr><td><div contenteditable="true"></div></td><td>'.$icon.$iconmenu.'</td><td><div contenteditable="true"></div></td><td><div contenteditable="true"></div></td><td>'.$delbutton.'</td></tr>'.PHP_EOL;
+  echo '<tr><td><div contenteditable="true" placeholder="192.168.0.2"></div></td><td>'.$icon.$iconmenu.'</button></td><td><div contenteditable="true" placeholder="new.host"></div></td><td><div contenteditable="true" placeholder="11:22:33:aa:bb:cc"></div></td><td>'.$delbutton.'</td></tr>'.PHP_EOL;
 
   //Save button
   echo '<tr><td colspan="5"><button type="button" onclick=submitForm(2)>Save Changes</button></td></tr>'.PHP_EOL;
@@ -716,12 +716,11 @@ function addRow(btn) {
   let c4 = newRow.insertCell(4);
 
   //Set contents of the cells
-  c0.innerHTML = '<div contenteditable="true"></div>';     //IP
-  c1.innerHTML = iconMenu();                               //Icon
-  c2.innerHTML = '<div contenteditable="true"></div>';     //Name
-  c3.innerHTML = '<div contenteditable="true"></div>';     //MAC
+  c0.innerHTML = '<div contenteditable="true" placeholder="192.168.0.3"></div>';
+  c1.innerHTML = iconMenu();
+  c2.innerHTML = '<div contenteditable="true" placeholder="new.host"></div>';
+  c3.innerHTML = '<div contenteditable="true" placeholder="11:22:33:aa:bb:cc"></div>';
   c4.innerHTML = '<button class="button-grey material-icon-centre icon-plus" type="button" onclick="addRow(this)">&nbsp;</button>';
-
 }
 /********************************************************************
  *  Delete Row
