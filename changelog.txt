@@ -1,10 +1,10 @@
-Development
+v0.9.4 Released 15 Jan 2020
 Complete overhaul to DHCP page.
 Adding a static host will also add it to DNS localhosts list
 Side menu now shows number of alerts
-Add Clipboard to Alerts page
 Improve Alerts feature to find more elusive tracking domains
-Styling improvements on Investigate page
+Styling improvements
+Added clipboard buttons
 
 *************************************************
 v0.9.3 Released 08 Dec 2019
