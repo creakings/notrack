@@ -286,7 +286,7 @@ function update_statichosts() {
 
     //Regex check on user data entered to ensure the it's valid and avoid XSS vulnerabilities
     if (preg_match($regex_newhost, $host, $matches)) {
-      $ip = $matches[1];
+      $ip = (filter_var($matches[1], FILTER_VALIDATE_IP)) ? $matches[1] : '';
 
       $statichosts[$ip] = array('mac' => $matches[2], 'name' => $matches[5], 'icon' => $matches[6]);
     }
