@@ -215,6 +215,7 @@ function filter_domain($domain) {
   }
 }
 
+
 /********************************************************************
  *  Filter Integer Value
  *    Checks if Integer value given is between min and max
@@ -232,6 +233,24 @@ function filter_integer($value, $min, $max, $defaultvalue=0) {
 
   return $defaultvalue;
 }
+
+
+/********************************************************************
+ *  Filter MAC Address
+ *    Checks value is a valid colon-seperated MAC address
+ *  Params:
+ *    String to check
+ *  Return:
+ *    True on success, False on failure
+ */
+function filter_macaddress($str) {
+  if (preg_match('/^([\dA-Fa-f]{2}:){5}[\dA-Fa-f]{2}$/', $str)) {
+    return true;
+  }
+
+  return false;
+}
+
 
 
 /********************************************************************
@@ -321,7 +340,7 @@ function formatnumber($number) {
  */
 function pluralise($count, $text)
 {
-  return $count.(($count == 1) ? (" $text") : (" ${text}s"));
+  return $count.(($count == 1) ? (" {$text}") : (" {$text}s"));
 }
 
 /********************************************************************
