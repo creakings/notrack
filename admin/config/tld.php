@@ -1,17 +1,13 @@
 <?php
 /********************************************************************
-config.php handles setting of Global variables, GET, and POST requests
-It also houses the functions for POST requests.
-
-All other config functions are in ./include/config-functions.php
 
 ********************************************************************/
 
 require('../include/global-vars.php');
 require('../include/global-functions.php');
+require('../include/config.php');
 require('../include/menu.php');
 
-load_config();
 ensure_active_session();
 
 /************************************************
@@ -19,6 +15,7 @@ ensure_active_session();
 ************************************************/
 define('DOMAIN_BLACKLIST', '/etc/notrack/domain-blacklist.txt');
 define('DOMAIN_WHITELIST', '/etc/notrack/domain-whitelist.txt');
+
 /************************************************
 *Global Variables                               *
 ************************************************/
@@ -27,7 +24,7 @@ define('DOMAIN_WHITELIST', '/etc/notrack/domain-whitelist.txt');
 /************************************************
 *Arrays                                         *
 ************************************************/
-$list = array();                                 //Global array for all the Block Lists
+$list = array();                                //Contents of tld.csv
 
 
 /********************************************************************
@@ -50,7 +47,7 @@ function load_csv($filename, $listname) {
 
     fclose($fh);
 
-    $mem->set($listname, $list, 0, 120);                   //2 Minutes
+    $mem->set($listname, $list, 0, 600);                   //10 Minutes
   }
 
   return true;
@@ -97,7 +94,6 @@ function load_list($filename, $listname) {
  */
 function tld_help() {
   echo '<div>'.PHP_EOL;                                    //Start tab 4 div
-  echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Domain Blocking</h5>'.PHP_EOL;
   echo '<p>NoTrack has the ability to block certain top-level domains, this comes in useful against certain domains which are abused by malicious actors. Sites can be created very quickly with the purpose of hosting malware and phishing sites, which can inflict a significant amount of damage before the security community can identify and block them.</p>'.PHP_EOL;
   echo '<p>Domains are categorised by a risk level: High, Medium, Low, and Negligible. The risk level has been taken from <u><a href="https://www.spamhaus.org/statistics/tlds/">Spamhaus</a></u>, <u><a href="https://krebsonsecurity.com/tag/top-20-shady-top-level-domains/">Krebs on Security</a></u>, <u><a href="https://www.symantec.com/blogs/feature-stories/top-20-shady-top-level-domains">Symantec</a></u>, and my own experience of dealing with Malware and Phishing campaigns in an Enterprise environment</p>'.PHP_EOL;
@@ -119,7 +115,6 @@ function tld_help() {
   echo '<p>These domains are not open to the public, and therefore extremely unlikely to contain malicious sites.</p>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
 
-  echo '</div>'.PHP_EOL;
   echo '</div>'.PHP_EOL;                                   //End tab 4 div
 
 }
@@ -138,15 +133,19 @@ function tld_help() {
 function show_domain_list() {
   global $list;
 
-  $domain_cell = '';
+  $cell1 = '';                                             //Tickbox cell
+  $cell2 = '';                                             //TLD Name cell
+  $cell3 = '';                                             //Description cell
+  $checked = '';                                           //Tickbox status
   $domain_name = '';
-  $flag_image = '';
-  $flag_filename = '';
-  $black = array();
-  $white = array();
+  $flag_image = '';                                        //HTML Code for flag
+  $flag_filename = '';                                     //Filename of flag
+  $blackarray = array();                                   //TLD Blacklist
+  $whitearray = array();                                   //TLD Whitelist
+  $view = 1;                                               //Current Tab view
 
-  $black = array_flip(load_list(DOMAIN_BLACKLIST, 'tldblacklist'));
-  $white = array_flip(load_list(DOMAIN_WHITELIST, 'tldwhitelist'));
+  $blackarray = array_flip(load_list(DOMAIN_BLACKLIST, 'tldblacklist'));
+  $whitearray = array_flip(load_list(DOMAIN_WHITELIST, 'tldwhitelist'));
   $listsize = count($list);
 
   if ($list[$listsize-1][0] == '') {                       //Last line is sometimes blank
@@ -154,7 +153,7 @@ function show_domain_list() {
   }
 
   echo '<div>'.PHP_EOL;                                    //Start Tab
-  echo '<div class="sys-group">'.PHP_EOL;
+
   if ($listsize == 0) {                                    //Is List blank?
     echo '<h4><img src=./svg/emoji_sad.svg>No sites found in Block List</h4>'.PHP_EOL;
     echo '</div>';
@@ -162,7 +161,8 @@ function show_domain_list() {
   }
 
   echo '<h5>Old Generic Domains</h5>'.PHP_EOL;
-  echo '<table class="tld-table">'.PHP_EOL;                //Start TLD Table
+  echo '<input type="hidden" name="action" value="tld">'.PHP_EOL;
+  echo '<table class="tld-table">'.PHP_EOL;                //Start tld-table
 
   foreach ($list as $line) {
     //1. Domain
@@ -170,27 +170,26 @@ function show_domain_list() {
     //3. Risk
     //4. Comment
 
-    if ($line[2] == 0) {                                   //Risk zero means draw new table
-      echo '</table>'.PHP_EOL;                             //End current TLD table
-      echo '<input type="submit" value="Save Changes">'.PHP_EOL;
-      echo '</div>'.PHP_EOL;                               //End sys-group
+    //Risk score of zero means draw new table
+    if ($line[2] == 0) {
+      echo '<tr><td colspan="3"><button type="submit" name="v" value="'.$view.'">Save Changes</button></td></tr>'.PHP_EOL;
+      echo '</table>'.PHP_EOL;                             //End current tld-table
       echo '</div>'.PHP_EOL;                               //End Tab
 
+      $view++;
       echo '<div>'.PHP_EOL;                                //Start new Tab
-      echo '<div class="sys-group">'.PHP_EOL;              //Start new sys-group
-      echo '<h5>'.$line[1].'</h5>'.PHP_EOL;                //Title of new TLD Table
-      echo '<table class="tld-table">'.PHP_EOL;            //Start new TLD Table
+      echo '<h5>'.$line[1].'</h5>'.PHP_EOL;                //Title
+      echo '<table class="tld-table">'.PHP_EOL;            //Start new tld-table
       continue;                                            //Jump to end of loop
     }
 
     $domain_name = substr($line[0], 1);
 
-    echo '<tr>';                                           //Start Row
     switch ($line[2]) {                                    //Cell colour based on risk
-      case 1: $domain_cell = '<td class="red">'; break;
-      case 2: $domain_cell = '<td class="orange">'; break;
-      case 3: $domain_cell = '<td>'; break;                //Use default colour for low risk
-      case 5: $domain_cell = '<td class="green">'; break;
+      case 1: $cell2 = '<td class="red">'; break;
+      case 2: $cell2 = '<td class="orange">'; break;
+      case 3: $cell2 = '<td>'; break;                      //Default colour for low risk
+      case 5: $cell2 = '<td class="green">'; break;
     }
 
     //Flag names are seperated by underscore and converted to ASCII, dropping any UTF-8 Characters
@@ -208,23 +207,26 @@ function show_domain_list() {
       $flag_image = '';
     }
 
-    //Embolden Domain and Domain Name, and check checkbox of blocked domains
-    //Condition for not blocking - (Risk 1 & NOT in White List) OR (in Black List)
-    if ((($line[2] == 1) && (! array_key_exists($line[0], $white))) || (array_key_exists($line[0], $black))) {
-      echo $domain_cell.'<b>'.$line[0].'</b></td><td><b>'.$flag_image.$line[1].'</b></td><td>'.$line[3].'</td><td><input type="checkbox" name="'.$domain_name.'" checked="checked"></td></tr>'.PHP_EOL;
+    //Set tickbox checked: Condition (Risk 1 & NOT in White List) OR (in Black List)
+    if ((($line[2] == 1) && (! array_key_exists($line[0], $whitearray))) || (array_key_exists($line[0], $blackarray))) {
+      $checked = ' checked="checked"';
     }
     else {
-      echo $domain_cell.$line[0].'</td><td>'.$flag_image.$line[1].'</td><td>'.$line[3].'</td><td><input type="checkbox" name="'.$domain_name.'"></td></tr>'.PHP_EOL;
+      $checked = '';
     }
+
+    $cell1 = '<input type="checkbox" name="'.$domain_name.'"'.$checked.'>';
+    $cell2 .= '<div class="centered">'.$line[0].'</div>';
+    $cell3 = $flag_image.$line[1].'<br>'.$line[3];
+
+    echo "<tr><td>$cell1</td>$cell2</td><td>$cell3</td></tr>".PHP_EOL;
+
   }
 
-  echo '</table>'.PHP_EOL;
-  echo '<input type="submit" value="Save Changes">'.PHP_EOL;
+  echo '<tr><td colspan="3"><button type="submit" name="v" value="'.$view.'">Save Changes</button></td></tr>'.PHP_EOL;
+  echo '</table>'.PHP_EOL;                                 //End final table
 
-  echo '</div>'.PHP_EOL;                                   //End last sys-group
   echo '</div>'.PHP_EOL;                                   //End Tab
-
-  return null;
 }
 
 
@@ -281,15 +283,74 @@ function update_domain_list() {
 }
 
 
+/********************************************************************
+ *  Draw Tabbed View
+ *    Draw Tabbed View is called when a value is set for GET/POST argument "v"
+ *    1. Check which tab to set as checked
+ *    2. Draw the tabbed elements
+ *    3. Draw the Domain List
+ *    4. Draw Help page
+ *  Params:
+ *    $view - Tab to View
+ *  Return:
+ *    None
+ */
+function draw_tabbedview($view) {
+  $tab = filter_integer($view, 1, 4, 2);
+  $checkedtabs = array('', '', '', '', '');
+  $checkedtabs[$tab] = ' checked';
+
+  echo '<form name="tld" action="?" method="post">'.PHP_EOL;
+  echo '<input type="hidden" name="action" value="tld">'.PHP_EOL;
+
+  echo '<div class="sys-group">'.PHP_EOL;
+  echo '<div id="tabbed">'.PHP_EOL;                        //Start tabbed container
+
+  echo '<input type="radio" name="tabs" id="tab-nav-1"'.$checkedtabs[1].'><label for="tab-nav-1">Old Generic</label>'.PHP_EOL;
+  echo '<input type="radio" name="tabs" id="tab-nav-2"'.$checkedtabs[2].'><label for="tab-nav-2">New Generic</label>'.PHP_EOL;
+  echo '<input type="radio" name="tabs" id="tab-nav-3"'.$checkedtabs[3].'><label for="tab-nav-3">Country</label>'.PHP_EOL;
+  echo '<input type="radio" name="tabs" id="tab-nav-4"'.$checkedtabs[4].'><label for="tab-nav-4">Help</label>'.PHP_EOL;
+
+  echo '<div id="tabs">'.PHP_EOL;
+
+  show_domain_list();
+  tld_help();
+  echo '</div>'.PHP_EOL;                                   //End tabs
+  echo '</div>'.PHP_EOL;                                   //End tabbed container
+  echo '</div>'.PHP_EOL;                                   //End sys-group
+  echo '</form>'.PHP_EOL;                                   //End form
+}
+
+
+/********************************************************************
+ *  Draw Welcome
+ *    Draw Welcome is called when no value has been set for GET/POST argument "v"
+ *    Word Cloud images generated from https://www.jasondavies.com/wordcloud/
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function draw_welcome() {
+  echo '<div class="sys-group">'.PHP_EOL;
+  echo '<div class="bl-flex-container">'.PHP_EOL;
+  echo '<a href="?v=1"><img src="../svg/wordclouds/classic_wordcloud.svg" alt=""><h6>Old Generic</h6></a>'.PHP_EOL;
+  echo '<a href="?v=2"><img src="../svg/wordclouds/gtld_wordcloud.svg" alt=""><h6>New Generic</h6></a>'.PHP_EOL;
+  echo '<a href="?v=3"><img src="../svg/wordclouds/country_wordcloud.svg" alt=""><h6>Country</h6></a>'.PHP_EOL;
+  echo '<a href="?v=4"><img src="../svg/wordclouds/help_wordcloud.svg" alt=""><h6>Help</h6></a>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
+}
+
 /************************************************
 *POST REQUESTS                                  *
 ************************************************/
 //Deal with POST actions first, that way we can reload the page and remove POST requests from browser history.
-if (isset($_POST['action'])) {
+if ((isset($_POST['action'])) && (isset($_POST['v']))) {
   load_csv(TLD_CSV, 'csvtld');                             //Load tld.csv
   update_domain_list();
-  sleep(1);                                                //Prevent race condition
-  header('Location: ../config/tld.php');                   //Reload page
+  usleep(250000);                                          //Prevent race condition
+  header('Location: ?v='.$_POST['v']);                     //Reload page
 }
 
 
@@ -315,22 +376,14 @@ draw_topmenu('Domains');
 draw_sidemenu();
 
 echo '<div id="main">'.PHP_EOL;
-echo '<form name="tld" action="?" method="post">'.PHP_EOL;
-echo '<input type="hidden" name="action" value="tld">'.PHP_EOL;
-echo '<div id="tabbed">'.PHP_EOL;                          //Start tabbed container
 
-echo '<input type="radio" name="tabs" id="tab-nav-1"><label for="tab-nav-1">Old Generic</label>'.PHP_EOL;
-echo '<input type="radio" name="tabs" id="tab-nav-2" checked><label for="tab-nav-2">New Generic</label>'.PHP_EOL;
-echo '<input type="radio" name="tabs" id="tab-nav-3"><label for="tab-nav-3">Country</label>'.PHP_EOL;
-echo '<input type="radio" name="tabs" id="tab-nav-4"><label for="tab-nav-4">Help</label>'.PHP_EOL;
+if (isset($_GET['v'])) {
+  draw_tabbedview($_GET['v']);
+}
+else {
+  draw_welcome();
+}
 
-echo '<div id="tabs">'.PHP_EOL;
-
-show_domain_list();
-tld_help();
-echo '</div>'.PHP_EOL;                                     //End tabs
-echo '</div>'.PHP_EOL;                                     //End tabbed container
-echo '</form>'.PHP_EOL;                                    //End form
 ?>
 
 </div>

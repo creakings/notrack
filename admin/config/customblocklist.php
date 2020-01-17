@@ -1,9 +1,9 @@
 <?php
 require('../include/global-vars.php');
 require('../include/global-functions.php');
+require('../include/config.php');
 require('../include/menu.php');
 
-load_config();
 ensure_active_session();
 
 /************************************************
@@ -78,11 +78,17 @@ function load_customlist($listname, $filename) {
  *  Return:
  *    None
  */
-function draw_switcher($view) {
+function draw_table_toolbar($view) {
   global $searchbox;
 
   $blackactive = ($view == 'black') ? 'checked="checked"' : '';
   $whiteactive = ($view == 'white') ? 'checked="checked"' : '';
+
+  echo '<div class="table-toolbar">'.PHP_EOL;
+  echo '<button class="float-left" onclick="window.location.href=\'?v=bulk'.$view.'\'">Bulk Upload</button>'.PHP_EOL;
+  echo '<div class="table-toolbar-options">'.PHP_EOL;      //Start Table Toolbar Export
+  echo '<button class="button-grey material-icon-centre icon-export" title="Export" onclick="window.location.href=\'../include/downloadlist.php?v='.$view.'\'">&nbsp;</button>';
+  echo '</div>'.PHP_EOL;                                   //End Table Toolbar Export
 
   echo '<form method="get">';                              //Groupby box
   echo '<input type="hidden" name="s" value="'.$searchbox.'">';
@@ -91,6 +97,7 @@ function draw_switcher($view) {
   echo '<input id="gbtab2" type="radio" name="v" value="white" onchange="submit()" '.$whiteactive.'><label for="gbtab2">White List</label>'.PHP_EOL;
   echo '</div>'.PHP_EOL;                                   //End Groupby box
   echo '</form>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;                                   //End Table Toolbar
 }
 
 
@@ -100,7 +107,6 @@ function draw_switcher($view) {
  *    1. Show search button
  *    2. Display table with items from $list
  *    3. Add a new table row with text boxes for new site
- *    4. Add download list button
  *
  *  Params:
  *    $view - black or white
@@ -116,23 +122,27 @@ function show_custom_list($view) {
   $i = 1;
 
   echo '<div class="sys-group">'.PHP_EOL;
-  echo '<h5>'.ucfirst($view).' List</h5>'.PHP_EOL;
 
-  echo '<div class="float-left">'.PHP_EOL;
-  echo '<form method="get">';                              //Search box
+  echo '<form method="get">';                              //Filter Toolbar
+  echo '<div class="filter-toolbar custombl-filter-toolbar">'.PHP_EOL;
+
+  //Column Headers
+  echo '<div><h3>Search Domain</h3></div>'.PHP_EOL;
+  echo '<div></div>'.PHP_EOL;
+
   echo '<input type="hidden" name="v" value="'.$view.'">';
-  echo '<input type="text" name="s" id="searchbox" value="'.$searchbox.'">&nbsp;&nbsp;';
-  echo '<input type="submit" value="Search">'.PHP_EOL;
-  echo '</form>'.PHP_EOL;
+  echo '<div><input type="text" name="s" id="searchbox" placeholder="site.com" value="'.$searchbox.'"></div>';
+  echo '<div><button type="submit">Search</button></div>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
-  draw_switcher($view);
-  echo '<br>'.PHP_EOL;
+  echo '</form>'.PHP_EOL;
 
-  echo '<table id="cfg-custom-table">'.PHP_EOL;            //Start custom list table
+  draw_table_toolbar($view);
+
+  echo '<table id="custombl-table">'.PHP_EOL;            //Start custom list table
 
   if (is_array($list)) {
     foreach ($list as $listitem) {
-      $delete = '<button class="icon-delete button-grey" onclick="deleteSite(\''.$listitem[0].'\')">Del</button>';
+      $delete = '<button class="button-grey material-icon-centre icon-delete" onclick="deleteSite(\''.$listitem[0].'\')" title="Delete">&nbsp;</button>';
       if ($listitem[2] == true) {
         $checkbox = '<input type="checkbox" name="'.$listitem[0].'" onclick="changeSite(this)" checked="checked">';
         $rowclass = '<tr>';
@@ -159,12 +169,6 @@ function show_custom_list($view) {
   echo '<td><button class="icon-save button-grey" onclick="addSite()">Save</button></td></tr>';
 
   echo '</table>'.PHP_EOL;                                 //End custom list table
-
-  echo '<div class="centered"><br>'.PHP_EOL;
-  echo '<form method="get">'.PHP_EOL;
-  echo '<button type="submit" name="v" value="bulk'.$view.'">Bulk Upload</button>&nbsp;'.PHP_EOL;
-  echo '<button type="submit" name="v" value="'.$view.'" formaction="../include/downloadlist.php" class="button-grey">Download List</button></form>';
-  echo '</div>'.PHP_EOL;
   echo '</div>'.PHP_EOL;                                   //End sys-group
 }
 
@@ -350,6 +354,39 @@ function show_bulkupload($view) {
   echo '</div>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
 }
+
+/********************************************************************
+ Main
+*/
+
+//Carry out any post actions and then reload
+if (isset($_POST['action'])) {
+  switch($_POST['action']) {
+    case 'black':
+      load_customlist('black', BLACKLIST_FILE);
+      update_custom_list('BlackList', 'black');
+      header('Location: ?v=black');
+      break;
+    case 'white':
+      load_customlist('white', WHITELIST_FILE);
+      update_custom_list('WhiteList', 'white');
+      header('Location: ?v=white');
+      break;
+    case 'bulkblack':
+      load_customlist('black', BLACKLIST_FILE);
+      process_bulk_list('BlackList', 'black');
+      header('Location: ?v=black');
+      break;
+    case 'bulkwhite':
+      load_customlist('white', WHITELIST_FILE);
+      process_bulk_list('WhiteList', 'white');
+      header('Location: ?v=white');
+      break;
+  }
+  exit;
+}
+
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -366,13 +403,6 @@ function show_bulkupload($view) {
 
 <body>
 <?php
-/********************************************************************
- Main
-*/
-draw_topmenu('Blocklists');
-draw_sidemenu();
-
-echo '<div id="main">'.PHP_EOL;
 
 if (isset($_GET['s'])) {                                   //Search box
   //Limit characters to alphanumeric, . - _
@@ -380,53 +410,40 @@ if (isset($_GET['s'])) {                                   //Search box
   $searchbox = strtolower($searchbox);
 }
 
-if (isset($_POST['action'])) {                             //Is there an action to carry out?
-  switch($_POST['action']) {
-    case 'black':
-      load_customlist('black', BLACKLIST_FILE);
-      update_custom_list('BlackList', 'black');
-      show_custom_list('black');
-      $listtype = 'black';
-      break;
-    case 'white':
-      load_customlist('white', WHITELIST_FILE);
-      update_custom_list('WhiteList', 'white');
-      show_custom_list('white');
-      $listtype = 'white';
-      break;
-    case 'bulkblack':
-      load_customlist('black', BLACKLIST_FILE);
-      process_bulk_list('BlackList', 'black');
-      show_custom_list('black');
-      $listtype = 'black';
-      break;
-    case 'bulkwhite':
-      load_customlist('white', WHITELIST_FILE);
-      process_bulk_list('WhiteList', 'white');
-      show_custom_list('white');
-      $listtype = 'white';
-      break;
-  }
-}
-
-elseif (isset($_GET['v'])) {                               //What view to show?
+if (isset($_GET['v'])) {                                   //What view to show?
   switch($_GET['v']) {
     case 'white':
+      draw_topmenu('White List');
+      draw_sidemenu();
+      echo '<div id="main">'.PHP_EOL;
+
       load_customlist('white', WHITELIST_FILE);
       show_custom_list('white');
       $listtype = 'white';
       break;
     case 'bulkblack':
+      draw_topmenu('Black List');
+      draw_sidemenu();
+      echo '<div id="main">'.PHP_EOL;
+
       load_customlist('black', BLACKLIST_FILE);
       show_bulkupload('black');
       $listtype = 'bulkblack';
       break;
     case 'bulkwhite':
+      draw_topmenu('White List');
+      draw_sidemenu();
+      echo '<div id="main">'.PHP_EOL;
+
       load_customlist('white', WHITELIST_FILE);
       show_bulkupload('white');
       $listtype = 'bulkwhite';
       break;
     default:
+      draw_topmenu('Black List');
+      draw_sidemenu();
+      echo '<div id="main">'.PHP_EOL;
+
       load_customlist('black', BLACKLIST_FILE);
       show_custom_list('black');
       $listtype = 'black';
@@ -434,6 +451,10 @@ elseif (isset($_GET['v'])) {                               //What view to show?
   }
 }
 else {
+  draw_topmenu('Black List');
+  draw_sidemenu();
+  echo '<div id="main">'.PHP_EOL;
+
   load_customlist('black', BLACKLIST_FILE);
   show_custom_list('black');
   $listtype = 'black';

@@ -1,9 +1,9 @@
 <?php
 require('./include/global-vars.php');
 require('./include/global-functions.php');
+require('./include/config.php');
 require('./include/menu.php');
 
-load_config();
 ensure_active_session();
 
 //-------------------------------------------------------------------
@@ -40,11 +40,11 @@ define ('DEF_DELAY', 30);
  *    None
  */
 function disable_password_protection() {
-  global $Config;
+  global $config;
   
-  $Config['Username'] = '';
-  $Config['Password'] = '';
-  save_config();  
+  $config->settings['Username'] = '';
+  $config->settings['Password'] = '';
+  $config->save();
 }
 
 /********************************************************************
@@ -56,8 +56,6 @@ function disable_password_protection() {
  *    None
  */
 function change_password_form() {
-  global $Config;
-  
   echo '<form name="security" method="post">'.PHP_EOL;
   echo '<input type="hidden" name="change_password">'.PHP_EOL;
   echo '<table class="sys-table">'.PHP_EOL;
@@ -85,17 +83,17 @@ function change_password_form() {
  *    None
  */
 function new_password_input_form() {
-  global $Config;
+  global $config;
   
   echo '<form name="security" method="post">';
   echo '<table class="sys-table">'.PHP_EOL;
     
-  draw_sysrow('NoTrack Username', '<input type="text" name="username" value="'.$Config['Username'].'" placeholder="Username"><p><i>Optional authentication username</i></p>');
+  draw_sysrow('NoTrack Username', '<input type="text" name="username" value="'.$config->settings['Username'].'" placeholder="Username"><p><i>Optional authentication username</i></p>');
   
   draw_sysrow('NoTrack Password', '<input type="password" name="password" id="password" placeholder="Password" onkeyup="checkPassword();" required><p><i>Authentication password</i></p>');
   draw_sysrow('Confirm Password', '<input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" onkeyup="checkPassword();">');
   
-  draw_sysrow('Delay', '<input type="number" class="fixed10" name="delay" min="5" max="2400" value="'.$Config['Delay'].'"><p><i>Delay in seconds between attempts</i></p>');
+  draw_sysrow('Delay', '<input type="number" class="fixed10" name="delay" min="5" max="2400" value="'.$config->settings['Delay'].'"><p><i>Delay in seconds between attempts</i></p>');
   echo '<tr><td colspan="2"><div class="centered"><input type="submit" value="Save Changes"></div></td></tr>';
   echo '</table></form>'.PHP_EOL;
 }
@@ -109,7 +107,7 @@ function new_password_input_form() {
  *    true on success, false on fail
  */
 function update_password_config($username) {
-  global $Config, $message;
+  global $config, $message;
   
   $confirm_password = '';
   $password = $_POST['password'];
@@ -128,23 +126,18 @@ function update_password_config($username) {
   }
   
   if (($username == '') && ($password == '')) {                      //Removing password
-    $Config['Username'] = '';
-    $Config['Password'] = '';
+    $config->settings['Username'] = '';
+    $config->settings['Password'] = '';
   }
   else {  
-    $Config['Username'] = $username;
-    if (function_exists('password_hash')) {                          //Newer version of PHP with password_hash function
-      $Config['Password'] = password_hash($password, PASSWORD_DEFAULT);
-    }
-    else {                                                           //Fallback for older versions of PHP 
-      $Config['Password'] = hash('sha256', $password);
-    }
+    $config->settings['Username'] = $username;
+    $config->settings['Password'] = password_hash($password, PASSWORD_DEFAULT);
     
     if (isset($_POST['delay'])) {                                    //Set Delay
-      $Config['Delay'] = filter_integer($_POST['delay'], 5, 2401, DEF_DELAY);
+      $config->settings['Delay'] = filter_integer($_POST['delay'], 5, 2401, DEF_DELAY);
     }
     else {                                                           //Fallback if Delay not posted
-      $Config['Delay'] = DEF_DELAY;
+      $config->settings['Delay'] = DEF_DELAY;
     }
   }
   
@@ -161,19 +154,12 @@ function update_password_config($username) {
  */
  
 function validate_oldpassword() {
-  global $Config;
+  global $config;
+  
   if (! isset($_POST['old_password'])) return false;                 //Has old password been entered?
   
-  if (function_exists('password_hash')) {                            //Is PHP version new enough?
-    //Use built in password_verify function to compare with $Config['Password'] hash
-    if (password_verify($_POST['old_password'], $Config['Password'])) {
-      return true;
-    }
-  }
-  else {                                                             //Fallback to SHA256 for older versions of PHP
-    if (hash('sha256', $_POST['old_password']) == $Config['Password']) {
-      return true;
-    }  
+  if (password_verify($_POST['old_password'], $config->settings['Password'])) {
+    return true;
   }
   
   return false;
@@ -189,13 +175,13 @@ if (isset($_POST['enable_password'])) {
 }
 elseif (isset($_POST['change_password']) && (isset($_POST['password']))) {
   if (validate_oldpassword()) {
-    if (update_password_config($Config['Username'])) {
-      save_config();
+    if (update_password_config($config->settings['Username'])) {
+      $config->save();
       $message = 'Password Changed';
     }
   }
   else {
-    $message = 'Old password invalid';
+    $message = 'Old password incorrect';
   }
   $show_button_on = false;
 }
@@ -207,7 +193,7 @@ elseif (isset($_POST['disable_password'])) {
 }
 elseif ((isset($_POST['username']) && (isset($_POST['password'])))) {
   if (update_password_config($_POST['username'])) {
-    save_config();
+    $config->save();
     if (session_status() == PHP_SESSION_ACTIVE) session_destroy();   //Force logout
     $message = 'Password Protection Enabled';
     $show_button_on = false;

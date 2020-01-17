@@ -8,15 +8,27 @@
  *    None
  */
 function draw_sidemenu() {
+  $alert_count = 0;
+
+  $alert_count = sidemenu_get_alert_count();
+
   echo '<nav><div id="menu-side">'.PHP_EOL;
   echo '<a href="/admin/"><img src="/admin/svg/smenu_dashboard.svg" alt="" title="Dashboard">Dashboard</a>'.PHP_EOL;
   echo '<a href="/admin/queries.php"><img src="/admin/svg/smenu_queries.svg" alt="" title="DNS Queries">DNS Queries</a>'.PHP_EOL;
   echo '<a href="/admin/dhcp.php"><img src="/admin/svg/smenu_dhcp.svg" alt="" title="Network DHCP">Network</a>'.PHP_EOL;
   echo '<a href="/admin/live.php"><img src="/admin/svg/smenu_live.svg" alt="" title="Live">Live</a>'.PHP_EOL;
-  echo '<a href="/admin/analytics.php"><img src="/admin/svg/smenu_analytics.svg" alt="" title="Alerts">Alerts</a>'.PHP_EOL;
+
+  //Only display an alert count if its above zero
+  if ($alert_count == 0) {
+    echo '<a href="/admin/analytics.php"><img src="/admin/svg/smenu_analytics.svg" alt="" title="Alerts">Alerts</a>'.PHP_EOL;
+  }
+  else {
+    echo '<a href="/admin/analytics.php"><img src="/admin/svg/smenu_analytics.svg" alt="" title="Alerts"><div class="alert-count">'.formatnumber($alert_count).'</div>Alerts</a>'.PHP_EOL;
+  }
+
   echo '<a href="/admin/blocked.php"><img src="/admin/svg/smenu_blocked.svg" alt="" title="Sites Blocked">Sites Blocked</a>'.PHP_EOL;
   echo '<a href="/admin/investigate.php"><img src="/admin/svg/smenu_investigate.svg" alt="" title="Investigate">Investigate</a>'.PHP_EOL;
-  echo '<a href="/admin/config.php"><img src="/admin/svg/smenu_config.svg" alt="" title="Config">Config</a>'.PHP_EOL;
+  echo '<a href="/admin/config"><img src="/admin/svg/smenu_config.svg" alt="" title="Config">Config</a>'.PHP_EOL;
   echo '<a href="/admin/help.php"><img src="/admin/svg/smenu_help.svg" alt="" title="Help">Help</a>'.PHP_EOL;
 
   sidemenu_sysstatus();
@@ -57,7 +69,7 @@ function draw_helpmenu() {
  *    None
  */
 function draw_topmenu($currentpage='') {
-  global $Config, $mem;
+  global $config, $mem;
   
   echo '<nav><div id="menu-top">'.PHP_EOL;
   echo '<span class="hamburger pointer mobile-show" onclick="openNav()">&#9776;</span>'.PHP_EOL;   //Hamburger menu to show #menu-side mobile-show
@@ -71,17 +83,17 @@ function draw_topmenu($currentpage='') {
   
   
   //If Status = Paused AND UnpauseTime < Now plus a few seconds then force reload of Config
-  if (($Config['status'] & STATUS_PAUSED) && ($Config['unpausetime'] < (time()+10))) {
-    $mem->delete('Config');
-    load_config();
+  if (($config->status & STATUS_PAUSED) && ($config->unpausetime < (time()+10))) {
+    $mem->delete('conf-settings');
+    $config->load();
   }
 
   echo '<div id="pause-group">'.PHP_EOL;
   //echo '<input type="hidden" name="pause-time" id="pause-time" value="">'.PHP_EOL;
-  if ($Config['status'] & STATUS_PAUSED) {
+  if ($config->status & STATUS_PAUSED) {
     echo '<img id="pause-button" class="pointer" title="Resume Blocking" onclick="enableNoTrack()" src="/admin/svg/tmenu_play.svg" alt="">'.PHP_EOL;
   }
-  elseif ($Config['status'] & STATUS_DISABLED) {
+  elseif ($config->status & STATUS_DISABLED) {
     echo '<img id="pause-button" class="pointer" title="Resume Blocking" onclick="enableNoTrack()" src="/admin/svg/tmenu_play.svg" alt="">'.PHP_EOL;
   }
   else {
@@ -100,7 +112,7 @@ function draw_topmenu($currentpage='') {
   
   
   echo '<div id="menu-top-group">';
-  if ($Config['status'] & STATUS_INCOGNITO) {              //Is Incognito set? Draw purple button and text
+  if ($config->status & STATUS_INCOGNITO) {              //Is Incognito set? Draw purple button and text
     echo '<img id="incognito-button" class="pointer" title="Incognito" onclick="menuIncognito()" src="/admin/svg/menu_incognito_active.svg" alt="">'.PHP_EOL;
   }
   else {                                                   //No, draw white button and text
@@ -134,6 +146,34 @@ function draw_topmenu($currentpage='') {
 
 
 /********************************************************************
+ *  Side Menu Alert Count
+ *    1. Attempt to load alert_count value from Memcache
+ *    2. count_alert function is provided from $dbwrapper, but the current page may not contain that object
+ *    3. Once obtained store the value in Memcache for 1 hour
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    alert_count
+ */
+function sidemenu_get_alert_count() {
+  global $dbwrapper, $mem;
+
+  $alert_count = 0;
+
+  $alert_count = $mem->get('alert_count');
+
+  if (empty($alert_count)) {
+    if (isset($dbwrapper)) {
+      $alert_count = $dbwrapper->analytics_count();
+      $mem->set('alert_count', $alert_count, 0, 3600);
+    }
+  }
+
+  return $alert_count;
+}
+
+/********************************************************************
  *  Side Menu Status
  *
  *  Params:
@@ -142,7 +182,7 @@ function draw_topmenu($currentpage='') {
  *    None
  */
 function sidemenu_sysstatus() {
-  global $Config;
+  global $config;
   
   $sysload = sys_getloadavg();
   $freemem = preg_split('/\s+/', exec('free -m | grep Mem'));
@@ -152,7 +192,7 @@ function sidemenu_sysstatus() {
   echo '<div id="menu-side-status">'.PHP_EOL;              //Start menu-side-status
   echo '<div><img src="/admin/svg/status_screen.svg" alt="">System Status</div>';
   
-  if ($Config['status'] & STATUS_ENABLED) {
+  if ($config->status & STATUS_ENABLED) {
     if (file_exists(NOTRACK_LIST)) {
       echo '<div id="menu-side-blocking"><img src="/admin/svg/status_green.svg" alt="">Blocking: Enabled</div>'.PHP_EOL;
     }
@@ -162,10 +202,10 @@ function sidemenu_sysstatus() {
       }
     }
   }
-  elseif ($Config['status'] & STATUS_PAUSED) {
-    echo '<div id="menu-side-blocking"><img src="/admin/svg/status_yellow.svg" alt="">Blocking: Paused - '.date('H:i', $Config['unpausetime']).'</div>'.PHP_EOL;
+  elseif ($config->status & STATUS_PAUSED) {
+    echo '<div id="menu-side-blocking"><img src="/admin/svg/status_yellow.svg" alt="">Blocking: Paused - '.date('H:i', $config->unpausetime).'</div>'.PHP_EOL;
   }
-  elseif ($Config['status'] & STATUS_DISABLED) {
+  elseif ($config->status & STATUS_DISABLED) {
     echo '<div id="menu-side-blocking"><img src="/admin/svg/status_red.svg" alt="">Blocking: Disabled</div>'.PHP_EOL;
   }
   

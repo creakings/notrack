@@ -3,9 +3,10 @@
   TODO: Add view switcher to show resolved*/
 require('./include/global-vars.php');
 require('./include/global-functions.php');
+require('./include/config.php');
 require('./include/menu.php');
+require('./include/mysqlidb.php');
 
-load_config();
 ensure_active_session();
 
 ?>
@@ -24,10 +25,6 @@ ensure_active_session();
 
 <body>
 <?php
-draw_topmenu('Alerts');
-draw_sidemenu();
-echo '<div id="main">'.PHP_EOL;
-
 /************************************************
 *Constants                                      *
 ************************************************/
@@ -38,7 +35,7 @@ $INVESTIGATEURL = '';
 *Global Variables                               *
 ************************************************/
 $view = false;
-
+$dbwrapper = new MySqliDb;
 /************************************************
 *Arrays                                         *
 ************************************************/
@@ -57,6 +54,8 @@ $view = false;
  *    None
  */
 function do_action($action) {
+  global $dbwrapper;
+
   $boxstr = '';
   $boxes = array();
   $box = '';
@@ -72,51 +71,31 @@ function do_action($action) {
 
   foreach($boxes as $box) {
     if (preg_match('/(\d+)_(\d{4}\-\d\d-\d\d)_(\d\d:\d\d:\d\d)/', $box, $matches) > 0) {
-      update_value($matches[1], $matches[2], $matches[3], $action);
+      $dbwrapper->analytics_update_value($matches[1], $matches[2], $matches[3], $action);
     }
   }
 }
 
 
 /********************************************************************
- *  Update Value
- *    Update value in analytics table based on action
- *    Prevent malicious changes by checking time and id matches
- *    1. Search for value based on id and log_time
- *    2. Zero results means malicious change, so drop out silently
- *    3. Carry out update action
- *
+ *  Draw Filter Toolbar
+ *    Populates filter bar with Mark resolved
+ *    TODO more filters needed for showing resolved and severity
  *  Params:
- *    id, logdate, logtime, action
+ *    None
  *  Return:
  *    None
  */
-function update_value($id, $logdate, $logtime, $action) {
-  global $db;
-  $cmd = '';
-
-  $cmd = "SELECT * FROM analytics WHERE id = '$id' AND log_time = '$logdate $logtime'";
-
-  if(!$result = $db->query($cmd)){
-    return false;
-  }
-  if ($result->num_rows == 0) {
-    $result->free();
-    return false;
-  }
-  $result->free();
-
-  if ($action == 'resolve') {
-    $cmd = "UPDATE analytics SET ack = TRUE WHERE id = '$id'";
-  }
-  elseif ($action == 'delete') {
-    $cmd = "DELETE FROM analytics WHERE id = '$id'";
-  }
-
-  $db->query($cmd);
+function draw_filter_toolbar() {
+  echo '<div class="filter-toolbar analytics-filter-toolbar">'.PHP_EOL;
+  echo '<div>'.PHP_EOL;                                    //Start Group 1
+  echo '<input type="hidden" id="selectedCheckboxes" name="selectedCheckboxes" value="">'.PHP_EOL;
+  echo '<input type="checkbox" id="topCheckbox" onClick="checkAll(this)">'.PHP_EOL;
+  echo '<button type="submit" name="action" value="resolve" onClick="submitForm()">Mark Resolved</button>&nbsp;'.PHP_EOL;
+  echo '<button type="submit" class="button-grey" name="action" value="delete" onClick="submitForm()">Delete</button>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;                                   //End Group 1
+  echo '</div>'.PHP_EOL;                                   //End filter-toolbar
 }
-
-
 /********************************************************************
  *  Popup Menu
  *    Prepare popup menu and contents
@@ -127,7 +106,7 @@ function update_value($id, $logdate, $logtime, $action) {
  *    HTML code for popup menu
  */
 function popupmenu($domain, $blocked, $showreport) {
-  global $Config, $INVESTIGATE, $INVESTIGATEURL;
+  global $config, $INVESTIGATE, $INVESTIGATEURL;
 
   $str = '';
   $str .= '<div class="dropdown-container"><span class="dropbtn"></span><div class="dropdown">';
@@ -139,7 +118,7 @@ function popupmenu($domain, $blocked, $showreport) {
     $str .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
   }
   $str .= '<a href="'.$INVESTIGATEURL.$domain.'">'.$INVESTIGATE.'</a>';
-  $str .= '<a href="'.$Config['SearchUrl'].$domain.'" target="_blank">'.$Config['Search'].'</a>';
+  $str .= '<a href="'.$config->settings['SearchUrl'].$domain.'" target="_blank">'.$config->settings['Search'].'</a>';
   $str .= '<a href="https://www.virustotal.com/en/domain/'.$domain.'/information/" target="_blank">VirusTotal</a>';
   $str .= '</div></div>';                                  //End dropdown-container
 
@@ -158,8 +137,10 @@ function popupmenu($domain, $blocked, $showreport) {
  *    false when nothing found, true on success
  */
 function show_analytics() {
-  global $db, $view;
+  global $dbwrapper, $view;
+
   $action = '';
+  $clipboard = '';                                         //Div for Clipboard
   $log_time = '';
   $sys = '';
   $dns_request = '';
@@ -169,39 +150,27 @@ function show_analytics() {
   $list = '';
   $query = '';
   $checkboxid = '';
-  $queryurl = '';                                          //URL to queries.php
+  $investigateurl = '';                                    //URL to investigate.php
   $severity = 2;
   $event = '';
 
-  $query = "SELECT * FROM analytics WHERE ack = '$view' ORDER BY log_time DESC";
 
   echo '<div class="sys-group">'.PHP_EOL;
 
-  if(!$result = $db->query($query)){
-    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
-    echo 'show_analytics: '.$db->error;
-    echo '</div>'.PHP_EOL;
-    die();
-  }
+  $analyticsdata = $dbwrapper->analytics_get_data($view);
 
-  if ($result->num_rows == 0) {                            //Leave if nothing found
-    $result->free();
+  if ($analyticsdata === false) {                         //Leave if nothing found
     echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
     return false;
   }
 
-  //Draw form and buttons
   echo '<form method="POST" name="analyticsForm">'.PHP_EOL;
-  echo '<input type="hidden" id="selectedCheckboxes" name="selectedCheckboxes" value="">'.PHP_EOL;
-  echo '<input type="checkbox" id="topCheckbox" onClick="checkAll(this)">'.PHP_EOL;
-  echo '<button type="submit" name="action" value="resolve" onClick="submitForm()">Mark Resolved</button>'.PHP_EOL;
-  echo '<button type="submit" class="button-grey" name="action" value="delete" onClick="submitForm()">Delete</button>'.PHP_EOL;
-  echo '<p></p>'.PHP_EOL;
+  draw_filter_toolbar();
 
   echo '<table id="analytics-table">'.PHP_EOL;             //Start table
   echo '<tr><th>&nbsp;</th><th>&nbsp;</th><th>Site</th><th>System</th><th>Time</th><th>&nbsp;</th></tr>'.PHP_EOL;
 
-  while($row = $result->fetch_assoc()) {                   //Read each row of results
+  foreach ($analyticsdata as $row) {                       //Read each row of results
     $log_time = $row['log_time'];
     $sys = $row['sys'];
     $dns_request = $row['dns_request'];
@@ -210,38 +179,48 @@ function show_analytics() {
     $severity = 2;
 
     $checkboxid = $row['id'].'_'.str_replace(' ', '_', $log_time);
-    if ($dns_result != 'B') {                              //Setup Action Button
+
+    //$investigateurl = './queries.php?groupby=time&amp;sort=ASC&amp;sysip='.$sys.'&amp;datetime='.$log_time;
+    $investigateurl = "./investigate.php?datetime=".rawurlencode($log_time)."&amp;site={$dns_request}&amp;sys={$sys}";
+
+    //Create clipboard image and text
+    $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
+
+
+    //Setup Popup menu Button for blocked malware site
+    if ($dns_result != 'B') {
       $action = popupmenu($dns_request, false, 'true');
     }
 
+    //Setup $issue for Tracker or Advert accessed
     if (($row['issue'] == 'Tracker') || ($row['issue'] == 'Advert')) {
-      $issue = $row['issue'].' Accessed - '.$dns_request;
+      $issue = '<a href="'.$investigateurl.'">'.$row['issue'].' Accessed - '.$dns_request.'</a>'.$clipboard;
       $event = 'tracker';
     }
-    else {                                                 //Setup Malware Alert
+
+    //Setup $issue for Malware blocked or allowed
+    else {
       $list = ucwords(str_replace('_', ' ', substr($row['issue'], 11)));
       $event = 'malware';
       $action = ($list == 'Notrack Malware') ? popupmenu($dns_request, true, 'true') : popupmenu($dns_request, true, 'false');
       
-      if ($dns_result == 'B') {
-        $issue = 'Malware Blocked - '.$dns_request.'<p class="small grey">Blocked by '.$list.'</p>';
+      if ($dns_result == 'B') {                            //Malware Blocked
+        $issue = '<a href="'.$investigateurl.'">Malware Blocked - '.$dns_request.'</a>'.$clipboard.'<p class="small grey">Blocked by '.$list.'</p>';
       }
-      else {
-        $issue = '<span class="red">Malware Accessed</span> - '.$dns_request.'<p class="small grey">Identified by '.$list.'</p>';
+      else {                                               //Malware Accessed
+        $issue = '<a href="'.$investigateurl.'"><span class="red">Malware Accessed</span> - '.$dns_request.'</a>'.$clipboard.'<p class="small grey">Identified by '.$list.'</p>';
         $severity = 3;
       }
     }
 
-    $queryurl = './queries.php?groupby=time&amp;sort=ASC&amp;sysip='.$sys.'&amp;datetime='.$log_time;
-
+    //Output table row
     echo '<tr'.$row_colour.'><td><img src="./svg/events/'.$event.$severity.'.svg" alt=""></td><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
-    echo '<td class="pointer" onclick="window.open(\''.$queryurl.'\')">'.$issue.'</td><td>'.$sys.'</td><td>'.simplified_time($log_time).'</td><td>'.$action.'</td></tr>'.PHP_EOL;
+    echo '<td>'.$issue.'</td><td>'.$sys.'</td><td>'.simplified_time($log_time).'</td><td>'.$action.'</td></tr>'.PHP_EOL;
   }
 
   echo '</table>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
   echo '</div>'.PHP_EOL;                                   //End sys-group
-  $result->free();
 
   return true;
 }
@@ -249,7 +228,6 @@ function show_analytics() {
 /********************************************************************
  *Main
  */
-$db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
 
 if (isset($_POST['action'])) {                             //Any POST actions to carry out?
   switch($_POST['action']) {
@@ -260,11 +238,18 @@ if (isset($_POST['action'])) {                             //Any POST actions to
       do_action('delete');
       break;
   }
+  //Reload page to prevent repeat action browser alert
+  header('Location: analytics.php');
+  exit;
 }
 
-if ($Config['whoisapi'] == '') {                           //Setup Investigate / Whois for popupmenu
-  $INVESTIGATE = $Config['WhoIs'];
-  $INVESTIGATEURL = $Config['WhoIsUrl'];
+draw_topmenu('Alerts');
+draw_sidemenu();
+echo '<div id="main">'.PHP_EOL;
+
+if ($config->settings['whoisapi'] == '') {                 //Setup Investigate / Whois for popupmenu
+  $INVESTIGATE = $config->settings['WhoIs'];
+  $INVESTIGATEURL = $config->settings['WhoIsUrl'];
 }
 else {
   $INVESTIGATE = 'Investigate';
@@ -272,9 +257,8 @@ else {
 }
 
 show_analytics();
-
+draw_copymsg();
 //echo '</div>'.PHP_EOL;                                   //End Div Group
-$db->close();
 
 ?>
 </div>
@@ -307,11 +291,11 @@ $db->close();
 <div class="close-button" onclick="hideQueriesBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
 </div>
 <script>
-const SEARCHNAME = <?php echo json_encode($Config['Search'])?>;
-const SEARCHURL = <?php echo json_encode($Config['SearchUrl'])?>;
-const WHOISNAME = <?php echo json_encode($Config['WhoIs'])?>;
-const WHOISURL = <?php echo json_encode($Config['WhoIsUrl'])?>;
-const WHOISAPI = <?php echo ($Config['whoisapi'] == '') ? 0 : 1;?>;
+const SEARCHNAME = <?php echo json_encode($config->settings['Search'])?>;
+const SEARCHURL = <?php echo json_encode($config->settings['SearchUrl'])?>;
+const WHOISNAME = <?php echo json_encode($config->settings['WhoIs'])?>;
+const WHOISURL = <?php echo json_encode($config->settings['WhoIsUrl'])?>;
+const WHOISAPI = <?php echo ($config->settings['whoisapi'] == '') ? 0 : 1;?>;
 
 
 /********************************************************************
@@ -402,6 +386,7 @@ function submitForm() {
 
   document.getElementById('selectedCheckboxes').value = itemsChecked;
 }
+
 </script>
 </body>
 </html>

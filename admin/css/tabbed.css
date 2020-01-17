@@ -4,8 +4,10 @@
    ========================================================================== */
 
 #tabbed {
-  margin-top: -0.6rem;
-  background-color: rgba(0, 110, 116, 0.95);
+  padding: 0.5rem 0.8rem;
+  background-color: #d2d2d2;
+  border: 1px solid #bdbdbd;
+  border-radius: 2px;
 }
 #tabbed > input {
   display: none;
@@ -14,13 +16,10 @@
   margin: 0.2rem 0.1rem;
   padding: 0.5rem 1rem;
   border-radius: 4px;
-  cursor: pointer;
   background-color: #c8c8c8;
-  box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3), inset 0 0 3px #666;
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5), inset 0 0 4px #666;
+  cursor: pointer;
   display: inline-block;
-}
-#tabbed > label:nth-of-type(1) {                                     /* Shift over to match sys-group */
-  margin-left: 4.5%;
 }
 #tabbed > label:hover {
   opacity: 0.92;
@@ -29,8 +28,8 @@
   opacity: 0.82;
 }
 #tabbed > label:active {
-  transform: translateY(1px);
-  box-shadow: inset 0 0 6px #666;
+  transform: translateY(2px);
+  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5), inset 0 0 4px #666;
   opacity: 0.74;
 }
 #tabbed > input:checked + label {
@@ -38,16 +37,19 @@
 }
 
 #tabs {
+  margin: 0.5rem -0.8rem -1rem;
+  border-top: 1px solid #bdbdbd;
   clear: both;
 }
 #tabs > div {
-  position: absolute;
+  display: none;
+  margin: 0 -0.1rem;
+  padding: 0.5rem 0.5rem 0.7rem;
+  background-color: #f7f7f7;
   opacity: 0;
+  overflow-y: auto;
   transition: opacity 0.4s;
   z-index: 0;
-  display: inline-block;
-  height: calc(100vh - 5.9rem);
-  overflow-y: auto;
 }
 #tabbed input[type="submit"] {
   display:block;
@@ -62,13 +64,8 @@
 #tab-nav-6:checked ~ #tabs > div:nth-of-type(6),
 #tab-nav-7:checked ~ #tabs > div:nth-of-type(7),
 #tab-nav-8:checked ~ #tabs > div:nth-of-type(8) {
+  display: inline-block;
   opacity: 1;
   z-index: 1;
-}
-
-@media only screen and (max-width:480px), only screen and (max-device-width:480px) {
-  #tabbed > label:nth-of-type(1) {
-    margin-left: 0;
-  }
 }
 

@@ -10,13 +10,18 @@ queries.php:
 Config
 *Convert users Block/Allow form to POST
 *Remove PNG icons from Block/Allow page and use SVG-icons instead
-*Split config options into seperate pages
 
 menu.php
 *Add number of alerts to Alerts button
 
 blocked.php
 *Expand number of user agents
+
+investigate.php
+*Add Cisco Umbrella (existing code needs importing into NoTrack)
+
+index.php
+*Add message feature to show alerts such as new updates, threats, etc..
 
 notrack.sh
 *Add more blocklists
@@ -30,3 +35,6 @@ https://firebog.net/ - nice list and layout
 *Login page
 Keep track of IP's attempting to log in, and throttle exponentially
 
+Add difficult to block trackers as a selection list for user to choose and explain downsides.
+List of URLs may have to be generated from ntrk-exec.sh as a blocklist file for notrack.sh
+e.g. Amazon ads prevents Android app from working

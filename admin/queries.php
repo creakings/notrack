@@ -1,9 +1,9 @@
 <?php
 require('./include/global-vars.php');
 require('./include/global-functions.php');
+require('./include/config.php');
 require('./include/menu.php');
 
-load_config();
 ensure_active_session();
 
 ?>
@@ -17,7 +17,7 @@ ensure_active_session();
   <script src="./include/menu.js"></script>
   <script src="./include/queries.js"></script>
   <title>NoTrack - DNS Queries</title>
-  <meta name="viewport" content="width=device-width, initial-scale=0.7">
+  <meta name="viewport" content="width=device-width, initial-scale=0.8">
 </head>
 
 <body>
@@ -49,6 +49,8 @@ $TIMELIST = array('1 HOUR' => '1 Hour',
 
 $VIEWLIST = array('name', 'time');
 
+$INVESTIGATE = '';
+$INVESTIGATEURL = '';
 
 /************************************************
 *Global Variables                               *
@@ -84,11 +86,11 @@ function buildlink() {
 
   $link = "groupby=$groupby";
 
-  $link .= ($datetime != '') ? "&amp;datetime=".rawurlencode($datetime) : "&amp;searchtime=$searchtime";
-  $link .= ($dtrange != '') ? "&amp;dtrange=$dtrange" : '';
-  $link .= ($filter != DEF_FILTER) ? "&amp;filter=$filter" : '';
-  $link .= ($sysip != DEF_SYSTEM) ? "&amp;sysip=$sysip" : '';
-  $link .= ($searchbox != '') ? "&amp;searchbox=$searchbox" : '';
+  $link .= ($datetime != '') ? '&amp;datetime='.rawurlencode($datetime) : '&amp;searchtime='.rawurlencode($searchtime);
+  $link .= ($dtrange != '') ? "&amp;dtrange={$dtrange}" : '';
+  $link .= ($filter != DEF_FILTER) ? "&amp;filter={$filter}" : '';
+  $link .= ($sysip != DEF_SYSTEM) ? "&amp;sysip={$sysip}" : '';
+  $link .= ($searchbox != '') ? "&amp;searchbox={$searchbox}" : '';
 
   return $link;
 }
@@ -153,40 +155,45 @@ function filter_ipaddress($value) {
 /********************************************************************
  *  Get DNS Search
  *    Returns formatted SQL query for searching dns_request from dnsqueries table based on various search inputs
+ *    *domain* = domain anywhere
+ *    *domain = ends with domain
+ *    domain* = begins with domain
+ *    * = all grouped domains
+ *    domain = domain anywhere
  *
  *  Params:
  *    Users search
  *  Return:
  *    SQL Search string for DNS Request
  */
-function get_dnssearch($urlsearch) {
+function get_dnssearch($domainsearch) {
   $sqlsearch = '';
-  $url = '';
+  $domain = '';
 
-  $url = preg_replace('/\*/', '', $urlsearch);
+  $domain = preg_replace('/\*/', '', $domainsearch);
 
-  if (preg_match('/^\*[\w\d\.\-_]+\*$/', $urlsearch) > 0) {
-    $sqlsearch = "AND dns_request LIKE '%$url%' ";
+  if (preg_match('/^\*[\w\d\.\-_]+\*$/', $domainsearch) > 0) {
+    $sqlsearch = "AND dns_request LIKE '%{$domain}%' ";
     //echo '1';
   }
-  elseif (preg_match('/^\*[\w\d\.\-_]+\.[\w\d\-]+$/', $urlsearch) > 0) {
-    $sqlsearch = "AND dns_request LIKE '%$url' ";
+  elseif (preg_match('/^\*[\w\d\.\-_]+\.[\w\d\-]+$/', $domainsearch) > 0) {
+    $sqlsearch = "AND dns_request LIKE '%{$domain}' ";
     //echo '2';
   }
-  elseif (preg_match('/^[\w\d\.\-_]+\*$/', $urlsearch) > 0) {
-    $sqlsearch = "AND dns_request LIKE '$url%' ";
+  elseif (preg_match('/^[\w\d\.\-_]+\*$/', $domainsearch) > 0) {
+    $sqlsearch = "AND dns_request LIKE '{$domain}%' ";
     //echo '3';
   }
-  elseif (preg_match('/^[\w\d\.\-_]+\.[\w\d\-]+$/', $urlsearch) > 0) {
-    $sqlsearch = "AND dns_request = '$url' ";
+  elseif (preg_match('/^[\w\d\.\-_]+\.[\w\d\-]+$/', $domainsearch) > 0) {
+    $sqlsearch = "AND dns_request = '{$domain}' ";
     //echo '4';
   }
-  elseif (preg_match('/^\*$/', $urlsearch) > 0) {          //* Only = all grouped requests
+  elseif (preg_match('/^\*$/', $domainsearch) > 0) {          //* Only = all grouped requests
     $sqlsearch = "AND dns_request LIKE '*%' ";
     //echo '5';
   }
   else {
-    $sqlsearch = "AND dns_request LIKE '%$url%' ";
+    $sqlsearch = "AND dns_request LIKE '%{$domain}%' ";
     //echo '6';
   }
 
@@ -221,7 +228,8 @@ function get_ipsearch($ipsearch) {
 
 
 /********************************************************************
- *  Draw Filter Box
+ *  Draw Filter Toolbar
+ *    Populates filter bar with Search Boxes, Search Button
  *    Reset form is dealt with by queries.js function resetQueriesForm()
  *    Show current value first in <select>, and then read through respective array to output values
  *  Params:
@@ -229,14 +237,14 @@ function get_ipsearch($ipsearch) {
  *  Return:
  *    None
  */
-function draw_filterbox() {
+function draw_filter_toolbar() {
   global $sysiplist, $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby, $datetime, $dtrange;
   global $FILTERLIST, $TIMELIST;
 
   $line = '';
 
   echo '<form method="get">'.PHP_EOL;
-  echo '<div id="dnsfilter-container">'.PHP_EOL;                    //Start Div Group
+  echo '<div class="filter-toolbar queries-filter-toolbar">'.PHP_EOL;
 
   echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
   echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
@@ -247,6 +255,13 @@ function draw_filterbox() {
   if ($dtrange != '') {
     echo '<input type="hidden" name="dtrange" value="'.$dtrange.'">'.PHP_EOL;
   }
+
+  //Column Headers
+  echo '<div><h3>Domain</h3></div>'.PHP_EOL;
+  echo '<div><h3>IP</h3></div>'.PHP_EOL;
+  echo '<div><h3>Time</h3></div>'.PHP_EOL;
+  echo '<div><h3><span class="mobile-hide">Request </span>Type</h3></div>'.PHP_EOL;
+  echo '<div></div>'.PHP_EOL;
 
   echo '<div><input type="text" name="searchbox" id="filtersearch" value="'.$searchbox.'" placeholder="site.com"></div>'.PHP_EOL;
 
@@ -271,8 +286,8 @@ function draw_filterbox() {
   }
   echo '</select></div>'.PHP_EOL;                          //End Filter List
 
-  echo '<input type="submit" value="Search">&nbsp;&nbsp;';
-  echo '<button type="button" class="button-grey mobile-hide" onclick="resetQueriesForm()">Reset</button>';
+  echo '<div><input type="submit" value="Search">&nbsp;&nbsp;';
+  echo '<button type="button" class="button-grey mobile-hide" onclick="resetQueriesForm()">Reset</button></div>';
 
   echo '</div>'.PHP_EOL;                                   //End Div Group
   echo '</form>'.PHP_EOL;
@@ -282,8 +297,8 @@ function draw_filterbox() {
 
 /********************************************************************
  *  Draw Group By Buttons
- *    groupby is a form which contains hidden elements from draw_filterbox
- *    Selection between Site / Time is made using radio box, which is missing the input box
+ *    groupby is a form which contains hidden elements from draw_filter_toolbar
+ *    Selection between Domain / Time is made using radio box, which is missing the input box
  *    Radio box labels are styled to look like pag-nav
  *
  *  Params:
@@ -316,7 +331,7 @@ function draw_groupby() {
   echo '<input type="hidden" name="sys" value="'.$sysip.'">'.PHP_EOL;
   echo '<input type="hidden" name="filter" value="'.$filter.'">'.PHP_EOL;
   echo '<div id="groupby-container">'.PHP_EOL;
-  echo '<input type="radio" id="gbtab1" name="groupby" value="name" onchange="submit()" '.$domainactive.'><label for="gbtab1">Site</label>'.PHP_EOL;
+  echo '<input type="radio" id="gbtab1" name="groupby" value="name" onchange="submit()" '.$domainactive.'><label for="gbtab1">Domain</label>'.PHP_EOL;
   echo '<input type="radio" id="gbtab2" name="groupby" value="time" onchange="submit()" '.$timeactive.'><label for="gbtab2">Time</label>'.PHP_EOL;
   echo '</div></form>';
 }
@@ -407,49 +422,6 @@ function search_blockreason($domain) {
 
 
 /********************************************************************
- *  Get Block List Name
- *    Returns the name of block list if it exists in the names array
- *
- *  Params:
- *    $bl - bl_name
- *  Return:
- *    Full block list name
- *    Or what it has been named as
- */
-function get_blocklistname($bl) {
-  global $BLOCKLISTNAMES;
-
-  if (array_key_exists($bl, $BLOCKLISTNAMES)) {
-    return $BLOCKLISTNAMES[$bl];
-  }
-
-  return $bl;
-}
-
-
-/********************************************************************
- *  Get Block List Event
- *    Returns the name of block list event if it exists in the event array
- *
- *  Params:
- *    $bl - bl_name
- *  Return:
- *    event value
- */
-function get_blocklistevent($bl) {
-  global $BLOCKLISTEVENT;
-
-  if (array_key_exists($bl, $BLOCKLISTEVENT)) {
-    return $BLOCKLISTEVENT[$bl];
-  }
-  elseif (substr($bl, 0, 6) == 'custom') {                 //Could be a custom_x list
-    return 'custom';
-  }
-
-  return $bl;                                              //Shouldn't get to here
-}
-
-/********************************************************************
  *  Format Row
  *    Returns the action, blockreason, event, and severity in an array
  *
@@ -460,35 +432,40 @@ function get_blocklistevent($bl) {
  *    Array of variables to be taken using list()
  */
 function format_row($domain, $dns_result) {
-  $action = '';
+  global $config, $INVESTIGATE, $INVESTIGATEURL;
+
   $blocklist = '';
   $blockreason = '';
   $event = '';
   $severity = '1';
-  
+  $popupmenu = '';
+
+
+  $popupmenu = '<div class="dropdown-container"><span class="dropbtn"></span><div class="dropdown">';
+
   if ($dns_result == 'A') {
-    $action = '<button class="icon-boot button-grey" onclick="reportSite(\''.$domain.'\', false, true)">Block</button>';
     $event = 'allowed1';
+    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
   }
   elseif ($dns_result == 'B') {         //Blocked
     $blocklist = search_blockreason($domain);
     $severity = '2';
       
     if ($blocklist == 'bl_notrack') {        //Show Report icon on NoTrack list
-      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, true)">Allow</button>';
       $blockreason = '<p class="small grey">Blocked by NoTrack list</p>';
       $event = 'tracker2'; //TODO change image
+      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, true)">Allow</span>';
     }
     elseif ($blocklist == 'custom') {        //Users blacklist
-      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, false)">Allow</button>';
       $blockreason = '<p class="small grey">Blocked by Custom Black list</p>';
       $event = 'custom2';
+      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
     }
     elseif ($blocklist != '') {
-      $blockreason = '<p class="small grey">Blocked by '.get_blocklistname($blocklist).'</p>';
-      $action = '<button class="icon-tick button-grey" onclick="reportSite(\''.$domain.'\', true, false)">Allow</button>';
+      $blockreason = '<p class="small grey">Blocked by '.$config->get_blocklistname($blocklist).'</p>';
+      $event = $config->get_blocklistevent($blocklist);
 
-      $event = get_blocklistevent($blocklist);
+      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
 
       if ($event == 'malware') {
         $severity = '3';
@@ -499,13 +476,19 @@ function format_row($domain, $dns_result) {
     else {  //No reason is probably IP or Search request
       $blockreason = '<p class="small">Invalid request</p>';
       $event = 'invalid2';
+      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
     }
   }
   elseif ($dns_result == 'L') {
     $event = 'local1';
   }
 
-  return array($action, $blockreason, $event, $severity);
+  $popupmenu .= '<a href="'.$INVESTIGATEURL.$domain.'">'.$INVESTIGATE.'</a>';
+  $popupmenu .= '<a href="'.$config->settings['SearchUrl'].$domain.'" target="_blank">'.$config->settings['Search'].'</a>';
+  $popupmenu .= '<a href="https://www.virustotal.com/en/domain/'.$domain.'/information/" target="_blank">VirusTotal</a>';
+  $popupmenu .= '</div></div>';                                  //End dropdown-container
+
+  return array($blockreason, $event, $severity, $popupmenu);
 }
 
 
@@ -519,17 +502,18 @@ function format_row($domain, $dns_result) {
  *    false when nothing found, true on success
  */
 function show_group_view() {
-  global $db, $Config, $TLDBlockList;
+  global $db, $TLDBlockList;
   global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
 
   $i = 0;
   $k = 1;                                                  //Count within ROWSPERPAGE
-  $action = '';
   $blockreason = '';
-  $event = '';
+  $clipboard = '';                                         //Div for Clipboard
+  $event = '';                                             //Image event
+  $popupmenu = '';                                         //Div for popup menu
   $severity = 1;
   $query = '';
-  $domain = '';
+  $dns_request = '';
   $site_cell = '';
 
   $sortlink = "?page=$page&amp;".buildlink();
@@ -560,21 +544,27 @@ function show_group_view() {
   }
   $i = (($page - 1) * ROWSPERPAGE) + 1;                    //Friendly table position
 
+  echo '<div class="table-toolbar">'.PHP_EOL;              //Start table-toolbar
   pagination($result->num_rows, $paginationlink);
   draw_groupby();
+  echo '</div>'.PHP_EOL;                                   //End table-toolbar
 
   echo '<table id="query-group-table">'.PHP_EOL;
 
-  echo '<tr><th>&nbsp;</th><th>#</th><th>Site</th><th>Action</th><th>Requests<a class="primarydark" href="'.$sortlink.'&amp;sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'&amp;sort=ASC">&#x25B4;</a></th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp;</th><th>#</th><th>Domain</th><th>Requests<a class="primarydark" href="'.$sortlink.'&amp;sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'&amp;sort=ASC">&#x25B4;</a></th><th></th></tr>'.PHP_EOL;
 
-  while($row = $result->fetch_assoc()) {         //Read each row of results
-    $domain = $row['dns_request'];
-    list($action, $blockreason, $event, $severity) = format_row($domain, $row['dns_result']);
+  while($row = $result->fetch_assoc()) {                   //Read each row of results
+    $dns_request = $row['dns_request'];
+    list($blockreason, $event, $severity, $popupmenu) = format_row($dns_request, $row['dns_result']);
 
-    //Make entire site cell clickable with link going to Investigate
-    $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?site='.$domain.'\', \'_blank\')"><a href="./investigate.php?site='.$domain.'" class="black" target="_blank">'.$domain.$blockreason.'</a></td>';
+    //Create clipboard image and text
+    $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
 
-    echo '<tr><td><img src="./svg/events/'.$event.'.svg" alt=""></td><td>'.$i.'</td>'.$site_cell.'<td>'.$action.'</td><td>'.$row['count'].'</td></tr>'.PHP_EOL;
+    //Contents of domain cell
+    $domain_cell = '<a href="./investigate.php?site='.$dns_request.'" target="_blank">'.$dns_request.'</a>'.$clipboard.$blockreason;
+
+    //Output table row
+    echo "<tr><td><img src=\"./svg/events/{$event}.svg\" alt=\"\"></td><td>{$i}</td><td>{$domain_cell}</td><td>{$row['count']}</td><td>{$popupmenu}</td></tr>".PHP_EOL;
     $blockreason = '';
 
     $i++;
@@ -602,18 +592,19 @@ function show_group_view() {
  *    false when nothing found, true on success
  */
 function show_time_view() {
-  global $db, $Config, $TLDBlockList;
+  global $db, $TLDBlockList;
   global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
 
   $i = 0;
   $k = 1;                                                  //Count within ROWSPERPAGE
-  $action = '';
   $blockreason = '';
-  $event = '';
+  $clipboard = '';                                         //Div for Clipboard
+  $event = '';                                             //Image event
+  $popupmenu = '';                                         //Div for popup menu
   $severity = 1;
   $query = '';
-  $domain = '';
-  $site_cell = '';
+  $dns_request = '';
+  $domain_cell = '';
 
   $sortlink = "?page=$page&amp;".buildlink();
   $paginationlink = buildlink()."&amp;sort=$sort";
@@ -643,21 +634,26 @@ function show_time_view() {
   }
   $i = (($page - 1) * ROWSPERPAGE) + 1;                    //Friendly table position
 
+  echo '<div class="table-toolbar">'.PHP_EOL;              //Start table-toolbar
   pagination($result->num_rows, $paginationlink);
   draw_groupby();
+  echo '</div>'.PHP_EOL;                                   //End table-toolbar
 
   echo '<table id="query-time-table">'.PHP_EOL;
-  echo '<tr><th>&nbsp</th><th>Time<a class="primarydark" href="'.$sortlink.'&amp;sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'&amp;sort=ASC">&#x25B4;</a></th><th>System</th><th>Site</th><th>Action</th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp</th><th>Time<a class="primarydark" href="'.$sortlink.'&amp;sort=DESC">&#x25BE;</a><a class="primarydark" href="'.$sortlink.'&amp;sort=ASC">&#x25B4;</a></th><th>System</th><th>Domain</th><th></th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
-    $domain = $row['dns_request'];
-    list($action, $blockreason, $event, $severity) = format_row($domain, $row['dns_result']);
+    $dns_request = $row['dns_request'];
+    list($blockreason, $event, $severity, $popupmenu) = format_row($dns_request, $row['dns_result']);
 
-    //Make entire site cell clickable with link going to Investigate
-    //Add in datetime and system into investigate link
-    $site_cell = '<td class="pointer" onclick="window.open(\'./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$domain.'&amp;sys='.$row['sys'].'\', \'_blank\')"><a href="./investigate.php?datetime='.$row['formatted_time'].'&amp;site='.$domain.'&amp;sys='.$row['sys'].'" class="black" target="_blank">'.$domain.$blockreason.'</a></td>';
+    //Create clipboard image and text
+    $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
 
-    echo '<tr><td><img src="./svg/events/'.$event.'.svg" alt=""><td>'.$row['formatted_time'].'</td><td>'.$row['sys'].'</td>'.$site_cell.'<td>'.$action.'</td></tr>'.PHP_EOL;
+    //Contents of domain cell with more specific url for investigate
+    $domain_cell = "<a href=\"./investigate.php?datetime={$row['log_time']}&amp;site={$dns_request}&amp;sys={$row['sys']}\" target=\"_blank\">{$dns_request}</a>{$clipboard}{$blockreason}";
+
+    //Output table row
+    echo "<tr><td><img src=\"./svg/events/{$event}.svg\" alt=\"\"><td>{$row['formatted_time']}</td><td>{$row['sys']}</td><td>{$domain_cell}</td><td>{$popupmenu}</td></tr>".PHP_EOL;
     $blockreason = '';
 
     $k++;
@@ -714,9 +710,17 @@ if (isset($_GET['dtrange'])) {
   }
 }
 
-draw_filterbox();                                          //Draw filters
+if ($config->settings['whoisapi'] == '') {                 //Setup Investigate / Whois for popupmenu
+  $INVESTIGATE = $config->settings['WhoIs'];
+  $INVESTIGATEURL = $config->settings['WhoIsUrl'];
+}
+else {
+  $INVESTIGATE = 'Investigate';
+  $INVESTIGATEURL = './investigate.php?site=';
+}
 
 echo '<div class="sys-group">'.PHP_EOL;                    //Start Div Group
+draw_filter_toolbar();                                     //Draw filter-toolbar
 if ($groupby == 'time') {
   show_time_view();
 }
@@ -725,8 +729,9 @@ elseif ($groupby == 'name') {
 }
 
 echo '</div>'.PHP_EOL;                                     //End Div Group
-$db->close();
+draw_copymsg();
 
+$db->close();
 ?>
 </div>
 
@@ -758,11 +763,11 @@ $db->close();
 <div class="close-button" onclick="hideQueriesBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
 </div>
 <script>
-const SEARCHNAME = <?php echo json_encode($Config['Search'])?>;
-const SEARCHURL = <?php echo json_encode($Config['SearchUrl'])?>;
-const WHOISNAME = <?php echo json_encode($Config['WhoIs'])?>;
-const WHOISURL = <?php echo json_encode($Config['WhoIsUrl'])?>;
-const WHOISAPI = <?php echo ($Config['whoisapi'] == '') ? 0 : 1;?>;
+const SEARCHNAME = <?php echo json_encode($config->settings['Search'])?>;
+const SEARCHURL = <?php echo json_encode($config->settings['SearchUrl'])?>;
+const WHOISNAME = <?php echo json_encode($config->settings['WhoIs'])?>;
+const WHOISURL = <?php echo json_encode($config->settings['WhoIsUrl'])?>;
+const WHOISAPI = <?php echo ($config->settings['whoisapi'] == '') ? 0 : 1;?>;
 </script>
 </body>
 </html>

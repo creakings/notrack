@@ -1,3 +1,19 @@
+v0.9.4 Released 15 Jan 2020
+Complete overhaul to DHCP page.
+Adding a static host will also add it to DNS localhosts list
+Side menu now shows number of alerts
+Improve Alerts feature to find more elusive tracking domains
+Styling improvements
+Added clipboard buttons
+
+*************************************************
+v0.9.3 Released 08 Dec 2019
+Underlying changes to config code
+Advanced config settings moved into General Config
+Styling improvements for Top Level Domain admin page
+Add Get Latest option to Investigate whois results
+
+*************************************************
 v0.9.2 Released 07 Sep 2019
 New styling for block list selector
 New features added to API to allow construction of notrack-lcd project
@@ -5,7 +21,6 @@ Added Windows Spy Blocker list
 
 *************************************************
 v0.9.1 Released 23 Jul 2019
-
 DNS Query Line charts are now clickable
 Modern styling for Live page
 Added Block / Investigate menu to Live page

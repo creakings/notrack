@@ -1,10 +1,10 @@
 <?php
 require('./global-vars.php');
 require('./global-functions.php');
+require('./config.php');
 require('./mysqlidb.php');
-load_config();
 
-header('Content-Type: application/json; charset=UTF-8');
+header('content-Type: application/json; charset=UTF-8');
 
 /************************************************
 *Global Variables                               *
@@ -24,33 +24,33 @@ $readonly = true;
  *    None
  */
 function api_enable_notrack() {
-  global $Config, $mem, $response;
+  global $config, $mem, $response;
 
-  if ($Config['status'] & STATUS_ENABLED) {
+  if ($config->status & STATUS_ENABLED) {
     exec(NTRK_EXEC.'-s');
-    $Config['status'] -= STATUS_ENABLED;
-    $Config['status'] += STATUS_DISABLED;
+    $config->status -= STATUS_ENABLED;
+    $config->status += STATUS_DISABLED;
   }
-  elseif ($Config['status'] & STATUS_PAUSED) {
+  elseif ($config->status & STATUS_PAUSED) {
     exec(NTRK_EXEC.'-p');
-    $Config['status'] -= STATUS_PAUSED;
-    $Config['status'] += STATUS_ENABLED;
+    $config->status -= STATUS_PAUSED;
+    $config->status += STATUS_ENABLED;
   }
-  elseif ($Config['status'] & STATUS_DISABLED) {
+  elseif ($config->status & STATUS_DISABLED) {
     exec(NTRK_EXEC.'-p');
-    $Config['status'] -= STATUS_DISABLED;
-    $Config['status'] += STATUS_ENABLED;
+    $config->status -= STATUS_DISABLED;
+    $config->status += STATUS_ENABLED;
   }
-  //sleep(1);                                  //Prevent race condition
-  $mem->delete('Config');                      //Force reload of config
-  //load_config();
-  $response['status'] = $Config['status'];
+
+  $mem->delete('conf-settings');                           //Force reload of config
+  $response['status'] = $config->status;
 }
 
 
 /********************************************************************
  *  Pause NoTrack
  *    Pause NoTrack with time parsed in POST mins
+ *    Delete conf-settings from memcache so we force a load of config next page user views
  *
  *  Params:
  *    None
@@ -59,7 +59,7 @@ function api_enable_notrack() {
  *    true on success
  */
 function api_pause_notrack() {
-  global $Config, $mem, $response;
+  global $config, $mem, $response;
   
   $mins = 0;
 
@@ -72,16 +72,16 @@ function api_pause_notrack() {
   
   exec(NTRK_EXEC.'--pause '.$mins);
   
-  if ($Config['status'] & STATUS_INCOGNITO) {
-    $Config['status'] = STATUS_INCOGNITO + STATUS_PAUSED;
+  if ($config->status & STATUS_INCOGNITO) {
+    $config->status = STATUS_INCOGNITO + STATUS_PAUSED;
   }
   else {
-    $Config['status'] = STATUS_PAUSED;
+    $config->status = STATUS_PAUSED;
   }
   //sleep(1);
-  $mem->delete('Config');                      //Force reload of config
-  //load_config();
-  $response['status'] = $Config['status'];
+  $mem->delete('conf-settings');                           //Force reload of config
+  //$config->load();
+  $response['status'] = $config->status;
   $response['unpausetime'] = date('H:i', (time() + ($mins * 60)));
   
   return true;
@@ -90,20 +90,20 @@ function api_pause_notrack() {
 
 /********************************************************************
  *  API Incognito
- *    Switch incognito status based on bitwise value of Config[status]
+ *    Switch incognito status based on bitwise value of config->status
  *  Params:
  *    None
  *  Return:
  *    None
  */
 function api_incognito() {
-  global $Config, $response;
+  global $config, $response;
   
-  if ($Config['status'] & STATUS_INCOGNITO) $Config['status'] -= STATUS_INCOGNITO;
-  else $Config['status'] += STATUS_INCOGNITO;
-  $response['status'] = $Config['status'];
+  if ($config->status & STATUS_INCOGNITO) $config->status -= STATUS_INCOGNITO;
+  else $config->status += STATUS_INCOGNITO;
+  $response['status'] = $config->status;
   
-  save_config();
+  $config->save();
 }
 
 
@@ -204,20 +204,20 @@ function api_recent_queries($dbwrapper) {
  *    None
  */
 function is_key_valid() {
-  global $Config, $readonly;
+  global $config, $readonly;
 
   $key = '';
 
-  if ($Config['api_key'] == '') return false;
+  if ($config->settings['api_key'] == '') return false;
   
   $key = $_GET['api_key'] ?? '';
   
   if (preg_match(REGEX_VALIDAPI, $key)) {
-    if ($key == $Config['api_key']) {
+    if ($key == $config->settings['api_key']) {
       $readonly = false;
       return true;
     }
-    elseif ($key == $Config['api_readonly']) {
+    elseif ($key == $config->settings['api_readonly']) {
       $readonly = true;
       return true;
     }
@@ -238,7 +238,7 @@ function is_key_valid() {
  *    None
  */
 function do_action() {
-  global $Config, $response;
+  global $response;
   
   $dbwrapper = new MySqliDb;
   

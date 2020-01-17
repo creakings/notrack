@@ -1,9 +1,10 @@
 <?php
 require('./include/global-vars.php');
 require('./include/global-functions.php');
+require('./include/mysqlidb.php');
+require('./include/config.php');
 require('./include/menu.php');
 
-load_config();
 ensure_active_session();
 ?>
 <!DOCTYPE html>
@@ -21,20 +22,15 @@ ensure_active_session();
 
 <body>
 <?php
-draw_topmenu();
-draw_sidemenu();
-
 /************************************************
 *Constants                                      *
 ************************************************/
-define('QRY_BLOCKLIST', 'SELECT COUNT(*) FROM blocklist');
-
 $CHARTCOLOURS = array('#00c2c8', '#b1244a', '#93a0ff');
 
 /************************************************
 *Global Variables                               *
 ************************************************/
-$db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
+$dbwrapper = new MySqliDb;
 
 $day_allowed = 0;
 $day_blocked = 0;
@@ -46,6 +42,9 @@ $link_labels = array();
 
 /********************************************************************
  *  Block List Box
+ *    1. Check if notrack.sh is currently running
+ *    2. If it is, show message that blocklists are processing
+ *    3. Otherwise show the blocklist count
  *
  *  Params:
  *    None
@@ -53,11 +52,13 @@ $link_labels = array();
  *    None
  */
 function home_blocklist() {
+  global $dbwrapper;
+
   $rows = 0;
 
   exec('pgrep notrack', $pids);
   if(empty($pids)) {
-    $rows = count_rows(QRY_BLOCKLIST); 
+    $rows = $dbwrapper->count_blocklists();
     echo '<a class="home-nav-item" href="./config/blocklists.php"><span><h2>Block List</h2>'.number_format(floatval($rows)).'<br>Domains</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></a>'.PHP_EOL;
   }
   else {
@@ -147,7 +148,7 @@ function home_queries() {
  *    None
  */
 function home_status() {
-  global $Config;
+  global $config;
 
   $currenttime = time();
   $date_bgcolour = '';
@@ -183,16 +184,16 @@ function home_status() {
     }
   }  
   else {
-    if ($Config['status'] & STATUS_ENABLED) {
+    if ($config->status & STATUS_ENABLED) {
       $status_msg = '<h3 class="darkgray">Block List Missing</h3>';
       $date_msg = '<h3 class="darkgray">Unknown</h3>';
       $date_bgcolour = 'home-bgred';
     }
   }
 
-  if ((VERSION != $Config['LatestVersion']) && check_version($Config['LatestVersion'])) {
+  if ((VERSION != $config->settings['LatestVersion']) && check_version($config->settings['LatestVersion'])) {
     $date_msg = '<h3 class="darkgray">Upgrade</h3>';
-    $date_submsg = '<p>New version available: v'.$Config['LatestVersion'].'</p>';
+    $date_submsg = '<p>New version available: v'.$config->settings['LatestVersion'].'</p>';
     
     echo '<a class="home-bggreen" href="./upgrade.php"><span><h2>Status</h2>'.$date_msg.$date_submsg.'</span></a>'.PHP_EOL;
     //TODO Image for upgrade
@@ -207,10 +208,11 @@ function home_status() {
 
 /********************************************************************
  *  Count Queries
- *    1. Query time, system, dns_result for all results from passed 24 hours from dnslog
- *    2. Use SQL rounding to round time to nearest 30 mins
- *    3. Count by 30 min time blocks into associative array
- *    4. Move values from associative array to daily count indexed array
+ *    1. Create chart labels
+ *    2. Query time, system, dns_result for all results from passed 24 hours from dnslog
+ *    3. Use SQL rounding to round time to nearest 30 mins
+ *    4. Count by 30 min time blocks into associative array
+ *    5. Move values from associative array to daily count indexed array
  *
  *  Params:
  *    None
@@ -218,7 +220,8 @@ function home_status() {
  *    None
  */
 function count_queries() {
-  global $db, $allowed_queries, $blocked_queries, $chart_labels, $link_labels;
+  global $dbwrapper;
+  global $allowed_queries, $blocked_queries, $chart_labels, $link_labels;
   global $day_allowed, $day_blocked, $day_local;
   
   $allowed_arr = array();
@@ -226,18 +229,9 @@ function count_queries() {
   $currenttime = 0;
   $datestr = '';
 
-  $currenttime = intval(time() - (time() % 1800)) + 3600;
-  /*if ($currenttime < time()+1800) {
-    echo intval($currenttime - time()).'offset<br>';
-    $currenttime += 1800;
-  }
-  else echo intval($currenttime - time())."not used<br>";*/
+  $currenttime = intval(time() - (time() % 1800)) + 3600;  //Round current time up to nearest 30 min period
 
-  $starttime = date('Y-m-d H:00:00', $currenttime - 84600);
-  $endtime = date('Y-m-d H:59:59');
-  
-  $query = "SELECT SEC_TO_TIME((TIME_TO_SEC(log_time) DIV 1800) * 1800) AS round_time, sys, dns_result FROM dnslog WHERE log_time >= '$starttime' AND log_time <= '$endtime'";
-  
+  //Create labels, Allowed array, and Blocked array values
   for ($i = $currenttime - 84600; $i <= $currenttime; $i+=1800) {
     $datestr = date('H:i:00', $i);
     $allowed_arr[$datestr] = 0;
@@ -245,22 +239,16 @@ function count_queries() {
     $chart_labels[] = date('H:i', $i);
     $link_labels[] = date('Y-m-d H:i:00', $i);
   }
-  //print_r($allowed_arr);
+
+  $hourlyvalues = $dbwrapper->queries_count_hourly($currenttime);
   
-  if(!$result = $db->query($query)){
-    echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
-    echo 'count_queries: '.$db->error;
-    echo '</div>'.PHP_EOL;
-    die();
-  }
-  
-  if ($result->num_rows == 0) {                  //Leave if nothing found
-    $result->free();
-    //echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
+  if ($hourlyvalues === false) {                           //Leave if nothing found
     return false;
   }
-  
-  while($row = $result->fetch_assoc()) {         //Read each row of results
+
+  //Read each row of results totalling up a count per 30 min period depending whether the query was allowed / blocked / local
+  //Also include count per day for the piechart
+  foreach ($hourlyvalues as $row) {
     if ($row['dns_result'] == 'A') {
       $allowed_arr[$row['round_time']]++;
       $day_allowed++;
@@ -274,20 +262,18 @@ function count_queries() {
     }
   }
 
-  $result->free();
-  
   $allowed_queries = array_values($allowed_arr);
   $blocked_queries = array_values($blocked_arr);
-  
-  return null;
 }
 
 
 
 //Main---------------------------------------------------------------
 
-
+draw_topmenu();
+draw_sidemenu();
 echo '<div id="main">';
+
 count_queries();
 echo '<div class="home-nav-container">';
 home_status();
@@ -302,9 +288,6 @@ if ($day_allowed + $day_blocked > 0) {
   linechart($allowed_queries, $blocked_queries, $chart_labels, $link_labels, 'dtrange=1:00:00', 'DNS Queries over past 24 hours');
 }
 
-
-
-$db->close();
 ?>
 </div>
 </body>

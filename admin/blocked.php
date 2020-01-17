@@ -1,8 +1,9 @@
 <?php
 require('./include/global-vars.php');
 require('./include/global-functions.php');
+require('./include/config.php');
 require('./include/menu.php');
-load_config();
+
 ensure_active_session();
 ?>
 <!DOCTYPE html>
@@ -55,11 +56,10 @@ $db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
  *  Return:
  *    None
  */
-function draw_subnav() {
+function draw_filter_toolbar() {
   global $view;
   
-  echo '<div class="sys-group">'.PHP_EOL;
-  echo '<h5>Sites Blocked</h5>'.PHP_EOL;
+  echo '<div class="filter-toolbar analytics-filter-toolbar">'.PHP_EOL;
   echo '<div class="pag-nav">'.PHP_EOL;
   echo '<ul>'.PHP_EOL;
   echo '<li'.is_active_class($view, 'group').'><a class="pag-exwide" href="?view=group">Group</a></li>'.PHP_EOL;
@@ -68,8 +68,9 @@ function draw_subnav() {
   echo '<li'.is_active_class($view, 'visualisation').'><a class="pag-exwide" href="?view=vis">Visualisation</a></li>'.PHP_EOL;
   echo '</ul>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;                                   //End filter-toolbar
 }
+
 
 /********************************************************************
  *  Get User Agent 
@@ -161,6 +162,7 @@ function get_useragent($user_agent) {
   return $ua;
 }
 
+
 /********************************************************************
  *  Hightlight URL
  *    Highlight site, similar to browser behaviour
@@ -191,6 +193,7 @@ function highlight_url($url) {
   return $highlighted;
 }
 
+
 /********************************************************************
  *  Show Access Table
  *    
@@ -211,23 +214,20 @@ function show_accesstable() {
   $user_agent = '';
   $user_agent_array = array();
     
-  echo '<div class="sys-group">'.PHP_EOL;
   if ($view == 'group') {                                  //Group view
-    echo '<h6>Sorted by Unique Site</h6>'.PHP_EOL;
     $rows = count_rows('SELECT COUNT(DISTINCT site) FROM weblog');
     if ((($page-1) * ROWSPERPAGE) > $rows) $page = 1;
     
     $query = 'SELECT * FROM weblog GROUP BY site ORDER BY UNIX_TIMESTAMP(log_time) '.$sort.' LIMIT '.ROWSPERPAGE.' OFFSET '.(($page-1) * ROWSPERPAGE);
   }
   elseif ($view == 'time') {                               //Time View
-    echo '<h6>Sorted by Time last seen</h6>'.PHP_EOL;
     $rows = count_rows('SELECT COUNT(*) FROM weblog');
     if ((($page-1) * ROWSPERPAGE) > $rows) $page = 1;
 
     $query = 'SELECT * FROM weblog ORDER BY UNIX_TIMESTAMP(log_time) '.$sort.' LIMIT '.ROWSPERPAGE.' OFFSET '.(($page-1) * ROWSPERPAGE);
   }
 
-  if(!$result = $db->query($query)){
+  if (!$result = $db->query($query)){
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
     echo 'show_accesstable: '.$db->error;
     echo '</div>'.PHP_EOL;
@@ -241,12 +241,14 @@ function show_accesstable() {
     return false;
   }
   
+  echo '<div class="table-toolbar">'.PHP_EOL;              //Start table-toolbar
   pagination($rows, 'view='.$view);                        //Draw pagination buttons
+  echo '</div>'.PHP_EOL;                                   //End table-toolbar
   
   echo '<table id="access-table">'.PHP_EOL;                //Start table
   echo '<tr><th>Date Time</th><th>Method</th><th>User Agent</th><th>Site</th></tr>'.PHP_EOL;
   
-  while($row = $result->fetch_assoc()) {                   //Read each row of results
+  while ($row = $result->fetch_assoc()) {                  //Read each row of results
     if ($row['http_method'] == 'GET') {                    //Colour HTTP Method
       $http_method = '<span class="green">GET</span>';
     }
@@ -298,9 +300,7 @@ function show_visualisation() {
   $other = 0;
   $numsites = 0;
   
-  echo '<div class="sys-group">'.PHP_EOL;
-  echo '<h6>Visualisation</h6>'.PHP_EOL;
-  
+  echo '<div class="table-toolbar">'.PHP_EOL;              //Start table-toolbar
   echo '<div class="pag-nav"><ul>'.PHP_EOL;
   echo '<li'.is_active_class($last.$unit, '1HOUR').'><a href="?view=vis&amp;last=1hour">1 Hour</a></li>'.PHP_EOL;
   echo '<li'.is_active_class($last.$unit, '4HOUR').'><a href="?view=vis&amp;last=4hour">4 Hours</a></li>'.PHP_EOL;
@@ -308,7 +308,7 @@ function show_visualisation() {
   echo '<li'.is_active_class($last.$unit, '1DAY').'><a href="?view=vis&amp;last=1day">1 Day</a></li>'.PHP_EOL;
   echo '<li'.is_active_class($last.$unit, '7DAY').'><a href="?view=vis&amp;last=7day">7 Days</a></li>'.PHP_EOL;
   echo '</ul></div>'.PHP_EOL;
-  
+  echo '</div>'.PHP_EOL;                                   //End table-toolbar
   
   $total = count_rows('SELECT COUNT(*) FROM weblog WHERE log_time >= (NOW() - INTERVAL '.$last.' '.$unit.')');
   
@@ -390,8 +390,8 @@ if (isset($_GET['last'])) {
 }
 //Start of page------------------------------------------------------
 echo '<div id="main">';
-
-draw_subnav();
+echo '<div class="sys-group">';
+draw_filter_toolbar();
 
 if (($view == 'group') || ($view == 'time'))  {
   show_accesstable();
