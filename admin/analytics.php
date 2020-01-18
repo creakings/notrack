@@ -34,8 +34,10 @@ $INVESTIGATEURL = '';
 /************************************************
 *Global Variables                               *
 ************************************************/
-$view = false;
 $dbwrapper = new MySqliDb;
+
+$status = 0;
+
 /************************************************
 *Arrays                                         *
 ************************************************/
@@ -79,6 +81,50 @@ function do_action($action) {
 
 /********************************************************************
  *  Draw Filter Toolbar
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+
+function draw_filter_toolbar() {
+  global $status;
+
+  echo '<div class="filter-toolbar analytics-filter-toolbar">'.PHP_EOL;
+
+  echo '<div>'.PHP_EOL;
+  echo '<h3>Status</h3>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
+
+  echo '<div class="filter-nav-group">'.PHP_EOL;
+  if ($status & STATUS_OPEN) {
+    echo '<a class="filter-nav-button active" href="?status='.($status - STATUS_OPEN).'"><span class="open">Open</span></a>'.PHP_EOL;
+  }
+  else {
+    echo '<a class="filter-nav-button" href="?status='.($status + STATUS_OPEN).'"><span class="open">Open</span></a>'.PHP_EOL;
+  }
+
+  if ($status & STATUS_RESOLVED) {
+    echo '<a class="filter-nav-button active" href="?status='.($status - STATUS_RESOLVED).'"><span class="resolved">Resolved</span></a>'.PHP_EOL;
+  }
+  else {
+    echo '<a class="filter-nav-button" href="?status='.($status + STATUS_RESOLVED).'"><span class="resolved">Resolved</span></a>'.PHP_EOL;
+  }
+
+  echo '</div>'.PHP_EOL;
+  /*echo '<div>'.PHP_EOL;                                    //Start Group 1
+  echo '<input type="hidden" id="selectedCheckboxes" name="selectedCheckboxes" value="">'.PHP_EOL;
+  echo '<input type="checkbox" id="topCheckbox" onClick="checkAll(this)">'.PHP_EOL;
+  echo '<button type="submit" name="action" value="resolve" onClick="submitForm()">Mark Resolved</button>&nbsp;'.PHP_EOL;
+  echo '<button type="submit" class="button-grey" name="action" value="delete" onClick="submitForm()">Delete</button>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;                                   //End Group 1*/
+  echo '</div>'.PHP_EOL;                                   //End filter-toolbar
+}
+
+
+/********************************************************************
+ *  Draw Table Toolbar
  *    Populates filter bar with Mark resolved
  *    TODO more filters needed for showing resolved and severity
  *  Params:
@@ -86,16 +132,16 @@ function do_action($action) {
  *  Return:
  *    None
  */
-function draw_filter_toolbar() {
-  echo '<div class="filter-toolbar analytics-filter-toolbar">'.PHP_EOL;
-  echo '<div>'.PHP_EOL;                                    //Start Group 1
+
+function draw_table_toolbar() {
+  echo '<div class="table-toolbar">'.PHP_EOL;
   echo '<input type="hidden" id="selectedCheckboxes" name="selectedCheckboxes" value="">'.PHP_EOL;
   echo '<input type="checkbox" id="topCheckbox" onClick="checkAll(this)">'.PHP_EOL;
   echo '<button type="submit" name="action" value="resolve" onClick="submitForm()">Mark Resolved</button>&nbsp;'.PHP_EOL;
   echo '<button type="submit" class="button-grey" name="action" value="delete" onClick="submitForm()">Delete</button>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;                                   //End Group 1
   echo '</div>'.PHP_EOL;                                   //End filter-toolbar
 }
+
 /********************************************************************
  *  Popup Menu
  *    Prepare popup menu and contents
@@ -137,7 +183,7 @@ function popupmenu($domain, $blocked, $showreport) {
  *    false when nothing found, true on success
  */
 function show_analytics() {
-  global $dbwrapper, $view;
+  global $dbwrapper, $status;
 
   $action = '';
   $clipboard = '';                                         //Div for Clipboard
@@ -156,16 +202,19 @@ function show_analytics() {
 
 
   echo '<div class="sys-group">'.PHP_EOL;
+  echo '<form method="POST" name="analyticsForm">'.PHP_EOL;
+  echo '<input type="hidden" name="status" value="'.$status.'">'.PHP_EOL;
+  draw_filter_toolbar();
+  draw_table_toolbar();
 
-  $analyticsdata = $dbwrapper->analytics_get_data($view);
+  $analyticsdata = $dbwrapper->analytics_get_data($status);
 
   if ($analyticsdata === false) {                         //Leave if nothing found
     echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
     return false;
   }
 
-  echo '<form method="POST" name="analyticsForm">'.PHP_EOL;
-  draw_filter_toolbar();
+
 
   echo '<table id="analytics-table">'.PHP_EOL;             //Start table
   echo '<tr><th>&nbsp;</th><th>&nbsp;</th><th>Site</th><th>System</th><th>Time</th><th>&nbsp;</th></tr>'.PHP_EOL;
@@ -229,6 +278,12 @@ function show_analytics() {
  *Main
  */
 
+
+//Review POST values
+if (isset($_POST['status'])) {                             //ACK (acknowledge) carry value through on reload
+  $status = filter_integer($_POST['status'], 0, 3, 1);
+}
+
 if (isset($_POST['action'])) {                             //Any POST actions to carry out?
   switch($_POST['action']) {
     case 'resolve':
@@ -239,8 +294,14 @@ if (isset($_POST['action'])) {                             //Any POST actions to
       break;
   }
   //Reload page to prevent repeat action browser alert
-  header('Location: analytics.php');
+  header("Location: analytics.php?status={$status}");
   exit;
+}
+
+
+//Review GET values
+if (isset($_GET['status'])) {                              //ACK (acknowledge)
+  $status = filter_integer($_GET['status'], 0, 3, 1);
 }
 
 draw_topmenu('Alerts');

@@ -100,15 +100,31 @@ class MySqliDb {
    *    Return Array of results from analytics table
    *
    *  Params:
-   *    Acknowledge view - true or false
+   *    status - Whether to look for open or resolved (ACK false or true)
    *  Return:
    *    False when nothing found
    *    Associative Array of results
    */
-  public function analytics_get_data($view) {
+  public function analytics_get_data($status) {
     $values = array();                                     //Array of values to be returned
+    $query = '';
 
-    $query = "SELECT * FROM analytics WHERE ack = '{$view}' ORDER BY log_time DESC";
+    $query = 'SELECT * FROM analytics ';// WHERE ack = '{$view}' ORDER BY log_time DESC";
+
+    //Status uses Bitwise operators. OPEN + RESOLVED doesn't require a search input
+    switch($status) {
+      case 0:
+      case STATUS_OPEN:
+        $query .= "WHERE ack = '0' ";
+        break;
+      case STATUS_RESOLVED:
+        $query .= "WHERE ack = '1' ";
+        break;
+    }
+
+    $query .= 'ORDER BY log_time DESC';
+
+
 
     if (!$result = $this->db->query($query)){
       $this->display_error('analytics_get_data');

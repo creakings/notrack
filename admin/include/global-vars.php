@@ -26,6 +26,12 @@ define('NTRK_EXEC', 'sudo /usr/local/sbin/ntrk-exec ');
 define('NOTRACK_LIST', '/etc/dnsmasq.d/notrack.list');
 define('BLACKLIST_FILE', '/etc/notrack/blacklist.txt');
 define('WHITELIST_FILE', '/etc/notrack/whitelist.txt');
+
+//Status values for Analytics ACK (acknowledged)
+define('STATUS_OPEN', 1);
+define('STATUS_RESOLVED', 2);
+
+//Regular Expressions:
 define('REGEX_DATETIME', '/^2\d\d\d\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])\s([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/');
 
 //VALIDAPI is any length of hexadecimal lowercase from start to end
