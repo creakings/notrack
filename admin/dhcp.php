@@ -33,7 +33,7 @@ define('REGEX_DEVICEICONS', '(computer|laptop|nas|phone|raspberrypi|server|tv)')
 *Global Variables                               *
 ************************************************/
 $view = 1;
-
+$privacy = false;
 /************************************************
 *Arrays                                         *
 ************************************************/
@@ -69,7 +69,7 @@ $leases = array();                                         //Array of leases fro
  *    not captured - * or MAC address
  */
 function load_activeleases() {
-  global $leases;
+  global $leases, $privacy;
 
   $matches = array();
 
@@ -82,6 +82,8 @@ function load_activeleases() {
     //Create new value in leases by key - IP
     //Value is an array of: mac, name, icon, active
     if (preg_match('/^(\d+) ([\da-f:]{17}) ([\d:\.]+) ([\w\*\-_\.]+)/i', $line, $matches)) {
+      if ($privacy) $matches[2] = '**:**:**:**:**:**';
+
       $leases[$matches[3]] = array('exptime' => $matches[1], 'mac' => $matches[2], 'name' => $matches[4], 'icon' => 'computer', 'active' => true);
     }
   }
@@ -104,7 +106,7 @@ function load_activeleases() {
  *    None
  */
 function load_dhcp() {
-  global $dhcpconfig, $statichosts;
+  global $dhcpconfig, $statichosts, $privacy;
 
   $host = array();                                         //Temp array for each host
   $ip = '';                                                //System IP for $statichosts
@@ -122,6 +124,9 @@ function load_dhcp() {
       //Value is an array of: mac, name, icon
       if (preg_match('/^dhcp\-host=([\da-f:]{17}),([\da-f:\.]+)$/i', $line,  $matches)) {
         $host = array();
+
+        if ($privacy) $matches[1] = '**:**:**:**:**:**';
+
         $ip = $matches[2];                                 //Hold IP value
         $host['mac'] = $matches[1];                        //Set MAC Address
         $host['name'] = '';                                //Temp System name
@@ -635,6 +640,11 @@ if (count($_POST) > 2) {                                   //Anything in POST ar
   header('Location: ?view='.$view);
 }
 
+
+//Optional GET value to blank out MAC addresses
+if (isset($_GET['privacy'])) {
+  $privacy = true;
+}
 
 //Set value for view from GET value
 if (isset($_GET['view'])) {
