@@ -79,7 +79,7 @@ function create_whoistable() {
 function draw_filter_toolbar() {
   global $subdomain;
 
-  echo '<div class="filter-toolbar analytics-filter-toolbar">'.PHP_EOL;
+  echo '<div class="filter-toolbar single-filter-toolbar">'.PHP_EOL;
   echo '<form method="GET">'.PHP_EOL;
   echo '<input type="text" name="site" class="input-conf" placeholder="Search domain" value="'.$subdomain.'">'.PHP_EOL;
   echo '<button type="submit">Investigate</button>'.PHP_EOL;

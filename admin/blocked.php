@@ -59,7 +59,7 @@ $db = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
 function draw_filter_toolbar() {
   global $view;
   
-  echo '<div class="filter-toolbar analytics-filter-toolbar">'.PHP_EOL;
+  echo '<div class="filter-toolbar single-filter-toolbar">'.PHP_EOL;
   echo '<div class="pag-nav">'.PHP_EOL;
   echo '<ul>'.PHP_EOL;
   echo '<li'.is_active_class($view, 'group').'><a class="pag-exwide" href="?view=group">Group</a></li>'.PHP_EOL;
