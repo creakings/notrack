@@ -99,17 +99,17 @@ function draw_filter_toolbar() {
 
   echo '<div class="filter-nav-group">'.PHP_EOL;
   if ($status & STATUS_OPEN) {
-    echo '<a class="filter-nav-button active" href="?status='.($status - STATUS_OPEN).'"><span class="open">Open</span></a>'.PHP_EOL;
+    echo '<a class="filter-nav-button active" href="?status='.($status - STATUS_OPEN).'"><span>Open</span></a>'.PHP_EOL;
   }
   else {
-    echo '<a class="filter-nav-button" href="?status='.($status + STATUS_OPEN).'"><span class="open">Open</span></a>'.PHP_EOL;
+    echo '<a class="filter-nav-button" href="?status='.($status + STATUS_OPEN).'"><span>Open</span></a>'.PHP_EOL;
   }
 
   if ($status & STATUS_RESOLVED) {
-    echo '<a class="filter-nav-button active" href="?status='.($status - STATUS_RESOLVED).'"><span class="resolved">Resolved</span></a>'.PHP_EOL;
+    echo '<a class="filter-nav-button active" href="?status='.($status - STATUS_RESOLVED).'"><span>Resolved</span></a>'.PHP_EOL;
   }
   else {
-    echo '<a class="filter-nav-button" href="?status='.($status + STATUS_RESOLVED).'"><span class="resolved">Resolved</span></a>'.PHP_EOL;
+    echo '<a class="filter-nav-button" href="?status='.($status + STATUS_RESOLVED).'"><span>Resolved</span></a>'.PHP_EOL;
   }
 
   echo '</div>'.PHP_EOL;

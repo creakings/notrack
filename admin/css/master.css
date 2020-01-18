@@ -382,12 +382,7 @@ button:active {
   border-radius: 2px;
   text-align: center;
 }
-span.open {
-  background-color: mediumseagreen;
-}
-span.resolved {
-  background-color: dodgerblue;
-}
+
 /* ==========================================================================
    Table Toolbar
    ========================================================================== */
