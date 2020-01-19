@@ -95,9 +95,11 @@ class MySqliDb {
     return $this->count_table_rows("analytics WHERE ack = 'FALSE'");
   }
 
+
   /******************************************************************
    *  Analytics Get Data
    *    Return Array of results from analytics table
+   *    Behaviour of status search is to search for ACK = FALSE when status = 0
    *
    *  Params:
    *    status - Whether to look for open or resolved (ACK false or true)
@@ -105,28 +107,73 @@ class MySqliDb {
    *    False when nothing found
    *    Associative Array of results
    */
-  public function analytics_get_data($status) {
+  public function analytics_get_data($severity, $status) {
     $values = array();                                     //Array of values to be returned
-    $query = '';
 
-    $query = 'SELECT * FROM analytics ';// WHERE ack = '{$view}' ORDER BY log_time DESC";
+    $query = '';
+    $search_severity = false;
+    $search_status = false;
+
+    //Work out if any extra searches are required for severity or status
+    if ($status < 3) {                                     //STATUS_OPEN + STATUS_RESOLVED
+      $search_status = true;
+    }
+
+    if (($severity > 0) && ($severity < 7)) {              //SEVERITY_LOW + SEVERITY_MED + SEVERITY_HIGH
+      $search_severity = true;
+    }
+
+    $query = 'SELECT * FROM analytics ';
+
+    //Any searching to do?
+    if (($search_status) || ($search_severity)) {
+      $query .= 'WHERE ';
+    }
 
     //Status uses Bitwise operators. OPEN + RESOLVED doesn't require a search input
     switch($status) {
       case 0:
       case STATUS_OPEN:
-        $query .= "WHERE ack = '0' ";
+        $query .= "ack = '0' ";
         break;
       case STATUS_RESOLVED:
-        $query .= "WHERE ack = '1' ";
+        $query .= "ack = '1' ";
+        break;
+    }
+
+    //AND will need adding if status and a severity search is being done
+    if (($search_status) && ($search_severity)) {
+      $query .= 'AND ';
+    }
+
+    //Severity uses Bitwise operators, although SEVERITY_LOW (1) doesn't apply but could be inputted by user
+    //Allowed tracker or Blocked malware is medium
+    //Allowed malware is high
+
+    switch($severity) {
+      case SEVERITY_LOW:
+        $query .= "(dns_result = 'A' AND issue = 'Tracker') ";
+        break;
+      case SEVERITY_MED:
+        $query .= "(dns_result = 'B' AND issue REGEXP '^Malware\-') ";
+        break;
+      case SEVERITY_MED + SEVERITY_LOW:
+        $query .= "((dns_result = 'A' AND issue = 'Tracker') OR (dns_result = 'B' AND issue REGEXP '^Malware\-')) ";
+        break;
+      case SEVERITY_HIGH:
+        $query .= "(dns_result = 'A' AND issue REGEXP '^Malware\-') ";
+        break;
+      case SEVERITY_HIGH + SEVERITY_LOW:
+        $query .= "dns_result = 'A' ";
+        break;
+      case SEVERITY_HIGH + SEVERITY_MED:
+        $query .= "issue REGEXP '^Malware\-' ";
         break;
     }
 
     $query .= 'ORDER BY log_time DESC';
 
-
-
-    if (!$result = $this->db->query($query)){
+    if (!$result = $this->db->query($query)) {             //Run the query
       $this->display_error('analytics_get_data');
     }
 

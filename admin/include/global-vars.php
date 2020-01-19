@@ -31,6 +31,11 @@ define('WHITELIST_FILE', '/etc/notrack/whitelist.txt');
 define('STATUS_OPEN', 1);
 define('STATUS_RESOLVED', 2);
 
+//Severity values for Analytics, DNS Queries
+define('SEVERITY_LOW', 1);
+define('SEVERITY_MED', 2);
+define('SEVERITY_HIGH', 4);
+
 //Regular Expressions:
 define('REGEX_DATETIME', '/^2\d\d\d\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])\s([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/');
 

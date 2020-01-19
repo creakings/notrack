@@ -319,11 +319,13 @@ button:active {
   width: 100%;
 }
 
+/* Column sizes for different pages
+   ========================================================================== */
 .single-filter-toolbar {
   grid-template-columns: auto;
 }
 .analytics-filter-toolbar {
-  grid-template-columns: auto;
+  grid-template-columns: fit-content(13.6rem) auto;
 }
 .custombl-filter-toolbar {
   grid-template-columns: 50% fit-content(6rem);
@@ -343,18 +345,19 @@ button:active {
   grid-template-columns: 25% auto auto auto fit-content(12rem);
 }
 
+/* Filter nav buttons
+   ========================================================================== */
 .filter-nav-group {
-  margin: 0.5rem 0 0.6rem;
-
+  margin: 0.5rem 0.4rem 0.6rem;
 }
 .filter-nav-button {
-  display: inline;
+  display: inline-block;
   margin-left: -4px;
-  padding: 0.4rem 1rem;
+  padding: 0.3rem 1rem;
   border: 2px solid #757575;
-  background-color: #c8c8c8;
-  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.4), inset 0 0 8px rgba(0, 0, 0, 0.4);
-/*   box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.4); */
+  background-color: #fafafa;
+/*   box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.4), inset 0 0 8px rgba(0, 0, 0, 0.4); */
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.4);
 }
 .filter-nav-button:active,
 .filter-nav-button:hover {
@@ -382,12 +385,11 @@ button:active {
   border-radius: 2px;
   text-align: center;
 }
-span.open {
-  background-color: mediumseagreen;
+.filter-nav-button > img {
+  width: 2.13rem;
+  padding-top: 0.2rem;
 }
-span.resolved {
-  background-color: dodgerblue;
-}
+
 /* ==========================================================================
    Table Toolbar
    ========================================================================== */

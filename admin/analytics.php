@@ -1,6 +1,5 @@
 <?php
-/*TODO: Add Resolve and delete to popup menu
-  TODO: Add view switcher to show resolved*/
+/*TODO: Add Resolve and delete to popup menu*/
 require('./include/global-vars.php');
 require('./include/global-functions.php');
 require('./include/config.php');
@@ -36,6 +35,7 @@ $INVESTIGATEURL = '';
 ************************************************/
 $dbwrapper = new MySqliDb;
 
+$severity = 0;
 $status = 0;
 
 /************************************************
@@ -81,7 +81,9 @@ function do_action($action) {
 
 /********************************************************************
  *  Draw Filter Toolbar
- *
+ *    $severity and $status utise bitwise values to allow multiple buttons to be pressed
+ *    if status & value then button active, link is status - value
+ *    else button inactive, link is status + value
  *  Params:
  *    None
  *  Return:
@@ -89,36 +91,60 @@ function do_action($action) {
  */
 
 function draw_filter_toolbar() {
-  global $status;
+  global $severity, $status;
+
+  $severitylink = '';
+  $statuslink = '';
+
+  $severitylink = "severity={$severity}";
+  $statuslink = "&amp;status={$status}";
 
   echo '<div class="filter-toolbar analytics-filter-toolbar">'.PHP_EOL;
 
-  echo '<div>'.PHP_EOL;
-  echo '<h3>Status</h3>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
+  //Column Headers
+  echo '<div><h3>Status</h3></div>'.PHP_EOL;
+  echo '<div><h3>Severity</h3></div>'.PHP_EOL;
 
-  echo '<div class="filter-nav-group">'.PHP_EOL;
+
+  echo '<div class="filter-nav-group">'.PHP_EOL;           //Start Group 1 - Status
   if ($status & STATUS_OPEN) {
-    echo '<a class="filter-nav-button active" href="?status='.($status - STATUS_OPEN).'"><span class="open">Open</span></a>'.PHP_EOL;
+    echo '<a class="filter-nav-button active" href="?'.$severitylink.'&amp;status='.($status - STATUS_OPEN).'"><span>Open</span></a>'.PHP_EOL;
   }
   else {
-    echo '<a class="filter-nav-button" href="?status='.($status + STATUS_OPEN).'"><span class="open">Open</span></a>'.PHP_EOL;
+    echo '<a class="filter-nav-button" href="?'.$severitylink.'&amp;status='.($status + STATUS_OPEN).'"><span>Open</span></a>'.PHP_EOL;
   }
 
   if ($status & STATUS_RESOLVED) {
-    echo '<a class="filter-nav-button active" href="?status='.($status - STATUS_RESOLVED).'"><span class="resolved">Resolved</span></a>'.PHP_EOL;
+    echo '<a class="filter-nav-button active" href="?'.$severitylink.'&amp;status='.($status - STATUS_RESOLVED).'"><span>Resolved</span></a>'.PHP_EOL;
   }
   else {
-    echo '<a class="filter-nav-button" href="?status='.($status + STATUS_RESOLVED).'"><span class="resolved">Resolved</span></a>'.PHP_EOL;
+    echo '<a class="filter-nav-button" href="?'.$severitylink.'&amp;status='.($status + STATUS_RESOLVED).'"><span>Resolved</span></a>'.PHP_EOL;
+  }
+  echo '</div>'.PHP_EOL;                                   //End Group 1 - Status
+
+  echo '<div class="filter-nav-group">'.PHP_EOL;           //Start Group 2 - Severity
+
+  if ($severity & SEVERITY_LOW) {
+    echo '<a class="filter-nav-button active" title="Tracker Accessed"  href="?severity='.($severity - SEVERITY_LOW).$statuslink.'"><img src="./svg/filters/severity_lowalt.svg" alt=""></a>'.PHP_EOL;
+  }
+  else {
+    echo '<a class="filter-nav-button" title="Tracker Accessed" href="?severity='.($severity + SEVERITY_LOW).$statuslink.'"><img src="./svg/filters/severity_lowalt.svg" alt=""></a>'.PHP_EOL;
   }
 
-  echo '</div>'.PHP_EOL;
-  /*echo '<div>'.PHP_EOL;                                    //Start Group 1
-  echo '<input type="hidden" id="selectedCheckboxes" name="selectedCheckboxes" value="">'.PHP_EOL;
-  echo '<input type="checkbox" id="topCheckbox" onClick="checkAll(this)">'.PHP_EOL;
-  echo '<button type="submit" name="action" value="resolve" onClick="submitForm()">Mark Resolved</button>&nbsp;'.PHP_EOL;
-  echo '<button type="submit" class="button-grey" name="action" value="delete" onClick="submitForm()">Delete</button>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;                                   //End Group 1*/
+  if ($severity & SEVERITY_MED) {
+    echo '<a class="filter-nav-button active" title="Malware Blocked"  href="?severity='.($severity - SEVERITY_MED).$statuslink.'"><img src="./svg/filters/severity_med.svg" alt=""></a>'.PHP_EOL;
+  }
+  else {
+    echo '<a class="filter-nav-button" title="Malware Blocked" href="?severity='.($severity + SEVERITY_MED).$statuslink.'"><img src="./svg/filters/severity_med.svg" alt=""></a>'.PHP_EOL;
+  }
+
+  if ($severity & SEVERITY_HIGH) {
+    echo '<a class="filter-nav-button active" title="Malware Accessed"  href="?severity='.($severity - SEVERITY_HIGH).$statuslink.'"><img src="./svg/filters/severity_high.svg" alt=""></a>'.PHP_EOL;
+  }
+  else {
+    echo '<a class="filter-nav-button" title="Malware Accessed" href="?severity='.($severity + SEVERITY_HIGH).$statuslink.'"><img src="./svg/filters/severity_high.svg" alt=""></a>'.PHP_EOL;
+  }
+  echo '</div>'.PHP_EOL;                                   //End Group 2 - Severity
   echo '</div>'.PHP_EOL;                                   //End filter-toolbar
 }
 
@@ -183,7 +209,7 @@ function popupmenu($domain, $blocked, $showreport) {
  *    false when nothing found, true on success
  */
 function show_analytics() {
-  global $dbwrapper, $status;
+  global $dbwrapper, $severity, $status;
 
   $action = '';
   $clipboard = '';                                         //Div for Clipboard
@@ -197,17 +223,19 @@ function show_analytics() {
   $query = '';
   $checkboxid = '';
   $investigateurl = '';                                    //URL to investigate.php
-  $severity = 2;
+  $itemseverity = 2;
   $event = '';
 
 
   echo '<div class="sys-group">'.PHP_EOL;
   echo '<form method="POST" name="analyticsForm">'.PHP_EOL;
+  echo '<input type="hidden" name="severity" value="'.$severity.'">'.PHP_EOL;
   echo '<input type="hidden" name="status" value="'.$status.'">'.PHP_EOL;
+
   draw_filter_toolbar();
   draw_table_toolbar();
 
-  $analyticsdata = $dbwrapper->analytics_get_data($status);
+  $analyticsdata = $dbwrapper->analytics_get_data($severity, $status);
 
   if ($analyticsdata === false) {                         //Leave if nothing found
     echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
@@ -225,7 +253,7 @@ function show_analytics() {
     $dns_request = $row['dns_request'];
     $dns_result = $row['dns_result'];
     $row_colour = ($row['ack'] == 0) ? '' : ' class="dark"';
-    $severity = 2;
+    $itemseverity = 2;
 
     $checkboxid = $row['id'].'_'.str_replace(' ', '_', $log_time);
 
@@ -258,12 +286,12 @@ function show_analytics() {
       }
       else {                                               //Malware Accessed
         $issue = '<a href="'.$investigateurl.'"><span class="red">Malware Accessed</span> - '.$dns_request.'</a>'.$clipboard.'<p class="small grey">Identified by '.$list.'</p>';
-        $severity = 3;
+        $itemseverity = 3;
       }
     }
 
     //Output table row
-    echo '<tr'.$row_colour.'><td><img src="./svg/events/'.$event.$severity.'.svg" alt=""></td><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
+    echo '<tr'.$row_colour.'><td><img src="./svg/events/'.$event.$itemseverity.'.svg" alt=""></td><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
     echo '<td>'.$issue.'</td><td>'.$sys.'</td><td>'.simplified_time($log_time).'</td><td>'.$action.'</td></tr>'.PHP_EOL;
   }
 
@@ -280,6 +308,10 @@ function show_analytics() {
 
 
 //Review POST values
+if (isset($_POST['severity'])) {                           //Severity to carry value through on reload
+  $severity = filter_integer($_POST['severity'], 0, 7, 1);
+}
+
 if (isset($_POST['status'])) {                             //ACK (acknowledge) carry value through on reload
   $status = filter_integer($_POST['status'], 0, 3, 1);
 }
@@ -294,12 +326,17 @@ if (isset($_POST['action'])) {                             //Any POST actions to
       break;
   }
   //Reload page to prevent repeat action browser alert
-  header("Location: analytics.php?status={$status}");
+  header("Location: analytics.php?severity={$severity}&status={$status}");
   exit;
 }
 
 
 //Review GET values
+
+if (isset($_GET['severity'])) {                            //Severity
+  $severity = filter_integer($_GET['severity'], 0, 7, 1);
+}
+
 if (isset($_GET['status'])) {                              //ACK (acknowledge)
   $status = filter_integer($_GET['status'], 0, 3, 1);
 }
