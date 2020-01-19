@@ -229,7 +229,6 @@ function add_statichosts() {
 /********************************************************************
  *  Get Icon Menu
  *    Build icon select menu
- *    TODO need to show pictures
  *  Params:
  *    None
  *  Return:
