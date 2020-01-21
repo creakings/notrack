@@ -7,7 +7,10 @@
  * Primary: #00c2c8          *
  * Primary Dark: #00b7ba     *
  * Inverse: #b1244a          *
- * Divider: #bdbdbd          */
+ * Divider: #bdbdbd          *
+ * Input Background: #fafafa *
+ * Input Border: #757575     *
+ * Hover: brightness 90%     */
 body {
   min-height: 92vh;                                        /*Fix for mobiles*/
   margin: 0;
@@ -411,8 +414,8 @@ button:active {
    ========================================================================== */
 
 .pag-nav {
-  margin: 0 0.2em 0.4em;
-  font-size: 0.9em;
+/*   margin: 0 0.2em 0.4em; */
+  font-size: 0.85rem;
   float: left;
 }
 .pag-nav ul {
@@ -421,35 +424,34 @@ button:active {
 }
 .pag-nav a,
 .pag-nav span {
-  display: inline-block;
-  padding: 0.5em 0.8em;
+  display: block;
+  padding: 0.4rem 0.62rem;
 }
 .pag-nav li {
   margin-right: 0.15rem;
+  border: 1px solid #757575;
   border-radius: 4px;
-  background-color: #c8c8c8;
-  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5), inset 0 0 4px #666;
+  background-color: #fafafa;
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.4);
   display: inline-block;
 }
 .pag-nav li.active {
   background-color: #00c2c8;
 }
 a.pag-exwide {                                                       /*Wide button on blocked.php*/
-  width: 7em;
+  width: 6.5rem;
   text-align: center;
 }
+.pag-nav li:active,
+.pag-nav li:focus,
 .pag-nav li:hover {
-  opacity: 0.92;
-}
-.pag-nav li:focus {
-  opacity: 0.82;
-}
-.pag-nav li:active {
-  transform: translateY(3px);
-  box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.5), inset 0 0 4px #666;
-  opacity: 0.74;
+  border: 1px solid #00c2c8;
+  filter: brightness(90%);
 }
 
+.pag-nav li:active {
+  transform: translateY(2px);
+}
 
 /* ==========================================================================
    Group By (similar to pag-nav, but using radio buttons instead)
