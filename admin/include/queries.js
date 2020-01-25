@@ -373,3 +373,31 @@ window.onscroll = function() {                             //OnScroll Event
   }*/
 }
 
+
+function selectTime(item, timeValue) {
+  document.getElementById('timepicker-text').value = item.innerText;
+  document.getElementById('dateTime').value = timeValue;
+
+  document.getElementById('timepicker-dropdown').blur();
+  document.getElementById('timepicker-group').blur();
+}
+
+function selectDate() {
+  let startDate = document.getElementById('timepicker-date-start').value;
+  let endDate = document.getElementById('timepicker-date-end').value;
+
+  if (startDate == '') return;
+  if (endDate == '') return;
+
+  //Check if startDate in Unix time is greater than endDate in Unix time
+  if (Date.parse(startDate) > Date.parse(endDate)) {
+     [startDate, endDate] = [endDate, startDate]           //Swap the values
+  }
+
+  document.getElementById('timepicker-text').value = startDate + ' to ' + endDate;
+  document.getElementById('dateTime').value = startDate + '00:00/' + endDate + '23:59:59';
+
+  document.getElementById('timepicker-dropdown').blur();
+  document.getElementById('timepicker-group').blur();
+
+}

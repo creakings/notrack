@@ -57,13 +57,19 @@ $INVESTIGATEURL = '';
 ************************************************/
 $page = 1;
 $filter = DEF_FILTER;
-$datetime = '';
+$datetime = 'P1D';                                         //Default range = Past 1 Day
 $dtrange = '';
 $groupby = 'name';
 $searchbox = '';
 $searchtime = '1 DAY';
 $sort = 'DESC';
 $sysip = DEF_SYSTEM;
+
+define('REGEX_DTDURATION', '/^P(?=T|\d)(\dY)?(\d{1,2}M)?(\d{1,3}D)?(T(\d{1,3}H)?(\d{1,3}M)?(\d{1,3}S)?)?$/');
+define('REGEX_DTSINGLE', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$/');
+define('REGEX_DTRANGE', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])\/([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$/');
+define('REGEX_DTSTARTDURATION', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])\/P(\dY)?(1[0-2]M|[0-9]M)?([1-2][0-9]D|3[0-1]D|[0-9]D)?T?([1-2][0-4]H|[0-9]H)?([0-5]?[0-9]M)?([0-5]?[0-9]S)?$/');
+define('REGEX_DTNAMED', '/^(last week midnight|first day of (last|this) (week|month) midnight)\/(now|last week midnight|first day of (last|this) (week|month) midnight)$/');
 
 /************************************************
 *Arrays                                         *
@@ -249,12 +255,11 @@ function draw_filter_toolbar() {
   echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
   echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
   echo '<input type="hidden" name="groupby" value="'.$groupby.'">'.PHP_EOL;
-  if ($datetime != '') {
-    echo '<input type="hidden" name="datetime" value="'.$datetime.'">'.PHP_EOL;
-  }
-  if ($dtrange != '') {
+  echo '<input type="hidden" name="datetime" id="dateTime" value="'.$datetime.'">'.PHP_EOL;
+
+  /*if ($dtrange != '') {
     echo '<input type="hidden" name="dtrange" value="'.$dtrange.'">'.PHP_EOL;
-  }
+  }*/
 
   //Column Headers
   echo '<div><h3>Domain</h3></div>'.PHP_EOL;
@@ -265,19 +270,78 @@ function draw_filter_toolbar() {
 
   echo '<div><input type="text" name="searchbox" id="filtersearch" value="'.$searchbox.'" placeholder="site.com"></div>'.PHP_EOL;
 
+  //Start Group 2 - IP
   if ($sysip == DEF_SYSTEM) {
     echo '<div><input type="text" name="sysip" id="filtersys" placeholder="192.168.0.1/24"></div>'.PHP_EOL;
   }
   else {
     echo '<div><input type="text" name="sysip" id="filtersys" value="'.$sysip.'" placeholder="192.168.0.1/24"></div>'.PHP_EOL;
   }
+  //End Group 2 - IP
 
-  echo '<div><select name="searchtime" id="filtertime" onchange="submit()">';
+
+  //Start Group 2 - Time
+  /*echo '<div><select name="searchtime" id="filtertime" onchange="submit()">';
   echo '<option value="'.$searchtime.'">'.$TIMELIST[$searchtime].'</option>'.PHP_EOL;
   foreach ($TIMELIST as $key => $line) {
     if ($key != $searchtime) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
   }
   echo '</select></div>'.PHP_EOL;                          //End Search Time
+  */
+
+  //Start Group 3
+  echo '<div id="timepicker-dropdown" tabindex="0">'.PHP_EOL;
+  echo '<input type="text" id="timepicker-text" value="'.$datetime.'">'.PHP_EOL;
+  //echo '<span id="timepicker-text">Something</span>'.PHP_EOL;
+  echo '<div id="timepicker-group">'.PHP_EOL;              //Start timepicker-group
+
+  echo '<div class="timepicker-item" tabindex="0">'.PHP_EOL;
+  echo '<h3>Presets</h3>'.PHP_EOL;
+  echo '<div class="timepicker-grid timepicker-grid-half">'.PHP_EOL;
+
+  //Column headers
+  echo '<div><h4>Relative</h4></div>'.PHP_EOL;
+  echo '<div><h4>Or</h4></div>'.PHP_EOL;
+
+  //Dates
+  echo '<ul>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'PT15M\')">15 Minutes</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'PT30M\')">30 Minutes</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'PT1H\')">1 Hour</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'PT4H\')">4 Hours</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'PT12H\')">12 Hours</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'P1D\')">1 Day</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'P7D\')">7 Days</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'P30D\')">30 Days</li>'.PHP_EOL;
+  echo '</ul>'.PHP_EOL;
+  /*echo '<ul>'.PHP_EOL;
+  echo '<li onclick="selectTime(this)">Yesterday</li>'.PHP_EOL;
+  echo '<li>Item2</li>'.PHP_EOL;
+  echo '</ul>'.PHP_EOL;*/
+
+  echo '</div>'.PHP_EOL;                                   //End timepicker-grid
+  echo '</div>'.PHP_EOL;                                   //End timepicker-item 1
+
+  echo '<div class="timepicker-item" tabindex="0">'.PHP_EOL;
+  echo '<h3>Date</h3>'.PHP_EOL;
+  echo '<div class="timepicker-grid timepicker-grid-half">'.PHP_EOL;
+
+  echo '<div>'.PHP_EOL;
+  echo '<input type="date" id="timepicker-date-start" value="2020-01-20">'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
+
+  echo '<div>'.PHP_EOL;
+  echo '<input type="date" id="timepicker-date-end" value="2020-01-20">'.PHP_EOL;
+  echo '<button type="button" onclick="selectDate()">Apply</button>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
+
+  echo '</div>'.PHP_EOL;                                   //End timepicker-grid
+  echo '</div>'.PHP_EOL;                                   //End timepicker-item 2
+  /*echo '<div class="timepicker-item" tabindex="0">'.PHP_EOL;
+  echo '<h3>Advanced</h3>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;*/
+  echo '</div>'.PHP_EOL;                                   //End timepicker-group
+  echo '</div>'.PHP_EOL;                                   //End timepicker-dropdown
 
   echo '<div><select name="filter" id="filtertype" onchange="submit()">';
   echo '<option value="'.$filter.'">'.$FILTERLIST[$filter].'</option>'.PHP_EOL;
@@ -286,7 +350,7 @@ function draw_filter_toolbar() {
   }
   echo '</select></div>'.PHP_EOL;                          //End Filter List
 
-  echo '<div><input type="submit" value="Search">&nbsp;&nbsp;';
+  echo '<div><button type="submit">Search</button>';
   echo '<button type="button" class="button-grey mobile-hide" onclick="resetQueriesForm()">Reset</button></div>';
 
   echo '</div>'.PHP_EOL;                                   //End Div Group
@@ -336,6 +400,24 @@ function draw_groupby() {
   echo '</div></form>';
 }
 
+function get_datetime_search() {
+  global $datetime;
+  $SQLFORMAT = 'Y-m-d H:i:s';
+
+  if (preg_match(REGEX_DTDURATION, $datetime)) {
+    $startdate = new DateTime('now');
+    $startdate->sub(new DateInterval($datetime));
+
+    return "log_time > '".$startdate->format($SQLFORMAT)."'";
+  }
+  /*
+  define('REGEX_DTDURATION', '/^P(?=T|\d)(\dY)?(\d{1,2}M)?(\d{1,3}D)?(T(\d{1,3}H)?(\d{1,3}M)?(\d{1,3}S)?)?$/');
+define('REGEX_DTSINGLE', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$/');
+define('REGEX_DTRANGE', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])\/([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$/');
+define('REGEX_DTSTARTDURATION', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])\/P(\dY)?(1[0-2]M|[0-9]M)?([1-2][0-9]D|3[0-1]D|[0-9]D)?T?([1-2][0-4]H|[0-9]H)?([0-5]?[0-9]M)?([0-5]?[0-9]S)?$/');
+define('REGEX_DTNAMED', '/^(last week midnight|first day of (last|this) (week|month) midnight)\/(now|last week midnight|first day of (last|this) (week|month) midnight)$/');
+*/
+}
 
 /********************************************************************
  *  Add Filter Vars to SQL Search
@@ -348,7 +430,13 @@ function draw_groupby() {
 function add_filterstr() {
   global $datetime, $dtrange, $searchbox, $searchtime, $filter, $sysip;
 
-  if (($datetime != '') && ($dtrange == '')) {             //No date-time range specified, use fixed -1m to +3m
+  $searchstr = '';
+
+  $searchstr = ' WHERE ';
+
+  $searchstr .= get_datetime_search();
+
+  /*if (($datetime != '') && ($dtrange == '')) {             //No date-time range specified, use fixed -1m to +3m
     $searchstr = " WHERE log_time > SUBTIME('$datetime', '00:01:00') AND log_time < ADDTIME('$datetime', '00:03:00')";
   }
   elseif (($datetime != '') && ($dtrange != '')) {         //Date-time range specified by user1
@@ -356,7 +444,9 @@ function add_filterstr() {
   }
   else {
     $searchstr = " WHERE log_time >= DATE_SUB(NOW(), INTERVAL $searchtime) ";
-  }
+  }*/
+
+
 
   if ($searchbox != '') {
     $searchstr .= get_dnssearch($searchbox);
@@ -700,7 +790,11 @@ if (isset($_GET['searchbox'])) {                           //searchbox uses preg
 }
 
 if (isset($_GET['datetime'])) {
-  if (preg_match(REGEX_DATETIME, $_GET['datetime'])) {
+  if ((preg_match(REGEX_DTDURATION, $_GET['datetime'])) ||
+      (preg_match(REGEX_DTSINGLE, $_GET['datetime'])) ||
+      (preg_match(REGEX_DTRANGE, $_GET['datetime'])) ||
+      (preg_match(REGEX_DTSTARTDURATION, $_GET['datetime'])) ||
+      (preg_match(REGEX_DTNAMED, $_GET['datetime']))) {
     $datetime = $_GET['datetime'];
   }
 }
