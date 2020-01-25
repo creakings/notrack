@@ -917,6 +917,8 @@ function setup_mariadb() {
   sudo mysql --user=root --password="$rootpass" -e "FLUSH PRIVILEGES;"
   
   echo "Creating Tables"
+  #Analytics
+  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE IF NOT EXISTS analytics (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, dns_result CHAR(1), issue TINYTEXT, ack BOOLEAN);"
   #dnslog
   mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE dnslog (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, dns_result CHAR(1));"
   #users (not yet used)

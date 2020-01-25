@@ -55,7 +55,8 @@ class MySqliDb {
     $rows = 0;
   
     if (!$result = $this->db->query('SELECT COUNT(*) FROM '.$expr)){
-      $this->display_error('count_table_rows');
+      //$this->display_error('count_table_rows');
+      return 0;
     }
 
     //Extract count value from array
@@ -79,7 +80,7 @@ class MySqliDb {
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
     echo $parentfunction.': '.$this->db->error;
     echo '</div>'.PHP_EOL;
-    die();
+    //die();
   }
 
 
@@ -175,6 +176,7 @@ class MySqliDb {
 
     if (!$result = $this->db->query($query)) {             //Run the query
       $this->display_error('analytics_get_data');
+      return false;
     }
 
     //Leave if nothing found and return false
