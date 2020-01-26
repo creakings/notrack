@@ -77,8 +77,20 @@ $sysip = DEF_SYSTEM;
 //Group 5: 1-999 Minutes (optional)
 //Group 6: 1-999 Seconds (optional)
 define('REGEX_DTDURATION', '/^P(?=T\d|\d)(\dY)?(\d{1,2}M)?(\d{1,3}D)?(?:T(\d{1,3}H)?(\d{1,3}M)?(\d{1,3}S)?)?$/');
-define('REGEX_DTSINGLE', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$/');
-define('REGEX_DTRANGE', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])\/([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$/');
+
+
+//Date Time Single Y-M-DTh:m:s
+//0000-9999 Years
+//Non-Capture Group 10-12 or 0-9 Months
+//Non-Capture Group 30-31 or 0 1-9 or 1-2 0-9 Days
+//T
+//Non-Capture Group 2 0-3 or 0-1 0-9 Hours
+//0-5 0-9 Minutes
+//0-5 0-9 Seconds
+define('REGEX_DTSINGLE', '/^[0-9]{4}\-(?:1[0-2]|0[1-9])\-(?:3[01]|0[1-9]|[12][0-9])T(?:2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]$/');
+
+//Date Time Range - Two ranges sepeareted by a /
+define('REGEX_DTRANGE', '/^([0-9]{4}\-(?:1[0-2]|0[1-9])\-(?:3[01]|0[1-9]|[12][0-9])T(?:2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9])\/([0-9]{4}\-(?:1[0-2]|0[1-9])\-(?:3[01]|0[1-9]|[12][0-9])T(?:2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9])/');
 
 //Date Time Start with Duration
 //Combined date time with a Duration
@@ -300,7 +312,6 @@ function draw_filter_toolbar() {
   //End Group 2 - IP
 
 
-
   //Start Group 3
   echo '<div id="timepicker-dropdown" tabindex="0">'.PHP_EOL;
   echo '<input type="text" id="timepicker-text" value="'.$datetime_text.'">'.PHP_EOL;
@@ -312,18 +323,18 @@ function draw_filter_toolbar() {
 
   //Column headers
   echo '<div><h4>Relative</h4></div>'.PHP_EOL;
-  echo '<div><h4>Or</h4></div>'.PHP_EOL;
+  echo '<div><h4>Fixed</h4></div>'.PHP_EOL;
 
   //Dates
   echo '<ul>'.PHP_EOL;
-  echo '<li onclick="selectTime(this, \'PT15M\')">15 Minutes</li>'.PHP_EOL;
-  echo '<li onclick="selectTime(this, \'PT30M\')">30 Minutes</li>'.PHP_EOL;
-  echo '<li onclick="selectTime(this, \'PT1H\')">1 Hour</li>'.PHP_EOL;
-  echo '<li onclick="selectTime(this, \'PT4H\')">4 Hours</li>'.PHP_EOL;
-  echo '<li onclick="selectTime(this, \'PT12H\')">12 Hours</li>'.PHP_EOL;
-  echo '<li onclick="selectTime(this, \'P1D\')">1 Day</li>'.PHP_EOL;
-  echo '<li onclick="selectTime(this, \'P7D\')">7 Days</li>'.PHP_EOL;
-  echo '<li onclick="selectTime(this, \'P30D\')">30 Days</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'PT15M\')">Last 15 Minutes</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'PT30M\')">Last 30 Minutes</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'PT1H\')">Last 1 Hour</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'PT4H\')">Last 4 Hours</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'PT12H\')">Last 12 Hours</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'P1D\')">Last 1 Day</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'P7D\')">Last 7 Days</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'P30D\')">Last 30 Days</li>'.PHP_EOL;
   echo '</ul>'.PHP_EOL;
   /*echo '<ul>'.PHP_EOL;
   echo '<li onclick="selectTime(this)">Yesterday</li>'.PHP_EOL;
@@ -336,13 +347,17 @@ function draw_filter_toolbar() {
   echo '<div class="timepicker-item" tabindex="0">'.PHP_EOL;
   echo '<h3>Date</h3>'.PHP_EOL;
   echo '<div class="timepicker-grid timepicker-grid-half">'.PHP_EOL;
+  echo '<div><h4>From</h4></div>'.PHP_EOL;
+  echo '<div><h4>To</h4></div>'.PHP_EOL;
 
   echo '<div>'.PHP_EOL;
-  echo '<input type="date" id="timepicker-date-start" value="2020-01-20">'.PHP_EOL;
+  echo '<input type="date" id="timepicker-date-start" value="'.date('Y-m-d', strtotime('yesterday')).'">'.PHP_EOL;
+  echo '<p class="light">00:00</p>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
 
   echo '<div>'.PHP_EOL;
-  echo '<input type="date" id="timepicker-date-end" value="2020-01-20">'.PHP_EOL;
+  echo '<input type="date" id="timepicker-date-end" value="'.date('Y-m-d').'">'.PHP_EOL;
+  echo '<p class="light">23:59</p>'.PHP_EOL;
   echo '<button type="button" onclick="selectDate()">Apply</button>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
 
@@ -483,10 +498,30 @@ function format_datetime_search() {
       $datetime_text = $startdate->format('d M H:i').' for '.get_dtduration_text($matches[2]);
     }
   }
+
+  elseif (preg_match(REGEX_DTRANGE, $datetime, $matches)) {
+    $startdate = new DateTime($matches[1]);
+    $enddate = new DateTime($matches[2]);
+
+    if ($startdate->getTimestamp() > $enddate->getTimestamp()) {
+      unset($startdate);
+      unset($enddate);
+      $startdate = new DateTime($matches[2]);
+      $enddate = new DateTime($matches[1]);
+    }
+
+    $datetime_search = "log_time > '".$startdate->format($SQLFORMAT)."' AND log_time < '".$enddate->format($SQLFORMAT)."'";
+
+    if (($startdate->format('H:i:s') == '00:00:00') && ($enddate->format('H:i:s') == '23:59:59')) {
+      $datetime_text = $startdate->format('d M').' to '.$enddate->format('d M');
+    }
+    else {
+      $datetime_text = $startdate->format('d M H:i').' to '.$enddate->format('d M H:i');
+    }
+  }
   /*
 
 define('REGEX_DTSINGLE', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$/');
-define('REGEX_DTRANGE', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])\/([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$/');
 
 define('REGEX_DTNAMED', '/^(last week midnight|first day of (last|this) (week|month) midnight)\/(now|last week midnight|first day of (last|this) (week|month) midnight)$/');
 */
@@ -522,7 +557,7 @@ function add_filterstr() {
     $searchstr .= " AND dns_result = '$filter'";
   }
 
-  echo $searchstr;                                       //Uncomment to debug sql query
+  //echo $searchstr;                                       //Uncomment to debug sql query
   return $searchstr;
 }
 
@@ -849,8 +884,8 @@ if (isset($_GET['searchbox'])) {                           //searchbox uses preg
 }
 
 if (isset($_GET['datetime'])) {
+  //die($_GET['datetime']);
   if ((preg_match(REGEX_DTDURATION, $_GET['datetime'])) ||
-      (preg_match(REGEX_DTSINGLE, $_GET['datetime'])) ||
       (preg_match(REGEX_DTRANGE, $_GET['datetime'])) ||
       (preg_match(REGEX_DTSTARTDURATION, $_GET['datetime'])) ||
       (preg_match(REGEX_DTNAMED, $_GET['datetime']))) {

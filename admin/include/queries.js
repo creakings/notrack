@@ -395,7 +395,7 @@ function selectDate() {
   }
 
   document.getElementById('timepicker-text').value = startDate + ' to ' + endDate;
-  document.getElementById('dateTime').value = startDate + '00:00/' + endDate + '23:59:59';
+  document.getElementById('dateTime').value = startDate + 'T00:00:00/' + endDate + 'T23:59:59';
 
   document.getElementById('timepicker-dropdown').blur();
   document.getElementById('timepicker-group').blur();
