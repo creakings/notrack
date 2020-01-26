@@ -1572,24 +1572,9 @@ span.key {
 }
 
 
-/*#timepicker-dropdown {
-  height: 1.5rem;
-  width: 100%;
-  margin: 0.2rem 0 0.1rem;
-  padding-left: 0.2rem;
-  color: #00000a;
-  background-color: #fafafa;
-  border: 2px solid #757575;
-  border-radius: 4px;
-  font-size: 0.94rem;
-  overflow: hidden;
-}*/
-/*#timepicker-text::after {
-  content: "\2BC6";
-  font-size: 0.7rem;
-  margin-left: 0.1rem;
-}*/
-
+/* ==========================================================================
+   Time Picker on queries.php
+   ========================================================================== */
 #timepicker-dropdown:focus #timepicker-group,
 #timepicker-dropdown:focus-within #timepicker-group {
   display: block;
@@ -1599,25 +1584,34 @@ span.key {
   margin: 0.4rem 0 0 -5rem;
   position: absolute;
   padding: 0.1rem;
+  background: #f7f7f7;
   border: 1px solid #757575;
   border-radius: 4px;
   box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5), inset 0 0 4px #666;
   z-index: 1;
 }
+@media only screen and (max-width:480px), only screen and (max-device-width:480px) {
+  #timepicker-group {
+    left: 0.5rem;
+    width: calc(100% - 0.7rem);
+    margin: 0;
+  }
+}
 .timepicker-item {
   width:30rem;
   height: 1.5rem;
-  background: #f7f7f7;
   overflow-y: hidden;
   display: block;
   transition: height 0.5s;
 }
+.timepicker-item button {
+  margin: 0.5rem;
+  float: right;
+}
 .timepicker-item h3 {
   padding-left: 0.5rem;
-  margin: 0;
-  font-size: 1rem;
-  font-weight: normal;
-  background: lightgrey;
+  margin: 0.1rem;
+  background: #d2d2d2;
 }
 .timepicker-item h3::before {
   content: "\1F892";
@@ -1646,13 +1640,13 @@ span.key {
 }
 .timepicker-grid input[type="date"] {
   width: 95%;
+/*   margin-bottom: 0.1rem; */
 }
 .timepicker-grid h4 {
-  margin: 0;
-  padding: 0 0.3rem;
-  color: #666;
+  margin: 0 0.3rem;
   font-size: 1rem;
+  text-align: left;
 }
 .timepicker-grid-half {
-  grid-template-columns: auto auto;
+  grid-template-columns: 50% 50%;
 }
