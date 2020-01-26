@@ -58,17 +58,42 @@ $INVESTIGATEURL = '';
 $page = 1;
 $filter = DEF_FILTER;
 $datetime = 'P1D';                                         //Default range = Past 1 Day
-$dtrange = '';
+$datetime_text = '';
+$datetime_search = '';
 $groupby = 'name';
 $searchbox = '';
-$searchtime = '1 DAY';
 $sort = 'DESC';
 $sysip = DEF_SYSTEM;
 
-define('REGEX_DTDURATION', '/^P(?=T|\d)(\dY)?(\d{1,2}M)?(\d{1,3}D)?(T(\d{1,3}H)?(\d{1,3}M)?(\d{1,3}S)?)?$/');
+//Date Time Duration from ISO 8601
+//Note: PHP allows the values to be higher than the normal time period e.g 90S instead of 1M30S
+//Start with P
+//Lookahead to see if next letter is T and a number or a number
+//Group 1: 1-9 Years (optional)
+//Group 2: 1-99 Months (optional)
+//Group 3: 1-999 Days (optional)
+//Non-Capture Group for optional T (Time component)
+//Group 4: 1-999 Hours (optional)
+//Group 5: 1-999 Minutes (optional)
+//Group 6: 1-999 Seconds (optional)
+define('REGEX_DTDURATION', '/^P(?=T\d|\d)(\dY)?(\d{1,2}M)?(\d{1,3}D)?(?:T(\d{1,3}H)?(\d{1,3}M)?(\d{1,3}S)?)?$/');
 define('REGEX_DTSINGLE', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$/');
 define('REGEX_DTRANGE', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])\/([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$/');
-define('REGEX_DTSTARTDURATION', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])\/P(\dY)?(1[0-2]M|[0-9]M)?([1-2][0-9]D|3[0-1]D|[0-9]D)?T?([1-2][0-4]H|[0-9]H)?([0-5]?[0-9]M)?([0-5]?[0-9]S)?$/');
+
+//Date Time Start with Duration
+//Combined date time with a Duration
+//Group 1 - Date Time e.g. 2020-01-26T17:10:00
+//Non-Capture Group 0000-9999 Years
+//Non-Capture Group 10-12 or 0-9 Months
+//Non-Capture Group 30-31 or 0 1-9 or 1-2 0-9 Days
+//T
+//Non-Capture Group 2 0-3 or 0-1 0-9 Hours
+//Non-Capture Group 0-5 0-9 Minutes
+//Non-Capture Group 0-5 0-9 Seconds
+// / (split)
+//Group 2 Duration (see REGEX_DTDURATION)
+define('REGEX_DTSTARTDURATION', '/^((?:[0-9]{4})\-(?:1[0-2]|0[1-9])\-(?:3[01]|0[1-9]|[12][0-9])T(?:2[0-3]|[01][0-9]):(?:[0-5][0-9]):(?:[0-5][0-9]))\/(P(?=T\d|\d)(?:\dY)?(?:1[0-2]M|[0-9]M)?(?:[1-2][0-9]D|3[0-1]D|[0-9]D)?T?(?:[1-2][0-4]H|[0-9]H)?(?:[0-5]?[0-9]M)?(?:[0-5]?[0-9]S)?)$/');
+
 define('REGEX_DTNAMED', '/^(last week midnight|first day of (last|this) (week|month) midnight)\/(now|last week midnight|first day of (last|this) (week|month) midnight)$/');
 
 /************************************************
@@ -88,12 +113,11 @@ $TLDBlockList = array();
  *    String of parameters
  */
 function buildlink() {
-  global $datetime, $dtrange, $filter, $groupby, $searchbox, $searchtime, $sysip;
+  global $datetime, $filter, $groupby, $searchbox, $sysip;
 
   $link = "groupby=$groupby";
 
-  $link .= ($datetime != '') ? '&amp;datetime='.rawurlencode($datetime) : '&amp;searchtime='.rawurlencode($searchtime);
-  $link .= ($dtrange != '') ? "&amp;dtrange={$dtrange}" : '';
+  $link .= ($datetime != '') ? '&amp;datetime='.rawurlencode($datetime) : '';
   $link .= ($filter != DEF_FILTER) ? "&amp;filter={$filter}" : '';
   $link .= ($sysip != DEF_SYSTEM) ? "&amp;sysip={$sysip}" : '';
   $link .= ($searchbox != '') ? "&amp;searchbox={$searchbox}" : '';
@@ -244,7 +268,7 @@ function get_ipsearch($ipsearch) {
  *    None
  */
 function draw_filter_toolbar() {
-  global $sysiplist, $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby, $datetime, $dtrange;
+  global $sysiplist, $filter, $page, $searchbox, $sort, $sysip, $groupby, $datetime, $datetime_text;
   global $FILTERLIST, $TIMELIST;
 
   $line = '';
@@ -256,10 +280,6 @@ function draw_filter_toolbar() {
   echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
   echo '<input type="hidden" name="groupby" value="'.$groupby.'">'.PHP_EOL;
   echo '<input type="hidden" name="datetime" id="dateTime" value="'.$datetime.'">'.PHP_EOL;
-
-  /*if ($dtrange != '') {
-    echo '<input type="hidden" name="dtrange" value="'.$dtrange.'">'.PHP_EOL;
-  }*/
 
   //Column Headers
   echo '<div><h3>Domain</h3></div>'.PHP_EOL;
@@ -280,19 +300,10 @@ function draw_filter_toolbar() {
   //End Group 2 - IP
 
 
-  //Start Group 2 - Time
-  /*echo '<div><select name="searchtime" id="filtertime" onchange="submit()">';
-  echo '<option value="'.$searchtime.'">'.$TIMELIST[$searchtime].'</option>'.PHP_EOL;
-  foreach ($TIMELIST as $key => $line) {
-    if ($key != $searchtime) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
-  }
-  echo '</select></div>'.PHP_EOL;                          //End Search Time
-  */
 
   //Start Group 3
   echo '<div id="timepicker-dropdown" tabindex="0">'.PHP_EOL;
-  echo '<input type="text" id="timepicker-text" value="'.$datetime.'">'.PHP_EOL;
-  //echo '<span id="timepicker-text">Something</span>'.PHP_EOL;
+  echo '<input type="text" id="timepicker-text" value="'.$datetime_text.'">'.PHP_EOL;
   echo '<div id="timepicker-group">'.PHP_EOL;              //Start timepicker-group
 
   echo '<div class="timepicker-item" tabindex="0">'.PHP_EOL;
@@ -371,7 +382,7 @@ function draw_filter_toolbar() {
  *    None
  */
 function draw_groupby() {
-  global $filter, $page, $searchbox, $searchtime, $sort, $sysip, $groupby, $datetime, $dtrange;
+  global $filter, $page, $searchbox, $sort, $sysip, $groupby, $datetime;
 
   $domainactive = '';
   $timeactive = '';
@@ -383,15 +394,7 @@ function draw_groupby() {
   echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
   echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
   echo '<input type="hidden" name="searchbox" value="'.$searchbox.'">'.PHP_EOL;
-  if ($datetime != '') {
-    echo '<input type="hidden" name="datetime" value="'.$datetime.'">'.PHP_EOL;
-  }
-  else {
-    echo '<input type="hidden" name="searchtime" value="'.$searchtime.'">'.PHP_EOL;
-  }
-  if ($dtrange != '') {
-    echo '<input type="hidden" name="dtrange" value="'.$dtrange.'">'.PHP_EOL;
-  }
+  echo '<input type="hidden" name="datetime" value="'.$datetime.'">'.PHP_EOL;
   echo '<input type="hidden" name="sys" value="'.$sysip.'">'.PHP_EOL;
   echo '<input type="hidden" name="filter" value="'.$filter.'">'.PHP_EOL;
   echo '<div id="groupby-container">'.PHP_EOL;
@@ -400,21 +403,91 @@ function draw_groupby() {
   echo '</div></form>';
 }
 
-function get_datetime_search() {
-  global $datetime;
+
+/********************************************************************
+ *  Get DT Duration Text
+ *    Converts ISO 8601 Abbrevated Duration to a Human readable form
+ *    e.g. P1M2DT15H22M8S = 1 Month 2 Days 15 Hours 22 Minutes 8 Seconds
+ *
+ *    1. Use REGEX_DTDURATION to get grouped matches
+ *    2. Loop through array of matches
+ *    3. If match is set, get pluralised value from corresponding dtnames array
+ *
+ *  Params:
+ *    Duration
+ *  Return:
+ *    None
+ */
+function get_dtduration_text($duration) {
+  $str = '';
+  $i = 0;
+
+  $dtnames = array('', 'Year', 'Month', 'Day', 'Hour', 'Minute', 'Second');
+
+  preg_match(REGEX_DTDURATION, $duration, $matches);
+
+  for ($i = 1; $i < 7; $i++) {
+    if (isset($matches[$i])) {
+      if ($matches[$i] != '') {
+        $str .= pluralise((int)substr($matches[$i], 0, -1), $dtnames[$i]);
+        $str .= ' ';
+      }
+    }
+  }
+
+  return $str;
+}
+
+
+/********************************************************************
+ *  Format Date Time Search
+ *    Fills in $datetime_search (SQL search) and $datetime_text (Human readable)
+ *     based on the type of search from $datetime
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function format_datetime_search() {
+  global $datetime, $datetime_search, $datetime_text;
+  $matches = array();
   $SQLFORMAT = 'Y-m-d H:i:s';
 
+  //Duration from ISO 8601
+  //Usually last x time, so no end time required
   if (preg_match(REGEX_DTDURATION, $datetime)) {
     $startdate = new DateTime('now');
     $startdate->sub(new DateInterval($datetime));
 
-    return "log_time > '".$startdate->format($SQLFORMAT)."'";
+    $datetime_search = "log_time > '".$startdate->format($SQLFORMAT)."'";
+    $datetime_text = 'Last '.get_dtduration_text($datetime);
+  }
+
+  //Start Duration
+  //(2020-01-26T15:00:00)/(PT1H)
+  //Group 1 Date Time
+  //Group 2 Range to add
+  elseif (preg_match(REGEX_DTSTARTDURATION, $datetime, $matches)) {
+    $startdate = new DateTime($matches[1]);
+    $enddate = new DateTime($matches[1]);
+    $enddate->add(new DateInterval($matches[2]));
+
+    $datetime_search = "log_time > '".$startdate->format($SQLFORMAT)."' AND log_time < '".$enddate->format($SQLFORMAT)."'";
+
+    //Searching for one day, so drop the time
+    if ($matches[2] == 'P1D') {
+      $datetime_text = $startdate->format('d M').' for '.get_dtduration_text($matches[2]);
+    }
+    else {
+      $datetime_text = $startdate->format('d M H:i').' for '.get_dtduration_text($matches[2]);
+    }
   }
   /*
-  define('REGEX_DTDURATION', '/^P(?=T|\d)(\dY)?(\d{1,2}M)?(\d{1,3}D)?(T(\d{1,3}H)?(\d{1,3}M)?(\d{1,3}S)?)?$/');
+
 define('REGEX_DTSINGLE', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$/');
 define('REGEX_DTRANGE', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])\/([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$/');
-define('REGEX_DTSTARTDURATION', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])\/P(\dY)?(1[0-2]M|[0-9]M)?([1-2][0-9]D|3[0-1]D|[0-9]D)?T?([1-2][0-4]H|[0-9]H)?([0-5]?[0-9]M)?([0-5]?[0-9]S)?$/');
+
 define('REGEX_DTNAMED', '/^(last week midnight|first day of (last|this) (week|month) midnight)\/(now|last week midnight|first day of (last|this) (week|month) midnight)$/');
 */
 }
@@ -428,24 +501,13 @@ define('REGEX_DTNAMED', '/^(last week midnight|first day of (last|this) (week|mo
  *    SQL Query string
  */
 function add_filterstr() {
-  global $datetime, $dtrange, $searchbox, $searchtime, $filter, $sysip;
+  global $datetime, $datetime_search, $searchbox, $filter, $sysip;
 
   $searchstr = '';
 
   $searchstr = ' WHERE ';
 
-  $searchstr .= get_datetime_search();
-
-  /*if (($datetime != '') && ($dtrange == '')) {             //No date-time range specified, use fixed -1m to +3m
-    $searchstr = " WHERE log_time > SUBTIME('$datetime', '00:01:00') AND log_time < ADDTIME('$datetime', '00:03:00')";
-  }
-  elseif (($datetime != '') && ($dtrange != '')) {         //Date-time range specified by user1
-    $searchstr = " WHERE log_time > '$datetime' AND log_time < ADDTIME('$datetime', '$dtrange')";
-  }
-  else {
-    $searchstr = " WHERE log_time >= DATE_SUB(NOW(), INTERVAL $searchtime) ";
-  }*/
-
+  $searchstr .= $datetime_search;
 
 
   if ($searchbox != '') {
@@ -460,7 +522,7 @@ function add_filterstr() {
     $searchstr .= " AND dns_result = '$filter'";
   }
 
-  //echo $searchstr;                                       //Uncomment to debug sql query
+  echo $searchstr;                                       //Uncomment to debug sql query
   return $searchstr;
 }
 
@@ -593,7 +655,7 @@ function format_row($domain, $dns_result) {
  */
 function show_group_view() {
   global $db, $TLDBlockList;
-  global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
+  global $page, $sort, $filter, $sysip, $groupby, $searchbox;
 
   $i = 0;
   $k = 1;                                                  //Count within ROWSPERPAGE
@@ -683,7 +745,7 @@ function show_group_view() {
  */
 function show_time_view() {
   global $db, $TLDBlockList;
-  global $page, $sort, $filter, $sysip, $groupby, $searchbox, $searchtime;
+  global $page, $sort, $filter, $sysip, $groupby, $searchbox;
 
   $i = 0;
   $k = 1;                                                  //Count within ROWSPERPAGE
@@ -781,9 +843,6 @@ if (isset($_GET['groupby'])) {
   if (array_key_exists($_GET['groupby'], $GROUPLIST)) $groupby = $_GET['groupby'];
 }
 
-if (isset($_GET['searchtime'])) {
-  if (array_key_exists($_GET['searchtime'], $TIMELIST)) $searchtime = $_GET['searchtime'];
-}
 
 if (isset($_GET['searchbox'])) {                           //searchbox uses preg_replace to remove invalid characters
   $searchbox = preg_replace(REGEX_URLSEARCH, '', $_GET['searchbox']);
@@ -798,11 +857,8 @@ if (isset($_GET['datetime'])) {
     $datetime = $_GET['datetime'];
   }
 }
-if (isset($_GET['dtrange'])) {
-  if (preg_match('/^([0-1][0-9]:|2[0-4]:|[0-9]:)?([0-5]?[0-9]):([0-5][0-9])$/', $_GET['dtrange'])) {
-    $dtrange = $_GET['dtrange'];
-  }
-}
+
+format_datetime_search();
 
 if ($config->settings['whoisapi'] == '') {                 //Setup Investigate / Whois for popupmenu
   $INVESTIGATE = $config->settings['WhoIs'];
