@@ -237,7 +237,7 @@ function count_queries() {
     $allowed_arr[$datestr] = 0;
     $blocked_arr[$datestr] = 0;
     $chart_labels[] = date('H:i', $i);
-    $link_labels[] = date('Y-m-d H:i:00', $i);
+    $link_labels[] = date('Y-m-d\TH:i:00', $i);
   }
 
   $hourlyvalues = $dbwrapper->queries_count_hourly($currenttime);
@@ -285,7 +285,7 @@ home_network();
 
 echo '</div>'.PHP_EOL;                                     //End home-nav-container
 if ($day_allowed + $day_blocked > 0) {
-  linechart($allowed_queries, $blocked_queries, $chart_labels, $link_labels, 'dtrange=1:00:00', 'DNS Queries over past 24 hours');
+  linechart($allowed_queries, $blocked_queries, $chart_labels, $link_labels, '/PT1H', 'DNS Queries over past 24 hours');
 }
 
 ?>
