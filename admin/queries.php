@@ -347,22 +347,45 @@ function draw_filter_toolbar() {
   echo '<div class="timepicker-item" tabindex="0">'.PHP_EOL;
   echo '<h3>Date</h3>'.PHP_EOL;
   echo '<div class="timepicker-grid timepicker-grid-half">'.PHP_EOL;
+
+  //Column headers for Date
   echo '<div><h4>From</h4></div>'.PHP_EOL;
   echo '<div><h4>To</h4></div>'.PHP_EOL;
 
-  echo '<div>'.PHP_EOL;
+  echo '<div>'.PHP_EOL;                                    //Start date-start
   echo '<input type="date" id="timepicker-date-start" value="'.date('Y-m-d', strtotime('yesterday')).'">'.PHP_EOL;
   echo '<p class="light">00:00</p>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;                                   //End date-start
 
-  echo '<div>'.PHP_EOL;
+  echo '<div>'.PHP_EOL;                                    //Start date-end
   echo '<input type="date" id="timepicker-date-end" value="'.date('Y-m-d').'">'.PHP_EOL;
   echo '<p class="light">23:59</p>'.PHP_EOL;
   echo '<button type="button" onclick="selectDate()">Apply</button>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;                                   //End date-end
 
   echo '</div>'.PHP_EOL;                                   //End timepicker-grid
   echo '</div>'.PHP_EOL;                                   //End timepicker-item 2
+
+  //Time & Date
+  echo '<div class="timepicker-item" tabindex="0">'.PHP_EOL;
+  echo '<h3>Time & Date</h3>'.PHP_EOL;
+  echo '<div class="timepicker-grid timepicker-grid-td">'.PHP_EOL;
+
+  //Column headers for Date
+  echo '<div><h4>From</h4></div>'.PHP_EOL;
+  echo '<div><h4>To</h4></div>'.PHP_EOL;
+
+  echo '<div><input type="date" id="timepicker-tddate-start" value="'.date('Y-m-d', strtotime('yesterday')).'"></div>'.PHP_EOL;
+  echo '<div><input type="time" id="timepicker-tdtime-start" value="00:00"></div>'.PHP_EOL;
+
+  echo '<div><input type="date" id="timepicker-tddate-end" value="'.date('Y-m-d').'"></div>'.PHP_EOL;
+  echo '<div><input type="time" id="timepicker-tdtime-end" value="00:00"></div>'.PHP_EOL;
+
+  echo '<div><button type="button" onclick="selectTimeDate()">Apply</button></div>'.PHP_EOL;
+  echo '</div>'.PHP_EOL;                                   //End timepicker-grid
+  echo '</div>'.PHP_EOL;                                   //End timepicker-item 2
+
+
   /*echo '<div class="timepicker-item" tabindex="0">'.PHP_EOL;
   echo '<h3>Advanced</h3>'.PHP_EOL;
   echo '</div>'.PHP_EOL;*/

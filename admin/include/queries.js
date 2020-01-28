@@ -401,3 +401,33 @@ function selectDate() {
   document.getElementById('timepicker-group').blur();
 
 }
+
+function selectTimeDate() {
+  let startDate = document.getElementById('timepicker-tddate-start').value;
+  let endDate = document.getElementById('timepicker-tddate-end').value;
+  let startTime = document.getElementById('timepicker-tdtime-start').value;
+  let endTime = document.getElementById('timepicker-tdtime-end').value;
+
+  if (startDate == '') return;
+  if (endDate == '') return;
+  if (startTime == '') return;
+  if (endTime == '') return;
+
+  startDate += "T" + startTime;
+  endDate += "T" + endTime;
+
+  //Check if startDate in Unix time is greater than endDate in Unix time
+  if (Date.parse(startDate) > Date.parse(endDate)) {
+     [startDate, endDate] = [endDate, startDate]           //Swap the values
+  }
+
+  //TODO Beatuify
+  document.getElementById('timepicker-text').value = startDate + ' to ' + endDate;
+
+  //Need to add the seconds
+  document.getElementById('dateTime').value = startDate + ':00/' + endDate + ':00';
+
+  document.getElementById('timepicker-dropdown').blur();
+  document.getElementById('timepicker-group').blur();
+
+}
