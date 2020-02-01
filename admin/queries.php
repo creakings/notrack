@@ -40,13 +40,6 @@ $FILTERLIST = array('all' => 'All Requests',
 $GROUPLIST = array('name' => 'Site Name',
                    'time' => 'Time');
 
-$TIMELIST = array('1 HOUR' => '1 Hour',
-                  '4 HOUR' => '4 Hours',
-                  '12 HOUR' => '12 Hours',
-                  '1 DAY' => '1 Day',
-                  '7 DAY' => '7 Days',
-                  '30 DAY' => '30 Days');
-
 $VIEWLIST = array('name', 'time');
 
 $INVESTIGATE = '';
@@ -106,7 +99,11 @@ define('REGEX_DTRANGE', '/^([0-9]{4}\-(?:1[0-2]|0[1-9])\-(?:3[01]|0[1-9]|[12][0-
 //Group 2 Duration (see REGEX_DTDURATION)
 define('REGEX_DTSTARTDURATION', '/^((?:[0-9]{4})\-(?:1[0-2]|0[1-9])\-(?:3[01]|0[1-9]|[12][0-9])T(?:2[0-3]|[01][0-9]):(?:[0-5][0-9]):(?:[0-5][0-9]))\/(P(?=T\d|\d)(?:\dY)?(?:1[0-2]M|[0-9]M)?(?:[1-2][0-9]D|3[0-1]D|[0-9]D)?T?(?:[1-2][0-4]H|[0-9]H)?(?:[0-5]?[0-9]M)?(?:[0-5]?[0-9]S)?)$/');
 
-define('REGEX_DTNAMED', '/^(last week midnight|first day of (last|this) (week|month) midnight)\/(now|last week midnight|first day of (last|this) (week|month) midnight)$/');
+//Date Time Named - Two word Duration points that PHP can understand
+//Group 1 - From
+//Non Capture Group yesterday|last week
+// / (split)
+define('REGEX_DTFIXED', '/^(yesterday|(?:this|previous) (?:week|month))/');
 
 /************************************************
 *Arrays                                         *
@@ -281,7 +278,7 @@ function get_ipsearch($ipsearch) {
  */
 function draw_filter_toolbar() {
   global $sysiplist, $filter, $page, $searchbox, $sort, $sysip, $groupby, $datetime, $datetime_text;
-  global $FILTERLIST, $TIMELIST;
+  global $FILTERLIST;
 
   $line = '';
 
@@ -336,10 +333,14 @@ function draw_filter_toolbar() {
   echo '<li onclick="selectTime(this, \'P7D\')">Last 7 Days</li>'.PHP_EOL;
   echo '<li onclick="selectTime(this, \'P30D\')">Last 30 Days</li>'.PHP_EOL;
   echo '</ul>'.PHP_EOL;
-  /*echo '<ul>'.PHP_EOL;
-  echo '<li onclick="selectTime(this)">Yesterday</li>'.PHP_EOL;
-  echo '<li>Item2</li>'.PHP_EOL;
-  echo '</ul>'.PHP_EOL;*/
+
+  echo '<ul>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'yesterday\')">Yesterday</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'this week\')">Week-To-Date</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'previous week\')">Previous Week</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'this month\')">Month-To-Date</li>'.PHP_EOL;
+  echo '<li onclick="selectTime(this, \'previous month\')">Previous Month</li>'.PHP_EOL;
+  echo '</ul>'.PHP_EOL;
 
   echo '</div>'.PHP_EOL;                                   //End timepicker-grid
   echo '</div>'.PHP_EOL;                                   //End timepicker-item 1
@@ -489,6 +490,10 @@ function get_dtduration_text($duration) {
  */
 function format_datetime_search() {
   global $datetime, $datetime_search, $datetime_text;
+
+  $fixedstart = '';
+  $fixedend = '';
+
   $matches = array();
   $SQLFORMAT = 'Y-m-d H:i:s';
 
@@ -542,12 +547,43 @@ function format_datetime_search() {
       $datetime_text = $startdate->format('d M H:i').' to '.$enddate->format('d M H:i');
     }
   }
-  /*
 
-define('REGEX_DTSINGLE', '/^([0-9]{4})\-(1[0-2]|0[1-9])\-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])$/');
+  elseif (preg_match(REGEX_DTFIXED, $datetime)) {
 
-define('REGEX_DTNAMED', '/^(last week midnight|first day of (last|this) (week|month) midnight)\/(now|last week midnight|first day of (last|this) (week|month) midnight)$/');
-*/
+    switch($datetime) {
+      case 'previous week':
+        $fixedstart = 'last week midnight';
+        $fixedend = 'this week midnight';
+        $datetime_text = 'Previous Week';
+        break;
+      case 'this week':
+        $fixedstart = 'this week midnight';
+        $fixedend = 'now';
+        $datetime_text = 'Week-To-Date';
+        break;
+      case 'previous month':
+        $fixedstart = 'last month midnight';
+        $fixedend = 'this month midnight';
+        $datetime_text = 'Previous Month';
+        break;
+      case 'this month':
+        $fixedstart = 'this month midnight';
+        $fixedend = 'now';
+        $datetime_text = 'Month-To-Date';
+        break;
+      default:                                             //Default to yesterday
+        $fixedstart = 'yesterday midnight';
+        $fixedend = 'today midnight';
+        $datetime_text = 'Yesterday';
+        break;
+    }
+
+    $startdate = new DateTime($fixedstart);
+    $enddate = new DateTime($fixedend);
+    $datetime_search = "log_time > '".$startdate->format($SQLFORMAT)."' AND log_time < '".$enddate->format($SQLFORMAT)."'";
+  }
+
+
 }
 
 /********************************************************************
@@ -911,7 +947,7 @@ if (isset($_GET['datetime'])) {
   if ((preg_match(REGEX_DTDURATION, $_GET['datetime'])) ||
       (preg_match(REGEX_DTRANGE, $_GET['datetime'])) ||
       (preg_match(REGEX_DTSTARTDURATION, $_GET['datetime'])) ||
-      (preg_match(REGEX_DTNAMED, $_GET['datetime']))) {
+      (preg_match(REGEX_DTFIXED, $_GET['datetime']))) {
     $datetime = $_GET['datetime'];
   }
 }
