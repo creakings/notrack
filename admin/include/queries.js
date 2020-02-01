@@ -355,25 +355,51 @@ window.onscroll = function() {                             //OnScroll Event
     document.getElementById('scrollup').style.display = 'none';
     document.getElementById('scrolldown').style.display = 'none';
   }
-
-  //Lock Stats box and Fade in place if visible
-  /*if (document.getElementById('queries-box').style.display == 'block') {
-    //document.getElementById('fade').style.top=window.pageYOffset+'px'; DEPRECATED
-
-    document.getElementById('queries-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+'px';
-    document.getElementById('queries-box').style.left = (window.innerWidth / 2)+'px';
-  }
-
-  //Lock Options box in place if visible
-  if (document.getElementById('options-box').style.display == 'block') {
-    document.getElementById('fade').style.top=window.pageYOffset+'px';
-
-    document.getElementById('options-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+'px';
-    document.getElementById('options-box').style.left = (window.innerWidth / 2)+'px';
-  }*/
 }
 
 
+/********************************************************************
+ *  Format Date
+ *    Return three character month name and day from a timedate string:
+ *     YYYY-MM-DDThh:mm
+ *    Although hh:mm is not necessarily required
+ *
+ *  Params:
+ *    timedate string
+ *  Return:
+ *    Formatted date string
+ */
+function formatDate(dateStr) {
+  let shortDay = '';
+  let shortMonth = '';
+
+  let options = {
+    month: 'short'
+  };
+
+  let tempDate= new Date(dateStr);
+
+  //Get 3 letter month from Intl DateTimeFormat
+  shortMonth = new Intl.DateTimeFormat('default', options).format(tempDate);
+
+  //Extract the first group match out of regex YYYY-MM-(DD)
+  shortDay = dateStr.match(/\d{4}\-\d{2}\-(\d{2})/)[1];
+
+  return shortDay + " " + shortMonth;
+}
+
+
+/********************************************************************
+ *  Select Time Preset from timepicker menu
+ *    Fills in timepicker-text from li text value
+ *    Fills in dateTime value from supplied timeValue
+ *
+ *  Params:
+ *    item - The li which called this function
+ *    timeValue - string to supply for dateTime value
+ *  Return:
+ *    None
+ */
 function selectTime(item, timeValue) {
   document.getElementById('timepicker-text').value = item.innerText;
   document.getElementById('dateTime').value = timeValue;
@@ -382,6 +408,20 @@ function selectTime(item, timeValue) {
   document.getElementById('timepicker-group').blur();
 }
 
+
+/********************************************************************
+ *  Select Date from timepicker menu
+ *    Fills in timepicker-text with formatDate value of start and end dates
+ *    Fills in dateTime value with selected dates and  with added time string 00:00:00 to 23:59:59
+ *    1. Check if startDate is greater than endDate - Swap around if necessary
+ *    2. Fill in timepicker-text with formatDate
+ *    3. Fill in dateTime with startDateT00:00:00/endDateT23:59:59
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
 function selectDate() {
   let startDate = document.getElementById('timepicker-date-start').value;
   let endDate = document.getElementById('timepicker-date-end').value;
@@ -394,7 +434,7 @@ function selectDate() {
      [startDate, endDate] = [endDate, startDate]           //Swap the values
   }
 
-  document.getElementById('timepicker-text').value = startDate + ' to ' + endDate;
+  document.getElementById('timepicker-text').value = formatDate(startDate) + ' to ' + formatDate(endDate);
   document.getElementById('dateTime').value = startDate + 'T00:00:00/' + endDate + 'T23:59:59';
 
   document.getElementById('timepicker-dropdown').blur();
@@ -402,6 +442,20 @@ function selectDate() {
 
 }
 
+
+/********************************************************************
+ *  Select Time & Date from timepicker menu
+ *    Fills in timepicker-text with formatDate value of start and end dates & times
+ *    Fills in dateTime value with selected dates and  with added seconds 00 to 59
+ *    1. Check if startDate + startTime is greater than endDate + endTime - Swap around if necessary
+ *    2. Fill in timepicker-text with formatDate
+ *    3. Fill in dateTime with startDateTstartTime:00/endDateTendTime:59
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
 function selectTimeDate() {
   let startDate = document.getElementById('timepicker-tddate-start').value;
   let endDate = document.getElementById('timepicker-tddate-end').value;
@@ -421,13 +475,11 @@ function selectTimeDate() {
      [startDate, endDate] = [endDate, startDate]           //Swap the values
   }
 
-  //TODO Beatuify
-  document.getElementById('timepicker-text').value = startDate + ' to ' + endDate;
+  document.getElementById('timepicker-text').value = formatDate(startDate) + ' ' + startTime + ' to ' + formatDate(endDate) + ' ' + endTime;
 
   //Need to add the seconds
   document.getElementById('dateTime').value = startDate + ':00/' + endDate + ':00';
 
   document.getElementById('timepicker-dropdown').blur();
   document.getElementById('timepicker-group').blur();
-
 }
