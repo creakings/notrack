@@ -1,3 +1,8 @@
+Development
+New timepicker menu on queries.php
+New Status and Severity selector on analytics.php
+*************************************************
+
 v0.9.4 Released 15 Jan 2020
 Complete overhaul to DHCP page.
 Adding a static host will also add it to DNS localhosts list
