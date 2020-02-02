@@ -1,18 +1,18 @@
 /********************************************************************
- *  Reset queries form
+ *  Reset queries form DEPRECATED
  *    Reset elements in queries form to their default values
  *  Params:
  *    None
  *  Return:
  *    None
  */
-function resetQueriesForm() {
+/*function resetQueriesForm() {
   document.getElementById('filtersearch').value = '';
   document.getElementById('filtersys').value = '';
   document.getElementById('filtertime').value = '1 DAY';
   document.getElementById('filtertype').value = 'all';
   document.getElementById('filtergroup').value = 'name';
-}
+}*/
 
 
 /********************************************************************
@@ -482,4 +482,35 @@ function selectTimeDate() {
 
   document.getElementById('timepicker-dropdown').blur();
   document.getElementById('timepicker-group').blur();
+}
+
+
+/********************************************************************
+ *  Toggle Nav Button
+ *    Toggle active state of severity button
+ *
+ *  Params:
+ *    Button, Value to increase or decrease severity by
+ *  Return:
+ *    None
+ */
+function toggleNavButton(item, value) {
+  let severity = document.getElementById('severity');
+  let severityInt = Number(severity.value);
+
+  //console.log("Before" + item.classList);
+  //console.log(severity.value);
+  if (item.classList.contains('active')) {
+    severityInt -= Number(value);
+    item.classList.remove('active');
+  }
+  else {
+    severityInt += Number(value);
+    item.classList.add('active');
+  }
+
+  severity.value = severityInt.toString();
+
+  //console.log("After" + item.classList);
+  //console.log(severity.value);
 }

@@ -29,13 +29,7 @@ echo '<div id="main">'.PHP_EOL;
 /************************************************
 *Constants                                      *
 ************************************************/
-DEFINE('DEF_FILTER', 'all');
 DEFINE('DEF_SYSTEM', 'all');
-
-$FILTERLIST = array('all' => 'All Requests',
-                    'A' => 'Allowed Only',
-                    'B' => 'Blocked Only',
-                    'L' => 'Local Only');
 
 $GROUPLIST = array('name' => 'Site Name',
                    'time' => 'Time');
@@ -49,7 +43,6 @@ $INVESTIGATEURL = '';
 *Global Variables                               *
 ************************************************/
 $page = 1;
-$filter = DEF_FILTER;
 $datetime = 'P1D';                                         //Default range = Past 1 Day
 $datetime_text = '';
 $datetime_search = '';
@@ -57,6 +50,7 @@ $groupby = 'name';
 $searchbox = '';
 $sort = 'DESC';
 $sysip = DEF_SYSTEM;
+$severity = 0;
 
 //Date Time Duration from ISO 8601
 //Note: PHP allows the values to be higher than the normal time period e.g 90S instead of 1M30S
@@ -122,12 +116,12 @@ $TLDBlockList = array();
  *    String of parameters
  */
 function buildlink() {
-  global $datetime, $filter, $groupby, $searchbox, $sysip;
+  global $datetime, $groupby, $searchbox, $severity, $sysip;
 
   $link = "groupby=$groupby";
 
   $link .= ($datetime != '') ? '&amp;datetime='.rawurlencode($datetime) : '';
-  $link .= ($filter != DEF_FILTER) ? "&amp;filter={$filter}" : '';
+  $link .= "&amp;severity={$severity}";
   $link .= ($sysip != DEF_SYSTEM) ? "&amp;sysip={$sysip}" : '';
   $link .= ($searchbox != '') ? "&amp;searchbox={$searchbox}" : '';
 
@@ -269,7 +263,7 @@ function get_ipsearch($ipsearch) {
 /********************************************************************
  *  Draw Filter Toolbar
  *    Populates filter bar with Search Boxes, Search Button
- *    Reset form is dealt with by queries.js function resetQueriesForm()
+ *    DEPRECATED Reset form is dealt with by queries.js function resetQueriesForm()
  *    Show current value first in <select>, and then read through respective array to output values
  *  Params:
  *    None
@@ -277,10 +271,9 @@ function get_ipsearch($ipsearch) {
  *    None
  */
 function draw_filter_toolbar() {
-  global $sysiplist, $filter, $page, $searchbox, $sort, $sysip, $groupby, $datetime, $datetime_text;
-  global $FILTERLIST;
+  global $sysiplist, $page, $searchbox, $severity, $sort, $sysip, $groupby, $datetime, $datetime_text;
 
-  $line = '';
+  $isactive = '';
 
   echo '<form method="get">'.PHP_EOL;
   echo '<div class="filter-toolbar queries-filter-toolbar">'.PHP_EOL;
@@ -289,12 +282,13 @@ function draw_filter_toolbar() {
   echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
   echo '<input type="hidden" name="groupby" value="'.$groupby.'">'.PHP_EOL;
   echo '<input type="hidden" name="datetime" id="dateTime" value="'.$datetime.'">'.PHP_EOL;
+  echo '<input type="hidden" name="severity" id="severity" value="'.$severity.'">'.PHP_EOL;
 
   //Column Headers
   echo '<div><h3>Domain</h3></div>'.PHP_EOL;
   echo '<div><h3>IP</h3></div>'.PHP_EOL;
   echo '<div><h3>Time</h3></div>'.PHP_EOL;
-  echo '<div><h3><span class="mobile-hide">Request </span>Type</h3></div>'.PHP_EOL;
+  echo '<div><h3>Severity</h3></div>'.PHP_EOL;
   echo '<div></div>'.PHP_EOL;
 
   echo '<div><input type="text" name="searchbox" id="filtersearch" value="'.$searchbox.'" placeholder="site.com"></div>'.PHP_EOL;
@@ -387,21 +381,28 @@ function draw_filter_toolbar() {
   echo '</div>'.PHP_EOL;                                   //End timepicker-item 2
 
 
-  /*echo '<div class="timepicker-item" tabindex="0">'.PHP_EOL;
+  /*TODO echo '<div class="timepicker-item" tabindex="0">'.PHP_EOL;
   echo '<h3>Advanced</h3>'.PHP_EOL;
   echo '</div>'.PHP_EOL;*/
   echo '</div>'.PHP_EOL;                                   //End timepicker-group
   echo '</div>'.PHP_EOL;                                   //End timepicker-dropdown
 
-  echo '<div><select name="filter" id="filtertype" onchange="submit()">';
-  echo '<option value="'.$filter.'">'.$FILTERLIST[$filter].'</option>'.PHP_EOL;
-  foreach ($FILTERLIST as $key => $line) {
-    if ($key != $filter) echo '<option value="'.$key.'">'.$line.'</option>'.PHP_EOL;
-  }
-  echo '</select></div>'.PHP_EOL;                          //End Filter List
 
-  echo '<div><button type="submit">Search</button>';
-  echo '<button type="button" class="button-grey mobile-hide" onclick="resetQueriesForm()">Reset</button></div>';
+  //Group 4 - Severity
+  echo '<div class="filter-nav-group">'.PHP_EOL;
+
+  $isactive = ($severity & SEVERITY_LOW) ? ' active' : '';
+  echo '<span class="filter-nav-button'.$isactive.'" title="Low - Connection Allowed" onclick="toggleNavButton(this, \''.SEVERITY_LOW.'\')"><img src="./svg/filters/severity_low.svg" alt=""></span>'.PHP_EOL;
+
+  $isactive = ($severity & SEVERITY_MED) ? ' active' : '';
+  echo '<span class="filter-nav-button'.$isactive.'" title="Medium - Connection Blocked" onclick="toggleNavButton(this, \''.SEVERITY_MED.'\')"><img src="./svg/filters/severity_med.svg" alt=""></span>'.PHP_EOL;
+
+
+  echo '</div>'.PHP_EOL;                                   //End Group 4 - Severity
+
+
+  echo '<div><button type="submit">Search</button></div>'.PHP_EOL;
+  //echo '<button type="button" class="button-grey mobile-hide" onclick="resetQueriesForm()">Reset</button></div>';
 
   echo '</div>'.PHP_EOL;                                   //End Div Group
   echo '</form>'.PHP_EOL;
@@ -421,7 +422,7 @@ function draw_filter_toolbar() {
  *    None
  */
 function draw_groupby() {
-  global $filter, $page, $searchbox, $sort, $sysip, $groupby, $datetime;
+  global $page, $searchbox, $severity, $sort, $sysip, $groupby, $datetime;
 
   $domainactive = '';
   $timeactive = '';
@@ -435,7 +436,7 @@ function draw_groupby() {
   echo '<input type="hidden" name="searchbox" value="'.$searchbox.'">'.PHP_EOL;
   echo '<input type="hidden" name="datetime" value="'.$datetime.'">'.PHP_EOL;
   echo '<input type="hidden" name="sys" value="'.$sysip.'">'.PHP_EOL;
-  echo '<input type="hidden" name="filter" value="'.$filter.'">'.PHP_EOL;
+  echo '<input type="hidden" name="severity" value="'.$severity.'">'.PHP_EOL;
   echo '<div id="groupby-container">'.PHP_EOL;
   echo '<input type="radio" id="gbtab1" name="groupby" value="name" onchange="submit()" '.$domainactive.'><label for="gbtab1">Domain</label>'.PHP_EOL;
   echo '<input type="radio" id="gbtab2" name="groupby" value="time" onchange="submit()" '.$timeactive.'><label for="gbtab2">Time</label>'.PHP_EOL;
@@ -595,7 +596,7 @@ function format_datetime_search() {
  *    SQL Query string
  */
 function add_filterstr() {
-  global $datetime, $datetime_search, $searchbox, $filter, $sysip;
+  global $datetime, $datetime_search, $searchbox, $severity, $sysip;
 
   $searchstr = '';
 
@@ -612,8 +613,20 @@ function add_filterstr() {
     //$searchstr .= "AND sys = '$sysip'";
     $searchstr .= get_ipsearch($sysip);
   }
-  if ($filter != DEF_FILTER) {
-    $searchstr .= " AND dns_result = '$filter'";
+
+  //Severity uses Bitwise operators
+  //Low is Allowed or Local
+  //Medium is Blocked
+  //High TODO will be malware accessed
+
+  switch($severity) {
+    case SEVERITY_LOW:
+      $searchstr .= " AND (dns_result = 'A' OR dns_result = 'L') ";
+      //$searchstr .= " AND dns_result = 'A' ";
+      break;
+    case SEVERITY_MED:
+      $searchstr .= " AND dns_result = 'B' ";
+      break;
   }
 
   //echo $searchstr;                                       //Uncomment to debug sql query
@@ -683,7 +696,7 @@ function format_row($domain, $dns_result) {
   $blocklist = '';
   $blockreason = '';
   $event = '';
-  $severity = '1';
+  $rowseverity = '1';
   $popupmenu = '';
 
 
@@ -695,7 +708,7 @@ function format_row($domain, $dns_result) {
   }
   elseif ($dns_result == 'B') {         //Blocked
     $blocklist = search_blockreason($domain);
-    $severity = '2';
+    $rowseverity = '2';
       
     if ($blocklist == 'bl_notrack') {        //Show Report icon on NoTrack list
       $blockreason = '<p class="small grey">Blocked by NoTrack list</p>';
@@ -714,9 +727,9 @@ function format_row($domain, $dns_result) {
       $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
 
       if ($event == 'malware') {
-        $severity = '3';
+        $rowseverity = '3';
       }
-      $event .= $severity;
+      $event .= $rowseverity;
 
     }
     else {  //No reason is probably IP or Search request
@@ -734,7 +747,7 @@ function format_row($domain, $dns_result) {
   $popupmenu .= '<a href="https://www.virustotal.com/en/domain/'.$domain.'/information/" target="_blank">VirusTotal</a>';
   $popupmenu .= '</div></div>';                                  //End dropdown-container
 
-  return array($blockreason, $event, $severity, $popupmenu);
+  return array($blockreason, $event, $rowseverity, $popupmenu);
 }
 
 
@@ -749,7 +762,7 @@ function format_row($domain, $dns_result) {
  */
 function show_group_view() {
   global $db, $TLDBlockList;
-  global $page, $sort, $filter, $sysip, $groupby, $searchbox;
+  global $page, $sort, $groupby, $searchbox, $severity, $sysip;
 
   $i = 0;
   $k = 1;                                                  //Count within ROWSPERPAGE
@@ -757,7 +770,7 @@ function show_group_view() {
   $clipboard = '';                                         //Div for Clipboard
   $event = '';                                             //Image event
   $popupmenu = '';                                         //Div for popup menu
-  $severity = 1;
+  $rowseverity = 1;
   $query = '';
   $dns_request = '';
   $site_cell = '';
@@ -801,7 +814,7 @@ function show_group_view() {
 
   while($row = $result->fetch_assoc()) {                   //Read each row of results
     $dns_request = $row['dns_request'];
-    list($blockreason, $event, $severity, $popupmenu) = format_row($dns_request, $row['dns_result']);
+    list($blockreason, $event, $rowseverity, $popupmenu) = format_row($dns_request, $row['dns_result']);
 
     //Create clipboard image and text
     $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
@@ -839,7 +852,7 @@ function show_group_view() {
  */
 function show_time_view() {
   global $db, $TLDBlockList;
-  global $page, $sort, $filter, $sysip, $groupby, $searchbox;
+  global $page, $sort, $groupby, $searchbox, $severity, $sysip;
 
   $i = 0;
   $k = 1;                                                  //Count within ROWSPERPAGE
@@ -847,7 +860,7 @@ function show_time_view() {
   $clipboard = '';                                         //Div for Clipboard
   $event = '';                                             //Image event
   $popupmenu = '';                                         //Div for popup menu
-  $severity = 1;
+  $rowseverity = 1;
   $query = '';
   $dns_request = '';
   $domain_cell = '';
@@ -890,7 +903,7 @@ function show_time_view() {
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
     $dns_request = $row['dns_request'];
-    list($blockreason, $event, $severity, $popupmenu) = format_row($dns_request, $row['dns_result']);
+    list($blockreason, $event, $rowseverity, $popupmenu) = format_row($dns_request, $row['dns_result']);
 
     //Create clipboard image and text
     $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
@@ -921,8 +934,8 @@ if (isset($_GET['page'])) {
   $page = filter_integer($_GET['page'], 1, PHP_INT_MAX, 1);
 }
 
-if (isset($_GET['filter'])) {
-  if (array_key_exists($_GET['filter'], $FILTERLIST)) $filter = $_GET['filter'];
+if (isset($_GET['severity'])) {                            //Severity
+  $severity = filter_integer($_GET['severity'], 0, 3, 1);
 }
 
 if (isset($_GET['sort'])) {
