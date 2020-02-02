@@ -147,8 +147,9 @@ class MySqliDb {
       $query .= 'AND ';
     }
 
-    //Severity uses Bitwise operators, although SEVERITY_LOW (1) doesn't apply but could be inputted by user
-    //Allowed tracker or Blocked malware is medium
+    //Severity uses Bitwise operators
+    //Allowed tracker is low
+    //Blocked malware is medium
     //Allowed malware is high
 
     switch($severity) {
