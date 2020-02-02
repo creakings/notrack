@@ -347,18 +347,19 @@ button:active {
   margin-bottom: -0.15rem;
 }
 .queries-filter-toolbar {
-  grid-template-columns: 25% auto auto auto fit-content(13rem);
+  grid-template-columns: 25% auto auto fit-content(9rem) fit-content(6rem);
 }
 
 /* Filter nav buttons
    ========================================================================== */
 .filter-nav-group {
-  margin: 0.5rem 0.4rem 0.6rem;
+  margin: 0.2rem 0.4rem;
 }
 .filter-nav-button {
   display: inline-block;
+  height: 1.2rem;
   margin-left: -4px;
-  padding: 0.3rem 1rem;
+  padding: 0.2rem 1rem;
   border: 2px solid #757575;
   background-color: #fafafa;
 /*   box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.4), inset 0 0 8px rgba(0, 0, 0, 0.4); */
@@ -385,14 +386,12 @@ button:active {
 }
 .filter-nav-button > span {
   display: inline-block;
-  line-height: 1.3rem;
   width: 4.2rem;
   border-radius: 2px;
   text-align: center;
 }
 .filter-nav-button > img {
-  width: 2.13rem;
-  padding-top: 0.2rem;
+  width: 1.8rem;
 }
 
 /* ==========================================================================
@@ -1618,7 +1617,7 @@ span.key {
   background: #d2d2d2;
 }
 .timepicker-item h3::before {
-  content: "\1F892";
+  content: "\25B8";
   margin-right: 0.2rem;
 }
 .timepicker-item ul {
@@ -1628,7 +1627,7 @@ span.key {
 }
 .timepicker-item:focus,
 .timepicker-item:focus-within {
-  height:14rem;
+  height: 14rem;
 }
 .timepicker-item:focus h3,
 .timepicker-item:focus-within h3 {
@@ -1647,7 +1646,6 @@ span.key {
 .timepicker-grid input[type="date"],
 .timepicker-grid input[type="time"] {
   width: 95%;
-/*   margin-bottom: 0.1rem; */
 }
 .timepicker-grid h4 {
   margin: 0 0.3rem;
