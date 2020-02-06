@@ -347,8 +347,24 @@ button:active {
   margin-bottom: -0.15rem;
 }
 .queries-filter-toolbar {
-  grid-template-columns: 25% auto auto fit-content(9rem) fit-content(6rem);
+  grid-template-columns: 25% auto auto fit-content(8.6rem) fit-content(6rem);
 }
+@media only screen and (max-width:640px), only screen and (max-device-width:640px) {
+  .queries-filter-toolbar {
+    grid-template-columns: auto fit-content(8.6rem) fit-content(6rem);
+  }
+  .queries-filter-toolbar > div:nth-child(1) {grid-column: 1; grid-row: 1;}
+  .queries-filter-toolbar > div:nth-child(2) {grid-column: 1; grid-row: 3;}
+  .queries-filter-toolbar > div:nth-child(3) {grid-column: 2; grid-row: 1;}
+  .queries-filter-toolbar > div:nth-child(4) {grid-column: 2; grid-row: 3;}
+  .queries-filter-toolbar > div:nth-child(5) {grid-column: 3; grid-row: 1;}
+  .queries-filter-toolbar > div:nth-child(6) {grid-column: 1; grid-row: 2;}
+  .queries-filter-toolbar > div:nth-child(7) {grid-column: 1; grid-row: 4;}
+  .queries-filter-toolbar > div:nth-child(8) {grid-column: 2; grid-row: 2;}
+  .queries-filter-toolbar > div:nth-child(9) {grid-column: 2; grid-row: 4;}
+  .queries-filter-toolbar > div:nth-child(10) {grid-column: 3; grid-row: 2;}
+}
+
 
 /* Filter nav buttons
    ========================================================================== */
@@ -359,7 +375,7 @@ button:active {
   display: inline-block;
   height: 1.2rem;
   margin-left: -4px;
-  padding: 0.2rem 1rem;
+  padding: 0.2rem 1rem 0.1rem;
   border: 2px solid #757575;
   background-color: #fafafa;
 /*   box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.4), inset 0 0 8px rgba(0, 0, 0, 0.4); */
@@ -392,6 +408,7 @@ button:active {
 }
 .filter-nav-button > img {
   width: 1.8rem;
+  margin-top: 0.2rem;
 }
 
 /* ==========================================================================

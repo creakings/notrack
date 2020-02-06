@@ -276,15 +276,15 @@ function draw_filter_toolbar() {
   $isactive = '';
 
   echo '<form method="get">'.PHP_EOL;
-  echo '<div class="filter-toolbar queries-filter-toolbar">'.PHP_EOL;
-
   echo '<input type="hidden" name="page" value="'.$page.'">'.PHP_EOL;
   echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
   echo '<input type="hidden" name="groupby" value="'.$groupby.'">'.PHP_EOL;
   echo '<input type="hidden" name="datetime" id="dateTime" value="'.$datetime.'">'.PHP_EOL;
   echo '<input type="hidden" name="severity" id="severity" value="'.$severity.'">'.PHP_EOL;
 
-  //Column Headers
+  echo '<div class="filter-toolbar queries-filter-toolbar">'.PHP_EOL;
+
+  //Column Headers and submit button
   echo '<div><h3>Domain</h3></div>'.PHP_EOL;
   echo '<div><h3>IP</h3></div>'.PHP_EOL;
   echo '<div><h3>Time</h3></div>'.PHP_EOL;
@@ -400,8 +400,8 @@ function draw_filter_toolbar() {
 
   echo '</div>'.PHP_EOL;                                   //End Group 4 - Severity
 
-
   echo '<div><button type="submit">Search</button></div>'.PHP_EOL;
+
   //echo '<button type="button" class="button-grey mobile-hide" onclick="resetQueriesForm()">Reset</button></div>';
 
   echo '</div>'.PHP_EOL;                                   //End Div Group
