@@ -400,7 +400,7 @@ function draw_filter_toolbar() {
 
   echo '</div>'.PHP_EOL;                                   //End Group 4 - Severity
 
-  echo '<div><button type="submit">Search</button></div>'.PHP_EOL;
+  echo '<div><button id="submit-button" type="submit">Search</button></div>'.PHP_EOL;
 
   //echo '<button type="button" class="button-grey mobile-hide" onclick="resetQueriesForm()">Reset</button></div>';
 

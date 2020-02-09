@@ -404,8 +404,9 @@ function selectTime(item, timeValue) {
   document.getElementById('timepicker-text').value = item.innerText;
   document.getElementById('dateTime').value = timeValue;
 
-  document.getElementById('timepicker-dropdown').blur();
+  document.getElementById('timepicker-dropdown').blur();   //Move focus to the submit button
   document.getElementById('timepicker-group').blur();
+  document.getElementById('submit-button').focus();
 }
 
 
@@ -437,9 +438,9 @@ function selectDate() {
   document.getElementById('timepicker-text').value = formatDate(startDate) + ' to ' + formatDate(endDate);
   document.getElementById('dateTime').value = startDate + 'T00:00:00/' + endDate + 'T23:59:59';
 
-  document.getElementById('timepicker-dropdown').blur();
+  document.getElementById('timepicker-dropdown').blur();   //Move focus to the submit button
   document.getElementById('timepicker-group').blur();
-
+  document.getElementById('submit-button').focus();
 }
 
 
@@ -480,8 +481,9 @@ function selectTimeDate() {
   //Need to add the seconds
   document.getElementById('dateTime').value = startDate + ':00/' + endDate + ':00';
 
-  document.getElementById('timepicker-dropdown').blur();
+  document.getElementById('timepicker-dropdown').blur();   //Move focus to the submit button
   document.getElementById('timepicker-group').blur();
+  document.getElementById('submit-button').focus();
 }
 
 
