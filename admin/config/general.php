@@ -39,27 +39,20 @@ $dbwrapper = new MySqliDb();
 ************************************************/
 //Deal with POST actions first, that way we can reload the page and remove POST requests from browser history.
 if (isset($_POST['action'])) {
-  switch($_POST['action']) {
-    case 'dnsqueries':
-      update_dnsqueries();
-      $config->save();
-      usleep(25000);                             //Short pause to prevent race condition
-      exec(NTRK_EXEC.'--parsing');               //Update ParsingTime value in Cron job
-      header('Location: #dnsqueries');
-      break;
-    case 'webserver':
-      update_webserver_config();
-      $config->save();
-      header('Location: #web');
-      break;
-    case 'server':
-      update_server_config();
-      $config->save();
-      usleep(25000);                             //Short pause to prevent race condition
-      header('Location: #server');
-      break;
-    default:
-      die('Unknown POST action');
+  update_dnsqueries();
+  update_webserver_config();
+  update_server_config();
+  usleep(25000);                             //Short pause to prevent race condition
+  $config->save();
+
+  //Refresh page to anchor point if action is valid
+  if (($_POST['action'] == 'dnsqueries') || ($_POST['action'] == 'webserver') || ($_POST['action'] == 'server')) {
+    header('Location: #'.$_POST['action']);
+    exit;
+  }
+  else {
+    header('Location: #');
+    exit;
   }
 }
 
@@ -67,7 +60,7 @@ if (isset($_GET['action'])) {
   if ($_GET['action'] == 'delete-history') {
     exec(NTRK_EXEC.'--delete-history');
     usleep(25000);                               //Short pause to prevent race condition
-    header('Location: ?#dns');
+    header('Location: #dns');
   }
 }
 
@@ -105,8 +98,6 @@ function server_section() {
   $uptime = exec('uptime -p');
 
   echo '<section id="server">'.PHP_EOL;
-  echo '<form name="server" method="post">'.PHP_EOL;
-  echo '<input type="hidden" name="action" value="server">'.PHP_EOL;
   draw_systable('Server');
   draw_sysrow('Name', gethostname());
   draw_sysrow('Network Device', $config->settings['NetDev']);
@@ -125,7 +116,7 @@ function server_section() {
 
   //Search Engine select box
   echo '<tr><td>Search Engine: </td>'.PHP_EOL;
-  echo '<td><select name="search" class="input-conf" onchange="submit()">'.PHP_EOL;
+  echo '<td><select name="search" class="input-conf" onchange="submitForm(\'server\')">'.PHP_EOL;
   echo '<option value="'.$config->settings['Search'].'">'.$config->settings['Search'].'</option>'.PHP_EOL;
   foreach ($config::SEARCHENGINELIST as $key => $value) {
     if ($key != $config->settings['Search']) {
@@ -136,7 +127,7 @@ function server_section() {
 
   //Whois select box
   echo '<tr><td>Who Is Lookup: </td>'.PHP_EOL;
-  echo '<td><select name="whois" class="input-conf" onchange="submit()">'.PHP_EOL;
+  echo '<td><select name="whois" class="input-conf" onchange="submitForm(\'server\')">'.PHP_EOL;
   echo '<option value="'.$config->settings['WhoIs'].'">'.$config->settings['WhoIs'].'</option>'.PHP_EOL;
   foreach ($config::WHOISLIST as $key => $value) {
     if ($key != $config->settings['WhoIs']) {
@@ -145,10 +136,9 @@ function server_section() {
   }
   echo '</select></td></tr>'.PHP_EOL;
 
-  draw_sysrow('JsonWhois API <a href="https://jsonwhois.com/"><div class="help-icon"></div></a>', '<input type="text" name="whoisapi" class="input-conf" value="'.$config->settings['whoisapi'].'">');
+  draw_sysrow('JsonWhois API <a href="https://jsonwhois.com/"><div class="help-icon"></div></a>', '<input type="text" name="whoisapi" class="input-conf" value="'.$config->settings['whoisapi'].'" onkeydown="if (event.keyCode == 13) { submitForm(\'server\'); return false; }">');
 
   echo '</table></div>'.PHP_EOL;
-  echo '</form>'.PHP_EOL;
   echo '</section>'.PHP_EOL;
 }
 
@@ -198,7 +188,7 @@ function dns_section() {
   draw_sysrow('Memory Used', $pidarray[3].' MB');
   draw_sysrow('Historical Logs', $dbwrapper->queries_historical_days().' Days');
   draw_sysrow('DNS Queries', number_format($dbwrapper->count_total_queries()));
-  draw_sysrow('Delete All History', '<button class="button-danger" onclick="confirmLogDelete();">Purge</button>');
+  draw_sysrow('Delete All History', '<button class="button-danger" type="button" onclick="confirmLogDelete();">Purge</button>');
   echo '</table></div>'.PHP_EOL;
   echo '</section>'.PHP_EOL;
 }
@@ -241,18 +231,18 @@ function web_section() {
     $pidarray = array('<span class="red">Inactive</span>', '-', '-', '-');
   }
 
-  echo '<section id="web">'.PHP_EOL;
-  echo '<form name="blockmsg" action="?" method="post">'.PHP_EOL;
-  echo '<input type="hidden" name="action" value="webserver">'.PHP_EOL;
+  echo '<section id="webserver">'.PHP_EOL;
+  //echo '<form name="blockmsg" action="?" method="post">'.PHP_EOL;
+  //echo '<input type="hidden" name="action" value="webserver">'.PHP_EOL;
   draw_systable('Web Server');
   draw_sysrow('Status', $pidarray[0]);
   draw_sysrow('Pid', $pidarray[1]);
   draw_sysrow('Started On', $pidarray[2]);
   draw_sysrow('Memory Used', $pidarray[3].' MB');
 
-  if ($config->settings['blockmessage'] == 'pixel') draw_sysrow('Block Message', '<input type="radio" name="block" value="pixel" checked onclick="document.blockmsg.submit()">1x1 Blank Pixel (default)<br><input type="radio" name="block" value="message" onclick="document.blockmsg.submit()">Message - Blocked by NoTrack<br>');
-  else draw_sysrow('Block Message', '<input type="radio" name="block" value="pixel" onclick="document.blockmsg.submit()">1x1 Blank Pixel (default)<br><input type="radio" name="block" value="messge" checked onclick="document.blockmsg.submit()">Message - Blocked by NoTrack<br>');
-  echo '</table></div></form>'.PHP_EOL;
+  if ($config->settings['blockmessage'] == 'pixel') draw_sysrow('Block Message', '<input type="radio" name="block" value="pixel" checked onclick="submitForm(\'webserver\')">1x1 Blank Pixel (default)<br><input type="radio" name="block" value="message" onclick="submitForm(\'webserver\')">Message - Blocked by NoTrack<br>');
+  else draw_sysrow('Block Message', '<input type="radio" name="block" value="pixel" onclick="submitForm(\'webserver\')">1x1 Blank Pixel (default)<br><input type="radio" name="block" value="messge" checked onclick="onclick="submitForm(\'webserver\')">Message - Blocked by NoTrack<br>');
+  echo '</table></div>'.PHP_EOL;
   echo '</section>'.PHP_EOL;
 }
 
@@ -269,15 +259,13 @@ function dnsqueries_section() {
   global $config;
 
   echo '<section id="dnsqueries">'.PHP_EOL;
-  echo '<form action="?" method="post">'.PHP_EOL;
-  echo '<input type="hidden" name="action" value="dnsqueries">'.PHP_EOL;
+
   draw_systable('DNS Queries');
-  draw_sysrow('DNS Log Parsing Interval', '<input type="number" class="fixed10" name="parsing" min="1" max="60" value="'.$config->settings['ParsingTime'].'" title="Time between updates in Minutes" onchange="submit()">');
-  draw_sysrow('Suppress Domains <div class="help-icon" title="Group together certain domains on the Stats page"></div>', '<textarea rows="5" name="suppress">'.str_replace(',', PHP_EOL, $config->settings['Suppress']).'</textarea>');
-  echo '<tr><td>&nbsp;</td><td><input type="submit" value="Save Changes"></td></tr>'.PHP_EOL;
+  draw_sysrow('DNS Log Parsing Interval', '<input type="number" class="fixed10" name="parsing" min="1" max="60" value="'.$config->settings['ParsingTime'].'" title="Time between log parsing in Minutes">');
+  draw_sysrow('Suppress Domains <div class="help-icon" title="Group together certain domains on the DNS Queries page"></div>', '<textarea rows="5" name="suppress">'.str_replace(',', PHP_EOL, $config->settings['Suppress']).'</textarea>');
+  echo '<tr><td colspan="2"><div class="centered"><button type="button" onclick="submitForm(\'dnsqueries\')">Save Changes</button></div></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
-  echo '</form>'.PHP_EOL;
   echo '</section>'.PHP_EOL;
 }
 
@@ -415,17 +403,24 @@ draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;
 
 //Draw all the sections
+echo '<form name="generalform" method="post">'.PHP_EOL;   //Form is to encapsulate all sections
+echo '<input type="hidden" id="action" name="action" value="">'.PHP_EOL;
 server_section();
 dns_section();
 web_section();
 dnsqueries_section();
-
+echo '</form>'.PHP_EOL;                                    //End Form
 echo '</div>'.PHP_EOL;                                     //End main
 ?>
 
 <script>
 function confirmLogDelete() {
   if (confirm("Are you sure you want to delete all History?")) window.open("?action=delete-history", "_self");
+}
+
+function submitForm(toAction) {
+  document.getElementById('action').value = toAction;
+  document.generalform.submit()
 }
 </script>
 </body>
