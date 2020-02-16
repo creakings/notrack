@@ -52,6 +52,8 @@ define('REGEX_IPCIDR', '/^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.)
 
 define('REGEX_URLSEARCH', '/[^\w\d\.\_\-\*]/');    //Valid leters for URL search
 
+//Abbreviation => Full word of dns_result
+define('DNS_RESULT_FULL', ['A' => 'Allowed', 'B' => 'Blocked', 'L' => 'Local']);
 
 if (!extension_loaded('memcache')) {
   die('NoTrack requires memcached and php-memcached to be installed');
