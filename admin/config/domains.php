@@ -92,6 +92,10 @@ function show_export() {
 
   $result = $dbwrapper->blocklist_domains($selectedbl, $searchbox);
 
+  header('Content-type: text/dns');
+  header('Content-Disposition: attachment; filename="notrack_blocklist_'.$selectedbl.'.txt"');
+  echo '#Title: NoTrack Blocklist'.PHP_EOL;
+
   echo "#Selected Block List: {$selectedbl}".PHP_EOL;
 
   if ($result->num_rows == 0) {                            //Leave if nothing found
@@ -105,8 +109,6 @@ function show_export() {
   }
 
   $result->free();
-
-  return true;
 }
 
 
@@ -235,8 +237,6 @@ if (isset($_GET['selectedbl'])) {                          //Selected Blocklist
 }
 
 if (isset($_GET['export'])) {                              //Export file has a different content type
-  header('Content-Disposition: attachment; filename="blocklist.txt"');
-  echo '#Title: NoTrack Blocklist'.PHP_EOL;
   show_export();
   exit;
 }
