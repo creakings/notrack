@@ -1,6 +1,8 @@
 Development
 New timepicker menu on queries.php
 New Status and Severity selector on analytics.php
+Added export button to analytics.php
+#290 fix confusing form layout on general.php
 *************************************************
 
 v0.9.4 Released 15 Jan 2020
