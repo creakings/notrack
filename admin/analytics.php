@@ -8,22 +8,6 @@ require('./include/mysqlidb.php');
 
 ensure_active_session();
 
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <link href="./css/master.css" rel="stylesheet" type="text/css">
-  <link href="./css/icons.css" rel="stylesheet" type="text/css">
-  <link rel="icon" type="image/png" href="./favicon.png">
-  <script src="./include/menu.js"></script>
-  <script src="./include/queries.js"></script>
-  <title>NoTrack - Alerts</title>
-  <meta name="viewport" content="width=device-width, initial-scale=0.7">
-</head>
-
-<body>
-<?php
 /************************************************
 *Constants                                      *
 ************************************************/
@@ -152,7 +136,6 @@ function draw_filter_toolbar() {
 /********************************************************************
  *  Draw Table Toolbar
  *    Populates filter bar with Mark resolved
- *    TODO more filters needed for showing resolved and severity
  *  Params:
  *    None
  *  Return:
@@ -165,6 +148,11 @@ function draw_table_toolbar() {
   echo '<input type="checkbox" id="topCheckbox" onClick="checkAll(this)">'.PHP_EOL;
   echo '<button type="submit" name="action" value="resolve" onClick="submitForm()">Mark Resolved</button>&nbsp;'.PHP_EOL;
   echo '<button type="submit" class="button-grey" name="action" value="delete" onClick="submitForm()">Delete</button>'.PHP_EOL;
+
+  echo '<div class="table-toolbar-options">'.PHP_EOL;      //Start Table Toolbar Export
+  echo '<button type="submit" name="action" value="export" class="button-grey material-icon-centre icon-export" title="Export">&nbsp;</button>';
+  echo '</div>'.PHP_EOL;                                   //End Table Toolbar Export
+
   echo '</div>'.PHP_EOL;                                   //End filter-toolbar
 }
 
@@ -302,6 +290,47 @@ function show_analytics() {
   return true;
 }
 
+
+/********************************************************************
+ *  Show Export
+ *    Output a CSV file of
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function show_export() {
+  global $dbwrapper, $severity, $status;
+
+  $result = '';
+
+  header('Content-type: text/csv');
+  header('Content-Disposition: attachment; filename="notrack_alerts.csv"');
+
+  $analyticsdata = $dbwrapper->analytics_get_data($severity, $status);
+
+  if ($analyticsdata === false) {                         //Leave if nothing found
+    return;
+  }
+
+  echo 'Time,IP,Domain,Result,Issue,Acknowledged'.PHP_EOL;
+
+  foreach ($analyticsdata as $row) {                       //Read each row of results
+
+    //Convert abreveation of DNS result to the full word
+    if (array_key_exists($row['dns_result'], DNS_RESULT_FULL)) {
+      $result = DNS_RESULT_FULL[$row['dns_result']];
+    }
+    else {
+      $result = '';
+    }
+
+    echo "\"{$row['log_time']}\",{$row['sys']},{$row['dns_request']},{$result},{$row['issue']},{$row['ack']}".PHP_EOL;
+
+  }
+}
+
 /********************************************************************
  *Main
  */
@@ -324,12 +353,32 @@ if (isset($_POST['action'])) {                             //Any POST actions to
     case 'delete':
       do_action('delete');
       break;
+    case 'export':
+      show_export();
+      exit;
+      break;
   }
   //Reload page to prevent repeat action browser alert
   header("Location: analytics.php?severity={$severity}&status={$status}");
   exit;
 }
 
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link href="./css/master.css" rel="stylesheet" type="text/css">
+  <link href="./css/icons.css" rel="stylesheet" type="text/css">
+  <link rel="icon" type="image/png" href="./favicon.png">
+  <script src="./include/menu.js"></script>
+  <script src="./include/queries.js"></script>
+  <title>NoTrack - Alerts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=0.7">
+</head>
+
+<body>
+<?php
 
 //Review GET values
 
