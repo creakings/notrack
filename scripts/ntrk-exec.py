@@ -14,15 +14,6 @@ import stat
 import subprocess
 import sys
 
-"""
-print(shutil.which('systemctl'))
-print(shutil.which('service'))
-print(shutil.which('sv'))
-print(shutil.which('bind'))
-print(shutil.which('lighttpd'))
-print(shutil.which('apache'))
-print(shutil.which('dnsmasq'))
-"""
 
 class DBConfig:
     user = 'ntrk'
@@ -49,11 +40,84 @@ class FolderList:
             self.wwwsink = '/var/www/html/sink/'
 
 
+#Services is a class for identifing Service Supervisor, Web Server, and DNS Server
+#Restarting the Service will use the appropriate Service Supervisor
+class Services:
+    __supervisor = ''
+    __supervisor_name = ''
+    __webserver = ''
+    __dnsserver = ''
+
+    def __init__(self):
+        #Find service supervisor by checking if each application exists
+        if shutil.which('systemctl') != None:
+            self.__supervisor = 'systemctl'
+            self.__supervisor_name = 'systemd'
+        elif shutil.which('service') != None:
+            self.__supervisor = 'service'
+            self.__supervisor_name = 'systemctl'
+        elif shutil.which('sv') != None:
+            self.__supervisor = 'sv'
+            self.__supervisor_name = 'ruinit'
+        else:
+            print('Services Init: Fatal Error - Unable to identify service supervisor')
+            sys.exit(7)
+        print('Services Init: Identified Service manager %s' % self.__supervisor_name)
+
+        #Find DNS server by checking if each application exists
+        if shutil.which('dnsmasq') != None:
+            self.__dnsserver = 'dnsmasq'
+        elif shutil.which('bind') != None:
+            self.__dnsserver = 'bind'
+        else:
+            print('Services Init: Fatal Error - Unable to identify DNS server')
+            sys.exit(8)
+        print('Services Init: Identified DNS server %s' % self.__dnsserver)
+
+        #Find Web server by checking if each application exists
+        if shutil.which('lighttpd') != None:
+            self.__webserver = 'lighttpd'
+        elif shutil.which('apache') != None:
+            self.__webserver = 'apache'
+        else:
+            print('Services Init: Fatal Error - Unable to identify Web server')
+            sys.exit(9)
+        print('Services Init: Identified Web server %s' % self.__webserver)
+
+
+    """ Restart Service
+        Restart specified service and check result
+    Args:
+        service to restart
+    Returns:
+        True on Success
+        False on Failure
+    """
+    def __restart_service(self, service):
+        p = subprocess.run(['sudo', self.__supervisor, 'restart', service], stderr=subprocess.PIPE)
+
+        if p.returncode != 0:
+            print('Services restart_service: Failed to restart %s' % service)
+            print(p.stderr)                                #TODO: Bad formatting output
+            return False
+        else:
+            print('Successfully restarted %s' % service)
+            return True
+
+    #Restart DNS Server - returns the result of restart_service
+    def restart_dnsserver(self):
+        return self.__restart_service(self.__dnsserver)
+
+    #Restart Web Server - returns the result of restart_service
+    def restart_webserver(self):
+        return self.__restart_service(self.__webserver)
+
+
 dbconf = DBConfig()
 folders = FolderList()
+services = Services()
 
-
-
+services.restart_dnsserver()
 """
 
 #######################################
@@ -275,32 +339,6 @@ def parsing_time(interval):
 
 
 """
-#######################################
-# Restart service
-#    with either systemd or sysvinit or runit
-#
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-service_restart() {
-  if [[ -n $1 ]]; then
-    echo "Restarting $1"
-    if [ "$(command -v systemctl)" ]; then       #systemd
-      sudo systemctl restart "$1"
-    elif [ "$(command -v service)" ]; then       #sysvinit
-      sudo service "$1" restart
-    elif [ "$(command -v sv)" ]; then            #runit
-      sudo sv restart "$1"
-    else
-      error_exit "Unable to restart services. Unknown service supervisor" "21"
-    fi
-  fi
-}
-
 #--------------------------------------------------------------------
 # Write Dhcp Config
 #   1: Check dhcp.conf exists in /tmp
@@ -456,18 +494,10 @@ if [ "$1" ]; then                         #Have any arguments been given
   while [ $# -gt 0 ]
   do
     case $1 in
-      -h)
-        echo "Help"
-      ;;
-      --accesslog)
+      esslog)
         create_accesslog
       ;;
-      --bm-msg)
-        block_message "message"
-      ;;
-      --bm-pxl)
-        block_message "pixel"
-      ;;
+
       --copy)
         if [[ $2 == "'black'" ]]; then
           copy_blacklist
@@ -488,9 +518,7 @@ if [ "$1" ]; then                         #Have any arguments been given
       -p)                                        #Play
         /usr/local/sbin/ntrk-pause --start  > /dev/null &
       ;;
-      --parsing)
-        parsing_time;
-      ;;
+
       --pause)
         pausetime=$(sed "s/'//g" <<< "$2")       #Remove single quotes
         echo "$pausetime"
