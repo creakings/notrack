@@ -1,3 +1,18 @@
+v0.9.5 Onwards:
+0. Success
+1. User aborted
+2. Must be run as root
+3. Must not be run as root
+4. Process already running
+5. Config missing
+6. Unknown command
+7. Unable to find Service Supervisor
+8. Unable to find DNS Server
+9. Unable to find Web Server
+
+
+
+Pre v0.9.4
 0. All good
 1. User aborted
 4. Command shouldn't be run as root
