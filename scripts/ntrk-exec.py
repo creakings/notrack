@@ -86,12 +86,12 @@ class Services:
 
 
     """ Restart Service
-        Restart specified service and check result
+        Restart specified service and return code
     Args:
         service to restart
     Returns:
-        True on Success
-        False on Failure
+        True on Success (return code zero)
+        False on Failure (return code non-zero)
     """
     def __restart_service(self, service):
         p = subprocess.run(['sudo', self.__supervisor, 'restart', service], stderr=subprocess.PIPE)
