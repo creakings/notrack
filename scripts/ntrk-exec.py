@@ -33,7 +33,7 @@ class FolderList:
         if os.name == 'posix':
             self.cron_ntrkparse = '/etc/cron.d/ntrk-parse'
             self.etc = '/etc/'
-            self.etc_notrack = '/etc/notrack'
+            self.etc_notrack = '/etc/notrack/'
             self.log = '/var/log/'
             self.notrack = '/usr/local/sbin/notrack'
             self.temp = '/tmp/'
@@ -47,6 +47,7 @@ class Services:
     __supervisor_name = ''
     __webserver = ''
     __dnsserver = ''
+    dhcp_config = ''
 
     def __init__(self):
         #Find service supervisor by checking if each application exists
@@ -67,6 +68,7 @@ class Services:
         #Find DNS server by checking if each application exists
         if shutil.which('dnsmasq') != None:
             self.__dnsserver = 'dnsmasq'
+            self.dhcp_config = '/etc/dnsmasq.d/dhcp.conf'
         elif shutil.which('bind') != None:
             self.__dnsserver = 'bind'
         else:
@@ -115,9 +117,7 @@ class Services:
 
 dbconf = DBConfig()
 folders = FolderList()
-services = Services()
 
-services.restart_dnsserver()
 """
 
 #######################################
@@ -215,41 +215,97 @@ function create_file() {
 """
 
 
-""" Save List
-    Copies a specified list from temp folder to /etc/notrack
-    Start a copy of notrack in wait mode (optional)
+""" Copy File
+    1. Check source exists
+    2. Set ownership to root
+    3. Set permissions to 644
+
+Args:
+    source
+    destination
+Returns:
+    True on success
+    False on failure
+"""
+def copy_file(source, destination):
+    if not os.path.isfile(source):
+        print('Copy_file: Error %s is missing' % source)
+        return False
+
+    #Set ownership to root
+    print('Setting ownership of %s to root:root' % source)
+    shutil.chown(source, user='root', group='root')
+
+    #Set permissions to RW R R'
+    print('Setting permissions of %s to 644' % source)
+    os.chmod(source, 0o644)
+
+    #Copy specified file
+    print('Moving %s to %s' % (source, destination))
+    shutil.move(source, destination)
+
+    if not os.path.isfile(destination):
+        print('Copy_file: Error %s does not exist. Copy failed')
+        return False
+
+    return True
+
+
+""" Copy DHCP Config
+    1: Check dhcp.conf exists in /tmp
+    2: Change ownership and permissions
+    3: Copy to /etc/dnsmasq.d/dhcp.conf
+    4: Restart Dnsmasq
+Args:
+    Interval in minutes
+Returns:
+    None
+"""
+def copy_dhcp():
+    dhcp_config = 'dhcp.conf'
+    services = Services()
+
+    #Has the DHCP config file been set when services were discovered?
+    if services.dhcp_config == '':
+        print('Copy_dhcp: Error - This function only works with Dnsmasq')
+        return
+
+    copy_file(folders.temp + dhcp_config, services.dhcp_config)
+
+    services.restart_dnsserver()
+
+
+""" Copy List
+    Copies either black or white list from temp folder to /etc/notrack
+    Start a copy of notrack in wait mode
     This will allow user time to make further changes before lists are updated
     If there is a copy of notrack waiting the forked process will be closed
 
 Args:
-    filename - list filename
+    list name
     runnotrack - Execute NoTrack in wait mode
 Returns:
     None
 """
-def save_list(filename, runnotrack):
-    if os.path.isfile(folders.temp + filename):
-        #Set ownership to root
-        print('Setting ownership of %s%s to root:root' % (folders.temp, filename))
-        shutil.chown(folders.temp + filename, user='root', group='root')
+def copy_list(listname):
+    copy_file(folders.temp + listname, folders.etc_notrack + listname)
 
-        #Set permissions to RW R R'
-        print('Setting permissions of %s%s to 644' % (folders.temp, filename))
-        os.chmod(folders.temp + filename, 0o644)
+    #Run notrack in delayed (wait) mode
+    #Fork process of notrack --wait into background
+    print('Running NoTrack with delay mode enabled')
+    subprocess.Popen([folders.notrack, ' --wait'], stdout=subprocess.PIPE )
 
-        #Copy specified file
-        print('Copying %s from %s to %s' % (filename, folders.temp, folders.etc_notrack))
-        shutil.copy(folders.temp + filename, folders.etc_notrack + filename)
 
-        #Optional - run notrack in delayed (wait) mode
-        if runnotrack:
-            print('Running NoTrack with delay mode enabled')
-            #Fork process of notrack --wait into background
-            subprocess.Popen([folders.notrack, ' --wait'], stdout=subprocess.PIPE )
-
-    else:
-      print('%s%s is missing' % (folders.temp, filename))
-
+""" Copy TLD Lists
+    Copy both TLD black and white list from temp folder to /etc/notrack
+Args:
+    None
+Returns:
+    None
+"""
+def copy_tldlists():
+    copy_file(folders.temp + 'domain-blacklist.txt', folders.etc_notrack + 'domain-blacklist.txt')
+    copy_file(folders.temp + 'domain-whitelist.txt', folders.etc_notrack + 'domain-whitelist.txt')
 
 """
 #--------------------------------------------------------------------
@@ -338,36 +394,9 @@ def parsing_time(interval):
     f.close()                                              #Close cron_ntrkparse file
 
 
+
+
 """
-#--------------------------------------------------------------------
-# Write Dhcp Config
-#   1: Check dhcp.conf exists in /tmp
-#   2: Change ownership and permissions
-#   3: Copy to /etc/dnsmasq.d/dhcp.conf
-#   4: Restart Dnsmasq TODO
-#
-# Globals:
-#   DHCP_CONFIG
-# Arguments:
-#   None
-# Returns:
-#   None
-
-#--------------------------------------------------------------------
-function write_dhcp() {
-  local dhcp_temp="/tmp/dhcp.conf"
-
-  if [ -e "$dhcp_temp" ]; then
-    chown root:root "$dhcp_temp"
-    chmod 644 "$dhcp_temp"
-    echo "Copying $dhcp_temp to $DHCP_CONFIG"
-    mv "$dhcp_temp" "$DHCP_CONFIG"
-    echo
-    service_restart dnsmasq
-  fi
-}
-
-
 
 #--------------------------------------------------------------------
 # Write Static Hosts Config
@@ -416,21 +445,6 @@ function write_localhosts() {
   fi
 }
 
-
-
-#--------------------------------------------------------------------
-# Write Dnsmasq Config
-#
-# Globals:
-#   USER, PASSWORD, DBNAME
-# Arguments:
-#   None
-# Returns:
-#   None
-#--------------------------------------------------------------------
-function write_dnsmasq() {
-  echo "here"
-}
 
 
 #--------------------------------------------------------------------
@@ -498,17 +512,7 @@ if [ "$1" ]; then                         #Have any arguments been given
         create_accesslog
       ;;
 
-      --copy)
-        if [[ $2 == "'black'" ]]; then
-          copy_blacklist
-        elif [[ $2 == "'white'" ]]; then
-          copy_whitelist
-        elif [[ $2 == "'tld'" ]]; then
-          copy_tldlists
-        else
-          echo "Invalid file"
-        fi
-      ;;
+
       --delete-history)
         delete_history
       ;;
@@ -524,13 +528,7 @@ if [ "$1" ]; then                         #Have any arguments been given
         echo "$pausetime"
         /usr/local/sbin/ntrk-pause --pause "$pausetime"  > /dev/null &
       ;;
-      --read)
-        if [[ $2 == "'dnsmasq'" ]]; then
-          read_dnsmasq
-        elif [[ $2 == "'dhcp'" ]]; then
-          read_dhcp
-        fi
-      ;;
+
       --restart)
         reboot > /dev/null &
       ;;
@@ -558,15 +556,8 @@ if [ "$1" ]; then                         #Have any arguments been given
           write_localhosts
         fi
       ;;
-      (--) shift; break;;
-      (-*) echo "$0: error - unrecognized option $1" 1>&2; exit 6;;
-      (*) break;;
-    esac
-    shift
-  done
-else
-  echo "No arguments given"
-fi
+
+
 """
 parser = argparse.ArgumentParser(description = 'NoTrack Exec:')
 parser.add_argument('-p', "--play", help='Start Blocking', action='store_true')
@@ -587,12 +578,13 @@ args = parser.parse_args()
 
 if args.save:
     if args.save == 'black':
-        save_list('blacklist.txt', True)
+        copy_list('blacklist.txt')
     elif args.save == 'white':
-        save_list('whitelist.txt', True)
+        copy_list('whitelist.txt')
+    elif args.save == 'dhcp':
+        copy_dhcp()
     elif args.save == 'tld':
-        save_list('domain-blacklist.txt', False)
-        save_list('domain-whitelist.txt', False)
+        copy_tldlist()
 if args.sink:
     block_message(args.sink)
 
