@@ -14,7 +14,6 @@ import stat
 import subprocess
 import sys
 
-
 class DBConfig:
     user = 'ntrk'
     password = 'ntrkpass'
@@ -38,6 +37,24 @@ class FolderList:
             self.notrack = '/usr/local/sbin/notrack'
             self.temp = '/tmp/'
             self.wwwsink = '/var/www/html/sink/'
+
+
+class Host:
+    name = ''
+    ip = ''
+
+    def __init__(self):
+        import socket
+
+        self.name = socket.gethostname()                   #Host Name is easy to get
+
+        #IP requires a connection out
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        #Connect to an unroutable 169.254.0.0/16 address on port 1
+        s.connect(("169.254.0.255", 1))
+        self.ip = s.getsockname()[0]
+        s.close()
+
 
 
 #Services is a class for identifing Service Supervisor, Web Server, and DNS Server
@@ -395,57 +412,40 @@ def parsing_time(interval):
 
 
 
+""" Save Static Hosts Config
+    1: Check localhosts.list exists in /tmp
+    2: Change ownership and permissions
+    3: Copy to /etc/dnsmasq.d/dhcp.conf
+
+Args:
+    None
+Returns:
+    None
+"""
+def copy_localhosts():
+    localhosts_temp = ''
+    host = Host()
+
+    localhosts_temp = folders.temp + 'localhosts.list'
+
+    #Check temp file exists
+    if not os.path.isfile(localhosts_temp):
+        print('Copy_localhosts: Error %s is missing' % localhosts_temp)
+        return
+
+    #Check the Host Name and IP have been found TODO probably 127.0.0.1 for unknown?
+    if host.name != '' and host.ip != '':
+        print('Adding %s\t%s to localhosts.list' % (host.ip, host.name))
+        f = open(localhosts_temp, 'a')                     #Open file for appending
+        print('%s\t%s' % (host.ip, host.name), file=f)
+        f.close()
+        print()
+
+    copy_file(localhosts_temp, folders.etc + 'localhosts.list')
+
+
 
 """
-
-#--------------------------------------------------------------------
-# Write Static Hosts Config
-#   1: Check localhosts.list exists in /tmp
-#   2: Change ownership and permissions
-#   3: Copy to /etc/dnsmasq.d/dhcp.conf
-#   4: Restart Dnsmasq TODO
-#
-# Globals:
-#   LOCALHOSTS
-# Arguments:
-#   None
-# Returns:
-#   None
-
-#--------------------------------------------------------------------
-function write_localhosts() {
-  local localhosts_temp="/tmp/localhosts.list"
-  local hostname=""
-  local hostip=""
-
-  #Retrive this system from localhosts file
-  if [ -e /etc/sysconfig/network ]; then
-    hostname=$(grep "HOSTNAME" /etc/sysconfig/network | cut -d "=" -f 2 | tr -d [[:space:]])
-  elif [ -e /etc/hostname ]; then
-    hostname=$(cat /etc/hostname)
-  fi
-
-  #Get the full line from localhosts if the hostname has been found
-  if [[ -n $hostname ]]; then
-    hostip=$(grep "$hostname" "$LOCALHOSTS")
-  fi
-
-  #Check temp file exists
-  if [ -e "$localhosts_temp" ]; then
-    chown root:root "$localhosts_temp"
-    chmod 644 "$localhosts_temp"
-    echo "Copying $localhosts_temp to $LOCALHOSTS"
-    mv "$localhosts_temp" "$LOCALHOSTS"
-
-    #Add the full line of hostip and hostname to the end of localhosts
-    if [[ -n $hostip ]]; then
-      echo "Adding $hostip back to $LOCALHOSTS"
-      echo "$hostip" | sudo tee -a "$LOCALHOSTS" &> /dev/null
-    fi
-  fi
-}
-
-
 
 #--------------------------------------------------------------------
 # Update Config
@@ -583,6 +583,8 @@ if args.save:
         copy_list('whitelist.txt')
     elif args.save == 'dhcp':
         copy_dhcp()
+    elif args.save == 'localhosts':
+        copy_localhosts()
     elif args.save == 'tld':
         copy_tldlist()
 if args.sink:
