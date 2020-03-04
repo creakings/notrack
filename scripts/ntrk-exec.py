@@ -25,6 +25,8 @@ class FolderList:
     etc_notrack = ''
     log = ''
     notrack = ''
+    ntrk_pause = ''
+    ntrk_upgrade = ''
     temp = ''
     wwwsink = ''
 
@@ -35,6 +37,8 @@ class FolderList:
             self.etc_notrack = '/etc/notrack/'
             self.log = '/var/log/'
             self.notrack = '/usr/local/sbin/notrack'
+            self.ntrk_pause = '/usr/local/sbin/ntrk-pause'
+            self.ntrk_upgrade = '/usr/local/sbin/ntrk-upgrade'
             self.temp = '/tmp/'
             self.wwwsink = '/var/www/html/sink/'
 
@@ -80,6 +84,7 @@ class Services:
         else:
             print('Services Init: Fatal Error - Unable to identify service supervisor')
             sys.exit(7)
+
         print('Services Init: Identified Service manager %s' % self.__supervisor_name)
 
         #Find DNS server by checking if each application exists
@@ -113,11 +118,11 @@ class Services:
         False on Failure (return code non-zero)
     """
     def __restart_service(self, service):
-        p = subprocess.run(['sudo', self.__supervisor, 'restart', service], stderr=subprocess.PIPE)
+        p = subprocess.run(['sudo', self.__supervisor, 'restart', service], stderr=subprocess.PIPE, universal_newlines=True)
 
         if p.returncode != 0:
             print('Services restart_service: Failed to restart %s' % service)
-            print(p.stderr)                                #TODO: Bad formatting output
+            print(p.stderr)
             return False
         else:
             print('Successfully restarted %s' % service)
@@ -135,19 +140,7 @@ class Services:
 dbconf = DBConfig()
 folders = FolderList()
 
-"""
 
-#######################################
-# Constants
-#######################################
-readonly ACCESSLOG="/var/log/ntrk-admin.log"
-readonly FILE_CONFIG="/etc/notrack/notrack.conf"
-readonly TEMP_CONFIG="/tmp/notrack.conf"
-readonly DNSMASQ_CONF="/etc/dnsmasq.conf"
-readonly DHCP_CONFIG="/etc/dnsmasq.d/dhcp.conf"
-readonly LOCALHOSTS="/etc/localhosts.list"
-
-"""
 
 """ Block Message
 Sets Block message for sink page
@@ -308,9 +301,7 @@ def copy_list(listname):
     copy_file(folders.temp + listname, folders.etc_notrack + listname)
 
     #Run notrack in delayed (wait) mode
-    #Fork process of notrack --wait into background
-    print('Running NoTrack with delay mode enabled')
-    subprocess.Popen([folders.notrack, ' --wait'], stdout=subprocess.PIPE )
+    run_notrack('wait')
 
 
 """ Copy TLD Lists
@@ -373,20 +364,6 @@ EOF
 }
 
 
-#--------------------------------------------------------------------
-# Add Value
-#   Add Value to SQL Config Table
-# Globals:
-#   None
-# Arguments:
-#   1: type
-#   2: option_name
-#   3: option_value
-#   4: option_enabled (# = false, 1 = true)
-# Returns:
-#   None
-#--------------------------------------------------------------------
-
 """
 
 """ Parsing Time
@@ -445,49 +422,90 @@ def copy_localhosts():
 
 
 
+""" NoTrack Pause
+    1. Check ntrk-pause exists
+    2. Run NoTrack
+
+Args:
+    None
+Returns:
+    None
 """
+def ntrk_pause(mode, duration=0):
+    from shlex import quote
+    if not os.path.isfile(folders.ntrk_pause):             #Does ntrk-pause exist?
+        print('Ntrk_pause: Error %s is missing' % folders.ntrk_pause)
+        sys.exit(24)
 
-#--------------------------------------------------------------------
-# Update Config
-#
-# Globals:
-#   FILE_CONFIG, TEMP_CONFIG
-# Arguments:
-#   None
-# Returns:
-#   None
-#--------------------------------------------------------------------
-function update_config() {
-  if [ -e "/tmp/notrack.conf" ]; then
-    chown root:root "$TEMP_CONFIG"
-    chmod 644 /tmp/notrack.conf
-    echo "Copying $TEMP_CONFIG to $FILE_CONFIG"
-    mv "$TEMP_CONFIG" "$FILE_CONFIG"
-    echo
-  fi
-}
+    if mode == 'pause':
+        #Fork process of ntrk-pause into background
+        print('Launching ntrk-pause with Pause mode, duration %d' % duration)
+        #subprocess.Popen([folders.ntrk_pause, '--pause 1'], stdout=subprocess.PIPE, shell=True)
+        dur = str(duration)
+        os.system(folders.ntrk_pause + ' --pause ' + dur + ' > /dev/null &')
+
+    else:
+        #Fork process of ntrk-pause --mode into background
+        print('Launching ntrk-pause with %s mode' % mode)
+        print()
+        process = subprocess.run([folders.ntrk_pause, '--' + mode], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        print(process.stdout)                                  #Show the terminal output
+        #print(process)
+        #subprocess.Popen([folders.ntrk_pause, ' --' + mode], stdout=subprocess.PIPE )
 
 
-#--------------------------------------------------------------------
-# Upgrade NoTrack
-#
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#--------------------------------------------------------------------
-function upgrade_notrack() {
-  if [ -e /usr/local/sbin/ntrk-upgrade ]; then
-    echo "Running NoTrack Upgrade"
-    sudo /usr/local/sbin/ntrk-upgrade #2>&1
-  else
-    echo "NoTrack Upgrade is missing, using fallback notrack.sh"
-    sudo /usr/local/sbin/notrack -u
-  fi
-}
 
+""" Run NoTrack
+    1. Check NoTrack exists
+    2. Run NoTrack
+
+Args:
+    None
+Returns:
+    None
+"""
+def run_notrack(mode=''):
+    if not os.path.isfile(folders.ntrk_upgrade):           #Does ntrk-upgrade exist?
+        print('Upgrade_notrack: Error %s is missing' % folders.ntrk_upgrade)
+        sys.exit(24)
+
+    if mode == '':
+        #Fork process of notrack into background
+        print('Launching NoTrack')
+        subprocess.Popen(folders.notrack, stdout=subprocess.PIPE )
+    else:
+        #Fork process of notrack --mode into background
+        print('Launching NoTrack with %s mode' % mode)
+        subprocess.Popen([folders.notrack, '--' + mode], stdout=subprocess.PIPE )
+
+
+
+
+""" Upgrade NoTrack
+    1. Check ntrk-upgrade exists
+    2. Run and wait for ntrk-upgrade to complete
+    3. Print the output of ntrk-upgrade
+    4. Check for errors
+
+Args:
+    None
+Returns:
+    None
+"""
+def upgrade_notrack():
+    if not os.path.isfile(folders.notrack):           #Does ntrk-upgrade exist?
+        print('Upgrade_notrack: Error %s is missing' % folders.ntrk_upgrade)
+        sys.exit(20)
+
+    process = subprocess.run([folders.ntrk_upgrade], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+    print(process.stdout)                                  #Show the terminal output
+
+    if process.returncode != 0:                            #Check return code
+        print('Upgrade_notrack: Error with upgrade')
+        print(process.stderr)                              #TODO no such functionality yet
+
+"""
 
 #Main----------------------------------------------------------------
 if [[ "$(id -u)" != "0" ]]; then                 #Check if running as root
@@ -538,12 +556,7 @@ if [ "$1" ]; then                         #Have any arguments been given
       --shutdown)
         shutdown now  > /dev/null &
       ;;
-      --run-notrack)
-        /usr/local/sbin/notrack > /dev/null &
-      ;;
-      --save-conf)
-        update_config
-      ;;
+
       --upgrade)
         upgrade_notrack
       ;;
@@ -577,7 +590,9 @@ parser.add_argument("--sink", help='Block Message on Sink page', choices=['messa
 args = parser.parse_args()
 
 if args.save:
-    if args.save == 'black':
+    if args.save == 'conf':
+        copy_file(folders.temp + 'notrack.conf', folders.etc_notrack + 'notrack.conf')
+    elif args.save == 'black':
         copy_list('blacklist.txt')
     elif args.save == 'white':
         copy_list('whitelist.txt')
@@ -587,15 +602,27 @@ if args.save:
         copy_localhosts()
     elif args.save == 'tld':
         copy_tldlist()
+
 if args.sink:
     block_message(args.sink)
 
 if args.parsing:
     parsing_time(args.parsing)
 
-if (args.play):
-    print('Play')
-if (args.pause):
-    print('Pause %d' % args.pause)
+if args.play:
+    ntrk_pause('start')
+if args.pause:
+    ntrk_pause('pause', args.pause)
+if args.stop:
+    ntrk_pause('stop')
+
 if (args.deletehistory):
     print("del")
+
+if args.run:
+    run_notrack()
+if args.force:
+    run_notrack('force')
+
+if args.upgrade:
+    upgrade_notrack()
