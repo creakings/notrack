@@ -234,7 +234,7 @@ function show_domain_list() {
  *  Update Domian List
  *    1. Write domain-whitelist.txt to /tmp
  *    2. Write domain-blacklist.txt to /tmp
- *    3. Call NTRK_EXEC to copy domain lists over
+ *    3. Run ntrk-exec to copy domain lists over
  *    4. Delete Memcache items to force reload
  *
  *  Params:
@@ -274,7 +274,8 @@ function update_domain_list() {
   }
   fclose($fh);                                             //Close Black List
 
-  exec(NTRK_EXEC.'--copy tld');
+  exec(NTRK_EXEC.'--copy tld'); // DEPRECATED
+  exec(NTRK_EXEC.'--save tld');
 
   $mem->delete('tldblacklist');                            //Delete Black List from Memcache
   $mem->delete('tldwhitelist');                            //Delete White List from Memcache

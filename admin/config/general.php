@@ -42,7 +42,7 @@ if (isset($_POST['action'])) {
   update_dnsqueries();
   update_webserver_config();
   update_server_config();
-  usleep(25000);                             //Short pause to prevent race condition
+  usleep(15000);                             //Short pause to prevent race condition
   $config->save();
 
   //Refresh page to anchor point if action is valid
@@ -58,9 +58,13 @@ if (isset($_POST['action'])) {
 
 if (isset($_GET['action'])) {
   if ($_GET['action'] == 'delete-history') {
-    exec(NTRK_EXEC.'--delete-history');
-    usleep(25000);                               //Short pause to prevent race condition
-    header('Location: #dns');
+    exec(NTRK_EXEC.'--delete-history');  //DEPRECATED
+    echo '<pre>';
+    passthru(NTRK_EXEC.'--deletehistory');
+    echo '</pre>'.PHP_EOL;
+    exit;
+    //usleep(15000);                               //Short pause to prevent race condition
+    //header('Location: #dns');
   }
 }
 
@@ -329,11 +333,13 @@ function update_webserver_config() {
     switch ($_POST['block']) {
       case 'message':
         $config->settings['blockmessage'] = 'message';
-        exec(NTRK_EXEC.'--bm-msg');
+        exec(NTRK_EXEC.'--bm-msg'); // DEPRECATED
+        exec(NTRK_EXEC.'--sink message');
         break;
       case 'pixel':
         $config->settings['blockmessage'] = 'pixel';
-        exec(NTRK_EXEC.'--bm-pxl');
+        exec(NTRK_EXEC.'--bm-pxl'); // DEPRECATED
+        exec(NTRK_EXEC.'--sink pixel');
         break;
     }
   }
@@ -364,6 +370,8 @@ function update_dnsqueries() {
 
   if (isset($_POST['parsing'])) {
     $config->settings['ParsingTime'] = filter_integer($_POST['parsing'], 1, 60, 4);
+    //Update /etc/cron.d/ntrk-parse with new time
+    exec(NTRK_EXEC.'--parsing '.$config->settings['ParsingTime']);
   }
 
   if (filter_string('suppress', 'POST', 4096)) {

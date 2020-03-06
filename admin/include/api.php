@@ -276,8 +276,9 @@ if (isset($_POST['operation'])) {
   ensure_active_session();
   switch ($_POST['operation']) {
       case 'force-notrack':
-        exec(NTRK_EXEC.'--force');
-        sleep(3);                                //Prevent race condition
+        exec(NTRK_EXEC.'--force'); //DEPRECATED
+        exec(NTRK_EXEC.'--run force');
+        sleep(1);                                //Prevent race condition
         header("Location: ?");
         break;
       case 'disable': api_enable_notrack(); break;

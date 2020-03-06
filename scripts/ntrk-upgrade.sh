@@ -176,8 +176,11 @@ echo "Copying updated scripts"
 copy_file "scripts/notrack.sh" "/usr/local/sbin/"                    #NoTrack.sh
 rename_file "/usr/local/sbin/notrack.sh" "/usr/local/sbin/notrack"
 
-copy_file "scripts/ntrk-exec.sh" "/usr/local/sbin/"                  #ntrk-exec.sh
+copy_file "scripts/ntrk-exec.sh" "/usr/local/sbin/"                  #ntrk-exec.sh DEPRECATED
 rename_file "/usr/local/sbin/ntrk-exec.sh" "/usr/local/sbin/ntrk-exec"
+
+#copy_file "scripts/ntrk-exec.py" "/usr/local/sbin/"                  #New ntrk-exec.py
+#rename_file "/usr/local/sbin/ntrk-exec.py" "/usr/local/sbin/ntrk-exec"
 
 copy_file "scripts/ntrk-pause.sh" "/usr/local/sbin/"                 #ntrk-pause.sh
 rename_file "/usr/local/sbin/ntrk-pause.sh" "/usr/local/sbin/ntrk-pause"

@@ -1,4 +1,5 @@
 #!/bin/bash
+#DEPRECATED file. This has now been ported to ntrk-exec.py
 #Title : NoTrack Exec
 #Description : NoTrack Exec takes jobs that have been written to from
 # A low privilege user, e.g. www-data, and then carries out the job

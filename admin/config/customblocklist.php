@@ -326,7 +326,8 @@ function write_temp_list($actualname, $listname) {
   }
   fclose($fh);                                             //Close file
 
-  exec(NTRK_EXEC.'--copy '.$listname);
+  exec(NTRK_EXEC.'--copy '.$listname); //DEPRECATED
+  exec(NTRK_EXEC.'--save '.$listname);
 
   $mem->delete($listname);
   $mem->set($listname, $list, 0, 120);

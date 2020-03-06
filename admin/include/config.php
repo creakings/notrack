@@ -368,7 +368,8 @@ class Config {
     $mem->delete('conf-settings');                         //Delete config from Memcache
     $mem->delete('conf-blocklists');                       //Delete config from Memcache
 
-    exec(NTRK_EXEC.'--save-conf');
+    exec(NTRK_EXEC.'--save-conf'); // DEPRECATED
+    exec(NTRK_EXEC.'--save conf');
   }
 
 

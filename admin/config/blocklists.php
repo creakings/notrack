@@ -508,7 +508,8 @@ echo '<div id="main">'.PHP_EOL;
 //Has the Save Changes button been clicked?
 if (isset($_POST['action'])) {                             //Yes - Update block list conf
   update_blocklists();
-  exec(NTRK_EXEC.'--run-notrack');
+  exec(NTRK_EXEC.'--run-notrack'); //DEPRECATED
+  exec(NTRK_EXEC.'--run wait');
 }
 
 if (isset($_GET['v'])) {

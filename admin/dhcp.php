@@ -313,7 +313,8 @@ function update_statichosts() {
 
   //Run ntrk-exec to copy Temp localhosts to /etc/localhosts.list
   //Restarting DNS server is handled by update_dhcp
-  exec(NTRK_EXEC.'--write localhosts');
+  exec(NTRK_EXEC.'--write localhosts'); // DEPRECATED
+  exec(NTRK_EXEC.'--save localhosts');
 }
 
 
@@ -399,7 +400,8 @@ function update_dhcp() {
   fclose($fh);                                             //Close Temp Conf
 
   //Run ntrk-exec to copy Temp conf to /etc/dnsmasq.d/dhcp.conf and then restart DNS server
-  exec(NTRK_EXEC.'--write dhcp');
+  exec(NTRK_EXEC.'--write dhcp'); // DEPRECATED
+  exec(NTRK_EXEC.'--save dhcp');
 }
 
 
