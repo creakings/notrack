@@ -17,9 +17,10 @@ import sys
 class DBConfig:
     user = 'ntrk'
     password = 'ntrkpass'
-    dbname = 'ntrkdb'
+    database = 'ntrkdb'
 
 class FolderList:
+    accesslog = ''
     cron_ntrkparse = ''
     etc = ''
     etc_notrack = ''
@@ -32,6 +33,7 @@ class FolderList:
 
     def __init__(self):
         if os.name == 'posix':
+            self.accesslog = '/var/log/ntrk-admin.log'
             self.cron_ntrkparse = '/etc/cron.d/ntrk-parse'
             self.etc = '/etc/'
             self.etc_notrack = '/etc/notrack/'
@@ -137,7 +139,6 @@ class Services:
         return self.__restart_service(self.__webserver)
 
 
-dbconf = DBConfig()
 folders = FolderList()
 
 
@@ -201,28 +202,6 @@ def block_message(msg):
     else:
         print('Setting permissions of %sindex.html to Archive' % folders.wwwsink)
         os.chmod(folders.wwwsink + 'index.html', stat.FILE_ATTRIBUTE_ARCHIVE)
-
-"""
-#--------------------------------------------------------------------
-# Create File
-# Checks if a file exists and creates it
-#
-# Globals:
-#   None
-# Arguments:
-#   #$1 File to create
-# Returns:
-#   None
-#--------------------------------------------------------------------
-function create_file() {
-  if [ ! -e "$1" ]; then                         #Does file already exist?
-    echo "Creating file: $1"
-    sudo touch "$1"                              #If not then create it
-    sudo chmod 664 "$1"                          #RW RW R permissions
-  fi
-}
-
-"""
 
 
 """ Copy File
@@ -315,56 +294,55 @@ def copy_tldlists():
     copy_file(folders.temp + 'domain-blacklist.txt', folders.etc_notrack + 'domain-blacklist.txt')
     copy_file(folders.temp + 'domain-whitelist.txt', folders.etc_notrack + 'domain-whitelist.txt')
 
+
+""" Create Access Log
+    Create /var/log/ntrk-admin.log and set permissions to 666
+Args:
+    None
+Returns:
+    None
 """
-#--------------------------------------------------------------------
-# Create Access Log
-#
-# Globals:
-#   ACCESSLOG
-# Arguments:
-#   None
-# Returns:
-#   None
-#--------------------------------------------------------------------
-function create_accesslog() {
-  if [ ! -e "$ACCESSLOG" ]; then
-    echo "Creating $ACCESSLOG"
-    touch "$ACCESSLOG"
-    chmod 666 "$ACCESSLOG"
-  fi
-}
+def create_accesslog():
+    print('Checking to see if %s exists' % folders.accesslog)
+    if os.path.isfile(folders.accesslog):
+        print('File exists, no action required')
+    else:
+        print('File missing, creating it')
+        f = open(folders.accesslog, 'w')
+        f.close()
+        print('Setting permissions to RW-RW-RW-');
+        os.chmod(folders.accesslog, 0o666)
 
 
-#--------------------------------------------------------------------
-# Delete History
-#
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#--------------------------------------------------------------------
-delete_history() {
-  echo "Deleting contents of dnslog and weblog tables"
-mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" << EOF
-DELETE LOW_PRIORITY FROM dnslog;
-ALTER TABLE dnslog AUTO_INCREMENT = 1;
-DELETE LOW_PRIORITY FROM weblog;
-ALTER TABLE weblog AUTO_INCREMENT = 1;
-EOF
-  #echo "Deleting Log Files in /var/log/lighttpd" DEPRECATED
-  #rm /var/log/lighttpd/*                         #Delete all files in lighttpd log folder
-  #touch /var/log/lighttpd/access.log             #Create new access log and set privileges
-  #chown www-data:root /var/log/lighttpd/access.log
-  #chmod 644 /var/log/lighttpd/access.log
-  #touch /var/log/lighttpd/error.log              #Create new error log and set privileges
-  #chown www-data:root /var/log/lighttpd/error.log
-  #chmod 644 /var/log/lighttpd/error.log
-}
-
-
+""" Delete History
+Args:
+    None
+Returns:
+    None
 """
+def delete_history():
+    import mysql.connector as mariadb
+
+    dbconf = DBConfig()
+
+    print('Opening connection to MariaDB')
+    db = mariadb.connect(user=dbconf.user, password=dbconf.password, database=dbconf.database)
+
+    cursor = db.cursor()
+
+    print('Deleting contents of dnslog and weblog tables')
+
+    cursor.execute('DELETE LOW_PRIORITY FROM dnslog');
+    print('Deleting %d rows from dnslog ' % cursor.rowcount)
+    cursor.execute('ALTER TABLE dnslog AUTO_INCREMENT = 1');
+
+    cursor.execute('DELETE LOW_PRIORITY FROM weblog');
+    print('Deleting %d rows from weblog ' % cursor.rowcount)
+    cursor.execute('ALTER TABLE weblog AUTO_INCREMENT = 1');
+    db.commit()
+    print('Completed, closing connection to MariaDB')
+    db.close()
+
 
 """ Parsing Time
     Update CRON parsing interval for ntrk-parse
@@ -441,8 +419,7 @@ def ntrk_pause(mode, duration=0):
         #Fork process of ntrk-pause into background
         print('Launching ntrk-pause with Pause mode, duration %d' % duration)
         #subprocess.Popen([folders.ntrk_pause, '--pause 1'], stdout=subprocess.PIPE, shell=True)
-        dur = str(duration)
-        os.system(folders.ntrk_pause + ' --pause ' + dur + ' > /dev/null &')
+        os.system(folders.ntrk_pause + ' --pause ' + str(duration) + ' > /dev/null &')
 
     else:
         #Fork process of ntrk-pause --mode into background
@@ -469,14 +446,16 @@ def run_notrack(mode=''):
         print('Upgrade_notrack: Error %s is missing' % folders.ntrk_upgrade)
         sys.exit(24)
 
-    if mode == '':
+    if mode == '' or mode == 'now':
         #Fork process of notrack into background
         print('Launching NoTrack')
-        subprocess.Popen(folders.notrack, stdout=subprocess.PIPE )
+        #subprocess.Popen(folders.notrack, stdout=subprocess.PIPE )
+        os.system(folders.notrack + ' > /dev/null &')
     else:
         #Fork process of notrack --mode into background
         print('Launching NoTrack with %s mode' % mode)
-        subprocess.Popen([folders.notrack, '--' + mode], stdout=subprocess.PIPE )
+        #subprocess.Popen([folders.notrack, '--' + mode], stdout=subprocess.PIPE )
+        os.system(folders.notrack + ' --' + mode + ' > /dev/null &')
 
 
 
@@ -514,29 +493,10 @@ if [[ "$(id -u)" != "0" ]]; then                 #Check if running as root
 fi
 
 
-
-if [ "$1" ]; then                         #Have any arguments been given
-  if ! Options=$(getopt -o hps -l accesslog,bm-msg,bm-pxl,delete-history,force,parsing,run-notrack,restart,save-conf,shutdown,upgrade,read:,write:,pause:,copy: -- "$@"); then
-    # something went wrong, getopt will put out an error message for us
-    exit 1
-  fi
-
-  set -- $Options
-
-  while [ $# -gt 0 ]
-  do
-    case $1 in
-      esslog)
-        create_accesslog
-      ;;
-
-
       --delete-history)
         delete_history
       ;;
-      --force)
-        /usr/local/sbin/notrack --force > /dev/null &
-      ;;
+
       -p)                                        #Play
         /usr/local/sbin/ntrk-pause --start  > /dev/null &
       ;;
@@ -560,16 +520,6 @@ if [ "$1" ]; then                         #Have any arguments been given
       --upgrade)
         upgrade_notrack
       ;;
-      --write)
-        if [[ $2 == "'dnsmasq'" ]]; then
-          write_dnsmasq
-        elif [[ $2 == "'dhcp'" ]]; then
-          write_dhcp
-        elif [[ $2 == "'localhosts'" ]]; then
-          write_localhosts
-        fi
-      ;;
-
 
 """
 parser = argparse.ArgumentParser(description = 'NoTrack Exec:')
@@ -578,16 +528,26 @@ parser.add_argument('-s', "--stop", help='Stop Blocking', action='store_true')
 parser.add_argument('--pause', help='Pause Blocking', type=int)
 parser.add_argument('--accesslog', help='Create Access log file', action='store_true')
 parser.add_argument("--deletehistory", help='Message on Sink Page', action='store_true')
-parser.add_argument('--force', help='Force run NoTrack', action='store_true')
-parser.add_argument('--run', help='Run NoTrack', action='store_true')
 parser.add_argument('--parsing', help='Parser update time', type=int)
 parser.add_argument('--restart', help='Restart System', action='store_true')
 parser.add_argument('--shutdown', help='Shutdown System', action='store_true')
 parser.add_argument('--upgrade', help='Upgrade NoTrack', action='store_true')
+parser.add_argument('--run', help='Run NoTrack', choices=['now', 'wait', 'force'])
 parser.add_argument("--save", help='Replace specified file', choices=['conf', 'dhcp', 'localhosts', 'black', 'white', 'tld'])
 parser.add_argument("--sink", help='Block Message on Sink page', choices=['message', 'pixel'])
 
 args = parser.parse_args()
+
+
+def check_module(mod):
+    import importlib.util
+    spec = importlib.util.find_spec(mod)
+    if spec is None:
+        print('Check_module: Error - %s not found' % mod)
+        return False
+    else:
+        print('Check_module: %s can be imported' % mod)
+        return True
 
 if args.save:
     if args.save == 'conf':
@@ -601,13 +561,7 @@ if args.save:
     elif args.save == 'localhosts':
         copy_localhosts()
     elif args.save == 'tld':
-        copy_tldlist()
-
-if args.sink:
-    block_message(args.sink)
-
-if args.parsing:
-    parsing_time(args.parsing)
+        copy_tldlists()
 
 if args.play:
     ntrk_pause('start')
@@ -616,13 +570,24 @@ if args.pause:
 if args.stop:
     ntrk_pause('stop')
 
-if (args.deletehistory):
-    print("del")
-
 if args.run:
-    run_notrack()
-if args.force:
-    run_notrack('force')
+    run_notrack(args.run)
 
 if args.upgrade:
     upgrade_notrack()
+
+if args.sink:
+    block_message(args.sink)
+
+if args.parsing:
+    parsing_time(args.parsing)
+
+if (args.deletehistory):
+    if check_module('mysql'):
+        delete_history()
+    else:
+        print('Install package python3-mysql.connector')
+        sys.exit(30)
+
+if (args.accesslog):
+    create_accesslog()
