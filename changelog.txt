@@ -1,4 +1,6 @@
 Development
+Begin work on porting Bash scripts to Python3.
+ntrk-exec ported to Python although not yet enabled due to dependency on non-installed package python3-mysql.connector
 New timepicker menu on queries.php
 New Status and Severity selector on analytics.php
 Added export button to analytics.php

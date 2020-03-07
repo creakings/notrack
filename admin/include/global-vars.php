@@ -6,15 +6,13 @@ define('STATUS_INCOGNITO', 8);
 define('STATUS_NOTRACKRUNNING', 64);
 define('STATUS_ERROR', 128);
 
-define('VERSION', '0.9.4');
+define('VERSION', '0.9.5');
 define('SERVERNAME', 'localhost');
 define('USERNAME', 'ntrk');
 define('PASSWORD', 'ntrkpass');
 define('DBNAME', 'ntrkdb');
 
 define('ROWSPERPAGE', 200);
-
-$LogLightyAccess = '/var/log/lighttpd/access.log';
 
 define('DIR_TMP', '/tmp/');
 define('ACCESSLOG', '/var/log/ntrk-admin.log');
@@ -62,8 +60,4 @@ if (!extension_loaded('memcache')) {
 $mem = new Memcache;                             //Initiate Memcache
 $mem->connect('localhost', 11211);
 
-if (!extension_loaded('mysqli')) {
-  echo '<p>NoTrack requires mysql to be installed<br>Run: <code>bash /opt/notrack/install.sh -sql</code> or <code>bash ~/notrack/install.sh -sql</code> (depending where NoTrack folder is located)</p>';
-  die;
-}
 ?>
