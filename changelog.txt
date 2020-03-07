@@ -1,4 +1,4 @@
-Development
+v0.9.5 Released 7 Mar 2020
 Begin work on porting Bash scripts to Python3.
 ntrk-exec ported to Python although not yet enabled due to dependency on non-installed package python3-mysql.connector
 New timepicker menu on queries.php
