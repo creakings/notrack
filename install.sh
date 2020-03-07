@@ -21,14 +21,16 @@ readonly DHCPCD_CONF_PATH="/etc/dhcpcd.conf"
 readonly DHCPCD_CONF_OLD_PATH="/etc/dhcpcd.conf.old"
 readonly NETWORK_INTERFACES_PATH="/etc/network/interfaces"
 readonly NETWORK_INTERFACES_OLD_PATH="/etc/network/interfaces.old"
-
 readonly DNSMASQ_CONF_PATH="/etc/dnsmasq.conf"
 
+readonly VERSION="0.9.5"
 
 #######################################
 # Global Variables
 #######################################
-readonly VERSION="0.9.1"
+DBUSER="ntrk"
+DBPASSWORD="ntrkpass"
+DBNAME="ntrkdb"
 
 SUDO_REQUIRED=false                              #true if installing to /opt
 REBOOT_REQUIRED=false
@@ -166,102 +168,52 @@ menu() {
 }
 
 
-#--------------------------------------------------------------------
-# Backup Config Files
-#   Take backups of dnsmasq and lighttpd
+#######################################
+# Copy File
+#   Checks if Source file exists, then copies it to Destination
+#
 # Globals:
-#   None
+#   INSTALL_LOCATION
 # Arguments:
-#   None
+#   $1: Source
+#   $2: Destination
 # Returns:
 #   None
-#--------------------------------------------------------------------
-function backup_configs() {
-  echo "Backing up old config files"
-  
-  echo "Copying /etc/dnsmasq.conf to /etc/dnsmasq.conf.old"
-  check_file_exists "/etc/dnsmasq.conf" 24
-  sudo cp /etc/dnsmasq.conf /etc/dnsmasq.conf.old
-  
-  echo "Copying /etc/lighttpd/lighttpd.conf to /etc/lighttpd/lighttpd.conf.old"
-  
-  check_file_exists "/etc/lighttpd/lighttpd.conf" 24
-  sudo cp /etc/lighttpd/lighttpd.conf /etc/lighttpd/lighttpd.conf.old
-  echo "========================================================="
-  echo
-}
-
-
 #######################################
-# Check if file exists
-# Globals:
-#   None
-# Arguments:
-#   $1 File Path
-# Returns:
-#   Exit Code
-#######################################
-function check_file_exists() {
-  if [ ! -e "$1" ]; then
-    echo "Error. File $1 is missing :-( Aborting."
-    exit "25" 
+function copy_file() {
+  if [ -e "$1" ]; then                                     #Does file exist?
+    echo "Copying $1 to $2"
+    sudo cp "$1" "$2"
+  else
+    echo "WARNING: Unable to find file $1 :-("             #Display a warning if file doesn't exist
   fi
 }
 
 
-#--------------------------------------------------------------------
-# Copy Scripts
-#   Copy notrack script files to /usr/local/sbin
+#######################################
+# Rename File
+#   Renames Source file to Destination
+#   Set permissions to -rwxr-xr-x
+#
 # Globals:
-#   INSTALL_LOCATION
-# Arguments:
 #   None
+# Arguments:
+#   $1: Source
+#   $2: Destination
 # Returns:
 #   None
-#--------------------------------------------------------------------
-function copy_scripts() {
-  check_file_exists "$INSTALL_LOCATION/scripts/notrack.sh"      #Blocklist parser
-  echo "Copying notrack.sh"
-  sudo cp "$INSTALL_LOCATION/scripts/notrack.sh" /usr/local/sbin/notrack.sh
-  sudo mv /usr/local/sbin/notrack.sh /usr/local/sbin/notrack 
-  sudo chmod 755 /usr/local/sbin/notrack
-
-  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-exec.sh"    #Exec
-  echo "Copying ntrk-exec.sh"
-  sudo cp "$INSTALL_LOCATION/scripts/ntrk-exec.sh" /usr/local/sbin/
-  sudo mv /usr/local/sbin/ntrk-exec.sh /usr/local/sbin/ntrk-exec
-  sudo chmod 755 /usr/local/sbin/ntrk-exec
-  
-  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-pause.sh"   #Pause
-  echo "Copying ntrk-pause.sh"
-  sudo cp "$INSTALL_LOCATION/scripts/ntrk-pause.sh" /usr/local/sbin/
-  sudo mv /usr/local/sbin/ntrk-pause.sh /usr/local/sbin/ntrk-pause
-  sudo chmod 755 /usr/local/sbin/ntrk-pause
-  
-  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-upgrade.sh" #Upgrader
-  echo "Copying ntrk-upgrade.sh"
-  sudo cp "$INSTALL_LOCATION/scripts/ntrk-upgrade.sh" /usr/local/sbin/
-  sudo mv /usr/local/sbin/ntrk-upgrade.sh /usr/local/sbin/ntrk-upgrade
-  sudo chmod 755 /usr/local/sbin/ntrk-upgrade
-  
-  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-parse.sh"   #ntrk-parse.sh
-  echo "Copying ntrk-parse.sh"
-  sudo cp "$INSTALL_LOCATION/scripts/ntrk-parse.sh" /usr/local/sbin/
-  sudo mv /usr/local/sbin/ntrk-parse.sh /usr/local/sbin/ntrk-parse
-  sudo chmod 755 /usr/local/sbin/ntrk-parse
-  
-  check_file_exists "$INSTALL_LOCATION/scripts/ntrk-analytics.sh" "29"   #ntrk-parse.sh
-  echo "Copying ntrk-analytics.sh"
-  sudo cp "$INSTALL_LOCATION/scripts/ntrk-analytics.sh" /usr/local/sbin/
-  sudo mv /usr/local/sbin/ntrk-analytics.sh /usr/local/sbin/ntrk-analytics
-  sudo chmod 755 /usr/local/sbin/ntrk-analytics
-
-  echo "========================================================="
-  echo
+#######################################
+function rename_file() {
+  if [ -e "$1" ]; then                                     #Does file exist?
+    sudo mv "$1" "$2"
+    sudo chmod 755 "$2"
+  else
+    echo "WARNING: Unable to rename file $1 :-("
+  fi
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Create File
 # Checks if a file exists and creates it
 #
@@ -271,7 +223,7 @@ function copy_scripts() {
 #   #$1 File to create
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function create_file() {
   if [ ! -e "$1" ]; then                         #Does file already exist?
     echo "Creating file: $1"
@@ -280,7 +232,7 @@ function create_file() {
   fi
 }
 
-#--------------------------------------------------------------------
+#######################################
 # Create Folder
 #   Creates a folder if it doesn't exist
 # Globals:
@@ -289,7 +241,7 @@ function create_file() {
 #   $1 - Folder to create
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function create_folder() {
   if [ ! -d "$1" ]; then                         #Does folder exist?
     echo "Creating folder: $1"                   #Tell user folder being created
@@ -298,7 +250,7 @@ function create_folder() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Delete File
 #   Checks if a file exists and then deletes it
 #
@@ -308,7 +260,7 @@ function create_folder() {
 #   #$1 File to delete
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function delete_file() {
   if [ -e "$1" ]; then                           #Does file exist?
     echo "Deleting file $1"
@@ -317,7 +269,71 @@ function delete_file() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
+# Backup Config Files
+#   Take backups of dnsmasq and lighttpd
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+function backup_configs() {
+  echo "Backing up old config files"
+  copy_file /etc/dnsmasq.conf /etc/dnsmasq.conf.old
+  copy_file /etc/lighttpd/lighttpd.conf /etc/lighttpd/lighttpd.conf.old
+  echo "========================================================="
+  echo
+}
+
+
+#######################################
+# Copy Scripts
+#   Copy notrack script files to /usr/local/sbin
+# Globals:
+#   INSTALL_LOCATION
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+function copy_scripts() {
+  #Blocklist parser
+  copy_file "$INSTALL_LOCATION/scripts/notrack.sh" /usr/local/sbin/notrack.sh
+  rename_file /usr/local/sbin/notrack.sh /usr/local/sbin/notrack
+  sudo chmod 755 /usr/local/sbin/notrack
+
+  #Ntrk-Exec DEPRECATED
+  copy_file "$INSTALL_LOCATION/scripts/ntrk-exec.sh" /usr/local/sbin/ntrk-exec.sh
+  rename_file /usr/local/sbin/ntrk-exec.sh /usr/local/sbin/ntrk-exec
+
+  #New Ntrk-Exec
+  #copy_file "$INSTALL_LOCATION/scripts/ntrk-exec.py" /usr/local/sbin/ntrk-exec.py
+  #rename_file /usr/local/sbin/ntrk-exec.py /usr/local/sbin/ntrk-exec
+
+  #Ntrk-Pause
+  copy_file "$INSTALL_LOCATION/scripts/ntrk-pause.sh" /usr/local/sbin/
+  rename_file /usr/local/sbin/ntrk-pause.sh /usr/local/sbin/ntrk-pause
+
+  #Ntrk-Upgrade
+  copy_file "$INSTALL_LOCATION/scripts/ntrk-upgrade.sh" /usr/local/sbin/
+  rename_file /usr/local/sbin/ntrk-upgrade.sh /usr/local/sbin/ntrk-upgrade
+
+  #Ntrk-Parser
+  copy_file "$INSTALL_LOCATION/scripts/ntrk-parse.sh" /usr/local/sbin/
+  rename_file /usr/local/sbin/ntrk-parse.sh /usr/local/sbin/ntrk-parse
+
+  #Ntrk-Analytics
+  copy_file "$INSTALL_LOCATION/scripts/ntrk-analytics.sh" /usr/local/sbin/
+  rename_file /usr/local/sbin/ntrk-analytics.sh /usr/local/sbin/ntrk-analytics
+
+  echo "========================================================="
+  echo
+}
+
+
+#######################################
 # Download with Git
 #   Download with Git if the user has it installed on their system
 # Globals:
@@ -326,7 +342,7 @@ function delete_file() {
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function download_with_git() {
   echo "Downloading NoTrack using Git"
 
@@ -339,7 +355,7 @@ function download_with_git() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Download with wget
 #   Alternative download if user doesn't have Git
 # Globals:
@@ -348,7 +364,7 @@ function download_with_git() {
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function download_with_wget() {
   if [ -d "$INSTALL_LOCATION" ]; then            #Check if NoTrack folder exists
     echo "NoTrack folder exists. Skipping download"
@@ -373,7 +389,7 @@ function download_with_wget() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Get hostname
 #   Attempt to find hostname of system
 # Globals:
@@ -382,7 +398,7 @@ function download_with_wget() {
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function get_hostname() {
   if [ -e /etc/sysconfig/network ]; then         #Set first entry for localhosts
     hostname=$(grep "HOSTNAME" /etc/sysconfig/network | cut -d "=" -f 2 | tr -d [[:space:]])
@@ -394,7 +410,7 @@ function get_hostname() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Install Packages
 #   Works out what type of package manager is in use
 #   Call appropriate function depending on package manager
@@ -404,13 +420,13 @@ function get_hostname() {
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function install_packages() {
 echo "========================================================="
 echo "Installing Packages"
 echo
 
-  if [ "$(command -v apt-get)" ]; then install_deb
+  if [ "$(command -v apt)" ]; then install_deb
   elif [ "$(command -v dnf)" ]; then install_dnf
   elif [ "$(command -v yum)" ]; then install_yum  
   elif [ "$(command -v pacman)" ]; then install_pacman
@@ -438,9 +454,9 @@ echo
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Install Deb Packages
-#   Installs packages using apt-get for Ubuntu / Debian based systems
+#   Installs packages using apt for Ubuntu / Debian based systems
 #   Checks to see if PHP7 is available
 # Globals:
 #   None
@@ -448,14 +464,14 @@ echo
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function install_deb() {
   local phpversion="php5"
   local phpmemcache="php5-memcache"
   i=6                                                      #Assume highest version of PHP 7 will be v7.6
 
   echo "Refreshing apt"
-  sudo apt-get update
+  sudo apt update
   echo
 
   echo "Searching package archives for latest PHP version"
@@ -479,24 +495,33 @@ function install_deb() {
   sleep 2s
   echo "Installing dependencies"
   sleep 2s
-  sudo apt-get -y install unzip
+  sudo apt -y install unzip
   echo
   echo "Installing Dnsmasq"
   sleep 2s
-  sudo apt-get -y install dnsmasq
+  sudo apt -y install dnsmasq
   echo
   echo "Installing MariaDB"
   sleep 2s
-  sudo apt-get -y install mariadb-server
+  sudo apt -y install mariadb-server
   echo
-  echo "Installing Lighttpd and PHP"
+  echo "Installing Webserver"
   sleep 2s
-  sudo apt-get -y install lighttpd memcached "$phpmemcache" "$phpversion-cgi" "$phpversion-curl" "$phpversion-mysql"
+  sudo apt -y install lighttpd
   echo
+  echo "Installing PHP"
+  sleep 2s
+  sudo apt -y install memcached "$phpmemcache" "$phpversion-cgi" "$phpversion-curl" "$phpversion-mysql"
+  echo
+  echo "Installing Python3"
+  sleep 2s
+  sudo apt -y install python3 python3-mysql.connector
+  echo
+  echo "Finished installing Deb packages"
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Install RPM Packages
 #   Installs packages using dnf for Redhat / Fedora
 # Globals:
@@ -505,7 +530,7 @@ function install_deb() {
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function install_dnf() {
   echo "Preparing to install RPM packages using Dnf..."
   sleep 2s
@@ -530,7 +555,7 @@ function install_dnf() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Install Aur Packages
 #   Installs packages using pacman for Arch
 # Globals:
@@ -539,7 +564,7 @@ function install_dnf() {
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function install_pacman() {
   echo "Preparing to install Arch packages..."
   sleep 2s
@@ -568,7 +593,7 @@ function install_pacman() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Install RPM Packages
 #   Installs packages using yum for Redhat / Fedora
 # Globals:
@@ -577,7 +602,7 @@ function install_pacman() {
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function install_yum() {
   echo "Preparing to install RPM packages using Yum..."
   sleep 2s
@@ -602,7 +627,7 @@ function install_yum() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Install apk Packages
 #   Installs packages for Busybox
 #   TODO
@@ -612,7 +637,7 @@ function install_yum() {
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function install_apk() {
   echo "Preparing to install packages using Apk..."
   sleep 2s
@@ -636,7 +661,7 @@ function install_apk() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Install xbps Packages
 #   Installs packages using xbps-install for VoidLinux
 # Globals:
@@ -645,7 +670,7 @@ function install_apk() {
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function install_xbps() {
   echo "Preparing to install XBPS packages..."
   sudo xbps-install -Suy                         ##sync & update only once
@@ -680,7 +705,7 @@ function install_xbps() {
 
 
 #######################################
-# check_systemd_dnsmasq
+# Check Systemd Dnsmasq
 #   Attempt to resolve any issues with systemd-resolved dns service conflicting with dnsmasq
 #
 # Globals:
@@ -689,6 +714,7 @@ function install_xbps() {
 #   None
 # Returns:
 #   0. Success
+#   1. Failure
 #
 #######################################
 function check_systemd_dnsmasq() {
@@ -711,14 +737,13 @@ function check_systemd_dnsmasq() {
       sudo systemctl restart systemd-resolved.service
       sudo systemctl restart dnsmasq.service
     else
-      return 1      
+      return 1
     fi
   fi
 }
 
 
-
-#--------------------------------------------------------------------
+#######################################
 # Setup Dnsmasq
 #   Copy custom config settings into dnsmasq.conf and create log file
 #   Create initial entry in /etc/localhosts.list
@@ -728,7 +753,7 @@ function check_systemd_dnsmasq() {
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function setup_dnsmasq() {
   echo "Configuring Dnsmasq"
   
@@ -739,8 +764,7 @@ function setup_dnsmasq() {
   
   #Copy config files modified for NoTrack
   echo "Copying Dnsmasq config files from $INSTALL_LOCATION to /etc/conf"
-  check_file_exists "$INSTALL_LOCATION/conf/dnsmasq.conf" 24
-  sudo cp "$INSTALL_LOCATION/conf/dnsmasq.conf" /etc/dnsmasq.conf
+  copy_file "$INSTALL_LOCATION/conf/dnsmasq.conf" /etc/dnsmasq.conf
   
   #Finish configuration of dnsmasq config
   sudo sed -i "s/interface=eth0/interface=$NETWORK_DEVICE/" /etc/dnsmasq.conf
@@ -760,11 +784,11 @@ function setup_dnsmasq() {
   echo "Setup of Dnsmasq complete"
   echo "========================================================="
   echo
-  sleep 4s
+  sleep 3s
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Setup Lighttpd
 #   Add www-data/http group rights to user
 #   copy lighty config, and create sink page
@@ -774,7 +798,7 @@ function setup_dnsmasq() {
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 setup_lighttpd() {
   local sudoerscheck=""
   local group=""
@@ -805,8 +829,7 @@ setup_lighttpd() {
   fi
   
   #Copy Config and change user name
-  check_file_exists "$INSTALL_LOCATION/conf/lighttpd.conf" 24
-  sudo cp "$INSTALL_LOCATION/conf/lighttpd.conf" /etc/lighttpd/lighttpd.conf
+  copy_file "$INSTALL_LOCATION/conf/lighttpd.conf" /etc/lighttpd/lighttpd.conf
   sudo sed -i "s/changegroup/$group/" /etc/lighttpd/lighttpd.conf
   sudo sed -i "s/changehost/$hostname/" /etc/lighttpd/lighttpd.conf
   
@@ -868,7 +891,7 @@ setup_lighttpd() {
   if [ "$(command -v pacman)" ]; then          #Custom setup for Arch
     create_folder "/etc/lighttpd/conf.d"
     
-    sudo cp "$INSTALL_LOCATION/conf/fastcgi.conf" /etc/lighttpd/conf.d/fastcgi.conf
+    copy_file "$INSTALL_LOCATION/conf/fastcgi.conf" /etc/lighttpd/conf.d/fastcgi.conf
     echo 'include "conf.d/fastcgi.conf"' | sudo tee -a /etc/lighttpd/lighttpd.conf
     sudo sed -i "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=1/" /etc/php/php.ini
     sudo sed -i "s/;extension=mysqli.so/extension=mysqli.so/" /etc/php/php.ini
@@ -881,55 +904,84 @@ setup_lighttpd() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Setup MariaDB
-#   Setup DB and Tables for Maria DB
+#   Setup user account and password (TODO) for Maria DB
 # Globals:
-#   None
+#   DBUSER, DBPASSWORD, DBNAME
 # Arguments:
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function setup_mariadb() {
+  local dbconfig="$INSTALL_LOCATION/admin/settings/dbconfig.php"
   local rootpass=""
 
   echo "Setting up MariaDB"
   echo -n "Please enter MariaDB root password you set earlier (leave blank if not set): "
   read -r rootpass;
   
+  #Create a random password
+  #DBPASSWORD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 40 | head -n 1)"
+
+
   echo
-  echo "Creating User ntrk"
-  sudo mysql --user=root --password="$rootpass" -e "CREATE USER 'ntrk'@'localhost' IDENTIFIED BY 'ntrkpass';"
+  echo "Creating User $DBUSER"
+  sudo mysql --user=root --password="$rootpass" -e "CREATE USER '$DBUSER'@'localhost' IDENTIFIED BY '$DBPASSWORD';"
   
   #Check to see if ntrk user has been added
   if [[ ! `sudo mysql -sN --user=root --password="$rootpass" -e "SELECT User FROM mysql.user"` =~ ntrk[[:space:]]root ]]; then
     error_exit "MariaDB command failed, have you entered incorrect root password?" "35"
   fi
   
-  echo "Creating Database ntrkdb"
-  sudo mysql --user=root --password="$rootpass" -e "CREATE DATABASE ntrkdb;"
+  echo "Creating Database $DBNAME"
+  sudo mysql --user=root --password="$rootpass" -e "CREATE DATABASE $DBNAME;"
     
   echo "Setting privilages for ntrk user"
-  sudo mysql --user=root --password="$rootpass" -e "GRANT ALL PRIVILEGES ON ntrkdb.* TO 'ntrk'@'localhost';"
+  sudo mysql --user=root --password="$rootpass" -e "GRANT ALL PRIVILEGES ON $DBNAME.* TO 'ntrk'@'localhost';"
   sudo mysql --user=root --password="$rootpass" -e "GRANT FILE ON *.* TO 'ntrk'@'localhost';"
   #GRANT INSERT, SELECT, DELETE, UPDATE ON database.* TO 'user'@'localhost' IDENTIFIED BY 'password';
   sudo mysql --user=root --password="$rootpass" -e "FLUSH PRIVILEGES;"
-  
-  echo "Creating Tables"
-  #Analytics
-  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE IF NOT EXISTS analytics (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, dns_result CHAR(1), issue TINYTEXT, ack BOOLEAN);"
-  #dnslog
-  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE dnslog (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, dns_result CHAR(1));"
-  #users (not yet used)
-  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE users (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, user TINYTEXT, pass TEXT, level CHAR(1));"
-  #blocklist
-  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE blocklist (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, bl_source TINYTEXT, site TINYTEXT, site_status BOOLEAN, comment TEXT);"
-  #weblog
-  mysql --user=ntrk --password=ntrkpass -D ntrkdb -e "CREATE TABLE weblog (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, site TINYTEXT, http_method CHAR(4), uri_path TEXT, referrer TEXT, user_agent TEXT, remote_host TEXT);"
 
+  # NOTE This feature will be enabled in NoTrack 0.9.7
+  #add password to local dbconfig.php
+  #touch "$dbconfig"
+  #echo "<?php" > "$dbconfig"
+  #echo "//Local MariaDB password generated at install" >> "$dbconfig"
+  #echo "\$dbconfig->password = '$dbpassword';" >> "$dbconfig"
+  #echo "?>" >> "$dbconfig"
+
+  #Create CRON Job for ntrk-parse
   echo "Creating cron job for Log Parser in /etc/cron.d"
   echo -e "*/4 * * * *\troot\t/usr/local/sbin/ntrk-parse" | sudo tee /etc/cron.d/ntrk-parse &> /dev/null
+
+  echo
+}
+
+
+#######################################
+# Create MariaDB Tables
+# Globals:
+#   DBUSER, DBPASSWORD, DBNAME
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+function create_tables() {
+  echo "Creating Tables in MariaDB"
+
+  #Analytics
+  mysql --user="$DBUSER" --password="$DBPASSWORD" -D "$DBNAME" -e "CREATE TABLE IF NOT EXISTS analytics (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, dns_result CHAR(1), issue TINYTEXT, ack BOOLEAN);"
+  #dnslog
+  mysql --user="$DBUSER" --password="$DBPASSWORD" -D "$DBNAME" -e "CREATE TABLE dnslog (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, dns_result CHAR(1));"
+  #users (not yet used)
+  mysql --user="$DBUSER" --password="$DBPASSWORD" -D "$DBNAME" -e "CREATE TABLE users (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, user TINYTEXT, pass TEXT, level CHAR(1));"
+  #blocklist
+  mysql --user="$DBUSER" --password="$DBPASSWORD" -D "$DBNAME" -e "CREATE TABLE blocklist (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, bl_source TINYTEXT, site TINYTEXT, site_status BOOLEAN, comment TEXT);"
+  #weblog
+  mysql --user="$DBUSER" --password="$DBPASSWORD" -D "$DBNAME" -e "CREATE TABLE weblog (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, log_time DATETIME, site TINYTEXT, http_method CHAR(4), uri_path TEXT, referrer TEXT, user_agent TEXT, remote_host TEXT);"
 
   echo "MariaDB setup complete"
   echo "========================================================="
@@ -1320,9 +1372,7 @@ get_network_start_address(){
 restore_dhcpcd_config() {
   if [ -e "$DHCPCD_CONF_OLD_PATH" ]; then
     echo "Restoring dhcpcd config files"
-  
-    echo "Copying $DHCPCD_CONF_OLD_PATH to $DHCPCD_CONF_PATH"
-    sudo cp $DHCPCD_CONF_OLD_PATH $DHCPCD_CONF_PATH
+    copy_file $DHCPCD_CONF_OLD_PATH $DHCPCD_CONF_PATH
   fi
   echo
 }
@@ -1342,7 +1392,7 @@ backup_dhcpcd_config() {
   
   echo "Copying $DHCPCD_CONF_PATH to $DHCPCD_CONF_OLD_PATH"
   if [ -e "$DHCPCD_CONF_PATH" ]; then
-    sudo cp $DHCPCD_CONF_PATH $DHCPCD_CONF_OLD_PATH
+    copy_file $DHCPCD_CONF_PATH $DHCPCD_CONF_OLD_PATH
   fi
   echo
 }
@@ -1362,7 +1412,7 @@ restore_network_interfaces_config() {
     echo "Restoring network interfaces config files"
   
     echo "Copying $NETWORK_INTERFACES_OLD_PATH to $NETWORK_INTERFACES_PATH"
-    sudo cp $NETWORK_INTERFACES_OLD_PATH $NETWORK_INTERFACES_PATH
+    copy_file $NETWORK_INTERFACES_OLD_PATH $NETWORK_INTERFACES_PATH
   fi
   echo
 }
@@ -1382,7 +1432,7 @@ backup_network_interfaces_config() {
   
   echo "Copying $NETWORK_INTERFACES_PATH to $NETWORK_INTERFACES_OLD_PATH"
   if [ -e "$NETWORK_INTERFACES_PATH" ]; then
-    sudo cp $NETWORK_INTERFACES_PATH $NETWORK_INTERFACES_OLD_PATH
+    copy_file $NETWORK_INTERFACES_PATH $NETWORK_INTERFACES_OLD_PATH
   fi
   echo
 }
@@ -1743,6 +1793,7 @@ copy_scripts                                     #Copy NoTrack script files
 setup_dnsmasq
 setup_lighttpd
 setup_mariadb
+create_tables
 setup_notrack
 
 if [ "$(command -v firewall-cmd)" ]; then        #Check FirewallD exists
