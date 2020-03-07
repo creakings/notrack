@@ -18,7 +18,7 @@ INSTALL_LOCATION=""
 USERNAME=""
 
 
-#--------------------------------------------------------------------
+#######################################
 # Copy File
 #   Checks if Source file exists, then copies it to Destination
 #
@@ -29,7 +29,7 @@ USERNAME=""
 #   $2: Destination
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function copy_file() {
   if [ -e "$INSTALL_LOCATION/$1" ]; then                   #Does file exist?
     cp "$INSTALL_LOCATION/$1" "$2"
@@ -40,19 +40,19 @@ function copy_file() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Rename File
 #   Renames Source file to Destination
-#   Chmod 755 Destination file
+#   Set permissions to -rwxr-xr-x
 #
 # Globals:
 #   None
 # Arguments:
-#   $1: Error Message
-#   $2: Exit Code
+#   $1: Source
+#   $2: Destination
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function rename_file() {
   if [ -e "$1" ]; then                                     #Does file exist?
     mv "$1" "$2"
@@ -63,7 +63,7 @@ function rename_file() {
 }
 
 
-#--------------------------------------------------------------------
+#######################################
 # Find NoTrack
 #   Find where NoTrack is installed
 #   1. Check users home folders
@@ -76,7 +76,7 @@ function rename_file() {
 #   None
 # Returns:
 #   None
-#--------------------------------------------------------------------
+#######################################
 function find_notrack {
   for homefolder in /home/*; do                                  #Try and find notrack folder in /home/users
     if [ -d "$homefolder/notrack" ]; then 
@@ -105,7 +105,7 @@ function find_notrack {
 
 }
 
-#--------------------------------------------------------------------
+#######################################
 if [[ "$(id -u)" != "0" ]]; then
   echo "Root access is required to carry out upgrade of NoTrack"
   echo "Usage: sudo ntrk-upgrade"
