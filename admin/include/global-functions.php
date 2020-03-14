@@ -194,20 +194,25 @@ function filter_bool($value) {
 
 /********************************************************************
  *  Filter Domain
- *    perform regex match to see if url is in the form of some-site.com, or some_site.co.uk
+ *    1. Check Domain length (must be less than 253 chars)
+ *    2. Perform regex match to see if domain is in the form of some-site.com, or some_site.co.uk
  *
  *  Regex:
  *    Group 1: *. (optional)
  *    Group 2: subdomain(s) (optional)
- *    Group 3: domain
- *    Group 4: TLD
+ *    Group 3: domain 1 to 63 chars
+ *    Group 4: TLD 2 to 63 chars
  *  Params:
  *    Domain to check
  *  Return:
  *    True on success, False on failure
  */
 function filter_domain($domain) {
-  if (preg_match('/^(\*\.)?([\w\-_\.]+)?[\w\-_]+\.[\w\-]+$/', $domain) > 0) {
+  if (strlen($domain) > 253) {
+    return false;
+  }
+
+  if (preg_match('/^(\*\.)?([\w\-_\.]+)?[\w\-_]{1,63}\.[\w\-]{2,63}$//', $domain) > 0) {
     return true;
   }
   else {
