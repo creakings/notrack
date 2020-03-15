@@ -50,6 +50,10 @@ dedupcount = 0
 domaincount = 0
 totaldedupcount = 0
 
+
+#######################################
+# Regular Expressions
+#######################################
 Regex_Defanged = re.compile('^(?:f[txX]p|h[txX][txX]ps?)\[?:\]?\/\/([\w\.\-_\[\]]{1,250}\[?\.\]?[\w\-]{2,63})')
 
 #Regex to extract domain.co.uk from subdomain.domain.co.uk
@@ -242,6 +246,7 @@ class Services:
             self.dhcp_config = '/etc/dnsmasq.d/dhcp.conf'
         elif shutil.which('bind') != None:
             self.__dnsserver = 'bind'
+            self.dnsserver_name = 'Bind'
         else:
             print('Services Init: Fatal Error - Unable to identify DNS server')
             sys.exit(8)
@@ -256,6 +261,7 @@ class Services:
             print('Services Init: Fatal Error - Unable to identify Web server')
             sys.exit(9)
         print('Services Init: Identified Web server %s' % self.__webserver)
+        print()
 
 
     """ Restart Service
@@ -293,8 +299,31 @@ def add_blacklist(domain):
 def add_whitelist(domain):
     return dnsserver_whitelist % domain
 
+
+""" String to Bool
+    Convert string to boolean value
+Args:
+    String
+Returns:
+    True or False
+"""
 def str2bool(v):
     return v.lower() in ('1', 'true', 'yes')
+
+
+""" Check Root
+    Check script is being run as root
+Args:
+    None
+Returns:
+    None
+"""
+def check_root():
+    if os.geteuid() != 0:
+        print('Error - This script must be run as root')
+        print('NoTrack must be run as root', file=sys.stderr)
+        sys.exit(2)
+
 
 """ Load Config
 Args:
@@ -308,6 +337,7 @@ def load_config():
     Regex_BLLine = re.compile('^(bl_[a-z_]+)\s+=\s+([01])\n')
     Regex_ConfLine = re.compile('^([\w_]+)\s+=\s+(.+)\n')
 
+    print('Loading Config')
     conflines = read_file(folders.notrack_config)
 
     for line in conflines:
@@ -337,6 +367,14 @@ def create_sqltables():
     cursor.execute(cmd);
     cursor.close()
 
+
+""" Clear Table
+    Clear blocklist table and reset serial increment
+Args:
+    None
+Returns:
+    None
+"""
 def clear_table():
     cursor = db.cursor()
 
@@ -345,59 +383,67 @@ def clear_table():
     cursor.close()
 
 
+""" Insert data into SQL table blocklist
+    Bulk insert a list into MariaDB
+Args:
+    List of data
+Returns:
+    None
+"""
 def insert_data(sqldata):
-
+    cmd = ''
     cursor = db.cursor()
 
-    cmd = "INSERT INTO blocklist (id, bl_source, site, site_status, comment) VALUES (NULL, %s, %s, %s, %s)"
+    cmd = 'INSERT INTO blocklist (id, bl_source, site, site_status, comment) VALUES (NULL, %s, %s, %s, %s)'
 
     cursor.executemany(cmd, sqldata)
     db.commit()
     cursor.close()
 
-""" Add Domain
-    Process supplied domain and and it to blocklist:
-    1. Extract domain.co.uk from say subdomain.domain.co.uk
-    2. Check if domain.co.uk is in blockdomiandict
-    3. if subdomain is actually a Domain then record Domain in blockdomiandict
-    4. Reverse subdomain
-    5. Append to blocklist as [reverse, subdomain, comment, source]
+
+""" Delete File
+    1. Check file exists
+    2. Delete file
 Args:
-    Subdomain - Subdomain or Domain
-    Comment - A comment
-    Source - Block list name
+    File to delete
 Returns:
-    None
+    True on success
+    False on failure or not needed
 """
-def add_domain(subdomain, comment, source):
-    global blocklist, dedupcount, domaincount, totaldedupcount
+def delete_file(filename):
+    if os.path.isfile(filename):
+        os.remove(filename)
+        return True
 
-    reverse = ''
+    return False
 
-    matches = Regex_Domain.search(subdomain)
-    if matches == None:                                    #Shouln't happen
-        return
 
-    if matches.group(0) in blockdomiandict:                #Blocked by domain or whitelisted?
-        #print('\t%s is already in blockdomiandict as %s' % (subdomain, matches.group(0)))
-        dedupcount += 1
-        totaldedupcount += 1
-        return
 
-    if matches.group(2) in blocktlddict:                   #Blocked by TLD?
-        #print('\t%s is blocked by TLD as %s' % (subdomain, matches.group(2)))
-        return
 
-    if matches.group(0) == subdomain:                      #Add domain.co.uk to blockdomiandict
-        #print('Adding domain %s' % subdomain)
-        blockdomiandict[subdomain] = True
+""" Move File
+    1. Check source exists
+    2. Move file
+Args:
+    source
+    destination
+Returns:
+    True on success
+    False on failure
+"""
+def move_file(source, destination):
+    if not os.path.isfile(source):
+        print('Move_file: Error %s is missing' % source)
+        return False
 
-    #Reverse the domain for later sorting and deduplication
-    #As Extra dot is required to match other subdomains and avoid similar spellings
-    reverse = subdomain[::-1] + '.'
+    #Copy specified file
+    print('\tMoving %s to %s' % (source, destination))
+    shutil.move(source, destination)
 
-    blocklist.append(tuple([reverse, subdomain, comment, source]))
-    domaincount += 1
+    if not os.path.isfile(destination):
+        print('Move_file: Error %s does not exist. Copy failed')
+        return False
+
+    return True
 
 
 """ Read CSV
@@ -451,11 +497,107 @@ def read_file(filename):
     return filelines
 
 
-def save_file(domains, filename):
-    f = open(filename, 'w')
-    f.writelines(domains)
-    f.close()
+""" Save Blob
+    Save a binary blob to a file
+Args:
+    None
+Returns:
+    None
+"""
+def save_blob(data, filename):
+    try:
+        f = open(filename, 'wb')                           #Open file for binary writing
+    except IOError:
+        print('Error writing to %s' % filename)
+    except OSError as e:
+        print('OS error: {0}'.format(e))  #TODO review this error
+    else:
+        f.write(data)
+    finally:
+        f.close()
 
+
+""" Save File
+    Save a list into a file
+Args:
+    None
+Returns:
+    None
+"""
+def save_list(domains, filename):
+    try:
+        f = open(filename, 'w')                            #Open file for ascii writing
+    except IOError:
+        print('Error writing to %s' % filename)
+    except OSError as e:
+        print('OS error: {0}'.format(e))  #TODO review this error
+    else:
+        f.writelines(domains)
+    finally:
+        f.close()
+
+
+""" Extract Zip
+    Unzip a file to destination
+Args:
+    Zip file, Output destination
+Returns:
+    None
+"""
+def extract_zip(inputfile, destination):
+    from zipfile import ZipFile
+
+    with ZipFile(inputfile) as zipobj:
+        for compressedfile in zipobj.namelist():
+            if compressedfile.endswith('.txt'):
+                zipobj.extract(compressedfile, folders.temp)
+                print('\tExtracting %s' % compressedfile)
+                move_file(folders.temp + compressedfile, destination)
+
+
+""" Add Domain
+    Process supplied domain and add it to blocklist:
+    1. Extract domain.co.uk from say subdomain.domain.co.uk
+    2. Check if domain.co.uk is in blockdomiandict
+    3. if subdomain is actually a Domain then record Domain in blockdomiandict
+    4. Reverse subdomain
+    5. Append to blocklist as [reverse, subdomain, comment, source]
+Args:
+    Subdomain - Subdomain or Domain
+    Comment - A comment
+    Source - Block list name
+Returns:
+    None
+"""
+def add_domain(subdomain, comment, source):
+    global blocklist, dedupcount, domaincount, totaldedupcount
+
+    reverse = ''
+
+    matches = Regex_Domain.search(subdomain)
+    if matches == None:                                    #Shouldn't happen
+        return
+
+    if matches.group(0) in blockdomiandict:                #Blocked by domain or whitelisted?
+        #print('\t%s is already in blockdomiandict as %s' % (subdomain, matches.group(0)))
+        dedupcount += 1
+        totaldedupcount += 1
+        return
+
+    if matches.group(2) in blocktlddict:                   #Blocked by TLD?
+        #print('\t%s is blocked by TLD as %s' % (subdomain, matches.group(2)))
+        return
+
+    if matches.group(0) == subdomain:                      #Add domain.co.uk to blockdomiandict
+        #print('Adding domain %s' % subdomain)
+        blockdomiandict[subdomain] = True
+
+    #Reverse the domain for later sorting and deduplication
+    #An Extra dot is required to match other subdomains and avoid similar spellings
+    reverse = subdomain[::-1] + '.'
+
+    blocklist.append(tuple([reverse, subdomain, comment, source]))
+    domaincount += 1
 
 """ Match Defanged Line
     Checks custom blocklist file line against Defanged List line regex
@@ -474,6 +616,7 @@ def match_defanged(line, listname):
         return True
 
     return False                                           #Nothing found, return False
+
 
 """ Match Easy Line
     Checks custom blocklist file line against Easy List line regex
@@ -529,12 +672,11 @@ def match_unixline(line, listname):
     return False                                           #Nothing found, return False
 
 
-#readonly REGEX_DEFANGED="^(f[xX]p|ftp|h[xX][xX]ps?|https?):\/\/([\.A-Za-z0-9_-]+)\/?.*$"
-
-
-
 """ Process Custom List
+    We don't know what type of list this is, so try regex match against different types
     1. Reset Dedup and Domain counters
+    2. Read list of lines
+    3. Try different regex matches
 
 Args:
     List of Lines
@@ -551,14 +693,13 @@ def process_customlist(lines, listname):
     print('\t%d lines to process' % len(lines))
 
     for line in lines:                                     #Read through list
-        if match_plainline(line, listname):
+        if match_plainline(line, listname):                #Try against Plain line
             continue
-        if match_easyline(line, listname):
+        if match_easyline(line, listname):                 #Try agaisnt Easy List
             continue
-        if match_unixline(line, listname):
+        if match_unixline(line, listname):                 #Try against Unix List
             continue
-        if match_defanged(line, listname):
-            continue
+        match_defanged(line, listname)                     #Finally try against Defanged
 
     print('\tAdded %d domains' % domaincount)              #Show stats for the list
     print('\tDeduplicated %d domains' % dedupcount)
@@ -657,7 +798,7 @@ def process_unixlist(lines, listname):
     print('\tDeduplicated %d domains' % dedupcount)
 
 
-""" Process TLD List
+""" Process Top Level Domain List
     1. Load users black & white tld lists
     2. Load NoTrack provided tld csv
     3. Create blocktlddict from High risk tld not in whitelist and Low risk tld in blacklist
@@ -722,7 +863,7 @@ def process_tldlist():
 
     if len(dns_whitelist) > 0:                             #Any domains in whitelist?
         print('\t%d domains added to whitelist in order avoid block from TLD' % len(dns_whitelist))
-        save_file(dns_whitelist, folders.dnslists + 'whitelist.txt')
+        save_list(dns_whitelist, folders.dnslists + 'whitelist.txt')
     else:
         print('\tNo domains require whitelisting')
         #delete TODO
@@ -772,7 +913,16 @@ def process_whitelist():
     print('')
 
 
-
+""" Check File Age
+    1. Has FORCE been set?
+    2. Does file exist?
+    3. Check last modified time is within MAX_AGE (2 days)
+Args:
+    File
+Returns:
+    True - Update list
+    False - List within MAX_AGE
+"""
 def check_file_age(filename):
     print('\tChecking age of %s' % filename)
     if FORCE:
@@ -791,15 +941,25 @@ def check_file_age(filename):
     return False
 
 
-def download_file(request, listname, destination):
+""" Download File
+    1. Make 3 attempts at downloading a file
+    2. Save File
+    3. Request file is unzipped (if necessary)
+Args:
+    URL, List Name, File Destination
+Returns:
+    True - Success
+    False - Failed download
+"""
+def download_file(url, listname, destination):
     extension = ''
     outputfile = ''
 
-    print('\tDownloading %s' % request)
+    print('\tDownloading %s' % url)
 
     for i in range(1, 4):
         try:
-            response = urlopen(request)
+            response = urlopen(url)
         except HTTPError as e:
             if e.code >= 500 and e.code < 600:
                 #Take another attempt up to max of for loop
@@ -815,14 +975,14 @@ def download_file(request, listname, destination):
                 return False
             elif e.code == 429:
                 print('\tHTTP Error 429: Too many requests')
-            print('\t%s' % request)
+            print('\t%s' % url)
         except URLError as e:
             if hasattr(e, 'reason'):
-                print('\tError downloading %s' % request)
+                print('\tError downloading %s' % url)
                 print('\tReason: %s' % e.reason)
                 return False
             elif hasattr(e, 'code'):
-                print('\t%s' % request)
+                print('\t%s' % url)
                 print('Server was unable to fulfill the request')
                 print('\tHTTP Error: %d' % e.code)
                 return False
@@ -834,64 +994,23 @@ def download_file(request, listname, destination):
                 print('\tHTTP Response 204: No data found')
                 return False
             else:
-                print('\t%s' % request)
+                print('\t%s' % url)
                 print('\tHTTP Response %d' % res_code)
 
         sleep(i * 2)                                       #Throttle repeat attemps
 
-
     #Prepare for writing downloaded file to temp folder
-    if request.endswith('zip'):                            #Check file extension
+    if url.endswith('zip'):                                #Check file extension
         extension = 'zip'
         outputfile = '%s%s.zip' % (folders.temp, listname)
     else:                                                  #Other - Assume txt for output
         extension = 'txt'
         outputfile = destination
 
-    #Write file to temp folder
-    f = open(outputfile, 'wb')
-    f.write(response.read())                               #Write output of download
-    f.close()
+    save_blob(response.read(), outputfile)                 #Write file to temp folder
 
     if extension == 'zip':                                 #Extract zip file?
         extract_zip(outputfile, destination)
-
-    return True
-
-
-def extract_zip(inputfile, destination):
-    from zipfile import ZipFile
-
-    with ZipFile(inputfile) as zipobj:
-        for compressedfile in zipobj.namelist():
-            if compressedfile.endswith('.txt'):
-                zipobj.extract(compressedfile, folders.temp)
-                print('\tExtracting %s' % compressedfile)
-                move_file(folders.temp + compressedfile, destination)
-
-
-""" Move File
-    1. Check source exists
-    2. Move file
-Args:
-    source
-    destination
-Returns:
-    True on success
-    False on failure
-"""
-def move_file(source, destination):
-    if not os.path.isfile(source):
-        print('Move_file: Error %s is missing' % source)
-        return False
-
-    #Copy specified file
-    print('\tMoving %s to %s' % (source, destination))
-    shutil.move(source, destination)
-
-    if not os.path.isfile(destination):
-        print('Move_file: Error %s does not exist. Copy failed')
-        return False
 
     return True
 
@@ -1059,8 +1178,37 @@ def dedup_lists():
     print('Further deduplicated %d domains' % dedupcount)
     print('Final number of domains in blocklist: %d' % len(dns_blacklist))
 
-    save_file(dns_blacklist, folders.dnslists + 'notrack.list')
+    save_list(dns_blacklist, folders.dnslists + 'notrack.list')
     insert_data(sqldata)
+
+
+""" Test
+    Display Config and version number
+Args:
+    None
+Returns:
+    None
+"""
+def test():
+
+    print('NoTrack Config Test')
+    print('NoTrack version %s' % VERSION)
+    print()
+    print('Hostname: %s' % host.name)
+    print('IP Address: %s' % host.ip)
+    print()
+    print('Block Lists Utilised:')
+
+    for bl in blocklistconf.items():
+        if bl[1][0]:
+            print(bl[0])
+
+    print()
+    if config['bl_custom'] == '':
+        print('No additional custom block lists utilised')
+    else:
+        print('Additional custom block lists utilised:')
+        print(config['bl_custom'].replace(',', '\n'))
 
 
 #Main----------------------------------------------------------------
@@ -1068,7 +1216,30 @@ def dedup_lists():
 #Add any OS specific folder locations
 blocklistconf['bl_usersblacklist'] = tuple([True, folders.blacklist, TYPE_PLAIN])
 
+#Declare classes
+host = Host()
+services = Services()
+
 load_config()
+
+
+parser = argparse.ArgumentParser(description = 'NoTrack')
+#parser.add_argument('-p', "--play", help='Start Blocking', action='store_true')
+#parser.add_argument('-s', "--stop", help='Stop Blocking', action='store_true')
+#parser.add_argument('--pause', help='Pause Blocking', type=int)
+parser.add_argument('--force', help='Force update block lists', action='store_true')
+parser.add_argument('--test', help='Show current configuration', action='store_true')
+#parser.add_argument('--parsing', help='Parser update time', type=int)
+#parser.add_argument('--run', help='Run NoTrack', choices=['now', 'wait', 'force'])
+
+args = parser.parse_args()
+
+if args.force:                                             #Download blocklists
+    FORCE = True
+if args.test:
+    test()
+    sys.exit(0)
+
 
 print('Opening connection to MariaDB')
 db = mariadb.connect(user=dbconf.user, password=dbconf.password, database=dbconf.database)
@@ -1102,111 +1273,8 @@ IPVersion="IPv4"
 
 declare -A Config                                #Config array for Block Lists
 
-#######################################
-# Constants
-#######################################
-readonly VERSION="0.9.4"
-
-readonly CHECKTIME=257400                        #Time in Seconds between downloading lists (3 days - 30mins)
-readonly USER="ntrk"
-readonly PASSWORD="ntrkpass"
-readonly DBNAME="ntrkdb"
-
-readonly REGEX_IPV4="^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
-readonly REGEX_DEFANGED="^(f[xX]p|ftp|h[xX][xX]ps?|https?):\/\/([\.A-Za-z0-9_-]+)\/?.*$"
-readonly REGEX_EASY="^\|\|([A-Za-z0-9._-]+)(\^|\/|$)(\$third-party|\$popup|\$popup\,third\-party)?$"
-readonly REGEX_PLAINLINE="^([A-Za-z0-9_-]+\.[A-Za-z0-9._-]+)[[:space:]]?#?([^#]*)$"
-readonly REGEX_UNIX="^(127\.0\.0\.1|0\.0\.0\.0)[[:space:]]+([A-Za-z0-9_-]+\.[A-Za-z0-9._-]+)[[:space:]]*#?(.*)\n?$"
-
-declare -A urls                                  #Block lists locations
 
 
-
-#######################################
-# Global Variables
-#######################################
-FORCE=0                                          #Force update block list
-EXECTIME=$(date +%s)                             #Time at Execution
-filetime=0                                       #Return value from get_filetime
-oldversion="$VERSION"
-declare -i jumppoint=0                           #Percentage increment
-declare -i percentpoint=0                        #Number of lines to loop through before a percentage increment is hit
-declare -i dedup=0                               #Count of Deduplication
-
-declare -A domainlist                            #Associative to store domains being blocked
-declare -a sqllist                              #Array to store each list for entering into MariaDB
-declare -A tldlist                               #Associative to check if TLD blocked
-declare -A whitelist                             #associative array for referencing domains in White List
-
-
-#######################################
-# Error Exit
-#
-# Globals:
-#   None
-# Arguments:
-#  $1. Error Message
-#  $2. Exit Code
-# Returns:
-#   None
-#
-#######################################
-function error_exit() {
-  echo "Error: $1"
-  echo "Aborting"
-  exit "$2"
-}
-
-
-#######################################
-# Restart service
-#    with either systemd or sysvinit or runit
-#
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#
-#######################################
-service_restart() {
-  if [[ -n $1 ]]; then
-    echo "Restarting $1"
-    if [ "$(command -v systemctl)" ]; then       #systemd
-      sudo systemctl restart "$1"
-    elif [ "$(command -v service)" ]; then       #sysvinit
-      sudo service "$1" restart
-    elif [ "$(command -v sv)" ]; then            #runit
-      sudo sv restart "$1"
-    else
-      error_exit "Unable to restart services. Unknown service supervisor" "21"
-    fi
-  fi
-}
-
-
-
-
-
-#######################################
-# Delete Old File
-#   Checks if a file exists and then deletes it
-#
-# Globals:
-#   None
-# Arguments:
-#   $1. File to delete
-# Returns:
-#   None
-#
-#######################################
-function delete_file() {
-  if [ -e "$1" ]; then                                     #Does file exist?
-    echo "Deleting file: $1"
-    rm "$1"                                                #If yes then delete it
-  fi
-}
 
 
 
@@ -1235,74 +1303,6 @@ function check_root() {
   fi
 }
 
-
-#######################################
-# Delete Blocklist table
-#   1. Delete all rows in Table
-#   2. Reset Counter
-#
-# Globals:
-#   USER, PASSWORD, DBNAME
-# Arguments:
-#   None
-# Returns:
-#   None
-#
-#######################################
-function delete_table() {
-  echo "Clearing Blocklist Table"
-
-  echo "DELETE FROM blocklist;" | mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME"
-  echo "ALTER TABLE blocklist AUTO_INCREMENT = 1;" | mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME"
-}
-
-
-#######################################
-# Download File
-#   1. Download file with wget
-#   2. Check return value of wget
-#   3. Check if file exists
-#
-# Globals:
-#   None
-# Arguments:
-#   $1. Output File
-#   $2. URL
-# Returns:
-#   0. success
-#   >=1. fail
-#
-#######################################
-function download_file() {
-  local exitstatus=0
-
-  echo "Downloading $2"
-  wget -qO "$1" "$2"                                       #Download with wget
-
-  exitstatus="$?"
-
-  if [ $exitstatus -eq 0 ]; then
-    if [ -s "$1" ]; then                                   #Check if file has been downloaded
-      return 0                                             #Success
-    else
-      echo "Error: download_file - File not downloaded"
-      return 1
-    fi
-  fi
-
-  case $exitstatus in                                      #Review exit code of wget
-    "1") echo "Error: download_file - Generic error" ;;
-    "2") echo "Error: download_file - Parsing error" ;;
-    "3") echo "Error: download_file - File I/O error" ;;
-    "4") echo error_exit "download_file - Network error" "30" ;;
-    "5") echo "Error: download_file - SSL verification failure" ;;
-    "6") echo "Error: download_file - Authentication failure" ;;
-    "7") echo "Error: download_file - Protocol error" ;;
-    "8") echo "Error: download_file - File not available on server" ;;
-  esac
-
-  return "$exitstatus"
-}
 
 
 #######################################
@@ -1388,31 +1388,6 @@ function get_ip() {
 }
 
 
-
-#######################################
-# Get Blacklist
-#   Get Users Custom Blacklist
-#
-# Globals:
-#   FILE_BLACKLIST, sqllist
-# Arguments:
-#   None
-# Returns:
-#   None
-#
-#######################################
-function get_blacklist() {
-  echo "Processing Custom Black List"
-  process_list "$FILE_BLACKLIST" TYPE_PLAIN
-
-  if [ ${#sqllist[@]} -gt 0 ]; then                         #Get size of sqllist
-    insert_data "custom"
-  fi
-  echo "Finished processing Custom Black List"
-  echo
-}
-
-
 #######################################
 # Get Custom Blocklists
 #   Get the users custom blocklists from either download or local file
@@ -1485,443 +1460,6 @@ function get_custom_blocklists() {
 }
 
 
-#######################################
-# Process Custom Blocklist
-#   1. Calculate percentpoint
-#   2. Attempt to match against a known pattern line
-#
-# Globals:
-#   sqllist, jumppoint, percentpoint
-# Arguments:
-#   $1. List file
-#   $2. filename for temp csv
-# Returns:
-#   None
-#
-#######################################
-function process_custom_blocklist() {
-  local listfile="$1"
-  local csvfile="$2"
-  local i=0
-  local j=0
-  local line=""
-
-  calc_percentpoint "$1"
-  i=1                                                      #Progress counter
-  j=$jumppoint                                             #Jump in percent
-
-  while IFS=$'\n\r' read -r line
-  do
-    if [[ ! $line =~ ^# ]] && [[ -n $line ]]; then  
-      if ! match_plainline "$line"; then
-        if ! match_easyline "$line"; then
-          if ! match_unixline "$line"; then
-            match_defangedline "$line"
-          fi          
-        fi        
-      fi
-    fi
-
-    if [ $i -ge $percentpoint ]; then                      #Display progress
-      echo -ne " $j%  \r"                                  #Echo without return
-      j=$((j + jumppoint))
-      i=0
-    fi
-    ((i++))
-  done < "$listfile"
-  echo " 100%"
-
-  unset IFS
-  
-  if [ ${#sqllist[@]} -gt 0 ]; then                       #Any domains in the block list?
-    insert_data "custom_$csvfile"
-    echo "Finished processing $csvfile"
-  else                                                     #No domains in block list
-    echo "No domains extracted from block list"
-  fi
-  
-  echo
-}
-
-
-#######################################
-# Insert Data into SQL Table
-#   1. Save sqllist array to .csv file
-#   2. Bulk write csv file into MariaDB
-#   3. Delete .csv file
-#
-# Globals:
-#   sqllist
-# Arguments:
-#   $1. Blocklist
-# Returns:
-#   None
-#
-#######################################
-function insert_data() {
-  printf "%s\n" "${sqllist[@]}" > "/tmp/$1.csv"           #Output arrays to file
-
-  mysql --user="$USER" --password="$PASSWORD" -D "$DBNAME" -e "LOAD DATA INFILE '/tmp/$1.csv' INTO TABLE blocklist FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\n' (@var1, @var2, @var3) SET id=NULL, bl_source = '$1', site = @var1, site_status=@var2, comment=@var3;"
-  delete_file "/tmp/$1.csv"
-
-  sqllist=()                                              #Zero SQL Array
-}
-
-
-#######################################
-# Check If mysql or MariaDB is installed
-#   exits if not installed
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#
-#######################################
-function is_sql_installed() {
-  if [ -z "$(command -v mysql)" ]; then
-    echo "NoTrack requires MySql or MariaDB to be installed"
-    echo "Run install.sh -sql"
-    exit 60
-  fi
-}
-
-
-#######################################
-# Check if an update is required
-#   Triggers for Update being required:
-#   1. -f or --forced
-#   2 Block list older than 3 days
-#   3 White list recently modified
-#   4 Black list recently modified
-#   5 Config recently modified
-#   6 Domain White list recently modified
-#   7 Domain Black list recently modified
-#   8 Domain CSV recently modified
-# Globals:
-#   FORCE
-#   FILE_BLACKLIST, FILE_WHITELIST, FILE_CONFIG, FILE_TLDBLACK, FILE_TLDWHITE
-#   TLD_CSV
-# Arguments:
-#   None
-# Returns:
-#   None
-#
-#######################################
-function is_update_required() {
-  local ftime=0
-
-  if [ $FORCE == 1 ]; then                                 #Force overrides
-    echo "Forced Update"
-    return 0
-  fi
-
-  get_filetime "$MAIN_BLOCKLIST"
-  ftime="$filetime"
-  if [ $ftime -lt $((EXECTIME-CHECKTIME)) ]; then
-    echo "Block List out of date"
-    return 0
-  fi
-
-  get_filetime "$FILE_WHITELIST"
-  if [ $filetime -gt $ftime ]; then
-    echo "White List recently modified"
-    return 0
-  fi
-
-  get_filetime "$FILE_BLACKLIST"
-  if [ $filetime -gt $ftime ]; then
-    echo "Black List recently modified"
-    return 0
-  fi
-
-  get_filetime "$FILE_CONFIG"
-  if [ $filetime -gt $ftime ]; then
-    echo "Config recently modified"
-    return 0
-  fi
-
-  get_filetime "$FILE_TLDWHITE"
-  if [ $filetime -gt $ftime ]; then
-    echo "Domain White List recently modified"
-    return 0
-  fi
-
-  get_filetime "$FILE_TLDBLACK"
-  if [ $filetime -gt $ftime ]; then
-    echo "Domain White List recently modified"
-    return 0
-  fi
-
-  get_filetime "$TLD_CSV"
-  if [ $filetime -gt $ftime ]; then
-    echo "TLD Master List recently modified"
-    return 0
-  fi
-
-  echo "No update required"
-  exit 0
-}
-
-
-
-#######################################
-# Get List
-#   Downloads a blocklist and prepares it for processing
-#
-# Globals:
-#   Config, filetime, sqllist
-# Arguments:
-#   $1. List Name to be Processed
-#   $2. Process Method
-#   $3. List file to use within zip file
-# Returns:
-#   0 on success
-#   1 on error
-#
-#######################################
-function get_list() {
-  local list="$1"
-  local dlfile="/tmp/$1.txt']
-  local zipfile=false
-
-  #Should we process this list according to the Config settings?
-  if [ "${Config[bl_$list]}" == 0 ]; then
-    delete_file "$dlfile"  #If not delete the old file, then leave the function
-    return 0
-  fi
-
-  if [[ ${urls[$list]} =~ \.zip$ ]]; then                  #Is the download a zip file?
-    dlfile="/tmp/$1.zip"
-    zipfile=true
-  fi
-
-  get_filetime "$dlfile"                                   #Is the download in date?
-
-  if [ $filetime -gt $((EXECTIME-CHECKTIME)) ]; then
-    echo "$list in date. Not downloading"
-  else
-    if ! download_file "$dlfile" "${urls[$list]}"; then    #Download out of date list
-      echo "Error: get_list - unable to proceed without ${urls[$list]}"
-      return 1
-    fi
-  fi
-
-  if [[ $zipfile == true ]]; then                          #Do we need to unzip?
-    unzip -o "$dlfile" -d "/tmp/"                          #Unzip not quietly (-q)
-    dlfile="/tmp/$3"                                       #dlfile is now the expected unziped file
-    if [ ! -e "$dlfile" ]; then                            #Check if expected file is there
-      echo "Warning: Can't find file $dlfile"
-      return 1
-    fi
-  fi
-
-  echo "Processing list $list"                             #Inform user
-
-  case $2 in                                               #What type of processing is required?
-    "csv") process_csv "$dlfile" ;;
-    "notrack") process_notracklist "$dlfile" ;;
-    "tldlist") process_tldlist ;;
-    *) process_list "$dlfile" "$2"
-  esac
-
-  if [ ${#sqllist[@]} -gt 0 ]; then                       #Are there any domains in the block list?
-    insert_data "bl_$list"                                 #Add data to SQL table
-    echo "Finished processing $list"
-  else                                                     #No domains in block list
-    echo "No domains extracted from block list"
-  fi
-
-  echo
-}
-
-
-#######################################
-# Process List
-#   Generic processing of block lists based on supplied Process Method
-#
-# Arguments:
-#   $1. List file
-#   $2. Process Method
-# Returns:
-#   None
-#
-#######################################
-function process_list() {
-  local listfile="$1"
-  local process_type="$2"
-  local i=0
-  local j=0
-  local line=""
-
-  calc_percentpoint "$1"
-  i=1                                                      #Progress counter
-  j=$jumppoint                                             #Jump in percent
-
-  while IFS=$'\n\r' read -r line
-  do
-    if [[ ! $line =~ ^# ]] && [[ -n $line ]]; then
-      eval "${process_type}" '"$line"'                     #Call appropriate match function
-    fi
-
-    if [ $i -ge $percentpoint ]; then                      #Display progress
-      echo -ne " $j%  \r"                                  #Echo without return
-      j=$((j + jumppoint))
-      i=0
-    fi
-    ((i++))
-  done < "$listfile"
-  echo " 100%"
-
-  unset IFS
-}
-
-
-#######################################
-# Match Defanged Line
-#
-# Globals:
-#   REGEX_DEFANGED
-# Arguments:
-#   $1. Line to match
-# Returns:
-#   0. Match
-#   1. No Match
-#
-#######################################
-function match_defangedline() {
-  local tmpstr="${1//[\[\]]/}"                             #Remove square brackets
-  
-  if [[ $tmpstr =~ $REGEX_DEFANGED ]]; then
-    add_domain "${BASH_REMATCH[2]}" ""
-  else
-    return 1
-  fi
-  return 0
-}
-
-
-#######################################
-# Match Easy Line
-#   EasyLists contain a mixture of Element hiding rules and third party sites to block.
-#   Disregard anything with a full URL supplied
-#
-# Globals:
-#   REGEX_EASY
-# Arguments:
-#   $1. Line to Match
-# Returns:
-#   0. Match
-#   1. No Match
-# Regex:
-#   Group 1: Domain
-#   Group 2: ^ | / | $  once
-#   Group 3: $third-party | $popup | $popup,third-party
-#
-#######################################
-function match_easyline() {
-  if [[ $1 =~ $REGEX_EASY ]]; then
-    add_domain "${BASH_REMATCH[1]}" ""
-  else
-    return 1
-  fi
-  return 0
-}
-
-
-#######################################
-# Match Plain Line
-#
-# Globals:
-#   REGEX_PLAINLINE
-# Arguments:
-#   $1. Line to process
-# Returns:
-#   0. Match
-#   1. No Match
-#
-#######################################
-function match_plainline() {
-  if [[ $1 =~ $REGEX_PLAINLINE ]]; then
-    add_domain "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
-  else
-    return 1
-  fi
-  return 0
-}
-
-
-#######################################
-# Match Unix Line
-#
-# Globals:
-#   REGEX_UNIX
-# Arguments:
-#   $1. Line to process
-# Returns:
-#   0. Match
-#   1. No Match
-# Regex:
-#   Group 1: 127.0.0.1 | 0.0.0.0
-#   Space  one or more (include tab)
-#   Group 2: Domain
-#   Group 3: Comment - any character zero or more times
-#
-#######################################
-function match_unixline() {
-  if [[ $1 =~ $REGEX_UNIX ]]; then
-    add_domain "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}"
-  else
-    return 1
-  fi
-
-  return 0
-}
-
-#######################################
-# Process CSV
-#   Process CSV List Tab seperated with Col1 = site, Col2 = comments
-#
-# Globals:
-#   jumppoint
-#   percentpoint
-# Arguments:
-#   $1. List file to process
-# Returns:
-#   None
-# Regex:
-#   Group 1: Subdomain or Domain
-#   Group 2: Domain or TLD
-#
-#######################################
-function process_csv() {
-  local csvsite=""
-  local csvcomment=""
-  local i=0
-  local j=0
-
-  calc_percentpoint "$1"
-  i=1                                                      #Progress counter
-  j=$jumppoint                                             #Jump in percent
-
-  while IFS=$'\t\n' read -r csvsite csvcomment _
-  do
-    if [[ $csvsite =~ ^([A-Za-z0-9\-]+)\.([A-Za-z0-9\.\-]+)$ ]]; then
-      add_domain "$csvsite" "$csvcomment"
-    fi
-
-    if [ $i -ge $percentpoint ]; then                      #Display progress
-      echo -ne " $j%  \r"                                  #Echo without return
-      j=$((j + jumppoint))
-      i=0
-    fi
-    ((i++))
-  done < "$1"
-  echo " 100%"
-
-  unset IFS
-}
 
 
 #######################################
@@ -1987,157 +1525,6 @@ function process_notracklist() {
 
 
 
-
-
-#######################################
-# Add Domain to List
-#   Checks whether a Domain is in the Users whitelist or has previously been added
-#
-# Globals:
-#   tldlist
-#   whitelist
-#   Dedup
-# Arguments:
-#   $1 domain to Add
-#   $2 Comment
-# Returns:
-#   0. Success
-#   1. Failed to add
-#
-#######################################
-function add_domain() {
-  local domain="$1"
-
-  if [[ $domain =~ $REGEX_IPV4 ]]; then                    #Leave if IPv4 Address
-    return 1
-  fi
-
-  if [[ $domain =~ ^www\. ]]; then                         #Drop www. from domain
-    domain="${domain:4}"
-  fi
-
-  #Ignore Sub domain
-  #Group 1 Domain: A-Z,a-z,0-9,-  one or more
-  # .
-  #Group 2 (Double-barrelled TLD's) : org. | co. | com.  optional
-  #Group 3 TLD: A-Z,a-z,0-9,-  one or more
-
-  if [[ $domain =~ ([A-Za-z0-9_\-]+)\.(org\.|co\.|com\.|gov\.)?([A-Za-z0-9\-]+)$ ]]; then
-    if [ -n "${tldlist[.${BASH_REMATCH[3]}]}" ]; then      #Drop if .domain is in TLD
-      #echo "Dedup TLD $domain"                            #Uncomment for debugging
-      ((dedup++))
-      return 1
-    fi
-
-    #Drop if sub.site.domain has been added
-    if [ -n "${domainlist[${BASH_REMATCH[1]}.${BASH_REMATCH[2]}${BASH_REMATCH[3]}]}" ]; then
-      #echo "Dedup Domain $domain"                         #Uncomment for debugging
-      ((dedup++))
-      return 1
-    fi
-
-    #Drop if sub.site.domain has been added
-    if [ -n "${domainlist[$domain]}" ]; then
-      #echo "Dedup Duplicate Sub $domain"                  #Uncomment for debugging
-      ((dedup++))
-      return 1
-    fi
-
-    #Is sub.site.domain or site.domain in whitelist?
-    if [ -n "${whitelist[$domain]}" ] || [ -n "${whitelist[${BASH_REMATCH[1]}.${BASH_REMATCH[2]}${BASH_REMATCH[3]}]}" ]; then
-      sqllist+=("\"$domain\",\"0\",\"$2\"")               #Add to SQL as Disabled
-    else                                                   #Not found it whitelist
-      sqllist+=("\"$domain\",\"1\",\"$2\"")               #Add to SQL as Active
-      domainlist[$domain]=true                             #Add domain into domainlist array
-    fi
-  #else
-    #echo "Invalid domain $domain"
-  fi
-
-  return 0
-}
-
-
-#######################################
-# Sort List then save to file
-#   1. Sort domainlist array into new array sortedlist
-#   2. Go through sortedlist and check subdomains again
-#   3. Copy sortedlist to domains, removing any blocked subdomains
-#   4. Write list to dnsmasq folder
-# Globals:
-#   domainlist
-# Arguments:
-#   None
-# Returns:
-#   None
-#
-#######################################
-function sortlist() {
-  local listsize=0
-  local i=0
-  local j=0
-  local -a sortedlist                                      #Sorted array of domainlist
-  local -a domains                                         #Dnsmasq list
-  local domain=""
-  local tmpstr=""
-  dedup=0                                                  #Reset Deduplication
-
-  listsize=${#domainlist[@]}                               #Get number of items in Array
-  if [ "$listsize" == 0 ]; then                            #Fatal error
-    error_exit "No items in Block List" "8"
-  fi
-  if [ "$listsize" -ge 100 ]; then                         #Calculate Percentage Point
-    percentpoint=$((listsize/100))
-    jumppoint=1
-  else
-    percentpoint=1
-    jumppoint=$((100/listsize))
-  fi
-
-  echo "Sorting List"
-  IFS=$'\n' sortedlist=($(sort <<< "${!domainlist[*]}"))
-  unset IFS
-
-  echo "Final Deduplication"
-  domains+=("#Tracker Block list last updated $(date)")
-  domains+=("#Don't make any changes to this file, use $FILE_BLACKLIST and $FILE_WHITELIST instead")
-
-  for domain in "${sortedlist[@]}"; do
-    # ^ Subdomain
-    #Group 1: Domain
-    #Group 2: org. | co. | com.  optional
-    #Group 3: TLD
-    #Is there a subdomain?
-    if [[ $domain =~ ^[A-Za-z0-9_\-]+\.([A-Za-z0-9_\-]+)\.(org\.|co\.|com\.|gov\.)?([A-Za-z0-9\-]+)$ ]]; then
-      #Is domain.domain already in list?
-      if [ -n "${domainlist[${BASH_REMATCH[1]}.${BASH_REMATCH[2]}${BASH_REMATCH[3]}]}" ]; then        
-        ((dedup++))                                        #Yes, add to total of dedup
-      else
-        domains+=("address=/$domain/$IPAddr")              #No, add to Array
-      fi
-    else                                                   #No subdomain, add to Array
-      domains+=("address=/$domain/$IPAddr")
-    fi
-
-    if [ $i -ge $percentpoint ]; then                      #Display progress
-      echo -ne " $j%  \r"                                  #Echo without return
-      j=$((j + jumppoint))
-      i=0
-    fi
-    ((i++))
-  done
-
-  echo " 100%"
-  echo
-  #printf "%s\n" "${sortedlist[@]}"                        #Uncomment to debug
-  echo "Further Deduplicated $dedup Domains"
-  echo "Number of Domains in Block List: ${#domains[@]}"
-  echo "Writing block list to $MAIN_BLOCKLIST"
-  printf "%s\n" "${domains[@]}" > "$MAIN_BLOCKLIST"
-
-  echo
-}
-
 #######################################
 # Show Help
 #
@@ -2153,11 +1540,9 @@ function show_help() {
   echo "Downloads and Installs updated tracker lists"
   echo
   echo "The following options can be specified:"
-  echo -e "  -f, --force\tForce update of Block list"
   echo -e "  -h, --help\tDisplay this help and exit"
   echo -e "  -t, --test\tConfig Test"
   echo -e "  -v, --version\tDisplay version information and exit"
-  echo -e "  -u, --upgrade\tRun a full upgrade"
 }
 
 
@@ -2176,62 +1561,6 @@ function show_version() {
   echo
 }
 
-
-#######################################
-# Test
-#   Display Config and version number
-# Globals:
-#   Config
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-function test() {
-  local DnsmasqVersion=""
-  local key=""
-
-  echo "NoTrack Config Test"
-  echo
-  echo "NoTrack version $VERSION"
-
-  DnsmasqVersion=$(dnsmasq --version)
-  [[ $DnsmasqVersion =~ ^Dnsmasq[[:space:]]version[[:space:]]([0-9]\.[0-9]{1,2}) ]]
-  local VerNo="${BASH_REMATCH[1]}"               #Extract version number from string
-  if [[ -z $VerNo ]]; then                       #Was anything extracted?
-    echo "Dnsmasq version Unknown"
-  else
-    echo "Dnsmasq version $VerNo"
-    check_dnsmasq_version
-    if [ $? == 53 ]; then                        #Is white listing supported?
-      echo "Dnsmasq Supports White listing"
-    else                                         #No, version too low
-      echo "Dnsmasq Doesn't support White listing (v2.75 or above is required)"
-      if [ -n "$(command -v dig)" ]; then        #Is dig available?
-        echo "Fallback option using Dig is available"
-      else
-        echo "Dig isn't installed. Unable to White list from blocked TLD's"
-      fi
-    fi
-  fi
-  echo
-
-  load_config                                    #Load saved variables
-  get_ip                                         #Read IP Address of NetDev
-
-  echo "Block Lists Utilised:"
-  for key in "${!Config[@]}"; do                 #Read keys from Config array
-    if [[ "${Config[$key]}" == 1 ]]; then        #Is block list enabled?
-      echo "$key"                                #Yes, display it
-    fi
-  done
-  echo
-
-  if [[ ${Config[bl_custom]} != "0" ]]; then      #Any custom block lists?
-    echo "Additional Custom Block Lists Utilised:"
-    echo "${Config[bl_custom]}"
-  fi
-}
 
 
 
