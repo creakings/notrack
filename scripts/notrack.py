@@ -6,7 +6,7 @@
 #Version : 0.9.5
 #Usage : sudo bash notrack.sh
 
-from time import time
+from time import time, sleep
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 import argparse
@@ -40,8 +40,8 @@ blockdomiandict = {}
 blocktlddict = {}
 whitedict = {}
 
-dnsserver_whitelist = 'server=/%s/#\n'
-dnsserver_blacklist = 'address=/%s/192.168.62.90\n'
+dnsserver_whitelist = ''
+dnsserver_blacklist = ''
 
 #######################################
 # Global Variables
@@ -196,22 +196,33 @@ folders = FolderList()
 
 
 #Host gets the Name and IP address of this system
+#If an IP has been supplied then use that instead of trying to find the system IP
+#Usecase is for when NoTrack is used on a VPN
 class Host:
     name = ''
     ip = ''
 
-    def __init__(self):
+    def __init__(self, conf_ip):
         import socket
 
         self.name = socket.gethostname()                   #Host Name is easy to get
 
-        #IP requires a connection out
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        #Connect to an unroutable 169.254.0.0/16 address on port 1
-        s.connect(("169.254.0.255", 1))
-        self.ip = s.getsockname()[0]
-        s.close()
-
+        #Has a non-loopback config - ipaddress been supplied?
+        if conf_ip == '127.0.0.1' or conf_ip == '::1' or conf_ip == '':
+            #Make a network connection to unroutable 169.x IP in order to get system IP
+            #Connect to an unroutable 169.254.0.0/16 address on port 1
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.connect(("169.254.0.255", 1))
+            except OSError as e:
+                print('Host Init: Error - Unable to open network connection')
+                sys.exit(1)
+            else:
+                self.ip = s.getsockname()[0]
+            finally:
+                s.close()
+        else:
+            self.ip = conf_ip
 
 
 #Services is a class for identifing Service Supervisor, Web Server, and DNS Server
@@ -246,7 +257,6 @@ class Services:
             self.dhcp_config = '/etc/dnsmasq.d/dhcp.conf'
         elif shutil.which('bind') != None:
             self.__dnsserver = 'bind'
-            self.dnsserver_name = 'Bind'
         else:
             print('Services Init: Fatal Error - Unable to identify DNS server')
             sys.exit(8)
@@ -262,6 +272,24 @@ class Services:
             sys.exit(9)
         print('Services Init: Identified Web server %s' % self.__webserver)
         print()
+
+
+    """ Get DNS Template String
+        Gets the necessary string for creating DNS Block list files based on DNS server
+    Args:
+        Host Name, Host IP
+    Returns:
+        list of blacklist and whitelist string templates
+    """
+    def get_dnstemplatestr(self, hostname, hostip):
+        blacklist = ''
+        whitelist = ''
+
+        if self.__dnsserver == 'dnsmasq':
+            blacklist = 'address=/%s/' + hostip + '\n'
+            whitelist = 'server=/%s/#\n'
+
+        return tuple([blacklist, whitelist])
 
 
     """ Restart Service
@@ -325,6 +353,41 @@ def check_root():
         sys.exit(2)
 
 
+""" Is Running
+    1. Get current pid and script name
+    2. Run pgrep -a python3 - look for instances of python3 running
+    3. Look through results of above command
+    4. Check for my script name not equalling my pid
+Args:
+    None
+Returns:
+    0 - No other instances running
+    > 0 - First match of another instance
+"""
+def is_running():
+    Regex_Pid = re.compile('^(\d+)\spython3?\s([\w\.]+)')
+    mypid = os.getpid()                                    #Current PID
+    myname = os.path.basename(__file__)                    #Current Script Name
+    cmd = 'pgrep -a python3'
+
+    try:
+        res = subprocess.check_output(cmd,shell=True, universal_newlines=True)
+    except subprocess.CalledProcessError as e:
+        print('error', e.output, e.returncode)
+    else:
+        for line in res.splitlines():
+            matches = Regex_Pid.search(line)
+            if matches is not None:
+                if matches.group(2) == myname and int(matches.group(1)) != mypid:
+                    print('%s is already running on pid %s' % (myname, matches.group(1)))
+                    sys.exit(8)
+                    #return int(matches.group(1))
+
+
+    return 0
+
+
+
 """ Load Config
 Args:
     None
@@ -350,6 +413,9 @@ def load_config():
         if matches is not None:
             if matches.group(1) in config:
                 config[matches.group(1)] = matches.group(2)
+
+    print()
+
 
 """ Create SQL Tables
     Create SQL tables for blocklist, in case it has been deleted
@@ -489,7 +555,7 @@ def read_file(filename):
         print('\t%s is missing' % filename)
         return []
 
-    print('\tReading data from %s' % filename)
+    #print('\tReading data from %s' % filename)
     f = open(filename, 'r')
     filelines = f.readlines()
     f.close()
@@ -507,14 +573,19 @@ Returns:
 def save_blob(data, filename):
     try:
         f = open(filename, 'wb')                           #Open file for binary writing
-    except IOError:
+    except IOError as e:
         print('Error writing to %s' % filename)
+        print(e)
+        return False
     except OSError as e:
-        print('OS error: {0}'.format(e))  #TODO review this error
+        print('Error writing to %s' % filename)
+        print(e)
+        return False
     else:
         f.write(data)
-    finally:
         f.close()
+
+
 
 
 """ Save File
@@ -522,19 +593,24 @@ def save_blob(data, filename):
 Args:
     None
 Returns:
-    None
+    True on success
+    False on error
 """
 def save_list(domains, filename):
     try:
         f = open(filename, 'w')                            #Open file for ascii writing
-    except IOError:
+    except IOError as e:
         print('Error writing to %s' % filename)
+        print(e)
+        return False
     except OSError as e:
-        print('OS error: {0}'.format(e))  #TODO review this error
+        print('Error writing to %s' % filename)
+        print(e)
+        return False
     else:
         f.writelines(domains)
-    finally:
         f.close()
+    return True
 
 
 """ Extract Zip
@@ -1155,7 +1231,7 @@ def dedup_lists():
 
     dns_blacklist = []
     sqldata = []
-    prev = '\0'                                            #Previous has to be something
+    prev = '\0'                                            #Previous has to be something (e.g. a null byte)
 
     dedupcount = 0
 
@@ -1182,20 +1258,74 @@ def dedup_lists():
     insert_data(sqldata)
 
 
+""" Generate Example Black List File
+
+Args:
+    None
+Returns:
+    None
+"""
+def generate_blacklist():
+    tmp = []                                               #List to build contents of file
+
+    if os.path.isfile(folders.blacklist):                  #Check if black list exists
+        return False
+
+    print('Creating Black List')
+    tmp.append('#Use this file to create your own custom block list\n')
+    tmp.append('#Run notrack script (sudo notrack) after you make any changes to this file\n')
+    tmp.append('#doubleclick.net\n')
+    tmp.append('#googletagmanager.com\n')
+    tmp.append('#googletagservices.com\n')
+    tmp.append('#polling.bbc.co.uk #BBC Breaking News Popup\n')
+    save_list(tmp, folders.blacklist)
+    print()
+
+
+""" Generate Example White List File
+
+Args:
+    None
+Returns:
+    None
+"""
+def generate_whitelist():
+    tmp = []                                               #List to build contents of file
+
+    if os.path.isfile(folders.whitelist):                  #Check if white list exists
+        return False
+
+    print('Creating White List')
+    tmp.append('#Use this file to create your own custom block list\n')
+    tmp.append('#Run notrack script (sudo notrack) after you make any changes to this file\n')
+    tmp.append('#doubleclick.net\n')
+    tmp.append('#googletagmanager.com\n')
+    tmp.append('#googletagservices.com\n')
+    save_list(tmp, folders.whitelist)
+    print()
+
+
+""" Show Version
+    Show version number and exit
+Args:
+    None
+Returns:
+    None
+"""
+def show_version():
+    print('NoTrack Version %s' % VERSION)
+    print()
+    sys.exit(0)
+
+
 """ Test
-    Display Config and version number
+    Display Config of Block list choices
 Args:
     None
 Returns:
     None
 """
 def test():
-
-    print('NoTrack Config Test')
-    print('NoTrack version %s' % VERSION)
-    print()
-    print('Hostname: %s' % host.name)
-    print('IP Address: %s' % host.ip)
     print()
     print('Block Lists Utilised:')
 
@@ -1210,35 +1340,50 @@ def test():
         print('Additional custom block lists utilised:')
         print(config['bl_custom'].replace(',', '\n'))
 
+    sys.exit(0)
+
 
 #Main----------------------------------------------------------------
-
-#Add any OS specific folder locations
-blocklistconf['bl_usersblacklist'] = tuple([True, folders.blacklist, TYPE_PLAIN])
-
-#Declare classes
-host = Host()
-services = Services()
-
-load_config()
-
-
 parser = argparse.ArgumentParser(description = 'NoTrack')
 #parser.add_argument('-p', "--play", help='Start Blocking', action='store_true')
 #parser.add_argument('-s', "--stop", help='Stop Blocking', action='store_true')
 #parser.add_argument('--pause', help='Pause Blocking', type=int)
 parser.add_argument('--force', help='Force update block lists', action='store_true')
+parser.add_argument('--wait', help='Delay start', action='store_true')
 parser.add_argument('--test', help='Show current configuration', action='store_true')
-#parser.add_argument('--parsing', help='Parser update time', type=int)
+parser.add_argument('-v', '--version', help='Get version number', action='store_true')
 #parser.add_argument('--run', help='Run NoTrack', choices=['now', 'wait', 'force'])
 
 args = parser.parse_args()
 
+if args.version:                                           #Showing version?
+    show_version()
+
+#Add any OS specific folder locations
+blocklistconf['bl_usersblacklist'] = tuple([True, folders.blacklist, TYPE_PLAIN])
+
+services = Services()                                      #Declare service class
+
+load_config()
+host = Host(config['ipaddress'])
+
+#Setup the template strings for writing out to black/white list files
+[dnsserver_blacklist, dnsserver_whitelist] = services.get_dnstemplatestr(host.name, host.ip)
+
+print('NoTrack version %s' % VERSION)
+print('Hostname: %s' % host.name)
+print('IP Address: %s' % host.ip)
+
+#Process Arguments
 if args.force:                                             #Download blocklists
     FORCE = True
 if args.test:
     test()
-    sys.exit(0)
+if args.wait:
+    sleep(1000)
+
+check_root()
+is_running()                                               #Already running?
 
 
 print('Opening connection to MariaDB')
@@ -1246,6 +1391,10 @@ db = mariadb.connect(user=dbconf.user, password=dbconf.password, database=dbconf
 
 create_sqltables()                                         #Create SQL Tables
 clear_table()                                              #Clear SQL Tables
+
+generate_blacklist()
+generate_whitelist()
+
 process_whitelist()                                        #Need whitelist first
 action_lists()                                             #Action default lists
 action_customlists()                                       #Action users custom lists
@@ -1259,419 +1408,5 @@ print('Closing connection to MariaDB')
 db.close()
 
 
-
-#######################################
-# User Configerable Settings
-#######################################
-"""
-#Set NetDev to the name of network device e.g. "eth0" IF you have multiple network cards
-NetDev=$(ip -o link show | awk '{print $2,$9}' | grep ": UP" | cut -d ":" -f 1)
-
-#If NetDev fails to recognise a Local Area Network IP Address, then you can use IPVersion to assign a custom IP Address in /etc/notrack/notrack.conf
-#e.g. IPVersion = 192.168.1.2
-IPVersion="IPv4"
-
-declare -A Config                                #Config array for Block Lists
-
-
-
-
-
-
-#######################################
-# Check If Running as Root and if Script is already running
-#
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#
-#######################################
-function check_root() {
-  local pid=""
-  pid=$(pgrep notrack | head -n 1)                         #Get PID of first notrack process
-
-  if [[ "$(id -u)" != "0" ]]; then
-    error_exit "This script must be run as root" "5"
-  fi
-
-  #Check if another copy of notrack is running
-  if [[ $pid != "$$" ]] && [[ -n $pid ]] ; then  #$$ = This PID
-    error_exit "NoTrack already running under pid $pid" "8"
-  fi
-}
-
-
-
-#######################################
-# Generate Example Black List File
-#
-# Globals:
-#   $FILE_BLACKLIST
-# Arguments:
-#   None
-# Returns:
-#   None
-#
-#######################################
-function generate_blacklist() {
-  local -a tmp                                   #Local array to build contents of file
-
-  echo "Creating blacklist"
-  touch "$FILE_BLACKLIST"
-  tmp+=("#Use this file to create your own custom block list")
-  tmp+=("#Run notrack script (sudo notrack) after you make any changes to this file")
-  tmp+=("#doubleclick.net")
-  tmp+=("#googletagmanager.com")
-  tmp+=("#googletagservices.com")
-  tmp+=("#polling.bbc.co.uk #BBC Breaking News Popup")
-  printf "%s\n" "${tmp[@]}" > $FILE_BLACKLIST    #Write Array to file with line seperator
-}
-
-
-#######################################
-# Generate Example White List File
-#
-# Globals:
-#   $FILE_WHITELIST
-# Arguments:
-#   None
-# Returns:
-#   None
-#
-#######################################
-function generate_whitelist() {
-  local -a tmp                                   #Local array to build contents of file
-
-  echo "Creating whitelist"
-  touch "$FILE_WHITELIST"
-  tmp+=("#Use this file to remove sites from block list")
-  tmp+=("#Run notrack script (sudo notrack) after you make any changes to this file")
-  tmp+=("#doubleclick.net")
-  tmp+=("#google-analytics.com")
-  printf "%s\n" "${tmp[@]}" > $FILE_WHITELIST    #Write Array to file with line seperator
-}
-
-
-#######################################
-# Get IP Address
-#   Reads IP address of System or uses custom IP assigned by IPVersion
-#   Note: A manual IP address can be assigned using IPVersion, e.g. if using with a VPN
-#
-# Globals:
-#   IPAddr, IPVersion
-# Arguments:
-#   None
-# Returns:
-#   None
-#
-#######################################
-function get_ip() {
-  if [ "$IPVersion" == "IPv4" ]; then
-    echo "Internet Protocol Version 4 (IPv4)"
-    echo "Reading IPv4 Address from $NetDev"
-    IPAddr=$(ip addr list "$NetDev" | grep inet | head -n 1 | cut -d ' ' -f6 | cut -d/ -f1)
-
-  elif [ "$IPVersion" == "IPv6" ]; then
-    echo "Internet Protocol Version 6 (IPv6)"
-    echo "Reading IPv6 Address"
-    IPAddr=$(ip addr list "$NetDev" | grep inet6 | head -n 1 | cut -d ' ' -f6 | cut -d/ -f1)
-  else
-    echo "Custom IP Address used"
-    IPAddr="$IPVersion";                         #Use IPVersion to assign a manual IP Address
-  fi
-
-  echo "System IP Address: $IPAddr"
-  echo
-}
-
-
-#######################################
-# Get Custom Blocklists
-#   Get the users custom blocklists from either download or local file
-#
-# Globals:
-#   Config
-# Arguments:
-#   None
-# Returns:
-#   None
-#
-#######################################
-function get_custom_blocklists() {
-  local dlfile=""
-  local dlfile_time=0                                      #Downloaded File Time
-  local -i c=1                                             #For displaying count of custom list
-  local filename=""
-  local customurl=""
-  local -a customurllist
-
-   #Are there any custom block lists set? 
-  if [[ ${Config[bl_custom]} == "0" ]] || [[ ${Config[bl_custom]} == "" ]]; then
-    echo "No Custom Block Lists in use"
-    echo
-    for filename in /tmp/custom_*; do                      #Clean up old custom lists
-      delete_file "/tmp/$filename"
-    done
-    return 0
-  fi
-
-  echo "Processing Custom Block Lists"
-    
-  #Read comma seperated values from bl_custom string into an array
-  IFS=',' read -ra customurllist <<< "${Config[bl_custom]}"
-  unset IFS
-  
-  for customurl in "${customurllist[@]}"; do               #Review each url from array
-    echo "$c: $customurl"
-    filename=${customurl##*/}                              #Get filename from URL
-    filename=${filename%.*}                                #Remove file extension
-    dlfile="/tmp/custom_$filename.txt']
-   
-    get_filetime "$dlfile"                                 #When was file last downloaded?
-    dlfile_time="$filetime"
-
-    #Determine whether we are dealing with a download or local file
-    if [[ $customurl =~ ^(https?|ftp):// ]]; then           #Is this a URL - http(s) / ftp?
-      if [ $dlfile_time -lt $((EXECTIME-CHECKTIME)) ]; then #Is list older than 4 days
-        if ! download_file "$dlfile" "$customurl"; then     #Yes - Download it
-          echo "Warning: get_custom_blocklists - unable to proceed without $customurl"
-          continue
-        fi
-      else
-        echo "File in date, not downloading"
-      fi
-    elif [ -e "$customurl" ]; then                         #Is it a file on the server?
-      echo "$customurl found on system"
-      dlfile="$customurl"      
-    else                                                   #Don't know what to do
-      echo "Warning: get_custom_blocklists - unable to find $customurl"
-      echo
-      continue                                             #Skip to next item
-    fi
-
-    process_custom_blocklist "$dlfile" "$filename"
-    ((c++))                                                #Increase count of custom lists
-  done
-
-  
-}
-
-
-
-
-#######################################
-# Process NoTrack List
-#   NoTrack list is just like PlainList, but contains latest version number
-#    which is used by the Admin page to inform the user an upgrade is available
-# Globals:
-#   jumppoint
-#   percentpoint
-#   Version
-# Arguments:
-#   $1 List file to process
-# Returns:
-#   None
-# Regex:
-#   Group 1: Subdomain or Domain
-#   .
-#   Group 2: Domain or TLD
-#   space  optional
-#   #  optional
-#   Group 3: Comment  any character zero or more times
-#
-#######################################
-function process_notracklist() {
-  local i=0
-  local j=0
-  local latestversion=""
-
-  calc_percentpoint "$1"
-  i=1                                                      #Progress counter
-  j=$jumppoint                                             #Jump in percent
-
-  while IFS=$'\n' read -r Line
-  do
-    if [[ $Line =~ $REGEX_PLAINLINE ]]; then
-      add_domain "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
-    elif [[ $Line =~ ^#LatestVersion[[:space:]]([0-9\.]+)$ ]]; then #Is it version number
-      latestversion="${BASH_REMATCH[1]}"         #Extract Version number
-      if [[ $oldversion != "$latestversion" ]]; then
-        echo "New version of NoTrack available v$latestversion"
-        #Check if config line LatestVersion exists
-        #If not add it in with tee
-        #If it does then use sed to update it
-        if [[ $(grep "LatestVersion" "$FILE_CONFIG") == "" ]]; then
-          echo "LatestVersion = $latestversion" | sudo tee -a "$FILE_CONFIG"
-        else
-          sed -i "s/^\(LatestVersion *= *\).*/\1$latestversion/" $FILE_CONFIG
-        fi
-      fi
-    fi
-
-    if [ $i -ge $percentpoint ]; then                      #Display progress
-      echo -ne " $j%  \r"                                  #Echo without return
-      j=$((j + jumppoint))
-      i=0
-    fi
-    ((i++))
-  done < "$1"
-  echo " 100%"
-
-  unset IFS
-}
-
-
-
-#######################################
-# Show Help
-#
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-function show_help() {
-  echo "Usage: notrack"
-  echo "Downloads and Installs updated tracker lists"
-  echo
-  echo "The following options can be specified:"
-  echo -e "  -h, --help\tDisplay this help and exit"
-  echo -e "  -t, --test\tConfig Test"
-  echo -e "  -v, --version\tDisplay version information and exit"
-}
-
-
-#######################################
-# Show Version
-#
-# Globals:
-#   VERSION
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-function show_version() {
-  echo "NoTrack Version $VERSION"
-  echo
-}
-
-
-
-
-#######################################
-# Main
-#######################################
-if [ -n "$1" ]; then                                       #Have any arguments been given
-  if ! options="$(getopt -o fhvtu -l help,force,version,upgrade,test,wait -- "$@")"; then
-    # something went wrong, getopt will put out an error message for us
-    exit 6
-  fi
-
-  set -- $options
-
-  while [ $# -gt 0 ]
-  do
-    case $1 in
-      -f|--force)
-        FORCE=1
-      ;;
-      -h|--help)
-        show_help
-        exit 0
-      ;;
-      -t|--test)
-        test
-        exit 0
-      ;;
-      -v|--version)
-        show_version
-        exit 0
-      ;;
-      -u|--upgrade)
-        upgrade
-        exit 0
-      ;;
-      --wait)
-        echo "Waiting"
-        sleep 240
-      ;;
-      (--)
-        shift
-        break
-      ;;
-      (-*)
-        error_exit "$0: error - unrecognized option $1" "6"
-      ;;
-      (*)
-        break
-      ;;
-    esac
-    shift
-  done
-fi
-
-
-#At this point the functionality of notrack.sh is to update Block Lists
-#1. Check if user is running as root
-#2. Create folder /etc/notrack
-#3. Load config file (or use default values)
-#4. Get IP address of system, e.g. 192.168.1.2
-#5. Generate whitelist if it doesn't exist
-#6. Check if Update is required
-#7. Load whitelist file into whitelist associative array
-#8. Process Users Custom BlackList
-#9. Process Other block lists according to Config
-#10. Process Custom block lists
-#11. Sort list and do final deduplication
-
-check_root                                                 #Check if Script run as Root
-is_sql_installed                                           #Check if MariaDB is installed
-create_sqltables                                           #Create Tables if they don't exist
-
-if [ ! -d "/etc/notrack" ]; then                           #Check /etc/notrack folder exists
-  echo "Creating notrack config folder: /etc/notrack"
-  if ! mkdir "/etc/notrack"; then 
-    error_exit "Unable to create folder /etc/notrack" "2"
-  fi
-fi
-
-load_config                                                #Load saved variables
-get_ip                                                     #Read IP Address of NetDev
-
-if [ ! -e $FILE_WHITELIST ]; then 
-  generate_whitelist
-fi
-
-if [ ! -e "$FILE_BLACKLIST" ]; then 
-  generate_blacklist
-fi
-
-create_file "$FILE_TLDWHITE"                               #Create Black & White TLD lists if they don't exist
-create_file "$FILE_TLDBLACK"
-create_file "$MAIN_BLOCKLIST"                              #The main notrack.list
-
-is_update_required                                         #Check if NoTrack really needs to run
-delete_table
-
-load_whitelist                                             #Load Whitelist into array
-process_tldlist                                            #Load and Process TLD List
-process_whitelist                                          #Process White List
-
-get_blacklist                                              #Process Users Blacklist
-get_custom_blocklists                                      #Process Custom Block lists
-
-
-echo "Deduplicated $dedup Domains"
-sortlist                                                   #Sort, Dedup 2nd round, Save list
-
-service_restart dnsmasq
-
-echo "NoTrack complete"
-echo
-"""
+#TODO Check for updates
+#TODO Pause
