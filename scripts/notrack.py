@@ -6,31 +6,34 @@
 #Version : 0.9.5
 #Usage : sudo bash notrack.sh
 
-from time import time, sleep
+#Standard imports
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 import argparse
 import os
 import re
 import shutil
+import signal
 import stat
 import subprocess
 import sys
+import time
+
+#Additional standard import
 import mysql.connector as mariadb
+
+#Local imports
+from blocklists import *
+from ntrkpause import *
 
 #######################################
 # Constants
 #######################################
 VERSION = '0.9.5'
-TYPE_PLAIN = 1
-TYPE_UNIXLIST = 2
-TYPE_EASYLIST = 4
-TYPE_CSV = 8
-TYPE_SPECIAL = 64
-
-FORCE = False
-CURRENT_TIME = time()
 MAX_AGE = 172800 #2 days in seconds
+CURRENT_TIME = time.time()
+FORCE = False
+
 
 #######################################
 # Global Lists / Dictionaries
@@ -61,10 +64,10 @@ Regex_Domain = re.compile('([\w\-_]{1,63})(\.(?:co\.|com\.|org\.|edu\.|gov\.)?[\
 
 #Regex EasyList Line:
 #|| Marks active domain entry
-#Group 1: domain.com
+#Group 1: domain.com (Need to eliminate IP addresses, so assume TLD begins with [a-z]
 #Non-capturing group: Domain ending
 #Non-capturing group: Against document type: Acceptable - third-party, doc, popup
-Regex_EasyLine = re.compile('^\|\|([\w\.\-_]{1,250}\.[\w\-]{2,63})(?:\^|\.)(?:\$third\-party|\$doc|\$popup|\$popup\,third\-party)?\n$')
+Regex_EasyLine = re.compile('^\|\|([\w\.\-_]{1,250}\.[a-zA-Z][\w\-]{1,62})(?:\^|\.)(?:\$third\-party|\$doc|\$popup|\$popup\,third\-party)?\n$')
 
 #Regex Plain Line
 #Group 1: domain.com
@@ -79,60 +82,6 @@ Regex_TLDLine = re.compile('^(\.\w{1,63})(?:\s#.*)?\n$')
 #Regex Unix Line
 Regex_UnixLine = re.compile('^(?:0|127)\.0\.0\.[01]\s+([\w\.\-_]{1,250}\.[\w\-]{2,63})\s*#?(.*)\n$')
 
-blocklistconf = {
-    'bl_tld' : [True, '', TYPE_SPECIAL],
-    'bl_blacklist' : [True, '', TYPE_PLAIN],
-    'bl_notrack' : [True, 'https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-blocklist.txt', TYPE_PLAIN],
-    'bl_notrack_malware' : [True, 'https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-malware.txt', TYPE_PLAIN],
-    'bl_cbl_all' : [False, 'https://zerodot1.gitlab.io/CoinBlockerLists/list.txt', TYPE_PLAIN],
-    'bl_cbl_browser' : [False, 'https://zerodot1.gitlab.io/CoinBlockerLists/list_browser.txt', TYPE_PLAIN],
-    'bl_cbl_opt' : [False, 'https://zerodot1.gitlab.io/CoinBlockerLists/list_optional.txt', TYPE_PLAIN],
-    'bl_cedia' : [False, 'http://mirror.cedia.org.ec/malwaredomains/domains.zip', TYPE_CSV],
-    'bl_cedia_immortal' : [True, 'http://mirror.cedia.org.ec/malwaredomains/immortal_domains.zip', TYPE_PLAIN],
-    'bl_hexxium' : [False, 'https://hexxiumcreations.github.io/threat-list/hexxiumthreatlist.txt', TYPE_EASYLIST],
-    'bl_disconnectmalvertising' : [False, 'https://s3.amazonaws.com/lists.disconnect.me/simple_malvertising.txt', TYPE_PLAIN],
-    'bl_easylist' : [False, 'https://easylist-downloads.adblockplus.org/easylist_noelemhide.txt', TYPE_EASYLIST],
-    'bl_easyprivacy' : [False, 'https://easylist-downloads.adblockplus.org/easyprivacy.txt', TYPE_EASYLIST],
-    'bl_fbannoyance' : [False, 'https://easylist-downloads.adblockplus.org/fanboy-annoyance.txt', TYPE_EASYLIST],
-    'bl_fbenhanced' : [False, 'https://www.fanboy.co.nz/enhancedstats.txt', TYPE_EASYLIST],
-    'bl_fbsocial' : [False, 'https://secure.fanboy.co.nz/fanboy-social.txt', TYPE_EASYLIST],
-    'bl_hphosts' : [False, 'http://hosts-file.net/ad_servers.txt', TYPE_UNIXLIST],
-    'bl_malwaredomainlist' : [False, 'http://www.malwaredomainlist.com/hostslist/hosts.txt', TYPE_UNIXLIST],
-    'bl_malwaredomains' : [False, 'http://mirror1.malwaredomains.com/files/justdomains', TYPE_PLAIN],
-    'bl_pglyoyo' : [False, 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=;mimetype=plaintext', TYPE_PLAIN],
-    'bl_someonewhocares' : [False, 'http://someonewhocares.org/hosts/hosts', TYPE_UNIXLIST],
-    'bl_spam404' : [False, 'https://raw.githubusercontent.com/Dawsey21/Lists/master/adblock-list.txt', TYPE_EASYLIST],
-    'bl_swissransom' : [False, 'https://ransomwaretracker.abuse.ch/downloads/RW_DOMBL.txt', TYPE_PLAIN],
-    'bl_winhelp2002' : [False, 'http://winhelp2002.mvps.org/hosts.txt', TYPE_UNIXLIST],
-    'bl_windowsspyblocker' : [False, 'https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/update.txt', TYPE_UNIXLIST],
-    'bl_areasy' : [False, 'https://easylist-downloads.adblockplus.org/Liste_AR.txt', TYPE_EASYLIST],                      #Arab
-    'bl_chneasy' : [False, 'https://easylist-downloads.adblockplus.org/easylistchina.txt', TYPE_EASYLIST],                #China
-    'bl_deueasy' : [False, 'https://easylist-downloads.adblockplus.org/easylistgermany.txt', TYPE_EASYLIST],              #Germany
-    'bl_dnkeasy' : [False, 'https://adblock.dk/block.csv', TYPE_EASYLIST],                                                #Denmark
-    'bl_fblatin' : [False, 'https://www.fanboy.co.nz/fanboy-espanol.txt', TYPE_EASYLIST],                                 #Portugal/Spain (Latin Countries)
-    'bl_fineasy' : [False, 'https://raw.githubusercontent.com/finnish-easylist-addition/finnish-easylist-addition/master/Finland_adb_uBO_extras.txt', TYPE_EASYLIST],                                     #Finland
-    'bl_fraeasy' : [False, 'https://easylist-downloads.adblockplus.org/liste_fr.txt', TYPE_EASYLIST],                     #France
-    'bl_grceasy' : [False, 'https://www.void.gr/kargig/void-gr-filters.txt', TYPE_EASYLIST],                              #Greece
-    'bl_huneasy' : [False, 'https://raw.githubusercontent.com/szpeter80/hufilter/master/hufilter.txt', TYPE_EASYLIST],    #Hungary
-    'bl_idneasy' : [False, 'https://raw.githubusercontent.com/ABPindo/indonesianadblockrules/master/subscriptions/abpindo.txt',TYPE_EASYLIST ],#Indonesia
-    'bl_isleasy' : [False, 'http://adblock.gardar.net/is.abp.txt', TYPE_EASYLIST],                                        #Iceland
-    'bl_itaeasy' : [False, 'https://easylist-downloads.adblockplus.org/easylistitaly.txt', TYPE_EASYLIST],                #Italy
-    'bl_jpneasy' : [False, 'https://raw.githubusercontent.com/k2jp/abp-japanese-filters/master/abpjf.txt', TYPE_EASYLIST],#Japan
-    'bl_koreasy' : [False, 'https://raw.githubusercontent.com/gfmaster/adblock-korea-contrib/master/filter.txt', TYPE_EASYLIST],#Korea Easy List
-    'bl_korfb' : [False, 'https://www.fanboy.co.nz/fanboy-korean.txt', TYPE_EASYLIST],                                    #Korea Fanboy
-    'bl_koryous' : [False, 'https://raw.githubusercontent.com/yous/YousList/master/youslist.txt', TYPE_EASYLIST],         #Korea Yous
-    'bl_ltueasy' : [False, 'http://margevicius.lt/easylistlithuania.txt', TYPE_EASYLIST],                                 #Lithuania
-    'bl_lvaeasy' : [False, 'https://notabug.org/latvian-list/adblock-latvian/raw/master/lists/latvian-list.txt', TYPE_EASYLIST],#Latvia
-    'bl_norfiltre' : [False, 'https://raw.githubusercontent.com/DandelionSprout/adfilt/master/NorwegianList.txt', TYPE_EASYLIST],   #Norway
-    'bl_nldeasy' : [False, 'https://easylist-downloads.adblockplus.org/easylistdutch.txt', TYPE_EASYLIST],                #Netherlands
-    'bl_poleasy' : [False, 'https://raw.githubusercontent.com/MajkiIT/polish-ads-filter/master/polish-adblock-filters/adblock.txt', TYPE_EASYLIST],#Polish
-    'bl_ruseasy' : [False, 'https://easylist-downloads.adblockplus.org/ruadlist+easylist.txt', TYPE_EASYLIST],            #Russia
-    'bl_spaeasy' : [False, 'https://easylist-downloads.adblockplus.org/easylistspanish.txt', TYPE_EASYLIST],              #Spain
-    'bl_svneasy' : [False, 'https://raw.githubusercontent.com/betterwebleon/slovenian-list/master/filters.txt', TYPE_EASYLIST],#Slovenian
-    'bl_sweeasy' : [False, 'https://www.fanboy.co.nz/fanboy-swedish.txt', TYPE_EASYLIST],                                 #Sweden
-    'bl_viefb' : [False, 'https://www.fanboy.co.nz/fanboy-vietnam.txt', TYPE_EASYLIST],                                   #Vietnam Fanboy
-    'bl_yhosts' : [False, 'https://raw.githubusercontent.com/vokins/yhosts/master/hosts', TYPE_UNIXLIST],                 #China yhosts
-}
 
 config = {
     'LatestVersion' : VERSION,
@@ -181,7 +130,7 @@ class FolderList:
     def __init__(self):
         if os.name == 'posix':
             self.main_blocklist = '/etc/dnsmasq.d/notrack.list'
-            self.dnslists = ''
+            self.dnslists = '/etc/dnsmasq.d/'
             self.blacklist = '/etc/notrack/blacklist.txt'
             self.whitelist = '/etc/notrack/whitelist.txt'
             self.tld_blacklist = '/etc/notrack/domain-blacklist.txt'
@@ -365,7 +314,7 @@ Returns:
     > 0 - First match of another instance
 """
 def is_running():
-    Regex_Pid = re.compile('^(\d+)\spython3?\s([\w\.]+)')
+    Regex_Pid = re.compile('^(\d+)\spython3?\s([\w\.\/]+)')
     mypid = os.getpid()                                    #Current PID
     myname = os.path.basename(__file__)                    #Current Script Name
     cmd = 'pgrep -a python3'
@@ -378,14 +327,12 @@ def is_running():
         for line in res.splitlines():
             matches = Regex_Pid.search(line)
             if matches is not None:
-                if matches.group(2) == myname and int(matches.group(1)) != mypid:
+                if matches.group(2).find(myname) and int(matches.group(1)) != mypid:
                     print('%s is already running on pid %s' % (myname, matches.group(1)))
-                    sys.exit(8)
-                    #return int(matches.group(1))
+                    return int(matches.group(1))
 
 
     return 0
-
 
 
 """ Load Config
@@ -414,7 +361,26 @@ def load_config():
             if matches.group(1) in config:
                 config[matches.group(1)] = matches.group(2)
 
-    print()
+
+""" Save Config
+    1. Build list from blocklists
+    2. Add old conf to the list
+Args:
+    None
+Returns:
+    None
+"""
+def save_config():
+    newconf = []                                           #Temp list for new conf
+
+    for blitem in blocklistconf.items():                   #Add name and enabled from bl
+        newconf.append('%s = %d\n' % (blitem[0], int(blitem[1][0])))
+
+    for item, value in config.items():                     #Add item, value from old conf
+        newconf.append(item + ' = ' + value + '\n')
+
+    print('Saving config')
+    save_list(newconf, folders.notrack_config)             #Save the new config
 
 
 """ Create SQL Tables
@@ -505,7 +471,7 @@ def move_file(source, destination):
     print('\tMoving %s to %s' % (source, destination))
     shutil.move(source, destination)
 
-    if not os.path.isfile(destination):
+    if not os.path.isfile(destination):                    #Check move has been successful
         print('Move_file: Error %s does not exist. Copy failed')
         return False
 
@@ -769,13 +735,13 @@ def process_customlist(lines, listname):
     print('\t%d lines to process' % len(lines))
 
     for line in lines:                                     #Read through list
-        if match_plainline(line, listname):                #Try against Plain line
+        if match_plainline(line, 'custom'):                #Try against Plain line
             continue
-        if match_easyline(line, listname):                 #Try agaisnt Easy List
+        if match_easyline(line, 'custom'):                 #Try agaisnt Easy List
             continue
-        if match_unixline(line, listname):                 #Try against Unix List
+        if match_unixline(line, 'custom'):                 #Try against Unix List
             continue
-        match_defanged(line, listname)                     #Finally try against Defanged
+        match_defanged(line, 'custom')                     #Finally try against Defanged
 
     print('\tAdded %d domains' % domaincount)              #Show stats for the list
     print('\tDeduplicated %d domains' % dedupcount)
@@ -939,7 +905,7 @@ def process_tldlist():
 
     if len(dns_whitelist) > 0:                             #Any domains in whitelist?
         print('\t%d domains added to whitelist in order avoid block from TLD' % len(dns_whitelist))
-        save_list(dns_whitelist, folders.dnslists + 'whitelist.txt')
+        save_list(dns_whitelist, folders.dnslists + 'whitelist.list')
     else:
         print('\tNo domains require whitelisting')
         #delete TODO
@@ -1253,6 +1219,7 @@ def dedup_lists():
 
     print('Further deduplicated %d domains' % dedupcount)
     print('Final number of domains in blocklist: %d' % len(dns_blacklist))
+    print()
 
     save_list(dns_blacklist, folders.dnslists + 'notrack.list')
     insert_data(sqldata)
@@ -1326,7 +1293,6 @@ Returns:
     None
 """
 def test():
-    print()
     print('Block Lists Utilised:')
 
     for bl in blocklistconf.items():
@@ -1343,11 +1309,148 @@ def test():
     sys.exit(0)
 
 
+def notrack_pause(request, pausetime):
+    check_root()
+    ntrkpause = NoTrackPause(folders.temp, folders.main_blocklist)
+
+    [newstatus, unpause_time] = ntrkpause.pause_blocking(config['status'], pausetime)
+    time.sleep(0.5)                                        #Prevent race condition
+
+    if newstatus == STATUS_ERROR:                          #Something wrong with status
+        notrack()                                          #Rerun notrack
+        config['status'] = str(STATUS_ENABLED)             #Set status to enabled
+        config['unpausetime'] = '0'                        #Reset pause time
+        save_config()
+        return
+
+    config['status'] = str(newstatus)                      #Success, Update status
+    config['unpausetime'] = str(unpause_time)              #Update unpausetime
+    save_config()
+    services.restart_dnsserver()                           #Restart DNS
+
+    newstatus = ntrkpause.wait()
+
+    if newstatus == STATUS_ERROR:                          #Something wrong with status
+        notrack()                                          #Rerun notrack
+        config['status'] = str(STATUS_ENABLED)             #Set status to enabled
+        config['unpausetime'] = '0'                        #Reset pause time
+        save_config()
+        return
+
+    config['status'] = str(newstatus)                      #Success, Update status
+    config['unpausetime'] = '0'                            #Reset pause time
+    save_config()
+    services.restart_dnsserver()                           #Restart DNS
+
+
+
+
+""" Notrack Play (Enable Blocking)
+    1. Check running as root
+    2. Create ntrkpause class
+    3. Enable blockling
+    4. Check new status:
+    4a. On error run notrack, set status to enabled
+    4b. On success restart DNS server, and change config['status']
+    5. Save config file
+Args:
+    None
+Returns:
+    None
+"""
+def notrack_play():
+    check_root()
+    ntrkpause = NoTrackPause(folders.temp, folders.main_blocklist)
+
+    newstatus = ntrkpause.enable_blocking(config['status'])
+
+    if newstatus == STATUS_ERROR:                          #Something wrong with status
+        notrack()                                          #Rerun notrack
+        config['status'] = str(STATUS_ENABLED)             #Set status to enabled
+    else:
+        services.restart_dnsserver()                       #Success, restart DNS
+        config['status'] = str(newstatus)                  #Update status
+
+    config['unpausetime'] = '0'                            #Reset pause time
+    save_config()                                          #Write status change to config
+
+
+""" Notrack Stop (Disable Blocking)
+    1. Check running as root
+    2. Create ntrkpause class
+    3. Disable blockling
+    4. Check new status:
+    4a. On error run notrack, set status to enabled
+    4b. On success restart DNS server, and change config['status']
+    5. Save config file
+Args:
+    None
+Returns:
+    None
+"""
+def notrack_stop():
+    check_root()
+    ntrkpause = NoTrackPause(folders.temp, folders.main_blocklist)
+
+    newstatus = ntrkpause.disable_blocking(config['status'])
+
+    if newstatus == STATUS_ERROR:                          #Something wrong with status
+        notrack()                                          #Rerun notrack
+        config['status'] = str(STATUS_ENABLED)             #Set status to enabled
+    else:
+        services.restart_dnsserver()                       #Success, restart DNS
+        config['status'] = str(newstatus)                  #Update status
+
+    config['unpausetime'] = '0'                            #Reset pause time
+    save_config()                                          #Write status change to config
+
+def notrack_status():
+    ntrkpause = NoTrackPause(folders.temp, folders.main_blocklist)
+    ntrkpause.get_detailedstatus(config['status'], config['unpausetime'])
+
+
+""" Main NoTrack Function
+Args:
+    Optional delay start
+Returns:
+    None
+"""
+def notrack(delay=0):
+    if delay == 0:                                         #Any delay needed?
+        print('Starting NoTrack')
+    else:
+        print('Starting NoTrack in delayed mode')
+        time.sleep(delay)
+        print('Delay finished')
+
+    check_root()
+    if is_running() > 0:                                   #Already running?
+        sys.exit(8)
+
+    create_sqltables()                                     #Create SQL Tables
+    clear_table()                                          #Clear SQL Tables
+
+    generate_blacklist()
+    generate_whitelist()
+
+    process_whitelist()                                    #Need whitelist first
+    action_lists()                                         #Action default lists
+    action_customlists()                                   #Action users custom lists
+
+    print('Finished processing all block lists')
+    print('Total number of domains added: %d' % len(blocklist))
+    print('Total number of domains deduplicated: %d' % totaldedupcount)
+    dedup_lists()                                          #Dedup then insert domains
+
+    services.restart_dnsserver()
+
+
 #Main----------------------------------------------------------------
 parser = argparse.ArgumentParser(description = 'NoTrack')
-#parser.add_argument('-p', "--play", help='Start Blocking', action='store_true')
-#parser.add_argument('-s', "--stop", help='Stop Blocking', action='store_true')
-#parser.add_argument('--pause', help='Pause Blocking', type=int)
+parser.add_argument('-p', "--play", help='Start Blocking', action='store_true')
+parser.add_argument('-s', "--stop", help='Stop Blocking', action='store_true')
+parser.add_argument('--pause', help='Pause Blocking', type=int)
+parser.add_argument('--status', help='Check Status', action='store_true')
 parser.add_argument('--force', help='Force update block lists', action='store_true')
 parser.add_argument('--wait', help='Delay start', action='store_true')
 parser.add_argument('--test', help='Show current configuration', action='store_true')
@@ -1360,53 +1463,44 @@ if args.version:                                           #Showing version?
     show_version()
 
 #Add any OS specific folder locations
-blocklistconf['bl_usersblacklist'] = tuple([True, folders.blacklist, TYPE_PLAIN])
+blocklistconf['bl_usersblacklist'] = [True, folders.blacklist, TYPE_PLAIN]
 
 services = Services()                                      #Declare service class
-
-load_config()
-host = Host(config['ipaddress'])
-
-#Setup the template strings for writing out to black/white list files
-[dnsserver_blacklist, dnsserver_whitelist] = services.get_dnstemplatestr(host.name, host.ip)
+load_config()                                              #Load users config
+host = Host(config['ipaddress'])                           #Declare host class
 
 print('NoTrack version %s' % VERSION)
 print('Hostname: %s' % host.name)
 print('IP Address: %s' % host.ip)
 
+#Setup the template strings for writing out to black/white list files
+[dnsserver_blacklist, dnsserver_whitelist] = services.get_dnstemplatestr(host.name, host.ip)
+
 #Process Arguments
-if args.force:                                             #Download blocklists
+if args.force:                                             #Force Download blocklists
     FORCE = True
 if args.test:
     test()
-if args.wait:
-    sleep(1000)
-
-check_root()
-is_running()                                               #Already running?
-
 
 print('Opening connection to MariaDB')
 db = mariadb.connect(user=dbconf.user, password=dbconf.password, database=dbconf.database)
+print()
 
-create_sqltables()                                         #Create SQL Tables
-clear_table()                                              #Clear SQL Tables
-
-generate_blacklist()
-generate_whitelist()
-
-process_whitelist()                                        #Need whitelist first
-action_lists()                                             #Action default lists
-action_customlists()                                       #Action users custom lists
-
-print('Finished processing all block lists')
-print('Total number of domains added: %d' % len(blocklist))
-print('Total number of domains deduplicated: %d' % totaldedupcount)
-dedup_lists()                                              #Dedup then insert domains
+if args.pause:
+    notrack_pause('pause', args.pause)
+elif args.play:
+    notrack_play()
+elif args.stop:
+    notrack_stop()
+elif args.status:
+    notrack_status()
+elif args.wait:
+    notrack(300)
+else:
+    notrack()
 
 print('Closing connection to MariaDB')
 db.close()
-
 
 #TODO Check for updates
 #TODO Pause
