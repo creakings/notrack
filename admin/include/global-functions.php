@@ -212,7 +212,7 @@ function filter_domain($domain) {
     return false;
   }
 
-  if (preg_match('/^(\*\.)?([\w\-_\.]+)?[\w\-_]{1,63}\.[\w\-]{2,63}$//', $domain) > 0) {
+  if (preg_match('/^(\*\.)?([\w\-_\.]+)?[\w\-_]{1,63}\.[\w\-]{2,63}$/', $domain) > 0) {
     return true;
   }
   else {
