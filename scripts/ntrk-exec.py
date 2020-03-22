@@ -419,34 +419,26 @@ def parsing_time(interval):
 
 
 """ NoTrack Pause
-    TODO ntrk-pause will functionality will be imported into this script
-    1. Check ntrk-pause exists
-    2. Run NoTrack
+    Run NoTrack with specified mode
+    TODO fork natively with python3
 Args:
     None
 Returns:
     None
 """
 def ntrk_pause(mode, duration=0):
-    if not os.path.isfile(folders.ntrk_pause):             #Does ntrk-pause exist?
-        print('Ntrk_pause: Error %s is missing' % folders.ntrk_pause)
-        sys.exit(24)
-
     if mode == 'pause':
         #Fork process of ntrk-pause into background
-        print('Launching ntrk-pause with Pause mode, duration %d' % duration)
-        #subprocess.Popen([folders.ntrk_pause, '--pause 1'], stdout=subprocess.PIPE, shell=True)
+        print('Launching NoTrack to Pause for %d minutes' % duration)
+        #subprocess.Popen([folders.notrack, '--pause', str(duration)])
         #TODO Popen wouldn't work with arguments
-        os.system(folders.ntrk_pause + ' --pause ' + str(duration) + ' > /dev/null &')
+        os.system(folders.notrack + ' --pause ' + str(duration) + ' > /dev/null &')
 
     else:
+        print('Launching NoTrack to %s' % mode)
         #Fork process of ntrk-pause --mode into background
-        print('Launching ntrk-pause with %s mode' % mode)
-        print()
-        process = subprocess.run([folders.ntrk_pause, '--' + mode], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-        print(process.stdout)                                  #Show the terminal output
-        #print(process)
         #subprocess.Popen([folders.ntrk_pause, ' --' + mode], stdout=subprocess.PIPE )
+        os.system(folders.notrack + ' --' + mode + ' > /dev/null &')
 
 
 
