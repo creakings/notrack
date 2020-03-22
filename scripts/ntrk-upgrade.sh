@@ -196,6 +196,15 @@ rename_file "/usr/local/sbin/ntrk-analytics.sh" "/usr/local/sbin/ntrk-analytics"
 echo "Finished copying scripts"
 echo
 
+#For Bash to Python porting
+#sudo rm /usr/local/sbin/notrack
+#sudo ln /home/quids/notrack/scripts/notrack.py /usr/local/sbin/notrack
+
+#sudo rm /usr/local/sbin/ntrk-exec
+#sudo ln -s /home/quids/notrack/scripts/ntrk-exec.py /usr/local/sbin/ntrk-exec
+
+#sudo rm /usr/local/sbin/ntrk-pause
+
 #sudocheck=$(grep www-data /etc/sudoers)                              #Check sudo permissions for lighty possibly DEPRECATED
 #if [[ $sudocheck == "" ]]; then
   #echo "Adding NoPassword permissions for www-data to execute script /usr/local/sbin/ntrk-exec as root"
