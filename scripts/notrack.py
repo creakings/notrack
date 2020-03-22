@@ -24,6 +24,7 @@ import mysql.connector as mariadb
 
 #Local imports
 from blocklists import *
+from ntrkshared import *
 from ntrkpause import *
 
 #######################################
@@ -432,50 +433,6 @@ def insert_data(sqldata):
     db.commit()
     cursor.close()
 
-
-""" Delete File
-    1. Check file exists
-    2. Delete file
-Args:
-    File to delete
-Returns:
-    True on success
-    False on failure or not needed
-"""
-def delete_file(filename):
-    if os.path.isfile(filename):
-        os.remove(filename)
-        return True
-
-    return False
-
-
-
-
-""" Move File
-    1. Check source exists
-    2. Move file
-Args:
-    source
-    destination
-Returns:
-    True on success
-    False on failure
-"""
-def move_file(source, destination):
-    if not os.path.isfile(source):
-        print('Move_file: Error %s is missing' % source)
-        return False
-
-    #Copy specified file
-    print('\tMoving %s to %s' % (source, destination))
-    shutil.move(source, destination)
-
-    if not os.path.isfile(destination):                    #Check move has been successful
-        print('Move_file: Error %s does not exist. Copy failed')
-        return False
-
-    return True
 
 
 """ Read CSV
@@ -897,7 +854,7 @@ def process_tldlist():
     print('\tAdded %d Top Level Domains' % domaincount)
 
 
-    #Check for whitelisted domains that are blocked by tld
+    #Check for white listed domains that are blocked by tld
     for line in whitedict:
         matches = Regex_Domain.search(line)                #Only need the tld
         if matches.group(2) in blocktlddict:               #Is tld in blocktlddict?
@@ -908,8 +865,8 @@ def process_tldlist():
         save_list(dns_whitelist, folders.dnslists + 'whitelist.list')
     else:
         print('\tNo domains require whitelisting')
-        #delete TODO
-
+        delete_file(folders.dnslists + 'whitelist.list')
+    whitedict.clear()                                      #whitedict no longer required
     print()
 
 
@@ -924,6 +881,7 @@ Returns:
 """
 def process_whitelist():
     global blockdomiandict, whitedict
+    whitedict_len = 0
 
     sqldata = []
     splitline = []
@@ -931,12 +889,13 @@ def process_whitelist():
     print('Processing Whitelist')
     print('\tLoading whitelist %s' % folders.whitelist)
 
-    filelines = read_file(folders.whitelist)
+    filelines = read_file(folders.whitelist)               #Load White list
     if filelines == None:
-        #TODO Delete old file
+        print('\tNothing in whitelist')
+        delete_file(folders.dnslists + 'whitelist.list')
         return
 
-    for line in filelines:
+    for line in filelines:                                 #Process each line
         splitline = line.split('#', 1)
         if splitline[0] == '\n' or splitline[0] == '':     #Ignore Comment line or Blank
             continue
@@ -949,10 +908,15 @@ def process_whitelist():
         else:                                              #No comment, leave it blank
             sqldata.append(tuple(['whitelist', splitline[0][:-1], True, '']))
 
-    insert_data(sqldata)
-    #TODO Delete old file when whitelist empty
-    print('\tNumber of domains in whitelist: %d' % len(blockdomiandict))
-    print('')
+    #Count number of domains white listed
+    whitedict_len = len(whitedict)
+    if whitedict_len > 0:
+        print('\tNumber of domains in whitelist: %d' % whitedict_len)
+        insert_data(sqldata)
+    else:
+        print('\tNothing in whitelist')
+        delete_file(folders.dnslists + 'whitelist.list')
+    print()
 
 
 """ Check File Age
@@ -1226,7 +1190,8 @@ def dedup_lists():
 
 
 """ Generate Example Black List File
-
+    1. Check to see if black list exists in NoTrack config folder
+    2. If it doesn't then generate some example commented out domains to block
 Args:
     None
 Returns:
@@ -1250,7 +1215,8 @@ def generate_blacklist():
 
 
 """ Generate Example White List File
-
+    1. Check to see if white list exists in NoTrack config folder
+    2. If it doesn't then generate some example commented out domains to allow
 Args:
     None
 Returns:
@@ -1309,12 +1275,28 @@ def test():
     sys.exit(0)
 
 
+""" Notrack Play (Enable Blocking)
+    1. Check running as root
+    2. Create ntrkpause class
+    3. Setup pause blocking
+    4. Check new status:
+    4a. On error run notrack, set status to enabled
+    4b. On success restart DNS server, and change config['status']
+    5. Wait
+    6. Check new status:
+    6a. On error run notrack, set status to enabled
+    6b. On success restart DNS server, and change config['status']
+
+Args:
+    None
+Returns:
+    None
+"""
 def notrack_pause(request, pausetime):
     check_root()
     ntrkpause = NoTrackPause(folders.temp, folders.main_blocklist)
 
     [newstatus, unpause_time] = ntrkpause.pause_blocking(config['status'], pausetime)
-    time.sleep(0.5)                                        #Prevent race condition
 
     if newstatus == STATUS_ERROR:                          #Something wrong with status
         notrack()                                          #Rerun notrack
@@ -1341,8 +1323,6 @@ def notrack_pause(request, pausetime):
     config['unpausetime'] = '0'                            #Reset pause time
     save_config()
     services.restart_dnsserver()                           #Restart DNS
-
-
 
 
 """ Notrack Play (Enable Blocking)
