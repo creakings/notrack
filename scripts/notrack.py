@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 #Title : NoTrack
-#Description : This script will download latest block lists from various sources, then parse them into Dnsmasq.
+#Description : This script will download latest block lists from various sources, then parse them into Dnsmasq
 #Author : QuidsUp
 #Date : 2015-01-14
 #Version : 0.9.5
-#Usage : sudo bash notrack.sh
+#Usage : sudo python notrack.py
 
 #Standard imports
 from urllib.request import Request, urlopen
@@ -19,12 +19,10 @@ import subprocess
 import sys
 import time
 
-#Additional standard import
-import mysql.connector as mariadb
-
 #Local imports
 from blocklists import *
 from ntrkshared import *
+from ntrkmariadb import DBWrapper
 from ntrkpause import *
 
 #######################################
@@ -107,14 +105,6 @@ config = {
     'unpausetime' : 0
 }
 
-
-#DBConfig loads the local settings for accessing MariaDB
-class DBConfig:
-    user = 'ntrk'
-    password = 'ntrkpass'
-    database = 'ntrkdb'
-
-dbconf = DBConfig()
 
 #FolderList stores the various file and folder locations by OS TODO complete for Windows
 class FolderList:
@@ -382,57 +372,6 @@ def save_config():
 
     print('Saving config')
     save_list(newconf, folders.notrack_config)             #Save the new config
-
-
-""" Create SQL Tables
-    Create SQL tables for blocklist, in case it has been deleted
-Args:
-    None
-Returns:
-    None
-"""
-def create_sqltables():
-    cursor = db.cursor()
-
-    cmd = 'CREATE TABLE IF NOT EXISTS blocklist (id SERIAL, bl_source TINYTEXT, site TINYTEXT, site_status BOOLEAN, comment TEXT)';
-    print('Checking SQL Table blocklist exists')
-
-    cursor.execute(cmd);
-    cursor.close()
-
-
-""" Clear Table
-    Clear blocklist table and reset serial increment
-Args:
-    None
-Returns:
-    None
-"""
-def clear_table():
-    cursor = db.cursor()
-
-    cursor.execute('DELETE FROM blocklist')
-    cursor.execute('ALTER TABLE blocklist AUTO_INCREMENT = 1')
-    cursor.close()
-
-
-""" Insert data into SQL table blocklist
-    Bulk insert a list into MariaDB
-Args:
-    List of data
-Returns:
-    None
-"""
-def insert_data(sqldata):
-    cmd = ''
-    cursor = db.cursor()
-
-    cmd = 'INSERT INTO blocklist (id, bl_source, site, site_status, comment) VALUES (NULL, %s, %s, %s, %s)'
-
-    cursor.executemany(cmd, sqldata)
-    db.commit()
-    cursor.close()
-
 
 
 """ Read CSV
@@ -912,7 +851,7 @@ def process_whitelist():
     whitedict_len = len(whitedict)
     if whitedict_len > 0:
         print('\tNumber of domains in whitelist: %d' % whitedict_len)
-        insert_data(sqldata)
+        dbwrapper.blocklist_insertdata(sqldata)
     else:
         print('\tNothing in whitelist')
         delete_file(folders.dnslists + 'whitelist.list')
@@ -1186,7 +1125,7 @@ def dedup_lists():
     print()
 
     save_list(dns_blacklist, folders.dnslists + 'notrack.list')
-    insert_data(sqldata)
+    dbwrapper.blocklist_insertdata(sqldata)
 
 
 """ Generate Example Black List File
@@ -1407,8 +1346,8 @@ def notrack(delay=0):
     if is_running() > 0:                                   #Already running?
         sys.exit(8)
 
-    create_sqltables()                                     #Create SQL Tables
-    clear_table()                                          #Clear SQL Tables
+    dbwrapper.blocklist_createtable()                      #Create SQL Tables
+    dbwrapper.blocklist_cleartable()                       #Clear SQL Tables
 
     generate_blacklist()
     generate_whitelist()
@@ -1435,7 +1374,6 @@ parser.add_argument('--force', help='Force update block lists', action='store_tr
 parser.add_argument('--wait', help='Delay start', action='store_true')
 parser.add_argument('--test', help='Show current configuration', action='store_true')
 parser.add_argument('-v', '--version', help='Get version number', action='store_true')
-#parser.add_argument('--run', help='Run NoTrack', choices=['now', 'wait', 'force'])
 
 args = parser.parse_args()
 
@@ -1446,6 +1384,7 @@ if args.version:                                           #Showing version?
 blocklistconf['bl_usersblacklist'] = [True, folders.blacklist, TYPE_PLAIN]
 
 services = Services()                                      #Declare service class
+dbwrapper = DBWrapper()                                    #Declare MariaDB Wrapper
 load_config()                                              #Load users config
 host = Host(config['ipaddress'])                           #Declare host class
 
@@ -1462,8 +1401,6 @@ if args.force:                                             #Force Download block
 if args.test:
     test()
 
-print('Opening connection to MariaDB')
-db = mariadb.connect(user=dbconf.user, password=dbconf.password, database=dbconf.database)
 print()
 
 if args.pause:
@@ -1479,8 +1416,5 @@ elif args.wait:
 else:
     notrack()
 
-print('Closing connection to MariaDB')
-db.close()
-
+del dbwrapper
 #TODO Check for updates
-#TODO Pause
