@@ -5,6 +5,9 @@
 #Additional standard import
 import mysql.connector as mariadb
 
+#Local imports
+from ntrkregex import *
+
 class DBWrapper:
     """ Class Init
         1. TODO load unique password out of php file
@@ -19,15 +22,50 @@ class DBWrapper:
         ntrkpassword = 'ntrkpass'
         ntrkdb = 'ntrkdb'
 
-        print('Opening connection to MariaDB')
+        #print('Opening connection to MariaDB')
         self.__db = mariadb.connect(user=ntrkuser, password=ntrkpassword, database=ntrkdb)
 
     """ Class Destructor
         Close DB connector
     """
     def __del__(self):
-        print('Closing connection to MariaDB')
+        #print('Closing connection to MariaDB')
         self.__db.close()
+
+
+    """ Table Searcher
+
+    Args:
+        None
+    Returns:
+        None
+    """
+    def __search(self, table, search=''):
+        cmd = '';
+        rowcount = 0
+        tabledata = []                                         #Results from table
+        cursor = self.__db.cursor()
+
+        if search == '':
+            cmd = 'SELECT * FROM %s ORDER BY id ASC' % table
+        else:
+            cmd = 'SELECT * FROM %s WHERE %s ORDER BY id ASC' % (table, search)
+
+        try:
+            cursor.execute(cmd);
+        except:
+            return False
+        else:
+            tabledata = cursor.fetchall()
+            rowcount = cursor.rowcount
+        finally:
+            cursor.close()
+
+
+        if rowcount == 0:
+            return False
+
+        return tabledata
 
 
     """ Create Blocklist Table
@@ -79,3 +117,48 @@ class DBWrapper:
         cursor.executemany(cmd, sqldata)
         self.__db.commit()
         cursor.close()
+
+
+    """ Blocklist Search
+        Find and display results from blocklist table
+        1. Check user input is valid
+        2. Search against domain or comment using regular expression
+        3. Display data
+        3a. Small number of results is displayed in detail form
+        3b. Large lists are displayed in table form
+    Args:
+        search string
+    Returns:
+        None
+    """
+    def blocklist_search(self, s):
+        i = 1                                              #Table position
+        search = ''                                        #SQL Search string
+
+        if not Regex_ValidInput.findall(s):                #Valid input specified?
+            print('Invalid search input')
+            return
+
+        search = "site REGEXP '%s' OR comment REGEXP '%s'" % (s, s)
+
+        results = self.__search('blocklist', search)
+
+        if results == False:                               #Any results found?
+            print('Nothing found')
+            return
+
+        if len(results) < 5:                               #Small list detailed view
+            for row in results:
+                print('Domain    : %s' % row[2])
+                print('Blocklist : %s' % row[1])
+                print('Comment   : %s' % row[4])
+                print()
+        else:
+            print('#      Block List          Domain                                   Comment')
+            print('-      ----------          ------                                   -------')
+            for row in results:                            #Large list table view
+                #Specify column widths
+                #Blocklist name | Domain | Comment
+                print('%-6d %-19s %-40s %s' % (i, row[1], row[2], row[4]))
+                i += 1
+        print()
