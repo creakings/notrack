@@ -25,17 +25,6 @@ class DBConfig:
 
 #FolderList stores the various file and folder locations by OS TODO complete for Windows
 class FolderList:
-    accesslog = ''
-    cron_ntrkparse = ''
-    etc = ''
-    etc_notrack = ''
-    log = ''
-    notrack = ''
-    ntrk_pause = ''
-    ntrk_upgrade = ''
-    temp = ''
-    wwwsink = ''
-
     def __init__(self):
         if os.name == 'posix':
             self.accesslog = '/var/log/ntrk-admin.log'
