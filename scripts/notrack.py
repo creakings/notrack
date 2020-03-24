@@ -11,7 +11,7 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 import argparse
 import os
-import re
+import re #TODO load_config and is_running still have regular expressions to move to ntrkregex
 import shutil
 import signal
 import stat
@@ -24,6 +24,7 @@ from blocklists import *
 from ntrkshared import *
 from ntrkmariadb import DBWrapper
 from ntrkpause import *
+from ntrkregex import *
 
 #######################################
 # Constants
@@ -52,36 +53,6 @@ dedupcount = 0
 domaincount = 0
 totaldedupcount = 0
 
-
-#######################################
-# Regular Expressions
-#######################################
-Regex_Defanged = re.compile('^(?:f[txX]p|h[txX][txX]ps?)\[?:\]?\/\/([\w\.\-_\[\]]{1,250}\[?\.\]?[\w\-]{2,63})')
-
-#Regex to extract domain.co.uk from subdomain.domain.co.uk
-Regex_Domain = re.compile('([\w\-_]{1,63})(\.(?:co\.|com\.|org\.|edu\.|gov\.)?[\w\-_]{1,63}$)')
-
-#Regex EasyList Line:
-#|| Marks active domain entry
-#Group 1: domain.com (Need to eliminate IP addresses, so assume TLD begins with [a-z]
-#Non-capturing group: Domain ending
-#Non-capturing group: Against document type: Acceptable - third-party, doc, popup
-Regex_EasyLine = re.compile('^\|\|([\w\.\-_]{1,250}\.[a-zA-Z][\w\-]{1,62})(?:\^|\.)(?:\$third\-party|\$doc|\$popup|\$popup\,third\-party)?\n$')
-
-#Regex Plain Line
-#Group 1: domain.com
-#Group 2: optional comment.
-#Utilise negative lookahead to make sure that two hashes aren't next to each other,
-# as this could be an EasyList element hider
-Regex_PlainLine = re.compile('^([\w\.\-_]{1,250}\.[\w\-]{2,63})( #(?!#).*)?\n$')
-
-#Regex TLD Line:
-Regex_TLDLine = re.compile('^(\.\w{1,63})(?:\s#.*)?\n$')
-
-#Regex Unix Line
-Regex_UnixLine = re.compile('^(?:0|127)\.0\.0\.[01]\s+([\w\.\-_]{1,250}\.[\w\-]{2,63})\s*#?(.*)\n$')
-
-
 config = {
     'LatestVersion' : VERSION,
     'NetDev' : 'eth0',
@@ -108,16 +79,6 @@ config = {
 
 #FolderList stores the various file and folder locations by OS TODO complete for Windows
 class FolderList:
-    main_blocklist = ''
-    blacklist = ''
-    whitelist = ''
-    tld_blacklist = ''
-    tld_whitelist = ''
-    tld_csv = ''
-    notrack_config = ''
-    temp = ''
-    dnslists = ''
-
     def __init__(self):
         if os.name == 'posix':
             self.main_blocklist = '/etc/dnsmasq.d/notrack.list'
@@ -782,12 +743,12 @@ def process_tldlist():
         if row[2] == '1':                                  #Risk 1 - High Risk
             if row[0] not in tld_white:                    #Is tld not in whitelist?
                 blocktlddict[row[0]] = True                #Add high risk tld
-                blocklist.append(tuple([reverse, row[0], 'tld', True, row[1]]))
+                blocklist.append(tuple([reverse, row[0], row[1], 'bl_tld', ]))
                 domaincount += 1
         else:
             if row[0] in tld_black:                        #Low risk, but in Black list
                 blocktlddict[row[0]] = True                #Add low risk tld
-                blocklist.append(tuple([reverse, row[0], 'tld', True, row[1]]))
+                blocklist.append(tuple([reverse, row[0], row[1], 'bl_tld', ]))
                 domaincount += 1
 
     print('\tAdded %d Top Level Domains' % domaincount)
@@ -825,7 +786,7 @@ def process_whitelist():
     sqldata = []
     splitline = []
 
-    print('Processing Whitelist')
+    print('Processing whitelist:')
     print('\tLoading whitelist %s' % folders.whitelist)
 
     filelines = read_file(folders.whitelist)               #Load White list
@@ -1198,7 +1159,7 @@ Returns:
     None
 """
 def test():
-    print('Block Lists Utilised:')
+    print('Block Lists enabled:')
 
     for bl in blocklistconf.items():
         if bl[1][0]:
@@ -1206,9 +1167,9 @@ def test():
 
     print()
     if config['bl_custom'] == '':
-        print('No additional custom block lists utilised')
+        print('No additional custom block lists set')
     else:
-        print('Additional custom block lists utilised:')
+        print('Additional custom block lists:')
         print(config['bl_custom'].replace(',', '\n'))
 
     sys.exit(0)
@@ -1323,6 +1284,14 @@ def notrack_stop():
     config['unpausetime'] = '0'                            #Reset pause time
     save_config()                                          #Write status change to config
 
+
+""" NoTrack Status
+    Shows the current status from ntrkpause
+Args:
+    None
+Returns:
+    None
+"""
 def notrack_status():
     ntrkpause = NoTrackPause(folders.temp, folders.main_blocklist)
     ntrkpause.get_detailedstatus(config['status'], config['unpausetime'])
@@ -1372,6 +1341,7 @@ parser.add_argument('--pause', help='Pause Blocking', type=int)
 parser.add_argument('--status', help='Check Status', action='store_true')
 parser.add_argument('--force', help='Force update block lists', action='store_true')
 parser.add_argument('--wait', help='Delay start', action='store_true')
+parser.add_argument('--search', help='Search block lists for a specified domain')
 parser.add_argument('--test', help='Show current configuration', action='store_true')
 parser.add_argument('-v', '--version', help='Get version number', action='store_true')
 
@@ -1411,6 +1381,8 @@ elif args.stop:
     notrack_stop()
 elif args.status:
     notrack_status()
+elif args.search:
+    dbwrapper.blocklist_search(args.search)
 elif args.wait:
     notrack(300)
 else:
