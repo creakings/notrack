@@ -135,26 +135,6 @@ class Services:
 
 #End Classes---------------------------------------------------------
 
-""" Check Module Exists
-    Checks specified module exists
-Args:
-    Module to check
-Returns:
-    True - Module exists
-    False - Module not installed
-"""
-def check_module(mod):
-    import importlib.util
-
-    spec = importlib.util.find_spec(mod)
-
-    if spec is None:
-        print('Check_module: Error - %s not found' % mod)
-        return False
-    else:
-        print('Check_module: %s can be imported' % mod)
-        return True
-
 
 """ Block Message
     Sets Block message for sink page

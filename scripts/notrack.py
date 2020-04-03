@@ -7,8 +7,6 @@
 #Usage : sudo python notrack.py
 
 #Standard imports
-from urllib.request import Request, urlopen
-from urllib.error import HTTPError, URLError
 import argparse
 import os
 import re #TODO load_config and is_running still have regular expressions to move to ntrkregex
@@ -240,20 +238,6 @@ def str2bool(v):
     return v.lower() in ('1', 'true', 'yes')
 
 
-""" Check Root
-    Check script is being run as root
-Args:
-    None
-Returns:
-    None
-"""
-def check_root():
-    if os.geteuid() != 0:
-        print('Error - This script must be run as root')
-        print('NoTrack must be run as root', file=sys.stderr)
-        sys.exit(2)
-
-
 """ Is Running
     1. Get current pid and script name
     2. Run pgrep -a python3 - look for instances of python3 running
@@ -386,31 +370,6 @@ def read_file(filename):
     return filelines
 
 
-""" Save Blob
-    Save a binary blob to a file
-Args:
-    None
-Returns:
-    None
-"""
-def save_blob(data, filename):
-    try:
-        f = open(filename, 'wb')                           #Open file for binary writing
-    except IOError as e:
-        print('Error writing to %s' % filename)
-        print(e)
-        return False
-    except OSError as e:
-        print('Error writing to %s' % filename)
-        print(e)
-        return False
-    else:
-        f.write(data)
-        f.close()
-
-
-
-
 """ Save File
     Save a list into a file
 Args:
@@ -443,10 +402,10 @@ Args:
 Returns:
     None
 """
-def extract_zip(inputfile, destination):
+def extract_list(sourcezip, destination):
     from zipfile import ZipFile
 
-    with ZipFile(inputfile) as zipobj:
+    with ZipFile(sourcezip) as zipobj:
         for compressedfile in zipobj.namelist():
             if compressedfile.endswith('.txt'):
                 zipobj.extract(compressedfile, folders.temp)
@@ -847,63 +806,20 @@ def check_file_age(filename):
     return False
 
 
-""" Download File
-    1. Make 3 attempts at downloading a file
-    2. Save File
-    3. Request file is unzipped (if necessary)
-Args:
-    URL, List Name, File Destination
-Returns:
-    True - Success
-    False - Failed download
-"""
-def download_file(url, listname, destination):
+def download_list(url, listname, destination):
+    """ Download List
+    Download File
+    Request file is unzipped (if necessary)
+
+    Args:
+        URL, List Name, File Destination
+    Returns:
+        True - Success
+        False - Failed download
+    """
     extension = ''
     outputfile = ''
 
-    print('\tDownloading %s' % url)
-
-    for i in range(1, 4):
-        try:
-            response = urlopen(url)
-        except HTTPError as e:
-            if e.code >= 500 and e.code < 600:
-                #Take another attempt up to max of for loop
-                print('\tHTTP Error %d: Server side error' % e.code)
-            elif e.code == 400:
-                print('\tHTTP Error 400: Bad request')
-                return False
-            elif e.code == 403:
-                print('\tHTTP Error 403: Unauthorised Access')
-                return False
-            elif e.code == 404:
-                print('\tHTTP Error 404: Not Found')
-                return False
-            elif e.code == 429:
-                print('\tHTTP Error 429: Too many requests')
-            print('\t%s' % url)
-        except URLError as e:
-            if hasattr(e, 'reason'):
-                print('\tError downloading %s' % url)
-                print('\tReason: %s' % e.reason)
-                return False
-            elif hasattr(e, 'code'):
-                print('\t%s' % url)
-                print('Server was unable to fulfill the request')
-                print('\tHTTP Error: %d' % e.code)
-                return False
-        else:
-            res_code = response.getcode()
-            if res_code == 200:                            #200 - Success
-                break
-            elif res_code == 204:                          #204 - Success but nothing
-                print('\tHTTP Response 204: No data found')
-                return False
-            else:
-                print('\t%s' % url)
-                print('\tHTTP Response %d' % res_code)
-
-        sleep(i * 2)                                       #Throttle repeat attemps
 
     #Prepare for writing downloaded file to temp folder
     if url.endswith('zip'):                                #Check file extension
@@ -913,10 +829,11 @@ def download_file(url, listname, destination):
         extension = 'txt'
         outputfile = destination
 
-    save_blob(response.read(), outputfile)                 #Write file to temp folder
+    if not download_file(url, outputfile):
+        return False
 
     if extension == 'zip':                                 #Extract zip file?
-        extract_zip(outputfile, destination)
+        extract_list(outputfile, destination)
 
     return True
 
@@ -957,7 +874,7 @@ def action_lists():
         if blurl.startswith('http') or blurl.startswith('ftp'):
             blfilename = folders.temp + blname + '.txt'    #Download to temp folder
             if check_file_age(blfilename):                 #Does file need freshening?
-                download_file(blurl, blname, blfilename)
+                download_list(blurl, blname, blfilename)
         else:                                              #Local file
             blfilename = blurl;                            #URL is actually the filename
 
@@ -1025,7 +942,7 @@ def action_customlists():
             #Download to temp folder with loop position in file name
             blfilename = '%s%s.txt' % (folders.temp, blname)
             if check_file_age(blfilename):                 #Does file need freshening?
-                download_file(blurl, blname, blfilename)
+                download_list(blurl, blname, blfilename)
         else:                                              #Local file
             blfilename = blurl;
 
