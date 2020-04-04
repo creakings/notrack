@@ -177,12 +177,16 @@ class NoTrackUpgrade():
         if p.returncode == 0:                              #Success
             print(p.stdout)
             return True
+        elif p.returncode == 1:                            #Fatal Error
+            print(p.stderr)
+            print('Git_Clone: Error - Not continuing')
+            sys.exit(21)
 
         print(p.stderr)                                    #Something wrong
         return False
 
 
-    def __git_upgrade(self):
+    def __git_pull(self):
         """
         Attempt a Git Pull
         Switch from using root to appropriate username
@@ -201,6 +205,10 @@ class NoTrackUpgrade():
         if p.returncode == 0:                              #Success
             print(p.stdout)
             return True
+        elif p.returncode == 1:                            #Fatal Error
+            print(p.stderr)
+            print('Git_Pull: Error - Not continuing')
+            sys.exit(21)
 
         print(p.stderr)                                    #Something wrong
         return False
@@ -400,7 +408,7 @@ class NoTrackUpgrade():
         """
 
         if self.__check_git():
-            if not self.__git_upgrade():
+            if not self.__git_pull():
                 self.__git_clone()
 
         else:
