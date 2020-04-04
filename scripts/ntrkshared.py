@@ -4,6 +4,9 @@ import os
 import shutil
 import time
 
+#Constants
+VERSION = '0.9.5'
+
 
 def check_module(mod):
     """ Check Module Exists
@@ -56,8 +59,6 @@ def delete_file(source):
         print('Delete_file: Error unable to delete', source)
         print(e)
         return False
-    else:
-        print('%s deleted successfully' % source)
 
     return True
 
@@ -81,8 +82,6 @@ def delete_folder(source):
         print('Delete_folder: Error unable to delete', source)
         #print(e)
         return False
-    else:
-        print('%s deleted successfully' % source)
 
     return True
 
