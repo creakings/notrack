@@ -23,7 +23,8 @@ class Services:
 
         self.__find_supervisor()
         self.__find_dnsserver()
-        self.__find_webserver
+        self.__find_webserver()
+
 
     def __find_supervisor(self):
         """
@@ -80,12 +81,10 @@ class Services:
 
         Parameters:
             service (str): Service to restart
-
         Returns:
             True on Success (return code zero)
             False on Failure (return code non-zero)
         """
-
         p = subprocess.run(['sudo', self.__supervisor, 'restart', service], stderr=subprocess.PIPE, universal_newlines=True)
 
         if p.returncode != 0:
