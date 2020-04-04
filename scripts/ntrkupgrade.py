@@ -439,6 +439,8 @@ def main():
     ntrkupgrade = NoTrackUpgrade(folders.tempdir, folders.sbindir, folders.wwwconfdir)
 
     print('NoTrack Upgrader')
+    check_root()
+
     print('Found Install Location:', ntrkupgrade.install_location)
     print('Found Username:', ntrkupgrade.username)
     print()
