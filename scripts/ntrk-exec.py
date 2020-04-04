@@ -17,6 +17,7 @@ import subprocess
 import sys
 
 #Local imports
+from ntrkfolders import FolderList
 from ntrkservices import Services
 
 #DBConfig loads the local settings for accessing MariaDB
@@ -24,22 +25,6 @@ class DBConfig:
     user = 'ntrk'
     password = 'ntrkpass'
     database = 'ntrkdb'
-
-
-#FolderList stores the various file and folder locations by OS TODO complete for Windows
-class FolderList:
-    def __init__(self):
-        if os.name == 'posix':
-            self.accesslog = '/var/log/ntrk-admin.log'
-            self.cron_ntrkparse = '/etc/cron.d/ntrk-parse'
-            self.etc = '/etc/'
-            self.etc_notrack = '/etc/notrack/'
-            self.log = '/var/log/'
-            self.notrack = '/usr/local/sbin/notrack'
-            self.ntrk_pause = '/usr/local/sbin/ntrk-pause'
-            self.ntrk_upgrade = '/usr/local/sbin/ntrk-upgrade'
-            self.temp = '/tmp/'
-            self.wwwsink = '/var/www/html/sink/'
 
 
 #Host gets the Name and IP address of this system
@@ -76,9 +61,10 @@ Returns:
     None
 """
 def block_message(msg):
-    import grp
-
+    services = Services()
     groupname = ''
+
+    groupname = services.get_webuser()
 
     print('Opening %sindex.html for writing' % folders.wwwsink)
 
@@ -91,26 +77,6 @@ def block_message(msg):
         f.write('<img src="data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=" alt="" />')
 
     f.close()                                              #Close index.html
-
-
-    #Find the group name. Arch uses http, other distros use www-data
-    print ('Finding group name for webserver')
-
-    try:
-        grp.getgrnam('www-data')
-    except KeyError:
-        print('No www-data group')
-    else:
-        groupname = 'www-data'
-        print('Found group www-data')
-
-    try:
-        grp.getgrnam('http')
-    except KeyError:
-        print('No http group')
-    else:
-        groupname = 'http'
-        print('Found group http')
 
     #Set ownership of index.html
     print('Setting ownership of %sindex.html to %s' % (folders.wwwsink, groupname))
@@ -179,7 +145,7 @@ def copy_dhcp():
         print('Copy_dhcp: Error - This function only works with Dnsmasq')
         return
 
-    copy_file(folders.temp + dhcp_config, services.dhcp_config)
+    copy_file(folders.tempdir + dhcp_config, services.dhcp_config)
 
     services.restart_dnsserver()
 
@@ -196,7 +162,7 @@ Returns:
     None
 """
 def copy_list(listname):
-    copy_file(folders.temp + listname, folders.etc_notrack + listname)
+    copy_file(folders.tempdir + listname, folders.etc_notrack + listname)
 
     #Run notrack in delayed (wait) mode
     run_notrack('wait')
@@ -210,8 +176,8 @@ Returns:
     None
 """
 def copy_tldlists():
-    copy_file(folders.temp + 'domain-blacklist.txt', folders.etc_notrack + 'domain-blacklist.txt')
-    copy_file(folders.temp + 'domain-whitelist.txt', folders.etc_notrack + 'domain-whitelist.txt')
+    copy_file(folders.tempdir + 'domain-blacklist.txt', folders.etc_notrack + 'domain-blacklist.txt')
+    copy_file(folders.tempdir + 'domain-whitelist.txt', folders.etc_notrack + 'domain-whitelist.txt')
 
 
 """ Save Static Hosts Config
@@ -227,7 +193,7 @@ def copy_localhosts():
     localhosts_temp = ''
     host = Host()
 
-    localhosts_temp = folders.temp + 'localhosts.list'
+    localhosts_temp = folders.tempdir + 'localhosts.list'
 
     #Check temp file exists
     if not os.path.isfile(localhosts_temp):
@@ -242,7 +208,7 @@ def copy_localhosts():
         f.close()
         print()
 
-    copy_file(localhosts_temp, folders.etc + 'localhosts.list')
+    copy_file(localhosts_temp, folders.etcdir + 'localhosts.list')
 
 
 """ Create Access Log
@@ -456,7 +422,7 @@ args = parser.parse_args()
 
 if args.save:                                              #Save a config file
     if args.save == 'conf':
-        copy_file(folders.temp + 'notrack.conf', folders.etc_notrack + 'notrack.conf')
+        copy_file(folders.tempdir + 'notrack.conf', folders.etc_notrack + 'notrack.conf')
     elif args.save == 'black':
         copy_list('blacklist.txt')
     elif args.save == 'white':

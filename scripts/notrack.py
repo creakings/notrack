@@ -19,6 +19,7 @@ import time
 
 #Local imports
 from blocklists import *
+from ntrkfolders import FolderList
 from ntrkshared import *
 from ntrkmariadb import DBWrapper
 from ntrkpause import *
@@ -28,7 +29,6 @@ from ntrkservices import Services
 #######################################
 # Constants
 #######################################
-VERSION = '0.9.5'
 MAX_AGE = 172800 #2 days in seconds
 CURRENT_TIME = time.time()
 FORCE = False
@@ -74,24 +74,6 @@ config = {
     'status' : 1,
     'unpausetime' : 0
 }
-
-
-#FolderList stores the various file and folder locations by OS TODO complete for Windows
-class FolderList:
-    def __init__(self):
-        if os.name == 'posix':
-            self.main_blocklist = '/etc/dnsmasq.d/notrack.list'
-            self.dnslists = '/etc/dnsmasq.d/'
-            self.blacklist = '/etc/notrack/blacklist.txt'
-            self.whitelist = '/etc/notrack/whitelist.txt'
-            self.tld_blacklist = '/etc/notrack/domain-blacklist.txt'
-            self.tld_whitelist = '/etc/notrack/domain-whitelist.txt'
-            self.tld_csv = '/var/www/html/admin/include/tld.csv'
-            self.notrack_config = '/etc/notrack/notrack.conf'
-            self.temp = '/tmp/'
-
-
-folders = FolderList()
 
 
 #Host gets the Name and IP address of this system
@@ -315,9 +297,9 @@ def extract_list(sourcezip, destination):
     with ZipFile(sourcezip) as zipobj:
         for compressedfile in zipobj.namelist():
             if compressedfile.endswith('.txt'):
-                zipobj.extract(compressedfile, folders.temp)
+                zipobj.extract(compressedfile, folders.tempdir)
                 print('\tExtracting %s' % compressedfile)
-                move_file(folders.temp + compressedfile, destination)
+                move_file(folders.tempdir + compressedfile, destination)
 
 
 """ Add Domain
@@ -731,7 +713,7 @@ def download_list(url, listname, destination):
     #Prepare for writing downloaded file to temp folder
     if url.endswith('zip'):                                #Check file extension
         extension = 'zip'
-        outputfile = '%s%s.zip' % (folders.temp, listname)
+        outputfile = '%s%s.zip' % (folders.tempdir, listname)
     else:                                                  #Other - Assume txt for output
         extension = 'txt'
         outputfile = destination
@@ -779,7 +761,7 @@ def action_lists():
 
         #Is this a downloadable file or locally stored?
         if blurl.startswith('http') or blurl.startswith('ftp'):
-            blfilename = folders.temp + blname + '.txt'    #Download to temp folder
+            blfilename = folders.tempdir + blname + '.txt'    #Download to temp folder
             if check_file_age(blfilename):                 #Does file need freshening?
                 download_list(blurl, blname, blfilename)
         else:                                              #Local file
@@ -847,7 +829,7 @@ def action_customlists():
         #Is this a downloadable file or locally stored?
         if blurl.startswith('http') or blurl.startswith('ftp'):
             #Download to temp folder with loop position in file name
-            blfilename = '%s%s.txt' % (folders.temp, blname)
+            blfilename = '%s%s.txt' % (folders.tempdir, blname)
             if check_file_age(blfilename):                 #Does file need freshening?
                 download_list(blurl, blname, blfilename)
         else:                                              #Local file
@@ -1018,7 +1000,7 @@ Returns:
 """
 def notrack_pause(request, pausetime):
     check_root()
-    ntrkpause = NoTrackPause(folders.temp, folders.main_blocklist)
+    ntrkpause = NoTrackPause(folders.tempdir, folders.main_blocklist)
 
     [newstatus, unpause_time] = ntrkpause.pause_blocking(config['status'], pausetime)
 
@@ -1064,7 +1046,7 @@ Returns:
 """
 def notrack_play():
     check_root()
-    ntrkpause = NoTrackPause(folders.temp, folders.main_blocklist)
+    ntrkpause = NoTrackPause(folders.tempdir, folders.main_blocklist)
 
     newstatus = ntrkpause.enable_blocking(config['status'])
 
@@ -1094,7 +1076,7 @@ Returns:
 """
 def notrack_stop():
     check_root()
-    ntrkpause = NoTrackPause(folders.temp, folders.main_blocklist)
+    ntrkpause = NoTrackPause(folders.tempdir, folders.main_blocklist)
 
     newstatus = ntrkpause.disable_blocking(config['status'])
 
@@ -1117,7 +1099,7 @@ Returns:
     None
 """
 def notrack_status():
-    ntrkpause = NoTrackPause(folders.temp, folders.main_blocklist)
+    ntrkpause = NoTrackPause(folders.tempdir, folders.main_blocklist)
     ntrkpause.get_detailedstatus(config['status'], config['unpausetime'])
 
 
@@ -1175,6 +1157,7 @@ if args.version:                                           #Showing version?
     show_version()
 
 #Add any OS specific folder locations
+folders = FolderList()
 blocklistconf['bl_usersblacklist'] = [True, folders.blacklist, TYPE_PLAIN]
 blocklistconf['bl_blacklist'][1] = folders.blacklist
 
