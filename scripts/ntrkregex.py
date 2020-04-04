@@ -34,3 +34,6 @@ Regex_TLDLine = re.compile('^(\.\w{1,63})(?:\s#.*)?\n$')
 
 #Regex Unix Line
 Regex_UnixLine = re.compile('^(?:0|127)\.0\.0\.[01]\s+([\w\.\-_]{1,250}\.[\w\-]{2,63})\s*#?(.*)\n$')
+
+#Version from bl_notrack
+Regex_Version = re.compile('^#LatestVersion (\d{1,2}\.\d{1,2}\.?\d?\d?)\n$')
