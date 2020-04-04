@@ -9,6 +9,7 @@ v0.9.5 Onwards:
 7. Unable to find Service Supervisor
 8. Unable to find DNS Server
 9. Unable to find Web Server
+10. Unable to find Web Folder
 
 -----------------------------
 20. Unable to find NoTrack folder
