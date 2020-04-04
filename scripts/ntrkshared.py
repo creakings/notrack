@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import sys
 import time
 
 #Constants
@@ -35,8 +36,7 @@ def check_root():
     Check script is being run as root
     """
     if os.geteuid() != 0:
-        print('Error - This script must be run as root')
-        print('NoTrack must be run as root', file=sys.stderr)
+        print('Error - This script must be run as root', file=sys.stderr)
         sys.exit(2)
 
 
