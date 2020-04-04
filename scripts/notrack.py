@@ -23,6 +23,7 @@ from ntrkshared import *
 from ntrkmariadb import DBWrapper
 from ntrkpause import *
 from ntrkregex import *
+from ntrkservices import Services
 
 #######################################
 # Constants
@@ -89,7 +90,6 @@ class FolderList:
             self.notrack_config = '/etc/notrack/notrack.conf'
             self.temp = '/tmp/'
 
-        blocklistconf['bl_blacklist'][1] = self.blacklist
 
 folders = FolderList()
 
@@ -124,99 +124,6 @@ class Host:
             self.ip = conf_ip
 
 
-#Services is a class for identifing Service Supervisor, Web Server, and DNS Server
-#Restarting the Service will use the appropriate Service Supervisor
-class Services:
-    __supervisor = ''                                      #Supervisor command
-    __supervisor_name = ''                                 #Friendly name
-    __webserver = ''
-    __dnsserver = ''
-    dhcp_config = ''
-
-    def __init__(self):
-        #Find service supervisor by checking if each application exists
-        if shutil.which('systemctl') != None:
-            self.__supervisor = 'systemctl'
-            self.__supervisor_name = 'systemd'
-        elif shutil.which('service') != None:
-            self.__supervisor = 'service'
-            self.__supervisor_name = 'systemctl'
-        elif shutil.which('sv') != None:
-            self.__supervisor = 'sv'
-            self.__supervisor_name = 'ruinit'
-        else:
-            print('Services Init: Fatal Error - Unable to identify service supervisor')
-            sys.exit(7)
-
-        print('Services Init: Identified Service manager %s' % self.__supervisor_name)
-
-        #Find DNS server by checking if each application exists
-        if shutil.which('dnsmasq') != None:
-            self.__dnsserver = 'dnsmasq'
-            self.dhcp_config = '/etc/dnsmasq.d/dhcp.conf'
-        elif shutil.which('bind') != None:
-            self.__dnsserver = 'bind'
-        else:
-            print('Services Init: Fatal Error - Unable to identify DNS server')
-            sys.exit(8)
-        print('Services Init: Identified DNS server %s' % self.__dnsserver)
-
-        #Find Web server by checking if each application exists
-        if shutil.which('lighttpd') != None:
-            self.__webserver = 'lighttpd'
-        elif shutil.which('apache') != None:
-            self.__webserver = 'apache'
-        else:
-            print('Services Init: Fatal Error - Unable to identify Web server')
-            sys.exit(9)
-        print('Services Init: Identified Web server %s' % self.__webserver)
-        print()
-
-
-    """ Get DNS Template String
-        Gets the necessary string for creating DNS Block list files based on DNS server
-    Args:
-        Host Name, Host IP
-    Returns:
-        list of blacklist and whitelist string templates
-    """
-    def get_dnstemplatestr(self, hostname, hostip):
-        blacklist = ''
-        whitelist = ''
-
-        if self.__dnsserver == 'dnsmasq':
-            blacklist = 'address=/%s/' + hostip + '\n'
-            whitelist = 'server=/%s/#\n'
-
-        return tuple([blacklist, whitelist])
-
-
-    """ Restart Service
-        Restart specified service and return code
-    Args:
-        service to restart
-    Returns:
-        True on Success (return code zero)
-        False on Failure (return code non-zero)
-    """
-    def __restart_service(self, service):
-        p = subprocess.run(['sudo', self.__supervisor, 'restart', service], stderr=subprocess.PIPE, universal_newlines=True)
-
-        if p.returncode != 0:
-            print('Services restart_service: Failed to restart %s' % service)
-            print(p.stderr)
-            return False
-        else:
-            print('Successfully restarted %s' % service)
-            return True
-
-    #Restart DNS Server - returns the result of restart_service
-    def restart_dnsserver(self):
-        return self.__restart_service(self.__dnsserver)
-
-    #Restart Web Server - returns the result of restart_service
-    def restart_webserver(self):
-        return self.__restart_service(self.__webserver)
 
 #End Classes---------------------------------------------------------
 
@@ -1269,6 +1176,7 @@ if args.version:                                           #Showing version?
 
 #Add any OS specific folder locations
 blocklistconf['bl_usersblacklist'] = [True, folders.blacklist, TYPE_PLAIN]
+blocklistconf['bl_blacklist'][1] = folders.blacklist
 
 services = Services()                                      #Declare service class
 dbwrapper = DBWrapper()                                    #Declare MariaDB Wrapper

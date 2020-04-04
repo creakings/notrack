@@ -8,6 +8,7 @@
 #Version: 0.9.5
 #Usage  : ntrk-exec [command]
 
+#Standard imports
 import argparse
 import os
 import shutil
@@ -15,6 +16,8 @@ import stat
 import subprocess
 import sys
 
+#Local imports
+from ntrkservices import Services
 
 #DBConfig loads the local settings for accessing MariaDB
 class DBConfig:
@@ -57,81 +60,6 @@ class Host:
         s.close()
 
 
-
-#Services is a class for identifing Service Supervisor, Web Server, and DNS Server
-#Restarting the Service will use the appropriate Service Supervisor
-class Services:
-    __supervisor = ''                                      #Supervisor command
-    __supervisor_name = ''                                 #Friendly name
-    __webserver = ''
-    __dnsserver = ''
-    dhcp_config = ''
-
-    def __init__(self):
-        #Find service supervisor by checking if each application exists
-        if shutil.which('systemctl') != None:
-            self.__supervisor = 'systemctl'
-            self.__supervisor_name = 'systemd'
-        elif shutil.which('service') != None:
-            self.__supervisor = 'service'
-            self.__supervisor_name = 'systemctl'
-        elif shutil.which('sv') != None:
-            self.__supervisor = 'sv'
-            self.__supervisor_name = 'ruinit'
-        else:
-            print('Services Init: Fatal Error - Unable to identify service supervisor')
-            sys.exit(7)
-
-        print('Services Init: Identified Service manager %s' % self.__supervisor_name)
-
-        #Find DNS server by checking if each application exists
-        if shutil.which('dnsmasq') != None:
-            self.__dnsserver = 'dnsmasq'
-            self.dhcp_config = '/etc/dnsmasq.d/dhcp.conf'
-        elif shutil.which('bind') != None:
-            self.__dnsserver = 'bind'
-        else:
-            print('Services Init: Fatal Error - Unable to identify DNS server')
-            sys.exit(8)
-        print('Services Init: Identified DNS server %s' % self.__dnsserver)
-
-        #Find Web server by checking if each application exists
-        if shutil.which('lighttpd') != None:
-            self.__webserver = 'lighttpd'
-        elif shutil.which('apache') != None:
-            self.__webserver = 'apache'
-        else:
-            print('Services Init: Fatal Error - Unable to identify Web server')
-            sys.exit(9)
-        print('Services Init: Identified Web server %s' % self.__webserver)
-
-
-    """ Restart Service
-        Restart specified service and return code
-    Args:
-        service to restart
-    Returns:
-        True on Success (return code zero)
-        False on Failure (return code non-zero)
-    """
-    def __restart_service(self, service):
-        p = subprocess.run(['sudo', self.__supervisor, 'restart', service], stderr=subprocess.PIPE, universal_newlines=True)
-
-        if p.returncode != 0:
-            print('Services restart_service: Failed to restart %s' % service)
-            print(p.stderr)
-            return False
-        else:
-            print('Successfully restarted %s' % service)
-            return True
-
-    #Restart DNS Server - returns the result of restart_service
-    def restart_dnsserver(self):
-        return self.__restart_service(self.__dnsserver)
-
-    #Restart Web Server - returns the result of restart_service
-    def restart_webserver(self):
-        return self.__restart_service(self.__webserver)
 
 #End Classes---------------------------------------------------------
 
