@@ -76,15 +76,21 @@ config = {
 }
 
 
-#Host gets the Name and IP address of this system
-#If an IP has been supplied then use that instead of trying to find the system IP
-#Usecase is for when NoTrack is used on a VPN
 class Host:
-    name = ''
-    ip = ''
+    """
+    Host gets the Name and IP address of this system
+    If an IP has been supplied then use that instead of trying to find the system IP
+    Usecase is for when NoTrack is used on a VPN
+
+    Parameters:
+        conf_ip (str): config.ipaddress
+    """
 
     def __init__(self, conf_ip):
         import socket
+
+        self.name = ''
+        self.ip = ''
 
         self.name = socket.gethostname()                   #Host Name is easy to get
 
@@ -116,29 +122,29 @@ def add_whitelist(domain):
     return dnsserver_whitelist % domain
 
 
-""" String to Bool
-    Convert string to boolean value
-Args:
-    String
-Returns:
-    True or False
-"""
 def str2bool(v):
+    """
+    Convert string to boolean value
+
+    Parameters:
+        v (str): Value to convert
+    Returns:
+        Boolean result
+    """
     return v.lower() in ('1', 'true', 'yes')
 
 
-""" Is Running
-    1. Get current pid and script name
-    2. Run pgrep -a python3 - look for instances of python3 running
-    3. Look through results of above command
-    4. Check for my script name not equalling my pid
-Args:
-    None
-Returns:
-    0 - No other instances running
-    > 0 - First match of another instance
-"""
 def is_running():
+    """
+    Get current pid and script name
+    Run pgrep -a python3 - look for instances of python3 running
+    Look through results of above command
+    Check for my script name not equalling my pid
+
+    Returns:
+        0 no other instances running
+        >0 first match of another instance
+    """
     Regex_Pid = re.compile('^(\d+)\spython3?\s([\w\.\/]+)')
     mypid = os.getpid()                                    #Current PID
     myname = os.path.basename(__file__)                    #Current Script Name
@@ -160,13 +166,10 @@ def is_running():
     return 0
 
 
-""" Load Config
-Args:
-    None
-Returns:
-    None
-"""
 def load_config():
+    """
+    Load configuration file
+    """
     global blocklistconf
 
     Regex_BLLine = re.compile('^(bl_[a-z_]+)\s+=\s+([01])\n')
@@ -187,15 +190,11 @@ def load_config():
                 config[matches.group(1)] = matches.group(2)
 
 
-""" Save Config
-    1. Build list from blocklists
-    2. Add old conf to the list
-Args:
-    None
-Returns:
-    None
-"""
 def save_config():
+    """
+    Build list from blocklists
+    Add old conf to the list
+    """
     newconf = []                                           #Temp list for new conf
 
     for blitem in blocklistconf.items():                   #Add name and enabled from bl
@@ -208,17 +207,18 @@ def save_config():
     save_list(newconf, folders.notrack_config)             #Save the new config
 
 
-""" Read CSV
+def read_csv(filename):
+    """
     Load contents of csv and return as a list
     1. Check file exists
     2. Read all lines of csv
-Args:
-    File to load
-Returns:
-    List of all lines in file
-    Empty List if file doesn't exist
-"""
-def read_csv(filename):
+
+    Parameters:
+        filename (str): File to load
+    Returns:
+        List of all lines in file
+        Empty list if file doesn't exist
+    """
     import csv
     data = []
 
@@ -234,17 +234,18 @@ def read_csv(filename):
     return data
 
 
-""" Read File
+def read_file(filename):
+    """
     Load contents of file and return as a list
     1. Check file exists
     2. Read all lines of file
-Args:
-    File to load
-Returns:
-    List of all lines in file
-    Empty List if file doesn't exist
-"""
-def read_file(filename):
+
+    Parameters:
+        filename (str): File to load
+    Returns:
+        List of all lines in file
+        Empty list if file doesn't exist
+    """
     filelines = []
 
     if not os.path.isfile(filename):
@@ -259,15 +260,18 @@ def read_file(filename):
     return filelines
 
 
-""" Save File
-    Save a list into a file
-Args:
-    None
-Returns:
-    True on success
-    False on error
-"""
 def save_list(domains, filename):
+    """
+    Save a list into a file
+
+    Parameters:
+        domains (list): list of data to save to file
+        filename (str): File to save
+
+    Returns:
+        True on success
+        False on error
+    """
     try:
         f = open(filename, 'w')                            #Open file for ascii writing
     except IOError as e:
@@ -284,14 +288,14 @@ def save_list(domains, filename):
     return True
 
 
-""" Extract Zip
-    Unzip a file to destination
-Args:
-    Zip file, Output destination
-Returns:
-    None
-"""
 def extract_list(sourcezip, destination):
+    """
+    Unzip a file to destination
+
+    Parameters:
+        sourcezip (str): Zip file
+        destination (str): Output destination
+    """
     from zipfile import ZipFile
 
     with ZipFile(sourcezip) as zipobj:
@@ -302,21 +306,20 @@ def extract_list(sourcezip, destination):
                 move_file(folders.tempdir + compressedfile, destination)
 
 
-""" Add Domain
-    Process supplied domain and add it to blocklist:
+def add_domain(subdomain, comment, source):
+    """
+    Process supplied domain and add it to blocklist
     1. Extract domain.co.uk from say subdomain.domain.co.uk
     2. Check if domain.co.uk is in blockdomiandict
-    3. if subdomain is actually a Domain then record Domain in blockdomiandict
+    3. If subdomain is actually a domain then record domain in blockdomiandict
     4. Reverse subdomain
     5. Append to blocklist as [reverse, subdomain, comment, source]
-Args:
-    Subdomain - Subdomain or Domain
-    Comment - A comment
-    Source - Block list name
-Returns:
-    None
-"""
-def add_domain(subdomain, comment, source):
+
+    Parameters:
+        subdomain (str): Subdomain or domain
+        comment (str): A comment
+        source (str): Block list name
+    """
     global blocklist, dedupcount, domaincount, totaldedupcount
 
     reverse = ''
@@ -346,16 +349,18 @@ def add_domain(subdomain, comment, source):
     blocklist.append(tuple([reverse, subdomain, comment, source]))
     domaincount += 1
 
-""" Match Defanged Line
-    Checks custom blocklist file line against Defanged List line regex
-Args:
-    Line from file
-    Blocklist Name
-Returns:
-    True on successful match
-    False when no match is found
-"""
+
 def match_defanged(line, listname):
+    """
+    Checks custom blocklist file line against Defanged List line regex
+
+    Parameters:
+        line (str): Line from file
+        listname (str): Blocklist name
+    Returns:
+        True on successful match
+        False when no match is found
+    """
     matches = Regex_Defanged.search(line)                  #Search for first match
     if matches is not None:                                #Has a match been found?
         #Add group 1 - Domain and replace defanged [.] with .
@@ -365,16 +370,17 @@ def match_defanged(line, listname):
     return False                                           #Nothing found, return False
 
 
-""" Match Easy Line
-    Checks custom blocklist file line against Easy List line regex
-Args:
-    Line from file
-    Blocklist Name
-Returns:
-    True on successful match
-    False when no match is found
-"""
 def match_easyline(line, listname):
+    """
+    Checks custom blocklist file line against Easy List line regex
+
+    Parameters:
+        line (str): Line from file
+        listname (str): Blocklist name
+    Returns:
+        True on successful match
+        False when no match is found
+    """
     matches = Regex_EasyLine.search(line)                  #Search for first match
     if matches is not None:                                #Has a match been found?
         add_domain(matches.group(1), '', listname)         #Add group 1 - Domain
@@ -383,16 +389,17 @@ def match_easyline(line, listname):
     return False                                           #Nothing found, return False
 
 
-""" Match Plain Line
-    Checks custom blocklist file line against Plain List line regex
-Args:
-    Line from file
-    Blocklist Name
-Returns:
-    True on successful match
-    False when no match is found
-"""
 def match_plainline(line, listname):
+    """
+    Checks custom blocklist file line against Plain List line regex
+
+    Parameters:
+        line (str): Line from file
+        listname (str): Blocklist name
+    Returns:
+        True on successful match
+        False when no match is found
+    """
     matches = Regex_PlainLine.search(line)                 #Search for first match
     if matches is not None:                                #Has a match been found?
         add_domain(matches.group(1), matches.group(2), listname)
@@ -401,16 +408,17 @@ def match_plainline(line, listname):
     return False                                           #Nothing found, return False
 
 
-""" Match Unix Line
-    Checks custom blocklist file line against Unix List line regex
-Args:
-    Line from file
-    Blocklist Name
-Returns:
-    True on successful match
-    False when no match is found
-"""
 def match_unixline(line, listname):
+    """
+    Checks custom blocklist file line against Unix List line regex
+
+    Parameters:
+        line (str): Line from file
+        listname (str): Blocklist name
+    Returns:
+        True on successful match
+        False when no match is found
+    """
     matches = Regex_UnixLine.search(line)                  #Search for first match
     if matches is not None:                                #Has a match been found?
         add_domain(matches.group(1), matches.group(2), listname)
@@ -419,19 +427,17 @@ def match_unixline(line, listname):
     return False                                           #Nothing found, return False
 
 
-""" Process Custom List
+def process_customlist(lines, listname):
+    """
     We don't know what type of list this is, so try regex match against different types
-    1. Reset Dedup and Domain counters
+    1. Reset dedup and domain counters
     2. Read list of lines
     3. Try different regex matches
 
-Args:
-    List of Lines
-    Blocklist Name
-Returns:
-    None
-"""
-def process_customlist(lines, listname):
+    Parameters:
+        lines (list): List of lines
+        listname (str): Blocklist name
+    """
     global dedupcount, domaincount
 
     dedupcount = 0                                         #Reset per list dedup count
@@ -452,19 +458,18 @@ def process_customlist(lines, listname):
     print('\tDeduplicated %d domains' % dedupcount)
 
 
-""" Process Easy List
+def process_easylist(lines, listname):
+    """
     List of domains in Adblock+ filter format [https://adblockplus.org/filter-cheatsheet]
-    1. Reset Dedup and Domain counters
+    1. Reset dedup and domain counters
     2. Read list of lines
     3. Check regex match against Regex_EasyLine
-    4. Add Domain
-Args:
-    List of Lines
-    Blocklist Name
-Returns:
-    None
-"""
-def process_easylist(lines, listname):
+    4. Add domain
+
+    Parameters:
+        lines (list): List of lines
+        listname (str): Blocklist name
+    """
     global dedupcount, domaincount
 
     dedupcount = 0                                         #Reset per list dedup count
@@ -481,19 +486,18 @@ def process_easylist(lines, listname):
     print('\tDeduplicated %d domains' % dedupcount)
 
 
-""" Process Plain List
-    List of domains with optional # seperated comments
-    1. Reset Dedup and Domain counters
+def process_plainlist(lines, listname):
+    """
+    List of domains with optional # separated comments
+    1. Reset dedup and domain counters
     2. Read list of lines
     3. Split each line by hash delimiter
-    4. Add Domain
-Args:
-    List of Lines
-    Blocklist Name
-Returns:
-    None
-"""
-def process_plainlist(lines, listname):
+    4. Add domain
+
+    Parameters:
+        lines (list): List of lines
+        listname (str): Blocklist name
+    """
     global dedupcount, domaincount
     splitline = []
 
@@ -516,19 +520,18 @@ def process_plainlist(lines, listname):
     print('\tDeduplicated %d domains' % dedupcount)
 
 
-""" Process Unix List
+def process_unixlist(lines, listname):
+    """
     List of domains starting with either 0.0.0.0 or 127.0.0.1 domain.com
-    1. Reset Dedup and Domain counters
+    1. Reset dedup and domain counters
     2. Read list of lines
     3. Check regex match against Regex_UnixLine
-    4. Add Domain
-Args:
-    List of Lines
-    Blocklist Name
-Returns:
-    None
-"""
-def process_unixlist(lines, listname):
+    4. Add domain
+
+    Parameters:
+        lines (list): List of lines
+        listname (str): Blocklist name
+    """
     global dedupcount, domaincount
 
     dedupcount = 0                                         #Reset per list dedup count
@@ -545,18 +548,14 @@ def process_unixlist(lines, listname):
     print('\tDeduplicated %d domains' % dedupcount)
 
 
-""" Process Top Level Domain List
-    1. Load users black & white tld lists
-    2. Load NoTrack provided tld csv
-    3. Create blocktlddict from High risk tld not in whitelist and Low risk tld in blacklist
-    4. Check for any domains in users whitelist that would be blocked by tld
-    5. Save whitelist of domains from (4)
-Args:
-    None
-Returns:
-    None
-"""
 def process_tldlist():
+    """
+    Load users black & white tld lists
+    Load NoTrack provided tld csv
+    Create blocktlddict from high risk tld not in whitelist and low risk tld in blacklist
+    Check for any domains in users whitelist that would be blocked by tld
+    Save whitelist of domains from previous step
+    """
     global blocklist, blocktlddict, domaincount
 
     #local name=""
@@ -618,16 +617,11 @@ def process_tldlist():
     print()
 
 
-""" Process White List
-    1. Load items from whitelist file into blockdomiandict array
-       (A domain being in the blocklist will prevent it from being added later)
-
-Args:
-    None
-Returns:
-    None
-"""
 def process_whitelist():
+    """
+    Load items from whitelist file into blockdomiandict array
+        (A domain being in the blocklist will prevent it from being added later)
+    """
     global blockdomiandict, whitedict
     whitedict_len = 0
 
@@ -667,17 +661,18 @@ def process_whitelist():
     print()
 
 
-""" Check File Age
-    1. Has FORCE been set?
-    2. Does file exist?
-    3. Check last modified time is within MAX_AGE (2 days)
-Args:
-    File
-Returns:
-    True - Update list
-    False - List within MAX_AGE
-"""
 def check_file_age(filename):
+    """
+    Has FORCE been set?
+    Does file exist?
+    Check last modified time is within MAX_AGE (2 days)
+
+    Parameters:
+        filename (str): File
+    Returns:
+        True update list
+        False list within MAX_AGE
+    """
     print('\tChecking age of %s' % filename)
     if FORCE:
         print('\tForced update')
@@ -696,15 +691,17 @@ def check_file_age(filename):
 
 
 def download_list(url, listname, destination):
-    """ Download List
-    Download File
+    """
+    Download file
     Request file is unzipped (if necessary)
 
-    Args:
-        URL, List Name, File Destination
+    Parameters:
+        url (str): URL
+        listname (str): List name
+        destination (str): File destination
     Returns:
-        True - Success
-        False - Failed download
+        True success
+        False failed download
     """
     extension = ''
     outputfile = ''
@@ -727,21 +724,17 @@ def download_list(url, listname, destination):
     return True
 
 
-""" Action Lists
+def action_lists():
+    """
     Go through config and process each enabled list
     1. Skip disabled lists
     2. Check if list is downloaded or locally stored
-    3. For download lists:
+    3. For downloaded lists
     3a. Check file age
     3b. Download new copy if out of date
     4. Read file into filelines list
     5. Process list based on type
-Args:
-    None
-Returns:
-    None
-"""
-def action_lists():
+    """
     blname = ''                                            #Block list name (shortened)
     blenabled = False
     blurl = ''                                             #Block list URL
@@ -790,21 +783,17 @@ def action_lists():
         print()
 
 
-""" Action Custom Lists
+def action_customlists():
+    """
     Go through config and process each enabled list
     1. Skip disabled lists
     2. Check if list is downloaded or locally stored
-    3. For download lists:
+    3. For downloaded lists
     3a. Check file age
     3b. Download new copy if out of date
     4. Read file into filelines list
     5. Process list based on type
-Args:
-    None
-Returns:
-    None
-"""
-def action_customlists():
+    """
     blname = ''
     blurl = ''                                             #Block list URL
     blfilename = ''                                        #Block list file name
@@ -848,21 +837,17 @@ def action_customlists():
         print()
 
 
-""" Deduplication
+def dedup_lists():
+    """
     Final sort and then save list to file
     1. Sort the blocklist by the reversed domain (blocklist[x][0])
     2. Check if each item matches the beginning of the previous item
-       (i.e. a subdomain of a blocked domain)
+        (i.e. a subdomain of a blocked domain)
     3. Remove matched items from the list
     4. Add unique items into sqldata and blacklist
     5. Save blacklist to file
-    6. Insert SQL Data
-Args:
-    None
-Returns:
-    None
-"""
-def dedup_lists():
+    6. Insert SQL data
+    """
     global blocklist, dedupcount
 
     dns_blacklist = []
@@ -895,15 +880,11 @@ def dedup_lists():
     dbwrapper.blocklist_insertdata(sqldata)
 
 
-""" Generate Example Black List File
-    1. Check to see if black list exists in NoTrack config folder
-    2. If it doesn't then generate some example commented out domains to block
-Args:
-    None
-Returns:
-    None
-"""
 def generate_blacklist():
+    """
+    Check to see if black list exists in NoTrack config folder
+    If it doesn't then generate some example commented out domains to block
+    """
     tmp = []                                               #List to build contents of file
 
     if os.path.isfile(folders.blacklist):                  #Check if black list exists
@@ -920,15 +901,11 @@ def generate_blacklist():
     print()
 
 
-""" Generate Example White List File
-    1. Check to see if white list exists in NoTrack config folder
-    2. If it doesn't then generate some example commented out domains to allow
-Args:
-    None
-Returns:
-    None
-"""
 def generate_whitelist():
+    """
+    Check to see if white list exists in NoTrack config folder
+    If it doesn't then generate some example commented out domains to allow
+    """
     tmp = []                                               #List to build contents of file
 
     if os.path.isfile(folders.whitelist):                  #Check if white list exists
@@ -944,27 +921,19 @@ def generate_whitelist():
     print()
 
 
-""" Show Version
-    Show version number and exit
-Args:
-    None
-Returns:
-    None
-"""
 def show_version():
+    """
+    Show version number and exit
+    """
     print('NoTrack Version %s' % VERSION)
     print()
     sys.exit(0)
 
 
-""" Test
-    Display Config of Block list choices
-Args:
-    None
-Returns:
-    None
-"""
 def test():
+    """
+    Display config of block list choices
+    """
     print('Block Lists enabled:')
 
     for bl in blocklistconf.items():
@@ -981,24 +950,22 @@ def test():
     sys.exit(0)
 
 
-""" Notrack Play (Enable Blocking)
-    1. Check running as root
-    2. Create ntrkpause class
-    3. Setup pause blocking
-    4. Check new status:
-    4a. On error run notrack, set status to enabled
-    4b. On success restart DNS server, and change config['status']
-    5. Wait
-    6. Check new status:
-    6a. On error run notrack, set status to enabled
-    6b. On success restart DNS server, and change config['status']
+def notrack_pause(pausetime):
+    """
+    Check running as root
+    Create ntrkpause class
+    Setup pause blocking
+    Check new status
+        On error run notrack, set status to enabled
+        On success restart DNS server, and change config['status']
+    Wait
+    Check new status
+        On error run notrack, set status to enabled
+        On success restart DNS server, and change config['status']
 
-Args:
-    None
-Returns:
-    None
-"""
-def notrack_pause(request, pausetime):
+    Parameters:
+        pausetime (int): Time to pause in minutes
+    """
     check_root()
     ntrkpause = NoTrackPause(folders.tempdir, folders.main_blocklist)
 
@@ -1031,20 +998,16 @@ def notrack_pause(request, pausetime):
     services.restart_dnsserver()                           #Restart DNS
 
 
-""" Notrack Play (Enable Blocking)
-    1. Check running as root
-    2. Create ntrkpause class
-    3. Enable blockling
-    4. Check new status:
-    4a. On error run notrack, set status to enabled
-    4b. On success restart DNS server, and change config['status']
-    5. Save config file
-Args:
-    None
-Returns:
-    None
-"""
 def notrack_play():
+    """
+    Check running as root
+    Create ntrkpause class
+    Enable blocking
+    Check new status
+        On error run notrack, set status to enabled
+        On success restart DNS server, and change config['status']
+    Save config file
+    """
     check_root()
     ntrkpause = NoTrackPause(folders.tempdir, folders.main_blocklist)
 
@@ -1061,20 +1024,16 @@ def notrack_play():
     save_config()                                          #Write status change to config
 
 
-""" Notrack Stop (Disable Blocking)
-    1. Check running as root
-    2. Create ntrkpause class
-    3. Disable blockling
-    4. Check new status:
-    4a. On error run notrack, set status to enabled
-    4b. On success restart DNS server, and change config['status']
-    5. Save config file
-Args:
-    None
-Returns:
-    None
-"""
 def notrack_stop():
+    """
+    Check running as root
+    Create ntrkpause class
+    Disable blocking
+    Check new status
+        On error run notrack, set status to enabled
+        On success restart DNS server, and change config['status']
+    Save config file
+    """
     check_root()
     ntrkpause = NoTrackPause(folders.tempdir, folders.main_blocklist)
 
@@ -1091,25 +1050,21 @@ def notrack_stop():
     save_config()                                          #Write status change to config
 
 
-""" NoTrack Status
-    Shows the current status from ntrkpause
-Args:
-    None
-Returns:
-    None
-"""
 def notrack_status():
+    """
+    Shows the current status from ntrkpause
+    """
     ntrkpause = NoTrackPause(folders.tempdir, folders.main_blocklist)
     ntrkpause.get_detailedstatus(config['status'], config['unpausetime'])
 
 
-""" Main NoTrack Function
-Args:
-    Optional delay start
-Returns:
-    None
-"""
 def notrack(delay=0):
+    """
+    Main NoTrack function
+
+    Parameters:
+        delay (int): Optional delay start
+    """
     if delay == 0:                                         #Any delay needed?
         print('Starting NoTrack')
     else:
@@ -1182,7 +1137,7 @@ if args.test:
 print()
 
 if args.pause:
-    notrack_pause('pause', args.pause)
+    notrack_pause(args.pause)
 elif args.play:
     notrack_play()
 elif args.stop:

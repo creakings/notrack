@@ -19,79 +19,84 @@ import time
 from ntrkshared import move_file
 
 #Constants
-STATUS_ENABLED=1
-STATUS_DISABLED=2
-STATUS_PAUSED=4
-STATUS_INCOGNITO=8
-STATUS_NOTRACKRUNNING=64
-STATUS_ERROR=128
+STATUS_ENABLED = 1
+STATUS_DISABLED = 2
+STATUS_PAUSED = 4
+STATUS_INCOGNITO = 8
+STATUS_NOTRACKRUNNING = 64 #DEPRECATED
+STATUS_ERROR = 128
 
 class NoTrackPause:
-    __incognito = 0                                        #Hold users incognito state
-    __templist = ''                                        #Location for temp block list
-    __blocklist = ''                                       #Location for main block list
-    __end_pause = False                                    #When to end wait
-    __enable_blocking = True                               #Enable blocking after pause
-    __pausetime = 0
-
-
-    """ NoTrack Pause Initialisation
-        1. Store block list file locations
-        2. Assign __exit_gracefully function to Signal Inturrupt, Abort and Terminate
-    Args:
-        temp folder from folders.temp
-        main blocklist from folders.main_blocklist
-    Returns:
-        None
     """
-    def __init__(self, tempfolder, main_blocklist):
-        self.__templist = tempfolder + 'notracktemp.list'
+    Provides the ability to change blocking state of NoTrack by moving the blocklist file
+    to a temporary location.
+    NoTrack Status options:
+        Enabled / Play: NoTrack block list is placed in /etc/dnsmasq.d/notrack.list
+        Disabled / Stop: NoTrack block list is placed in /tmp/notracktemp.list
+        Paused: NoTrack block list is placed in /tmp/notracktemp.list and a sleep timer is
+                run for the specified pause time. Pause can be ended with SIGABRT, SIGTERM or SIGINT
+        Error: Expected status does not match the actual block list file location
+
+    Parameters:
+        tempdir (str): folders.temp
+        main_blocklist (str): folders.main_blocklist
+    """
+    def __init__(self, tempdir, main_blocklist):
+        self.__incognito = 0                               #Hold users incognito state
+        self.__templist = ''                               #Location for temp block list
+        self.__blocklist = ''                              #Location for main block list
+        self.__end_pause = False                           #When to end wait
+        self.__enable_blocking = True                      #Enable blocking after pause
+        self.__pausetime = 0
+        self.__templist = tempdir + 'notracktemp.list'
         self.__blocklist = main_blocklist
 
+        #Assign Exit Signals
         signal.signal(signal.SIGINT, self.__exit_gracefully)  #2 Inturrupt = Pause > Play
         signal.signal(signal.SIGABRT, self.__exit_gracefully) #6 Abort = Pause > Stop
         signal.signal(signal.SIGTERM, self.__exit_gracefully) #9 Terminate = Pause > Play
 
 
-    """ Backup List
-    """
     def __backup_list(self):
+        """
+        Move block list from etc to temp
+        """
         return move_file(self.__blocklist, self.__templist)
 
 
-    """ Restore List
-    """
     def __restore_list(self):
+        """
+        Move block list from temp to etc
+        """
         return move_file(self.__templist, self.__blocklist)
 
 
-    """ Exit Gracefully
-        Ends pause wait and moves NoTrack to a new state - Enabled or Disabled depending
-        on the signal value received.
-    Args:
-        Signal, Frame
-    Returns:
-        None
-    """
     def __exit_gracefully(self, signum, frame):
+        """
+        Ends pause wait and moves NoTrack to a new state - Enabled or Disabled depending
+        on the signal value received
+
+        Parameters:
+            signum (int): Signal
+            frame (int): Frame
+        """
         if signum == signal.SIGABRT:                       #Abort moves state to Disabled
             self.__enable_blocking = False
 
         self.__end_pause = True                            #Trigger breakout of wait loop
 
 
-    """ Parent Running
-        1. Get current pid and script name
-        2. Run pgrep -a python3 - look for instances of python3 running
-        3. Look through results of above command
-        4. Check for my script name not equalling my pid
-    Args:
-        None
-    Returns:
-        0 - No other instances running
-        > 0 - First match of another instance
-    """
     def __parent_running(self):
+        """
+        Get current pid and script name
+        Run pgrep -a python3 - look for instances of python3 running
+        Look through results of above command
+        Check for my script name not equalling my pid
+
+        Returns:
+            0 no other instances running
+            >0 first match of another instance
+        """
         Regex_Pid = re.compile('^(\d+)\spython3?\s([\w\.\/]+)')
         mypid = os.getpid()                                    #Current PID
         myname = os.path.basename(__file__)                    #Current Script Name
@@ -112,17 +117,15 @@ class NoTrackPause:
         return 0
 
 
-    """ Terminate Pause
-        1. Find PID of the NoTrack script currently in a Paused state
-        2. Send appropriate signal to kill process
-        3. Pause to prevent a race condition where closing process could overwrite the config
-    Args:
-        resume_blocking - True, send SIGINT signal
-        resume_blocking - False, send SIGABRT signal
-    Returns:
-        None
-    """
     def __terminate_pause(self, resume_blocking):
+        """
+        Find PID of the NoTrack script currently in a paused state
+        Send appropriate signal to kill process
+        Pause to prevent a race condition where closing process could overwrite the config
+
+        Parameters:
+            resume_blocking (boolean): If True, send SIGINT signal. If False, send SIGABRT signal
+        """
         parentpid = self.__parent_running()
         sig = 0
 
@@ -140,17 +143,18 @@ class NoTrackPause:
         time.sleep(0.5)                                    #Prevent race condition
 
 
-    """ Disable Blocking
-        1. Verify current status
-        2. Check what state we are moving from into disabled
-        3. Move blocklist to temp
-    Args:
-        config['status']
-    Returns:
-        STATUS_DISABLED + STATUS_INCOGNITO (if set) on success
-        STATUS_ERROR when something has gone wrong
-    """
     def disable_blocking(self, confstatus):
+        """
+        Verify current status
+        Check what state we are moving from into disabled
+        Move blocklist to temp
+
+        Parameters:
+            confstatus (str): config['status']
+        Returns:
+            STATUS_DISABLED + STATUS_INCOGNITO (if set) on success
+            STATUS_ERROR when something has gone wrong
+        """
         status = self.get_status(confstatus)
 
         print('Disabling Blocking')
@@ -174,17 +178,18 @@ class NoTrackPause:
         return STATUS_DISABLED + self.__incognito
 
 
-    """ Enable Blocking
-        1. Verify current status
-        2. Check what state we are moving from into disabled
-        3. Move blocklist to temp
-    Args:
-        config['status']
-    Returns:
-        STATUS_DISABLED + STATUS_INCOGNITO (if set) on success
-        STATUS_ERROR when something has gone wrong
-    """
     def enable_blocking(self, confstatus):
+        """
+        Verify current status
+        Check what state we are moving from into enabled
+        Move blocklist to temp
+
+        Parameters:
+            confstatus (str): config['status']
+        Returns:
+            STATUS_ENABLED + STATUS_INCOGNITO (if set) on success
+            STATUS_ERROR when something has gone wrong
+        """
         status = self.get_status(confstatus)
 
         print('Enabling Blocking')
@@ -208,18 +213,20 @@ class NoTrackPause:
         return STATUS_ENABLED + self.__incognito
 
 
-    """ Pause Blocking
-        1. Calculate unpause time
-        2. Verify current status
-        3. Check what state we are moving from into paused
-        4. Move blocklist to temp
-    Args:
-        config['status'], Pause time in minutes
-    Returns:
-        [STATUS_PAUSED + STATUS_INCOGNITO (if set) on success, Unix time to unpause]
-        [STATUS_ERROR when something has gone wrong, 0]
-    """
     def pause_blocking(self, confstatus, mins):
+        """
+        Calculate unpause time
+        Verify current status
+        Check what state we are moving from into paused
+        Move blocklist to temp
+
+        Parameters:
+            confstatus (str): config['status']
+            mins (int): Pause time in minutes
+        Returns:
+            [STATUS_ENABLED + STATUS_INCOGNITO (if set) on success, Unix time to unpause]
+            [STATUS_ERROR when something has gone wrong, 0]
+        """
         unpause_time = 0                                   #Unix time in seconds
 
         self.__pausetime = mins * 60                       #Calculate how many seconds to pause for
@@ -247,17 +254,16 @@ class NoTrackPause:
         return [STATUS_PAUSED + self.__incognito, unpause_time]
 
 
-    """ Wait
-        This function follows pause_blocking
-        1. Loop until unpause time is reached or signal received to abort
-        2. Setup new status based depending whether __end_pause is set to True or False
-    Args:
-        None
-    Returns:
-        New STATUS + STATUS_INCOGNITO (if set) on success
-        STATUS_ERROR when something has gone wrong
-    """
     def wait(self):
+        """
+        This function allows pause_blocking
+        1. Loop until unpause time is reached or signal received to short
+        2. Setup new status depending whether __end_pause is set to True or False
+
+        Returns:
+            New STATUS + STATUS_INCOGNITO (if set) on success
+            STATUS_ERROR when something has gone wrong
+        """
         i = 0
         newstatus = 0                                      #New status after loop ended
 
@@ -282,14 +288,14 @@ class NoTrackPause:
             return STATUS_DISABLED + self.__incognito
 
 
-    """ Get Detailed Status
-        Print out the status
-    Args:
-        config['status'], config['unpause_time']
-    Returns:
-        None
-    """
     def get_detailedstatus(self, confstatus, confunpause_time):
+        """
+        Print out the status
+
+        Parameters:
+            confstatus (str): config['status']
+            confunpause_time (int): config['unpause_time']
+        """
         status = int(confstatus)
         unpause_time = int(confunpause_time)
 
@@ -318,15 +324,16 @@ class NoTrackPause:
         print()
 
 
-    """ Get Status
-        Confim system status is as config['status'] specifies.
-        e.g. main or temp blocklist could be missing
-    Args:
-        config['status']
-    Returns:
-        STATUS
-    """
     def get_status(self, confstatus):
+        """
+        Confirm system status is as config['status'] specifies
+        e.g. main or temp blocklist could be missing
+
+        Parameters:
+            confstatus (str): config['status']
+        Returns:
+            Actual Status
+        """
         status = int(confstatus)
 
         mainexists = os.path.isfile(self.__blocklist)

@@ -35,9 +35,6 @@ class NoTrackUpgrade():
     """
 
     def __init__(self, tempdir, sbindir, wwwconfdir):
-        """
-        Find location of NoTrack install folder
-        """
 
         #Set folder locations
         self.__REPO = 'https://gitlab.com/quidsup/notrack.git'
@@ -414,7 +411,7 @@ class NoTrackUpgrade():
         else:
             self.__download_from_git()
 
-        if check_module('mysql'):
+        if check_module('mysql.connector'):
             self.__modern_check_localsbin()
         else:
             self.__legacy_copyto_localsbin()

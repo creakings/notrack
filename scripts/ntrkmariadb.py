@@ -9,13 +9,9 @@ import mysql.connector as mariadb
 from ntrkregex import *
 
 class DBWrapper:
-    """ Class Init
-        1. TODO load unique password out of php file
-        2. Create DB connector
-    Args:
-        None
-    Returns:
-        None
+    """
+    TODO load unique password out of php file
+    Create DB connector
     """
     def __init__(self):
         ntrkuser = 'ntrk'
@@ -25,22 +21,23 @@ class DBWrapper:
         #print('Opening connection to MariaDB')
         self.__db = mariadb.connect(user=ntrkuser, password=ntrkpassword, database=ntrkdb)
 
-    """ Class Destructor
-        Close DB connector
-    """
+
     def __del__(self):
+        """
+        Close DB connector
+        """
         #print('Closing connection to MariaDB')
         self.__db.close()
 
 
-    """ Table Searcher
-
-    Args:
-        None
-    Returns:
-        None
-    """
     def __search(self, table, search=''):
+        """
+        Table searcher
+
+        Parameters:
+            table (str): Table to search
+            search (str): Search to perform
+        """
         cmd = '';
         rowcount = 0
         tabledata = []                                         #Results from table
@@ -68,14 +65,10 @@ class DBWrapper:
         return tabledata
 
 
-    """ Create Blocklist Table
-        Create SQL table for blocklist, in case it has been deleted
-    Args:
-        None
-    Returns:
-        None
-    """
     def blocklist_createtable(self):
+        """
+        Create SQL table for blocklist, in case it has been deleted
+        """
         cursor = self.__db.cursor()
 
         cmd = 'CREATE TABLE IF NOT EXISTS blocklist (id SERIAL, bl_source TINYTEXT, site TINYTEXT, site_status BOOLEAN, comment TEXT)';
@@ -85,14 +78,10 @@ class DBWrapper:
         cursor.close()
 
 
-    """ Clear Table
-        Clear blocklist table and reset serial increment
-    Args:
-        None
-    Returns:
-        None
-    """
     def blocklist_cleartable(self):
+        """
+        Clear blocklist table and reset serial increment
+        """
         cursor = self.__db.cursor()
 
         cursor.execute('DELETE FROM blocklist')
@@ -100,15 +89,14 @@ class DBWrapper:
         cursor.close()
 
 
-    """ Insert data into SQL table blocklist
+    def blocklist_insertdata(self, sqldata):
+        """
         Bulk insert a list into MariaDB
         NOTE Single quotes aren't needed around %s as they're added by executemany function
-    Args:
-        List of data
-    Returns:
-        None
-    """
-    def blocklist_insertdata(self, sqldata):
+
+        Parameters:
+            sqldata (list): List of data
+        """
         cmd = ''
         cursor = self.__db.cursor()
 
@@ -119,19 +107,18 @@ class DBWrapper:
         cursor.close()
 
 
-    """ Blocklist Search
+    def blocklist_search(self, s):
+        """
         Find and display results from blocklist table
         1. Check user input is valid
         2. Search against domain or comment using regular expression
         3. Display data
         3a. Small number of results is displayed in detail form
         3b. Large lists are displayed in table form
-    Args:
-        search string
-    Returns:
-        None
-    """
-    def blocklist_search(self, s):
+
+        Parameters:
+            s (str): Search string
+        """
         i = 1                                              #Table position
         search = ''                                        #SQL Search string
 
