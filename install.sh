@@ -65,6 +65,30 @@ error_exit() {
 
 
 #######################################
+# Start service
+#   Start and Enable systemd based services
+#   TODO complete for sv and sysvinit
+#
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+service_start() {
+  if [[ -n $1 ]]; then
+    echo "Starting $1"
+    if [ "$(command -v systemctl)" ]; then                 #systemd
+      sudo systemctl enable "$1"
+      sudo systemctl start "$1"
+    #else
+      #error_exit "Unable to start services. Unknown service supervisor" "21"
+    fi
+  fi
+}
+
+#######################################
 # Restart service
 #    with either systemd or sysvinit or runit
 #
@@ -925,6 +949,7 @@ function setup_mariadb() {
   #Create a random password
   #DBPASSWORD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 40 | head -n 1)"
 
+  service_start "mariadb.service"
 
   echo
   echo "Creating User $DBUSER"
