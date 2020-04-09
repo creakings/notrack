@@ -44,9 +44,9 @@ class FolderList:
 
 
     def __find_unix_webdir(self):
-    """
-    Find UNIX webdir
-    """
+        """
+        Find UNIX webdir
+        """
         if os.path.isdir('/var/www/html/notrack'):
             self.wwwconfdir = '/var/www/html/notrack/admin/settings/'
             self.wwwsink = '/var/www/html/notrack/sink/'
