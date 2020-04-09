@@ -227,20 +227,25 @@ class NoTrackUpgrade():
             print('Unable to download from Gitlab', file=sys.stderr)
             sys.exit(22)
 
-        #Unzip notrack-master
-        unzip_multiple_files(self.__TEMP_DOWNLOAD, self.__TEMPDIR + 'notrack-master')
+        #Unzip notrack-master to /tmp
+        unzip_multiple_files(self.__TEMP_DOWNLOAD, self.__TEMPDIR)
 
         #Delete old backup of NoTrack and then move current folder to backup
         delete_folder(self.install_location + '-old')      #Delete backup copy
         copy_file(self.install_location, self.install_location + '-old')
 
-        #Move extracted notrack-master
-        """if not move_file(self.__TEMPDIR + 'notrack-master', self.install_location):
-            print('Download missing, restoring backup')
-            move_file(self.install_location + '-old', self.install_location)
-            print('Unzip of notrack-master.zip failed', file=sys.stderr)
-            sys.exit(22)
-        """
+        #Delete old contents of NoTrack folder
+        delete_folder(self.install_location + '/admin')
+        delete_folder(self.install_location + '/conf')
+        delete_folder(self.install_location + '/scripts')
+        delete_folder(self.install_location + '/sink')
+        delete_file(self.install_location + '/changelog.txt')
+        delete_file(self.install_location + '/install.sh')
+        delete_file(self.install_location + '/LICENSE')
+        delete_file(self.install_location + '/README.md')
+        delete_file(self.install_location + '/TODO')
+
+        #Move new files to NoTrack folder
         move_file(temp_dldir + '/admin', self.install_location)
         move_file(temp_dldir + '/conf', self.install_location)
         move_file(temp_dldir + '/scripts', self.install_location)
@@ -250,6 +255,8 @@ class NoTrackUpgrade():
         move_file(temp_dldir + '/LICENSE', self.install_location)
         move_file(temp_dldir + '/README.md', self.install_location)
         move_file(temp_dldir + '/TODO', self.install_location)
+
+        delete_file(temp_dldir)
 
 
     def __legacy_copyto_localsbin(self):
