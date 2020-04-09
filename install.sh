@@ -572,9 +572,19 @@ function install_dnf() {
   sleep 2s
   sudo dnf -y install mariadb-server
   echo
-  echo "Installing Lighttpd and PHP"
+  echo "Installing Webserver"
   sleep 2s
-  sudo dnf -y install lighttpd memcached php-pecl-memcached php php-mysql
+  sudo dnf -y install lighttpd
+  echo
+  echo "Installing PHP"
+  sleep 2s
+  sudo dnf -y install memcached php-pecl-memcached php
+  # php-mysql is probably DEPRECATED now
+  sudo dnf -y install php-mysql
+  sudo dnf -y install php-mysqlnd
+  echo "Installing Python3"
+  sleep 2s
+  sudo dnf -y install python3 mysql-connector-python3
   echo
 }
 
