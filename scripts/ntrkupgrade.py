@@ -220,6 +220,8 @@ class NoTrackUpgrade():
         4. Move /tmp/notrack-master to install_location
         """
 
+        temp_dldir = self.__TEMPDIR + 'notrack-master'
+
         #Download notrack-master.zip
         if not download_file(self.__GITLAB_DOWNLOAD, self.__TEMP_DOWNLOAD):
             print('Unable to download from Gitlab', file=sys.stderr)
@@ -230,14 +232,24 @@ class NoTrackUpgrade():
 
         #Delete old backup of NoTrack and then move current folder to backup
         delete_folder(self.install_location + '-old')      #Delete backup copy
-        move_file(self.install_location, self.install_location + '-old')
+        copy_file(self.install_location, self.install_location + '-old')
 
         #Move extracted notrack-master
-        if not move_file(self.__TEMPDIR + 'notrack-master', self.install_location):
+        """if not move_file(self.__TEMPDIR + 'notrack-master', self.install_location):
             print('Download missing, restoring backup')
             move_file(self.install_location + '-old', self.install_location)
             print('Unzip of notrack-master.zip failed', file=sys.stderr)
             sys.exit(22)
+        """
+        move_file(temp_dldir + '/admin', self.install_location)
+        move_file(temp_dldir + '/conf', self.install_location)
+        move_file(temp_dldir + '/scripts', self.install_location)
+        move_file(temp_dldir + '/sink', self.install_location)
+        move_file(temp_dldir + '/changelog.txt', self.install_location)
+        move_file(temp_dldir + '/install.sh', self.install_location)
+        move_file(temp_dldir + '/LICENSE', self.install_location)
+        move_file(temp_dldir + '/README.md', self.install_location)
+        move_file(temp_dldir + '/TODO', self.install_location)
 
 
     def __legacy_copyto_localsbin(self):
