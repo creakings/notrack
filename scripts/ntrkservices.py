@@ -109,15 +109,23 @@ class Services:
         try:
             grp.getgrnam('www-data')
         except KeyError:
-            print('No www-data group')
+            pass
         else:
             groupname = 'www-data'
             print('Found group www-data')
 
         try:
+            grp.getgrnam('lighttpd')
+        except KeyError:
+            pass
+        else:
+            groupname = 'lighttpd'
+            print('Found group lighttpd')
+
+        try:
             grp.getgrnam('http')
         except KeyError:
-            print('No http group')
+            pass
         else:
             groupname = 'http'
             print('Found group http')

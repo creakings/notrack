@@ -804,10 +804,14 @@ setup_lighttpd() {
 
   echo "Configuring Lighttpd"
 
-  if getent passwd www-data > /dev/null 2>&1; then         #default group is www-data
+  if getent passwd www-data > /dev/null 2>&1; then         #Ubuntu uses group www-data
     echo "Adding www-data rights to $(whoami)"
     sudo usermod -a -G www-data "$(whoami)"
     group="www-data"
+  if getent passwd lighttpd > /dev/null 2>&1; then         #Fedora / Redhat uses group lighttpd
+    echo "Adding lighttpd rights to $(whoami)"
+    sudo usermod -a -G lighttpd "$(whoami)"
+    group="lighttpd"
   elif getent passwd http > /dev/null 2>&1; then           #Arch uses group http
     echo "Adding http rights to $(whoami)"
     sudo usermod -a -G http "$(whoami)"
@@ -817,7 +821,7 @@ setup_lighttpd() {
     sudo usermod -a -G _lighttpd "$(whoami)"
     group="_lighttpd"
   else
-    echo "setup_lighttpd() WARNING: Unable to find group for lighttpd (normally www-data or http)"
+    echo "Setup_Lighttpd: WARNING - Unable to find group for lighttpd (normally www-data or http)"
     echo "Lighttpd webserver will have to be manually setup."
     sleep 8s
     return
