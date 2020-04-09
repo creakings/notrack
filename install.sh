@@ -82,8 +82,6 @@ service_start() {
     if [ "$(command -v systemctl)" ]; then                 #systemd
       sudo systemctl enable "$1"
       sudo systemctl start "$1"
-    #else
-      #error_exit "Unable to start services. Unknown service supervisor" "21"
     fi
   fi
 }
@@ -180,7 +178,7 @@ menu() {
         ((highlight++))
       fi
     elif [[ $choice == "" ]]; then               #Enter
-      return $highlight                          #Return Highlighted value
+      return "$highlight"                        #Return Highlighted value
     elif [[ $choice == "q" ]] || [[ $choice == "Q" ]]; then
       exit 1
     fi
@@ -452,7 +450,6 @@ echo
 
   if [ "$(command -v apt)" ]; then install_deb
   elif [ "$(command -v dnf)" ]; then install_dnf
-  elif [ "$(command -v yum)" ]; then install_yum  
   elif [ "$(command -v pacman)" ]; then install_pacman
   elif [ "$(command -v apk)" ]; then install_apk
   elif [ "$(command -v xbps-install)" ]; then install_xbps
@@ -628,40 +625,6 @@ function install_pacman() {
 
 
 #######################################
-# Install RPM Packages
-#   Installs packages using yum for Redhat / Fedora
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-function install_yum() {
-  echo "Preparing to install RPM packages using Yum..."
-  sleep 2s
-  sudo yum update
-  echo
-  echo "Installing dependencies"
-  sleep 2s
-  sudo yum -y install unzip
-  echo
-  echo "Installing Dnsmasq"
-  sleep 2s
-  sudo yum -y install dnsmasq
-  echo
-  echo "Installing MariaDB"
-  sleep 2s
-  sudo yum -y install mariadb-server
-  echo
-  echo "Installing Lighttpd and PHP"
-  sleep 2s
-  sudo yum -y install lighttpd php memcached php-pecl-memcached php-mysql
-  echo
-}
-
-
-#######################################
 # Install apk Packages
 #   Installs packages for Busybox
 #   TODO
@@ -792,7 +755,9 @@ function setup_dnsmasq() {
   echo "Configuring Dnsmasq"
   
   create_folder "/etc/dnsmasq.d"                 #Issue #94 dnsmasq folder not created
-  create_file "/var/log/notrack.log"             #File where DNS logs are stored until parsed in MariaDB table dnslogs by ntrk-parse
+  create_file "/var/log/notrack.log"             #File where DNS logs are stored
+  chown dnsmasq:root /var/log/notrack.log        #Take ownership with dnsmasq
+  chmod 664 /var/log/notrack.log
   create_file "/etc/localhosts.list"             #File for user to add DNS entries for their network
   create_file "/etc/dnsmasq.d/servers.conf"
   
@@ -966,7 +931,7 @@ function setup_mariadb() {
   sudo mysql --user=root --password="$rootpass" -e "CREATE USER '$DBUSER'@'localhost' IDENTIFIED BY '$DBPASSWORD';"
   
   #Check to see if ntrk user has been added
-  if [[ ! `sudo mysql -sN --user=root --password="$rootpass" -e "SELECT User FROM mysql.user"` =~ ntrk[[:space:]]root ]]; then
+  if [[ ! $(sudo mysql -sN --user=root --password="$rootpass" -e "SELECT User FROM mysql.user") =~ ntrk[[:space:]]root ]]; then
     error_exit "MariaDB command failed, have you entered incorrect root password?" "35"
   fi
   
@@ -1115,7 +1080,7 @@ prompt_installloc() {
   local homefolder="${HOME}"
   
   if [[ $homefolder == "/root" ]]; then      #Change root folder to users folder
-    homefolder="$(getent passwd $SUDO_USER | grep /home | grep -v syslog | cut -d: -f6)"    
+    homefolder="$(getent passwd $SUDO_USER | grep /home | grep -v syslog | cut -d: -f6)"
     if [ $(wc -w <<< "$homefolder") -gt 1 ]; then   #Too many sudo users
       echo "Unable to estabilish which Home folder to install to"
       echo "Either run this installer without using sudo / root, or manually set the \$INSTALL_LOCATION variable"
@@ -1598,7 +1563,7 @@ prompt_gateway_address(){
 #   None
 #######################################
 backup_static_ip_address_config(){
-  if [[ ! -z $(which dhcpcd) ]]; then
+  if [[ -n $(which dhcpcd) ]]; then
     restore_dhcpcd_config
     backup_dhcpcd_config
   else
@@ -1641,7 +1606,7 @@ prompt_setup_static_ip_address(){
   case "$?" in
     1)
       if [[ -z $(which dhcpcd) ]]; then
-        if [[ ! -z $(dpkg -l | egrep -i "(kde|gnome|lxde|xfce|mint|unity|fluxbox|openbox)" | grep -v library) ]]; then
+        if [[ -n $(dpkg -l | grep -Ei "(kde|gnome|lxde|xfce|mint|unity|fluxbox|openbox)" | grep -v library) ]]; then
           clear
           echo "Your system appears to have a GUI desktop"
           echo
@@ -1730,31 +1695,9 @@ function show_finish() {
 #######################################
 # Main
 #######################################
-
-
 if [[ $(command -v sudo) == "" ]]; then          #Is sudo available?
   error_exit "NoTrack requires Sudo to be installed for Admin functionality" "10"
 fi
-
-if [ $1 ]; then
-  if [[ $1 == "-sql" ]]; then                    #Special upgrade section to v0.8 DEPRECATED at v1.0
-    echo "Upgrading NoTrack to v$VERSION"
-    echo "Installation of MariaDB might ask you for a root password"
-    echo "If it does make a note of it, as you will need it later"
-    echo "Press any key to continue"
-    read -rn1
-
-    install_packages
-    setup_mariadb
-
-    service_restart dnsmasq
-    service_restart lighttpd
-
-    show_finish
-    exit
-  fi
-fi
-    
 
 show_welcome
 
@@ -1783,7 +1726,7 @@ if [[ $IP_VERSION == "" ]]; then
 fi
 
 if [[ $IP_ADDRESS == "" ]]; then
-  get_ip_address $IP_VERSION $NETWORK_DEVICE
+  get_ip_address "$IP_VERSION" "$NETWORK_DEVICE"
 fi
 
 if [[ $DNS_SERVER_1 == "" ]]; then
@@ -1836,6 +1779,10 @@ if [ "$(command -v firewall-cmd)" ]; then        #Check FirewallD exists
 fi
 
 service_restart lighttpd
+
+if [ ! -e "/usr/local/sbin/notrack" ]; then
+  error_exit "Script files missing" "1"
+fi
 
 echo "========================================================="
 echo "Downloading and configuring blocklists"
