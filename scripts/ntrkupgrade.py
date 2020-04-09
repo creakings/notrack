@@ -42,7 +42,7 @@ class NoTrackUpgrade():
         self.__SBINDIR = sbindir
         self.__TEMPDIR = tempdir
         self.__WWWCONFDIR = wwwconfdir
-        self.__TEMP_DOWNLOAD = tempdir + '/notrack-master.zip'
+        self.__TEMP_DOWNLOAD = tempdir + 'notrack-master.zip'
 
         self.__latestversion = ''
         self.install_location = ''
@@ -226,14 +226,14 @@ class NoTrackUpgrade():
             sys.exit(22)
 
         #Unzip notrack-master
-        unzip_multiple_files(self.__TEMP_DOWNLOAD, tempfile.gettempdir())
+        unzip_multiple_files(self.__TEMP_DOWNLOAD, self.__TEMPDIR + 'notrack-master')
 
         #Delete old backup of NoTrack and then move current folder to backup
         delete_folder(self.install_location + '-old')      #Delete backup copy
         move_file(self.install_location, self.install_location + '-old')
 
         #Move extracted notrack-master
-        if not move_file(tempfile.gettempdir() + '/notrack-master', self.install_location):
+        if not move_file(self.__TEMPDIR + 'notrack-master', self.install_location):
             print('Download missing, restoring backup')
             move_file(self.install_location + '-old', self.install_location)
             print('Unzip of notrack-master.zip failed', file=sys.stderr)

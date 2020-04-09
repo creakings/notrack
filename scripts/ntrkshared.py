@@ -214,7 +214,7 @@ def download_file(url, destination):
                 print('\t%s' % url)
                 print('\tHTTP Response %d' % res_code)
 
-        time.sleep(i * 2)                                       #Throttle repeat attemps
+        time.sleep(i * 2)                                  #Throttle repeat attemps
 
     save_blob(response.read(), destination)                #Write file to destination
 
