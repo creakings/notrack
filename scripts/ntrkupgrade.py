@@ -131,6 +131,9 @@ class NoTrackUpgrade():
         import pwd
         passwd = pwd.getpwall()                            #Everything from /etc/passwd
 
+        if not ntrkdir.startswith('/home'):                #Return root for any non-home directory
+            return 'root'
+
         for obj in passwd:
             #Check if there is any match with this users home folder location
             if ntrkdir.startswith(obj.pw_dir):
@@ -231,8 +234,8 @@ class NoTrackUpgrade():
         unzip_multiple_files(self.__TEMP_DOWNLOAD, self.__TEMPDIR)
 
         #Delete old backup of NoTrack and then move current folder to backup
-        delete_folder(self.install_location + '-old')      #Delete backup copy
-        copy_file(self.install_location, self.install_location + '-old')
+        #delete_folder(self.install_location + '-old')      #Delete backup copy
+        #copy_file(self.install_location, self.install_location + '-old')
 
         #Delete old contents of NoTrack folder
         delete_folder(self.install_location + '/admin')
