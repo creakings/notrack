@@ -808,7 +808,7 @@ setup_lighttpd() {
     echo "Adding www-data rights to $(whoami)"
     sudo usermod -a -G www-data "$(whoami)"
     group="www-data"
-  if getent passwd lighttpd > /dev/null 2>&1; then         #Fedora / Redhat uses group lighttpd
+  elif getent passwd lighttpd > /dev/null 2>&1; then       #Fedora / Redhat uses group lighttpd
     echo "Adding lighttpd rights to $(whoami)"
     sudo usermod -a -G lighttpd "$(whoami)"
     group="lighttpd"
