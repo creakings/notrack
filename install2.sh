@@ -27,7 +27,7 @@ readonly NETWORK_INTERFACES_PATH="/etc/network/interfaces"
 readonly NETWORK_INTERFACES_OLD_PATH="/etc/network/interfaces.old"
 readonly DNSMASQ_CONF="/etc/dnsmasq.conf"
 
-readonly WEB_SERVER="lighttpd"                             # TODO allow other options
+readonly WEB_SERVER="nginx"                             # TODO allow other options
 
 #######################################
 # Global Variables
@@ -531,9 +531,8 @@ function install_packages() {
 
 
 #######################################
-# Install Deb Packages
-#   Installs packages using apt for Ubuntu / Debian based systems
-#   Checks to see if PHP7 is available
+# Installs deb packages using apt for Ubuntu / Debian based systems
+#
 # Globals:
 #   None
 # Arguments:
@@ -542,23 +541,9 @@ function install_packages() {
 #   None
 #######################################
 function install_deb() {
-  local phpversion=""
-  i=6                        #Assume highest version of PHP 7 will be v7.6
-
   echo "Refreshing apt"
   sudo apt update
   echo
-
-  echo "Searching package archives for latest PHP version"
-  while [ $i -ge 0 ]; do                                   #Start while loop at highest version
-    if apt-cache show php7.$i &> /dev/null; then           #Check apt-cache 0 mean available
-      echo "Installing PHP 7.$i"
-      phpversion="php7.$i"
-      break
-    else                                                   #Not found, try lower version
-      ((i--))
-    fi
-  done
 
   echo "Preparing to install Deb packages..."
   sleep 2s
@@ -576,11 +561,12 @@ function install_deb() {
   echo
   echo "Installing Webserver"
   sleep 2s
-  sudo apt -y install lighttpd
+  #sudo apt -y install lighttpd
+  sudo apt -y install nginx
   echo
   echo "Installing PHP"
   sleep 2s
-  sudo apt -y install memcached php-memcache "$phpversion-cgi" "$phpversion-curl" "$phpversion-mysql"
+  sudo apt -y install memcached php-memcache php php-fpm php-curl php-mysql
   echo
   echo "Installing Python3"
   sleep 2s
@@ -619,7 +605,8 @@ function install_dnf() {
   echo
   echo "Installing Webserver"
   sleep 2s
-  sudo dnf -y install lighttpd
+  #sudo dnf -y install lighttpd
+  sudo dnf -y install nginx
   echo
   echo "Installing PHP"
   sleep 2s
@@ -660,11 +647,19 @@ function install_pacman() {
   sleep 2s
   sudo pacman -S --noconfirm mysql
   echo
-  echo "Installing Lighttpd and PHP"
+  echo "Installing Webserver"
   sleep 2s
-  sudo pacman -S --noconfirm fcgi lighttpd php memcached php-memcache php-cgi 
+  sudo pacman -S --noconfirm nginx
   echo
-  
+  echo "Installing PHP"
+  sleep 2s
+  sudo pacman -S --noconfirm fcgi php memcached php-memcache php-cgi # TODO Confirm this
+  echo
+  echo "Installing Python3"
+  sleep 2s
+  sudo pacman -S --noconfirm python3 mysql-connector-python3 # TODO Confirm this
+  echo
+
   echo "Enabling MariaDB"
   sudo mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
   sudo systemd start mysqld
@@ -734,17 +729,23 @@ function install_xbps() {
   sudo xbps-install -y mariadb
   #sudo xbps-install -y mysql
   echo
-  echo "Installing Lighttpd and PHP"
+  echo "Installing Webserver"
   sleep 2s
   #sudo xbps-install -y fcgi lighttpd php memcached php-memcache php-cgi ##TODO php-memcache so far unavailable in repository
+  sudo xbps-install -y nginx
+  echo
+  echo "Installing PHP"
+  sleep 2s
   sudo xbps-install -y fcgi lighttpd php php-cgi
   echo
+  echo "Installing Python"
+  sleep 2s
+  sudo xbps-install -y python3 # TODO what is the name of mysql package?
 
   echo "Enabling Services"
   sudo ln -s /etc/sv/mysqld /var/service
   sudo ln -s /etc/sv/dnsmasq /var/service
   sudo ln -s /etc/sv/lighttpd /var/service
-  sleep 7s
 }
 
 
@@ -924,7 +925,7 @@ function webserver_sudoers() {
 
 
 #######################################
-# Setup Lighttpd configuration files
+# Setup nginx config files
 #
 # Globals:
 #   INSTALL_LOCATION, WEB_FOLDER, WEB_USER, hostname
@@ -933,60 +934,16 @@ function webserver_sudoers() {
 # Returns:
 #   None
 #######################################
-function setup_lighttpd() {
+function setup_nginx() {
   echo
-  echo "Setting up lighttpd"
+  echo "Setting up nginx"
 
-  service_start "lighttpd"
+  service_start "nginx"
 
-  if command -v lighty-enable-mod; then          #Is lighty-enable-mod available?
-    echo "enabling fastcgi on lighttpd"
-    sudo lighty-enable-mod fastcgi fastcgi-php
-  fi
-  
-  #Copy Config and change user name
-  copy_file "$INSTALL_LOCATION/conf/lighttpd.conf" /etc/lighttpd/lighttpd.conf
-  sudo sed -i "s!changefolder!$WEB_FOLDER!" /etc/lighttpd/lighttpd.conf
-  sudo sed -i "s/changegroup/$WEB_USER/" /etc/lighttpd/lighttpd.conf
-  sudo sed -i "s/changehost/$hostname/" /etc/lighttpd/lighttpd.conf
-  
-  #Fix for lighty 1.4.53 changing create-mime.assign and create-mime.conf
-  if [ -e "/usr/share/lighttpd/create-mime.assign.pl" ]; then
-    echo "Found create-mime.assign.pl, editing lighttpd.conf"
-    sudo sed -i 's!##include_shell "/usr/share/lighttpd/create-mime.assign.pl"!include_shell "/usr/share/lighttpd/create-mime.assign.pl"!' /etc/lighttpd/lighttpd.conf
-  fi
-  
-  if [ -e "/usr/share/lighttpd/create-mime.conf.pl" ]; then
-    echo "Found create-mime.conf.pl, editing lighttpd.conf"
-    sudo sed -i 's!##include_shell "/usr/share/lighttpd/create-mime.conf.pl"!include_shell "/usr/share/lighttpd/create-mime.conf.pl"!' /etc/lighttpd/lighttpd.conf
-  fi
-  
-  #Fix for lighty 1.4.53 moving from include-conf-enabled.pl to /etc/lighttpd/conf-enabled/*.conf
-  if [ -e "/usr/share/lighttpd/include-conf-enabled.pl" ]; then
-    echo "Found include-conf-enabled.pl"
-    if grep --quiet deprecated /usr/share/lighttpd/include-conf-enabled.pl; then
-      echo "deprecated version of include-conf-enabled.pl, using newer config setting"
-      #Deprecated exists in include-conf-enabled.pl, so use new method
-      sudo sed -i 's!##include "/etc/lighttpd/conf-enabled/\*.conf"!include "/etc/lighttpd/conf-enabled/*.conf"!' /etc/lighttpd/lighttpd.conf
-    else
-      #Deprecated doesn't exist, so go with old method
-      echo "legacy version of include-conf-enabled.pl, using older config setting"
-      sudo sed -i 's!##include_shell "/usr/share/lighttpd/include-conf-enabled.pl"!include_shell "/usr/share/lighttpd/include-conf-enabled.pl"!' /etc/lighttpd/lighttpd.conf
-    fi
-  else
-    echo "Unable to find include-conf-enabled.pl, assuming newer config setting"
-    sudo sed -i 's!##include "/etc/lighttpd/conf-enabled/*.conf"!include "/etc/lighttpd/conf-enabled/*.conf"!' /etc/lighttpd/lighttpd.conf
-  fi
-  
-  if [ "$(command -v pacman)" ]; then          #Custom setup for Arch
-    create_folder "/etc/lighttpd/conf.d"
-    copy_file "$INSTALL_LOCATION/conf/fastcgi.conf" /etc/lighttpd/conf.d/fastcgi.conf
-    echo 'include "conf.d/fastcgi.conf"' | sudo tee -a /etc/lighttpd/lighttpd.conf
-    sudo sed -i "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=1/" /etc/php/php.ini
-    sudo sed -i "s/;extension=mysqli.so/extension=mysqli.so/" /etc/php/php.ini
-  fi
+  #Replace the default nginx config
+  copy_file "$INSTALL_LOCATION/conf/nginx.conf" "/etc/nginx/sites-available/nginx.conf"
+  rename_file "/etc/nginx/sites-available/nginx.conf" "/etc/nginx/sites-available/default"
 
-  echo
 }
 
 
@@ -1009,11 +966,11 @@ function setup_webserver() {
   echo "Adding $WEB_USER rights to $(whoami)"
   sudo usermod -a -G "$WEB_USER" "$(whoami)"
 
-  if [[ $WEB_SERVER == "lighttpd" ]]; then                 #Install lighttpd
-    setup_lighttpd
+  if [[ $WEB_SERVER == "nginx" ]]; then                    #Install nginx
+    setup_nginx
   fi
 
-  delete_file "$WEB_FOLDER/index.lighttpd.html"            #Remove sample html file
+  #delete_file "$WEB_FOLDER/index.lighttpd.html"            #Remove sample html file
   delete_file "$WEB_FOLDER/admin"                          #Remove old symlink
 
   echo "Creating Sink Folder"                              #Create new sink folder
