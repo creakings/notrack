@@ -10,7 +10,7 @@
 #######################################
 INSTALL_LOCATION=""                         #define custom installation path
 
-DNS_GROUP=""
+#DNS_GROUP=""
 WEB_USER=""
 WEB_FOLDER=""
 
@@ -273,8 +273,7 @@ function create_folder() {
 
 
 #######################################
-# Delete File
-#   Checks if a file exists and then deletes it
+# Checks if a file exists and then deletes it
 #
 # Globals:
 #   None
@@ -307,7 +306,7 @@ function set_ownership() {
   if [ -d "$1" ]; then
     echo "Setting ownership of folder $1 to $2:$3"
     sudo chown -hR "$2":"$3" "$1"
-  elif  [ -e "$1" ]; then
+  elif [ -e "$1" ]; then
     echo "Setting ownership of file $1 to $2:$3"
     sudo chown "$2":"$3" "$1"
   else
@@ -331,30 +330,12 @@ function set_permissions() {
   if [ -d "$1" ]; then
     echo "Setting permissions of folder $1 to $2"
     sudo chmod -R "$2" "$1"
-  elif  [ -e "$1" ]; then
+  elif [ -e "$1" ]; then
     echo "Setting permissions of file $1 to $2"
     sudo chmod "$2" "$1"
   else
     echo "Set_Permissions: Error - $1 is missing"
   fi
-}
-
-#######################################
-# Backup Config Files
-#   Take backups of dnsmasq and lighttpd
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   None
-#######################################
-function backup_configs() {
-  echo "Backing up old config files"
-  copy_file "$DNSMASQ_CONF" "$DNSMASQ_CONF.old"
-  copy_file /etc/lighttpd/lighttpd.conf /etc/lighttpd/lighttpd.conf.old
-  echo "========================================================="
-  echo
 }
 
 
@@ -370,14 +351,17 @@ function backup_configs() {
 #######################################
 function copy_scripts() {
   #Blocklist parser
+  delete_file "/usr/local/sbin/notrack"
   sudo ln -s "$INSTALL_LOCATION/scripts/notrack.py" "/usr/local/sbin/notrack"
   set_permissions "$INSTALL_LOCATION/scripts/notrack.py" "775"
 
-  #Ntrk-Exec DEPRECATED
+  #Ntrk-Exec
+  delete_file "/usr/local/sbin/ntrk-exec"
   sudo ln -s "$INSTALL_LOCATION/scripts/ntrk-exec.py" "/usr/local/sbin/ntrk-exec"
   set_permissions "$INSTALL_LOCATION/scripts/ntrk-exec.py" "775"
 
   #Ntrk-Upgrade
+  delete_file "/usr/local/sbin/ntrk-upgrade"
   sudo ln -s "$INSTALL_LOCATION/scripts/ntrkupgrade.py" "/usr/local/sbin/ntrk-upgrade"
   set_permissions "$INSTALL_LOCATION/scripts/ntrkupgrade.py" "775"
 
@@ -488,15 +472,15 @@ function install_packages() {
   echo "Installing Packages"
   echo
 
-  if command -v apt; then
+  if [ "$(command -v apt)" ]; then
     install_deb
-  elif command -v dnf; then
+  elif [ "$(command -v dnf)" ]; then
     install_dnf
-  elif command -v pacman; then
+  elif [ "$(command -v pacman)" ]; then
     install_pacman
-  elif command -v apk; then
+  elif [ "$(command -v apk)" ]; then
     install_apk
-  elif command -v xbps-install; then
+  elif [ "$(command -v xbps-install)" ]; then
     install_xbps
   else
     echo "I don't know which package manager you have :-("
@@ -756,7 +740,7 @@ function install_xbps() {
 #
 #######################################
 function check_systemd_dnsmasq() {
-  if command -v systemctl; then
+  if [ "$(command -v systemctl)" ]; then
     if systemctl -q is-active dnsmasq.service; then
       echo "Dnsmasq successfully restarted"
       return 0
@@ -795,6 +779,7 @@ function check_systemd_dnsmasq() {
 function setup_dnsmasq() {
   echo "Configuring Dnsmasq"
   
+  copy_file "$DNSMASQ_CONF" "$DNSMASQ_CONF.old"            #Backup old config
   create_folder "/etc/dnsmasq.d"                           #Issue #94 folder not created
   create_file "/var/log/notrack.log"                       #DNS logs storage
   set_ownership "/var/log/notrack.log" "dnsmasq" "root"
@@ -936,7 +921,7 @@ function setup_nginx() {
   service_start "nginx"
 
   #Backup the old nginx default config
-  move_file "/etc/nginx/sites-available/default" "/etc/nginx/sites-available/default.old"
+  rename_file "/etc/nginx/sites-available/default" "/etc/nginx/sites-available/default.old"
   #Replace the default nginx config
   copy_file "$INSTALL_LOCATION/conf/nginx.conf" "/etc/nginx/sites-available/nginx.conf"
   rename_file "/etc/nginx/sites-available/nginx.conf" "/etc/nginx/sites-available/default"
@@ -1015,7 +1000,7 @@ function setup_webserver() {
 #   None
 #######################################
 function setup_mariadb() {
-  local dbconfig="$INSTALL_LOCATION/admin/settings/dbconfig.php"
+  #local dbconfig="$INSTALL_LOCATION/admin/settings/dbconfig.php" FUTURE FEATURE
   local rootpass=""
 
   echo "Setting up MariaDB"
@@ -1194,7 +1179,7 @@ function prompt_installloc() {
   #Find users home folder if installer was run as root
   if [[ $homefolder == "/root" ]]; then
     homefolder="$(getent passwd | grep /home | grep -v syslog | cut -d: -f6)"
-    if [ $(wc -w <<< "$homefolder") -gt 1 ]; then          #How many users found?
+    if [ "$(wc -w <<< "$homefolder")" -gt 1 ]; then          #How many users found?
       echo "Unable to estabilish which Home folder to install to"
       echo "Either run this installer without using sudo / root, or manually set the \$INSTALL_LOCATION variable"
       echo "\$INSTALL_LOCATION=\"/home/you/NoTrack\""
@@ -1261,7 +1246,7 @@ prompt_network_device() {
   elif [ "$count_net_dev" -eq 1 ]; then           #1 Device
     NETWORK_DEVICE=${device_list[0]}             #Simple, just set it
   elif [ "$count_net_dev" -gt 0 ]; then
-    menu "Select Network Device" ${device_list[*]}
+    menu "Select Network Device" "${device_list[*]}"
     menu_choice=$?
     NETWORK_DEVICE=${device_list[$((menu_choice-1))]}
   elif [ "$count_net_dev" -gt 9 ]; then          #10 or more use bash prompt
@@ -1309,7 +1294,7 @@ prompt_ip_version() {
 #   None
 #######################################
 prompt_dns_server() {
-  menu "Choose DNS Server\nThe job of a DNS server is to translate human readable domain names (e.g. google.com) into an  IP address which your computer will understand (e.g. 109.144.113.88) \nBy default your router forwards DNS queries to your Internet Service Provider (ISP), however ISP DNS servers are not the best." "OpenDNS" "Google Public DNS" "DNS.Watch" "Verisign" "Comodo" "FreeDNS" "Yandex DNS" "Cloudflare" "Other" 
+  menu "Choose DNS Server\nThe job of a DNS server is to translate human readable domain names (e.g. google.com) into an  IP address which your computer will understand (e.g. 109.144.113.88) \nBy default your router forwards DNS queries to your Internet Service Provider (ISP). However, ISP DNS servers are not the best." "OpenDNS" "Google Public DNS" "DNS.Watch" "Verisign" "Comodo" "FreeDNS" "Yandex DNS" "Cloudflare" "Other"
   
   case "$?" in
     1)                                           #OpenDNS
@@ -1642,7 +1627,7 @@ prompt_ip_address(){
   clear
   echo "Your current ip address is [$IP_ADDRESS]"
   echo
-  read -rp "Enter ip address: " -i $IP_ADDRESS -e IP_ADDRESS
+  read -rp "Enter ip address: " -i "$IP_ADDRESS" -e IP_ADDRESS
 }
 
 
@@ -1660,7 +1645,7 @@ prompt_gateway_address(){
   echo "Your current internet gateway address is [$GATEWAY_ADDRESS]"
   echo "This is usually the address of your router"
   echo
-  read -rp "Enter internet gateway address: " -i $GATEWAY_ADDRESS -e GATEWAY_ADDRESS
+  read -rp "Enter internet gateway address: " -i "$GATEWAY_ADDRESS" -e GATEWAY_ADDRESS
 }
 
 
@@ -1712,19 +1697,19 @@ set_static_ip_address(){
 #   None
 #######################################
 prompt_setup_static_ip_address(){
-  menu "NoTrack is a server and requires a static ip address to function properly" "Set a static ip address" "System has static ip address" "Abort install"
+  menu "NoTrack is a server and requires a static ip address to function properly" "Set a static ip address" "My system already has static ip address" "Abort install"
 
   case "$?" in
     1)
-      if [[ -z $(which dhcpcd) ]]; then
-        if [[ -n $(dpkg -l | grep -Ei "(kde|gnome|lxde|xfce|mint|unity|fluxbox|openbox)" | grep -v library) ]]; then
-          clear
-          echo "Your system appears to have a GUI desktop"
-          echo
-          echo "Use the connection editor to set a static ip address, then run this installer again"
-          echo
-          exit
-        fi
+      #Check running processes for anything that looks like a GUI desktop TODO complete
+      if ps -A | grep -Eiq "(kded5|gnome|lxde|xfce|mint|fluxbox|openbox)"; then
+        #if [[ -n $(dpkg -l | grep -Ei "(kded5|gnome|lxde|xfce|mint|unity|fluxbox|openbox)" | grep -v library) ]]; then
+        clear
+        echo "Your system appears to have a GUI desktop"
+        echo
+        echo "Use the desktop connection editor to set a static ip address, then run this installer again"
+        echo
+        exit 1
       fi
 
       SETUP_STATIC_IP_ADDRESS=true
@@ -1868,9 +1853,7 @@ fi
 
 install_packages                                 #Install Apps with the appropriate package manager
 
-backup_configs                                   #Backup old config files
-
-if command -v git; then                          #Utilise Git if its installed
+if [ "$(command -v git)" ]; then                 #Utilise Git if its installed
   download_with_git
 else
   download_with_wget                             #Git not installed, fallback to wget
@@ -1889,14 +1872,9 @@ fi
 
 service_restart "$WEB_SERVER"
 
-if [ ! -e "/usr/local/sbin/notrack" ]; then
-  error_exit "Script files missing" "1"
-fi
-
-echo "========================================================="
 echo "Downloading and configuring blocklists"
 echo
-sudo /usr/local/sbin/notrack -f
+sudo /usr/local/sbin/notrack
 
 show_finish
  
