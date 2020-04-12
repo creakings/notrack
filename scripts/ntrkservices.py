@@ -64,7 +64,9 @@ class Services:
         """
         Find Web server by checking if each application exists
         """
-        if shutil.which('lighttpd') != None:
+        if shutil.which('nginx') != None:
+            self.__webserver = 'nginx'
+        elif shutil.which('lighttpd') != None:
             self.__webserver = 'lighttpd'
         elif shutil.which('apache') != None:
             self.__webserver = 'apache'
