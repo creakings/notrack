@@ -486,7 +486,7 @@ function install_packages() {
     echo "I don't know which package manager you have :-("
     echo "Ensure you have the following packages installed:"
     echo -e "\tdnsmasq"
-    echo -e "\tlighttpd"
+    echo -e "\tnginx"
     echo -e "\tmariadb"
     echo -e "\tmemcached"
     echo -e "\tphp-cgi"
@@ -712,7 +712,7 @@ function install_xbps() {
   echo
   echo "Installing PHP"
   sleep 2s
-  sudo xbps-install -y fcgi lighttpd php php-cgi
+  sudo xbps-install -y fcgi php php-cgi
   echo
   echo "Installing Python"
   sleep 2s
@@ -864,15 +864,15 @@ function find_web_user() {
 
   if getent passwd www-data; then                          #Ubuntu uses www-data
     WEB_USER="www-data"
-  elif getent passwd lighttpd; then                        #Redhat uses lighttpd
-    WEB_USER="lighttpd"
-  elif getent passwd _lighttpd; then                       #Void uses _lighttpd
-    WEB_USER="_lighttpd"
+  elif getent passwd nginx; then                           #Redhat uses nginx
+    WEB_USER="nginx"
+  elif getent passwd _nginx; then                          #Void uses _nginx
+    WEB_USER="_nginx"
   elif getent passwd http; then                            #Arch uses http
     WEB_USER="http"
   else
     echo "Unable to find Group for web service :-("
-    echo "Check permissions of /var/www and then ammend \$WEB_USER value in this installer"
+    echo "Check /etc/passwd for the web user and then ammend \$WEB_USER value in this installer"
     exit 9
   fi
 
