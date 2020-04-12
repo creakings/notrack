@@ -370,30 +370,22 @@ function backup_configs() {
 #######################################
 function copy_scripts() {
   #Blocklist parser
-  copy_file "$INSTALL_LOCATION/scripts/notrack.sh" /usr/local/sbin/notrack.sh
-  rename_file /usr/local/sbin/notrack.sh /usr/local/sbin/notrack
+  sudo ln -s "$INSTALL_LOCATION/scripts/notrack.py" "/usr/local/sbin/notrack"
+  set_permissions "$INSTALL_LOCATION/scripts/notrack.py" "775"
 
   #Ntrk-Exec DEPRECATED
-  copy_file "$INSTALL_LOCATION/scripts/ntrk-exec.sh" /usr/local/sbin/ntrk-exec.sh
-  rename_file /usr/local/sbin/ntrk-exec.sh /usr/local/sbin/ntrk-exec
+  sudo ln -s "$INSTALL_LOCATION/scripts/ntrk-exec.py" "/usr/local/sbin/ntrk-exec"
+  set_permissions "$INSTALL_LOCATION/scripts/ntrk-exec.py" "775"
 
-  #New Ntrk-Exec
-  #copy_file "$INSTALL_LOCATION/scripts/ntrk-exec.py" /usr/local/sbin/ntrk-exec.py
-  #rename_file /usr/local/sbin/ntrk-exec.py /usr/local/sbin/ntrk-exec
+  #Ntrk-Upgrade
+  sudo ln -s "$INSTALL_LOCATION/scripts/ntrkupgrade.py" "/usr/local/sbin/ntrk-upgrade"
+  set_permissions "$INSTALL_LOCATION/scripts/ntrkupgrade.py" "775"
 
-  #Ntrk-Pause
-  copy_file "$INSTALL_LOCATION/scripts/ntrk-pause.sh" /usr/local/sbin/
-  rename_file /usr/local/sbin/ntrk-pause.sh /usr/local/sbin/ntrk-pause
-
-  #Ntrk-Upgrade DEPRECATED
-  copy_file "$INSTALL_LOCATION/scripts/ntrk-upgrade.sh" /usr/local/sbin/
-  rename_file /usr/local/sbin/ntrk-upgrade.sh /usr/local/sbin/ntrk-upgrade
-
-  #Ntrk-Parser
+  #Ntrk-Parser DEPRECATED
   copy_file "$INSTALL_LOCATION/scripts/ntrk-parse.sh" /usr/local/sbin/
   rename_file /usr/local/sbin/ntrk-parse.sh /usr/local/sbin/ntrk-parse
 
-  #Ntrk-Analytics
+  #Ntrk-Analytics DEPRECATED
   copy_file "$INSTALL_LOCATION/scripts/ntrk-analytics.sh" /usr/local/sbin/
   rename_file /usr/local/sbin/ntrk-analytics.sh /usr/local/sbin/ntrk-analytics
 
@@ -935,15 +927,33 @@ function webserver_sudoers() {
 #   None
 #######################################
 function setup_nginx() {
+  local phpinfo=""
+  local phpver=""
+
   echo
   echo "Setting up nginx"
 
   service_start "nginx"
 
+  #Backup the old nginx default config
+  move_file "/etc/nginx/sites-available/default" "/etc/nginx/sites-available/default.old"
   #Replace the default nginx config
   copy_file "$INSTALL_LOCATION/conf/nginx.conf" "/etc/nginx/sites-available/nginx.conf"
   rename_file "/etc/nginx/sites-available/nginx.conf" "/etc/nginx/sites-available/default"
 
+  #FastCGI server needs to contain the current PHP version
+  echo "Finding version of PHP"
+  phpinfo="$(php --version)"                               #Get info from php version
+
+  #Perform a regex check to extract version number from PHP (x.y).z
+  if [[ $phpinfo =~ ^PHP[[:space:]]([0-9]{1,2}\.[0-9]{1,2}) ]]; then
+    phpver="${BASH_REMATCH[1]}"
+    echo "Found PHP version $phpver"
+    sudo sed -i "s/%phpver%/$phpver/" /etc/nginx/sites-available/default
+  else
+    echo "I can't find the PHP version :-( You will have to replace %phpver% in /etc/nginx/sites-available/default"
+    sleep 8s
+  fi
 }
 
 
