@@ -539,6 +539,9 @@ function install_deb() {
   sleep 2s
   #sudo apt -y install lighttpd
   sudo apt -y install nginx
+  echo "Creating snakeoil SSL cert"
+  sudo apt -y install ssl-cert
+  make-ssl-cert generate-default-snakeoil
   echo
   echo "Installing PHP"
   sleep 2s
@@ -1768,9 +1771,9 @@ function show_finish() {
   echo -e "\t\u2022 Secure MariaDB Installation"
   echo -e "\t    Run: /usr/bin/mysql_secure_installation"
   echo
-  echo -e "\t\u2022 Create HTTPS Certificate"
-  echo -e "\t    bash $INSTALL_LOCATION/scripts/create-ssl-cert.sh"
-  echo
+  #echo -e "\t\u2022 Create HTTPS Certificate" DEPRECATED
+  #echo -e "\t    bash $INSTALL_LOCATION/scripts/create-ssl-cert.sh"
+  #echo
   echo -e "\t\u2022 Enable DHCP"
   echo -e "\t    http://$(hostname)/dhcp"
   echo
