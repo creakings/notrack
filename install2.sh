@@ -541,7 +541,7 @@ function install_deb() {
   sudo apt -y install nginx
   echo "Creating snakeoil SSL cert"
   sudo apt -y install ssl-cert
-  make-ssl-cert generate-default-snakeoil
+  sudo make-ssl-cert generate-default-snakeoil
   echo
   echo "Installing PHP"
   sleep 2s
@@ -750,7 +750,7 @@ function check_systemd_dnsmasq() {
     fi
     echo
     echo "WARNING: Dnsmasq has failed to restart. This could be due to a conflict with systemd-resolved service running a stub dns server on port 53."
-    echo "This issue is known to affect Ubuntu 19.04"
+    echo "This issue is known to affect Ubuntu 19.04 onwards"
     echo
     echo "I can fix the issue by adding DNSStubListener=no to /etc/systemd/resolved.conf"
     
