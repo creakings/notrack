@@ -1,6 +1,18 @@
+Development:
+Default webserver is now Nginx
+python3-mysql.connector must be installed to use the new Python3 scripts
+sudo apt install python3 python3-mysql.connector
+sudo dnf install python3 mysql-connector-python3
+
+notrack.sh replaced with notrack.py
+ntrk-exec.sh replaced with ntrk-exec.py
+ntrk-pause.sh deprecated
+ntrk-upgrade.sh replaced with ntrk-upgrade.py
+*************************************************
+
 v0.9.5 Released 7 Mar 2020
-Begin work on porting Bash scripts to Python3.
-ntrk-exec ported to Python although not yet enabled due to dependency on non-installed package python3-mysql.connector
+Begin work on replacing Bash scripts with Python3 scripts.
+ntrk-exec moved to Python although not yet enabled due to dependency on non-installed package python3-mysql.connector
 New timepicker menu on queries.php
 New Status and Severity selector on analytics.php
 Added export button to analytics.php
