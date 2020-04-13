@@ -550,8 +550,8 @@ function linechart($values1, $values2, $xlabels, $link_labels, $extraparams, $ti
   $numvalues = count($values1);
   $values1[] = 0;                                          //Ensure line returns to 0
   $values2[] = 0;                                          //Ensure line returns to 0
-  $xlabels[] = $xlabels[$numvalues-1] + 1;                 //Increment xlables
-  
+  $xlabels[] = $xlabels[$numvalues-1];                     //Increment xlables
+
   $xstep = 1900 / $numvalues;                              //Calculate x axis increment
   if ($max_value < 200) {                                  //Calculate y axis maximum
     $ymax = (ceil($max_value / 10) * 10) + 10;             //Change offset for low values
