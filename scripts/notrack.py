@@ -53,7 +53,6 @@ domaincount = 0
 totaldedupcount = 0
 
 config = {
-    'LatestVersion' : VERSION,
     'NetDev' : 'eth0',
     'IPVersion' : 'IPv4',
     'Search' : 'DuckDuckGo',
@@ -71,8 +70,9 @@ config = {
     'blockmessage' : 'pixel',
     'ipaddress' : '127.0.0.1',
     'whoisapi' : '',
-    'status' : 1,
-    'unpausetime' : 0
+    'status' : '1',
+    'unpausetime' : '0',
+    'autoupgrade' : '0'
 }
 
 
@@ -874,7 +874,6 @@ def dedup_lists():
 
     print('Further deduplicated %d domains' % dedupcount)
     print('Final number of domains in blocklist: %d' % len(dns_blacklist))
-    print()
 
     save_list(dns_blacklist, folders.dnslists + 'notrack.list')
     dbwrapper.blocklist_insertdata(sqldata)
@@ -948,6 +947,24 @@ def test():
         print(config['bl_custom'].replace(',', '\n'))
 
     sys.exit(0)
+
+def notrack_checkupgrade():
+    """
+    Check for upgrades to NoTrack
+    If autoupgrade is enabled then carry out upgrade
+    """
+    from ntrkupgrade import NoTrackUpgrade
+
+    update_available = False
+
+    if FORCE:                          #skip checking for upgrade if force mode is used
+        return
+
+    ntrkupgrade = NoTrackUpgrade(folders.tempdir, folders.sbindir, folders.wwwconfdir)
+    update_available = ntrkupgrade.get_latestversion()
+
+    if config['autoupgrade'] == '1' and update_available:
+        ntrkupgrade.do_upgrade()
 
 
 def notrack_pause(pausetime):
@@ -1092,6 +1109,8 @@ def notrack(delay=0):
     dedup_lists()                                          #Dedup then insert domains
 
     services.restart_dnsserver()
+
+    notrack_checkupgrade()
 
 
 #Main----------------------------------------------------------------
