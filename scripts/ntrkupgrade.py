@@ -3,7 +3,7 @@
 #Description : This script carries out upgrade for NoTrack
 #Author      : QuidsUp
 #Date        : 2020-03-28
-#Version     : 0.9.5
+#Version     : 0.9.6
 #Usage       : sudo python3 ntrkupgrade.py
 
 #Standard imports
@@ -17,7 +17,6 @@ import sys
 from ntrkfolders import FolderList
 from ntrkregex import Regex_Version
 from ntrkshared import *
-
 
 class NoTrackUpgrade():
     """
@@ -373,11 +372,12 @@ class NoTrackUpgrade():
         Check for upgrade
         Extract latestversion variable from bl_notrack.txt
         """
-        print('Checking what the latest version is of NoTrack')
+        print('Checking what the latest version of NoTrack is')
 
         #Is bl_notrack.txt available?
         if not Path(self.__TEMPDIR + 'bl_notrack.txt').is_file():
-            print('Check_For_Upgrade: Error - Temporary copy of NoTrack block list is not available')
+            print('Temporary copy of NoTrack block list is not available')
+            print('I don\'t know what the latest version of NoTrack is :-(')
             print('Either the file is missing due to a system reboot, or NoTrack block list is not enabled')
             print('To enable bl_notrack:')
             print('Edit /etc/notrack/notrack.conf, set bl_notrack = 1')
@@ -397,24 +397,29 @@ class NoTrackUpgrade():
     def __update_latest_version(self):
         """
         Update PHP latest version setting file
+
+        Returns:
+            True - New version available
+            False - Running current version
         """
         if self.__latestversion == '':                     #Failed to get latest version
-            return
+            return False
 
         if self.__latestversion == VERSION:                #Already latest version
             print('Running current version', VERSION)
-            return
+            return False
 
         print('New version available:', self.__latestversion)
-        print('Print updating latestversion.php')
+        print('Updating latestversion.php')
         with open (self.__WWWCONFDIR + 'latestversion.php', 'w') as f:
             f.write('<?php\n')
-            f.write("$config->LatestVersion = '%s';\n" % self.__latestversion)
+            f.write("$LATESTVERSION = '%s';\n" % self.__latestversion)
             f.write('?>\n')
             f.close()                                      #Close file
 
-        print('Setting permissions of latestversion.php to -rw-rw-rw')
-        os.chmod(self.__WWWCONFDIR + 'latestversion.php', 0o666)
+        os.chmod(self.__WWWCONFDIR + 'latestversion.php', 0o666) #-rw-rw-rw
+
+        return True                                        #New version updated at this point
 
 
     def do_upgrade(self):
@@ -425,6 +430,8 @@ class NoTrackUpgrade():
         3a. If it is install Python3 version of NoTrack
         3b. Otherwise fallback to using the legacy Bash version
         """
+
+        print('Upgrading NoTrack')
 
         if self.__check_git():
             if not self.__git_pull():
@@ -443,14 +450,15 @@ class NoTrackUpgrade():
         """
         Returns the latest version
         Will also update PHP settings
+
+        Returns:
+            True - New version available
+            False - Running current version
         """
         if self.__latestversion == '':                     #Is latest version known?
             self.__check_for_upgrade()                     #Read bl_notrack.txt
 
-        self.__update_latest_version()                     #Update PHP settings
-
-        return self.__latestversion
-
+        return self.__update_latest_version()              #Update PHP settings
 
 
 def main():

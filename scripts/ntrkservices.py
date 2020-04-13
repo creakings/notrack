@@ -92,9 +92,11 @@ class Services:
         if p.returncode != 0:
             print('Services restart_service: Failed to restart %s' % service)
             print(p.stderr)
+            print()
             return False
         else:
             print('Successfully restarted %s' % service)
+            print()
             return True
 
 
