@@ -191,6 +191,8 @@ function home_status() {
     }
   }
 
+  echo '<div><h2>Last Updated</h2>'.$date_msg.$date_submsg.'</div>'.PHP_EOL;
+  /* DEPRECATED
   if ((VERSION != $config->settings['LatestVersion']) && check_version($config->settings['LatestVersion'])) {
     $date_msg = '<h3 class="darkgray">Upgrade</h3>';
     $date_submsg = '<p>New version available: v'.$config->settings['LatestVersion'].'</p>';
@@ -199,10 +201,7 @@ function home_status() {
     //TODO Image for upgrade
   }
   else {
-    echo '<div><h2>Last Updated</h2>'.$date_msg.$date_submsg.'</div>'.PHP_EOL;
-  }
-
-  return null;
+  */
 }
 
 
@@ -267,14 +266,35 @@ function count_queries() {
 }
 
 
+/********************************************************************
+ *  Show Latest version alert if a newer version of NoTrack is available
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function show_latestversion() {
+  global $config;
 
-//Main---------------------------------------------------------------
+  if (($config->get_latestversion() != VERSION) && (compare_version($config->get_latestversion()))) {
+    echo '<div class="alertupgrade">'.PHP_EOL;
+    echo 'There is a newer version available - <a href="./upgrade.php">Update Now</a>'.PHP_EOL;
+    echo '</div>';
+  }
+}
+
+/********************************************************************
+ */
 
 draw_topmenu();
 draw_sidemenu();
 echo '<div id="main">';
 
 count_queries();
+load_latestversion();
+show_latestversion();
+
 echo '<div class="home-nav-container">';
 home_status();
 home_blocklist();

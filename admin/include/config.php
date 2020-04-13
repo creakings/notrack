@@ -13,6 +13,8 @@
  */
 
 class Config {
+  private $latestversion = VERSION;
+
   public $status = STATUS_ENABLED;
   public $unpausetime = 0;
 
@@ -32,7 +34,7 @@ class Config {
     'ParsingTime' => 4,
     'api_key' => '',
     'api_readonly' => '',
-    'LatestVersion' => VERSION,
+    //'LatestVersion' => VERSION, DEPRECATED
     'bl_custom' => '',
   );
 
@@ -338,10 +340,11 @@ class Config {
     $key = '';
     $value = '';
 
+    //DEPRECATED
     //Prevent wrong version being written to config file if user has just upgraded and old LatestVersion is still stored in Memcache
-    if (check_version($this->settings['LatestVersion'])) {
+    /*if (check_version($this->settings['LatestVersion'])) {
         $this->settings['LatestVersion'] = VERSION;
-    }
+    }*/
 
     $fh = fopen(CONFIGTEMP, 'w');                          //Open temp config for writing
 
@@ -412,6 +415,20 @@ class Config {
     }
 
     return $bl;                                            //Shouldn't get to here
+  }
+
+  /********************************************************************
+   *  Return value of latestversion
+   */
+  function get_latestversion() {
+    return $this->latestversion;
+  }
+
+  /********************************************************************
+   *  Set value of latestversion
+   */
+  function set_latestversion($newversion) {
+    $this->latestversion = $newversion;
   }
 
 

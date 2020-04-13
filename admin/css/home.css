@@ -1,10 +1,31 @@
 @charset "utf-8";
 /* ==========================================================================
+   Alert notifications for upgrade
+   ========================================================================== */
+.alertupgrade {
+  display: block;
+  width: 28rem;
+  max-width: 90%;
+  margin: 4rem auto 0;
+  padding: 0.5rem;
+  background-color: rgba(0, 193, 119, 0.8);
+  border: 2px solid #01ff9e;
+  border-radius: 4px;
+  font-size: 1.05rem;
+  text-align: center;
+}
+.alertupgrade a {
+/*   color: #00c2c8; */
+  text-decoration: underline;
+}
+
+
+/* ==========================================================================
    CSS for index providing home-nav
    ========================================================================== */
 .home-nav-container {
   width: 100%;
-  margin: 5rem auto 0;
+  margin: 1.5rem auto 0;
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
@@ -91,9 +112,9 @@
 }
 
 
-.home-bggreen {
+/*.home-bggreen { DEPRECATED
   background-color: rgba(0, 255, 127, 0.9) !important;
-}
+}*/
 .home-bgred {
   background-color: rgba(147, 30, 63, 0.9) !important;
 }

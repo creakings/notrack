@@ -96,7 +96,7 @@ function is_password_protection_enabled() {
 
 
 /********************************************************************
- *  Check Version
+ *  Compare Version possibly DEPRECATED
  *    1. Split strings by '.'
  *    2. Combine back together and multiply with Units array
  *    e.g 1.0 - 1x10000 + 0x100 = 10,000
@@ -107,7 +107,7 @@ function is_password_protection_enabled() {
  *  Return:
  *    true if latestversion >= currentversion, or false if latestversion < currentversion
  */
-function check_version($latestversion) {
+function compare_version($latestversion) {
   //If LatestVersion is less than Current Version then function returns false
   
   $numversion = 0;
@@ -711,4 +711,25 @@ function piechart($labels, $data, $cx, $cy, $radius, $colours) {
 
   return true;
 }
+
+/********************************************************************
+ *  Load latest version from settings folder
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    true - latestversion.php loaded successfully
+ *    false - latestversion.php missing
+ */
+function load_latestversion() {
+  global $config;
+  if (file_exists('./settings/latestversion.php')) {       //Attempt to load latestversion
+    include_once './settings/latestversion.php';
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
 ?>
