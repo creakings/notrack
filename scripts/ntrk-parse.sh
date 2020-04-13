@@ -601,10 +601,12 @@ if (( ($status & $STATUS_INCOGNITO ) >0 )); then           #Bitwise checks if in
   exit 0                                                   #Exit safely to make sure no data is recorded in Incognito mode
 fi
 
-#Make sure there is something in lighttpd access log 
-if [ "$(wc -l "$FILE_LIGHTYLOG" | cut -d " " -f 1)" -gt 2 ]; then
-  load_weblog                                              #Load lighttpd log file into array
-  process_weblog                                           #Process and add log to SQL table  
+#Make sure there is something in lighttpd access log
+if [[ -e $FILE_LIGHTYLOG ]]; then
+  if [ "$(wc -l "$FILE_LIGHTYLOG" | cut -d " " -f 1)" -gt 2 ]; then
+    load_weblog                                              #Load lighttpd log file into array
+    process_weblog                                           #Process and add log to SQL table
+  fi
 fi
 
 logarray=()                                                #Empty logarray for reuse
