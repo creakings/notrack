@@ -5,6 +5,7 @@
 #Date : 2016-03-22
 #Usage : ntrk-upgrade
 #Last updated with NoTrack v0.9 - 26 Aug 2018
+# DEPRECATED - Remove in 2021
 
 #######################################
 # Constants
@@ -176,17 +177,14 @@ echo "Copying updated scripts"
 copy_file "scripts/notrack.sh" "/usr/local/sbin/"                    #NoTrack.sh
 rename_file "/usr/local/sbin/notrack.sh" "/usr/local/sbin/notrack"
 
-copy_file "scripts/ntrk-exec.sh" "/usr/local/sbin/"                  #ntrk-exec.sh DEPRECATED
+copy_file "scripts/ntrk-exec.sh" "/usr/local/sbin/"                  #ntrk-exec.sh
 rename_file "/usr/local/sbin/ntrk-exec.sh" "/usr/local/sbin/ntrk-exec"
-
-#copy_file "scripts/ntrk-exec.py" "/usr/local/sbin/"                  #New ntrk-exec.py
-#rename_file "/usr/local/sbin/ntrk-exec.py" "/usr/local/sbin/ntrk-exec"
 
 copy_file "scripts/ntrk-pause.sh" "/usr/local/sbin/"                 #ntrk-pause.sh
 rename_file "/usr/local/sbin/ntrk-pause.sh" "/usr/local/sbin/ntrk-pause"
 
-copy_file "scripts/ntrk-upgrade.sh" "/usr/local/sbin/"               #ntrk-upgrade.sh
-rename_file "/usr/local/sbin/ntrk-upgrade.sh" "/usr/local/sbin/ntrk-upgrade"
+copy_file "scripts/ntrkupgrade.py" "/usr/local/sbin/"                #New ntrk-upgrade.py
+rename_file "/usr/local/sbin/ntrkupgrade.py" "/usr/local/sbin/ntrk-upgrade"
 
 copy_file "scripts/ntrk-parse.sh" "/usr/local/sbin/"                 #ntrk-parse.sh
 rename_file "/usr/local/sbin/ntrk-parse.sh" "/usr/local/sbin/ntrk-parse"
@@ -195,21 +193,6 @@ copy_file "scripts/ntrk-analytics.sh" "/usr/local/sbin/"             #ntrk-analy
 rename_file "/usr/local/sbin/ntrk-analytics.sh" "/usr/local/sbin/ntrk-analytics"
 echo "Finished copying scripts"
 echo
-
-#For Bash to Python porting
-#sudo rm /usr/local/sbin/notrack
-#sudo ln /home/quids/notrack/scripts/notrack.py /usr/local/sbin/notrack
-
-#sudo rm /usr/local/sbin/ntrk-exec
-#sudo ln -s /home/quids/notrack/scripts/ntrk-exec.py /usr/local/sbin/ntrk-exec
-
-#sudo rm /usr/local/sbin/ntrk-pause
-
-#sudocheck=$(grep www-data /etc/sudoers)                              #Check sudo permissions for lighty possibly DEPRECATED
-#if [[ $sudocheck == "" ]]; then
-  #echo "Adding NoPassword permissions for www-data to execute script /usr/local/sbin/ntrk-exec as root"
-  #echo -e "www-data\tALL=(ALL:ALL) NOPASSWD: /usr/local/sbin/ntrk-exec" | tee -a /etc/sudoers
-#fi
 
 if [ -e "$FILE_CONFIG" ]; then                                       #Remove Latestversion number from Config file
   echo "Removing version number from Config file"
