@@ -413,7 +413,7 @@ class NoTrackUpgrade():
         print('Updating latestversion.php')
         with open (self.__WWWCONFDIR + 'latestversion.php', 'w') as f:
             f.write('<?php\n')
-            f.write("$LATESTVERSION = '%s';\n" % self.__latestversion)
+            f.write("$config->set_latestversion('%s');\n" % self.__latestversion)
             f.write('?>\n')
             f.close()                                      #Close file
 
