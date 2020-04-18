@@ -1,80 +1,98 @@
-<html>
 <?php
+$urllist = array();                                        //List of URLs
+$paramlist = array();                                      //Sorted list of GET args
 
 /********************************************************************
- *  Check POST
- *    There is no need to display anything back for a POST request
- *    Respond with HTTP 503 - Service Unavialable
+ *  Extract URLs
+ *    Check for any URLs
+ *    Strip tags from GET values and store them in $paramlist
  *
  *  Params:
  *    None
  *  Return:
  *    None
  */
-function check_post() {
-  if (count($_POST) > 0) {                                 //Anything POSTed
-    http_response_code(503);                               //Resond Service Unavailable
-    exit;
+function extract_urls() {
+  global $paramlist, $urllist;
+  $taglessvalue = '';                                      //Value with strip_tags
+
+  foreach($_GET as $key => $value) {
+    if ($key == 'ntrkorigin') continue;                    //Skip ntrkorigin
+
+    $taglessvalue = strip_tags($value);                    //Prevent XSS
+    $paramlist[$key] = $taglessvalue;                      //Store sorted parameter
+
+    //Is the taglessvalue a URL?
+    if (preg_match('/^https?:\/\/[\w-._]{3,256}(\/[\w-_.%\/]*)?(\?[\w%&=.:#@~$]*)?$/', $taglessvalue)) {
+      if (! in_array($taglessvalue, $urllist)) {           //Prevent duplicates
+        $urllist[] = $taglessvalue;                        //Add array to list
+      }
+    }
   }
 }
 
 
 /********************************************************************
- *  File Extension
- *    Returns the file extension of the document part of a URI
+ *  Draw the Extracted URLs
  *
  *  Params:
- *    document
+ *    None
  *  Return:
- *    Success - File Extension
- *    Failure - Blank string
+ *    None
  */
-function file_extension($document) {
-  if (preg_match('/\.(\w{2,4})$/', $document, $matches)) {
-    return $matches[1];
+function draw_urllist() {
+  global $urllist;
+
+  if (count($urllist) == 0) {                              //Any URLs extracted?
+    return;
   }
-  else {
-    return '';
+
+  echo 'Extracted URL&rsquo;s:<br>'.PHP_EOL;
+  foreach($urllist as $url) {
+    echo "<a href=\"{$url}\">{$url}</a><br>".PHP_EOL;
   }
 }
 
 
 /********************************************************************
- *  Get Extension
- *    Extracts the folder and document from URI
- *    Then returns the file extension
+ *  Draw the Extracted Parameters
  *
  *  Params:
- *    folder
+ *    None
  *  Return:
- *    Success - File Extension
- *    Failure - Blank string
+ *    None
  */
-function get_extension($folder) {
-  //Seperate the document and parameters
-  $document = strstr($folder, '?', true);                  //Get portion of string before ? params
+function draw_paramlist() {
+  global $paramlist;
+  $i = 1;                                                  //Beautify
 
-  if ($document === false) {                               //No params, use $folder
-    return file_extension($folder);
+  echo 'Parameter list:<br>'.PHP_EOL;
+
+  if (count($paramlist) == 0) {                            //Any parameters extracted?
+    echo 'None specified<br>'.PHP_EOL;
+    return;
   }
-  else {                                                   //Params supplied, use $document
-    return file_extension($document);
+
+  ksort($paramlist);
+
+  foreach($paramlist as $key => $value) {
+    echo "{$i}: {$key} - {$value}<br>".PHP_EOL;
+    $i++;
   }
 }
-
-
-check_post();
-
 $host = $_SERVER['HTTP_HOST'];
-$folder = $_GET['ntrkorigin'] ?? 'Unknown';
-$extension = get_extension($folder);
+$ntrkorigin = $_GET['ntrkorigin'] ?? '';
 
-echo "Folder: $folder<br>";
-echo "Extension: $extension<br>";
-echo $_SERVER['HTTP_HOST'];
-echo '<br>';
-print_r($_SERVER);
-echo '<br>';
-print_r($_GET);
+echo '<!DOCTYPE html>'.PHP_EOL;
+echo '<h1>Blocked by NoTrack</h1>'.PHP_EOL;
+echo '<h3>Sorry about that</h3>'.PHP_EOL;
+echo "Host: $host<br>";
+echo "Folder: $ntrkorigin<br>";
+echo '<br>'.PHP_EOL;
+extract_urls();
+draw_urllist();
+echo '<br>'.PHP_EOL;
+draw_paramlist();
+echo '<br>'.PHP_EOL;
+echo '</html>'.PHP_EOL;
 ?>
-</html>
