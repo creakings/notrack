@@ -435,7 +435,7 @@ if args.save:                                              #Save a config file
         copy_tldlists()
 
 if args.play:                                              #Play / Pause / Stop
-    ntrk_pause('start')
+    ntrk_pause('play')
 if args.pause:
     ntrk_pause('pause', args.pause)
 if args.stop:
