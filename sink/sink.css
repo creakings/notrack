@@ -1,0 +1,99 @@
+@charset "utf-8";
+body {
+  margin: 0;
+  padding: 0;
+  background: #038890;
+  color: #00000a;
+  font-size: 90%;
+  font-family: Arial, Helvetica, sans-serif;
+}
+a:link,
+a:visited {
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+h1 {
+  margin: 0.2rem 0;
+  color: #222;
+  font-size: 2.5rem;
+}
+h2 {
+  margin: 0.7rem 0 1rem;
+  color: #222;
+  font-size: 1.8rem;
+}
+h3 {
+  margin: 0.5rem 0;
+  font-size: 1.2rem;
+  font-weight: normal;
+}
+h3 > a {
+  color: #666;
+}
+h4 {
+  margin: 2rem 0 0.2rem;
+  font-size: 1.05rem;
+  font-weight: normal;
+}
+li > a {
+  color: navy;
+}
+ul {
+  color: navy;
+  margin: 0;
+}
+table {
+  border-spacing: 0;
+  table-layout: fixed;
+  width: 100%;
+}
+tr {
+  background-color: #fbfbfb;
+}
+tr:hover {
+  filter: brightness(90%);
+}
+td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid #bdbdbd;
+  overflow: hidden;
+}
+td:nth-child(1) {
+  width: 2.5rem;
+  text-align: center;
+}
+td:nth-child(2) {
+  width: 8rem;
+}
+.circle1,
+.circle2 {
+  position: absolute;
+  max-width: 80vw;
+  max-height: 80vw;
+  width: 40rem;
+  height: 40rem;
+  z-index: -100;
+}
+.circle1 {
+  background: radial-gradient(circle at 30% 20%, #04bec8 10%, transparent 40%);
+  top: 0;
+  left: 0;
+}
+.circle2 {
+  background: radial-gradient(circle at 65% 70%, #03b3bc 8%, transparent 37%);
+  bottom: 0;
+  right: 0;
+}
+.sys-group {
+  max-height: 82vh;
+  width: 90%;
+  margin: 6vh auto 6vh;
+  padding: 0.5rem 0.5rem 0.8rem;
+  background-color: #f7f7f7;
+  border: 1px solid #bdbdbd;
+  border-radius: 2px;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
+}
