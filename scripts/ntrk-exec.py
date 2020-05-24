@@ -43,18 +43,20 @@ class Host:
 #End Classes---------------------------------------------------------
 
 
-""" Block Message
+def block_message(msg):
+    """
+    Block Message
     Sets Block message for sink page
     1. Output required data into wwwsink/index.html'
     2. Find which group is running the webserver (http or www-user)
     3. Set ownership of the file for relevant group
     4. Set file permissions to 775
-Args:
-    Message
-Returns:
-    None
-"""
-def block_message(msg):
+
+    Parameters:
+        msg (str): Message
+    Returns:
+        None
+    """
     services = Services()
     groupname = ''
 
@@ -85,52 +87,14 @@ def block_message(msg):
         os.chmod(folders.wwwsink + 'index.html', stat.FILE_ATTRIBUTE_ARCHIVE)
 
 
-""" Copy File
-    1. Check source exists
-    2. Set ownership to root
-    3. Set permissions to 644
-Args:
-    source
-    destination
-Returns:
-    True on success
-    False on failure
-"""
-def copy_file(source, destination):
-    if not os.path.isfile(source):
-        print('Copy_file: Error %s is missing' % source)
-        return False
-
-    #Set ownership to root
-    print('Setting ownership of %s to root:root' % source)
-    shutil.chown(source, user='root', group='root')
-
-    #Set permissions to RW R R'
-    print('Setting permissions of %s to 644' % source)
-    os.chmod(source, 0o644)
-
-    #Copy specified file
-    print('Moving %s to %s' % (source, destination))
-    shutil.move(source, destination)
-
-    if not os.path.isfile(destination):
-        print('Copy_file: Error %s does not exist. Copy failed')
-        return False
-
-    return True
-
-
-""" Copy DHCP Config
+def copy_dhcp():
+    """
+    Copy DHCP Config
     1: Check dhcp.conf exists in /tmp
     2: Change ownership and permissions
     3: Copy to /etc/dnsmasq.d/dhcp.conf
-    4: Restart Dnsmasq
-Args:
-    Interval in minutes
-Returns:
-    None
-"""
-def copy_dhcp():
+    4: Restart DNS Server
+    """
     dhcp_config = 'dhcp.conf'
     services = Services()
 
@@ -140,52 +104,44 @@ def copy_dhcp():
         return
 
     copy_file(folders.tempdir + dhcp_config, services.dhcp_config)
+    services.restart_dnsserver()                           #Restart the DNS Server
 
-    services.restart_dnsserver()
 
-
-""" Copy List
+def copy_list(listname):
+    """
+    Copy List
     1. Copies either black or white list from temp folder to /etc/notrack
     2. Start a copy of notrack in wait mode
     This will allow user time to make further changes before lists are updated
     If there is a copy of notrack waiting the forked process will be closed
-Args:
-    list name
-    runnotrack - Execute NoTrack in wait mode
-Returns:
-    None
-"""
-def copy_list(listname):
+
+    Parameters:
+        listname (str): List Filename
+    Returns:
+        None
+    """
     copy_file(folders.tempdir + listname, folders.etc_notrack + listname)
-
-    #Run notrack in delayed (wait) mode
-    run_notrack('wait')
+    run_notrack('wait')                                    #Run notrack in wait mode
 
 
-""" Copy TLD Lists
-    Copy both TLD black and white list from temp folder to /etc/notrack
-Args:
-    None
-Returns:
-    None
-"""
 def copy_tldlists():
+    """
+    Copy TLD Lists
+    Copy both TLD black and white list from temp folder to /etc/notrack
+    """
     copy_file(folders.tempdir + 'domain-blacklist.txt', folders.etc_notrack + 'domain-blacklist.txt')
     copy_file(folders.tempdir + 'domain-whitelist.txt', folders.etc_notrack + 'domain-whitelist.txt')
 
 
-""" Save Static Hosts Config
+def copy_localhosts():
+    """
+    Save Static Hosts Config
     1: Check localhosts.list exists in /tmp
     2: Change ownership and permissions
     3: Copy to /etc/dnsmasq.d/dhcp.conf
-Args:
-    None
-Returns:
-    None
-"""
-def copy_localhosts():
-    localhosts_temp = ''
+    """
     host = Host()
+    localhosts_temp = ''
 
     localhosts_temp = folders.tempdir + 'localhosts.list'
 
@@ -205,14 +161,11 @@ def copy_localhosts():
     copy_file(localhosts_temp, folders.etcdir + 'localhosts.list')
 
 
-""" Create Access Log
-    Create /var/log/ntrk-admin.log and set permissions to 666
-Args:
-    None
-Returns:
-    None
-"""
 def create_accesslog():
+    """
+    Create Access Log
+    Create /var/log/ntrk-admin.log and set permissions to 666
+    """
     print('Checking to see if %s exists' % folders.accesslog)
     if os.path.isfile(folders.accesslog):
         print('File exists, no action required')
@@ -234,14 +187,16 @@ def delete_history():
     dbwrapper.delete_history();
 
 
-""" Parsing Time
-    Update CRON parsing interval for ntrk-parse to specified interval in minutes
-Args:
-    Interval in minutes
-Returns:
-    None
-"""
 def parsing_time(interval):
+    """
+    Parsing Time
+    Update CRON parsing interval for ntrk-parse to specified interval in minutes
+
+    Parameters:
+        interval (int): Interval in minutes
+    Returns:
+        None
+    """
     print('Updating parsing time')
 
     if interval < 0 or interval > 99:
@@ -255,15 +210,13 @@ def parsing_time(interval):
     f.close()                                              #Close cron_ntrkparse file
 
 
-""" NoTrack Pause
+def ntrk_pause(mode, duration=0):
+    """
+    NoTrack Pause
     Run NoTrack with specified mode
     TODO fork natively with python3
-Args:
-    None
-Returns:
-    None
-"""
-def ntrk_pause(mode, duration=0):
+    """
+
     if mode == 'pause':
         #Fork process of ntrk-pause into background
         print('Launching NoTrack to Pause for %d minutes' % duration)
@@ -278,19 +231,19 @@ def ntrk_pause(mode, duration=0):
         os.system(folders.notrack + ' --' + mode + ' > /dev/null &')
 
 
-
-""" Run NoTrack
+def run_notrack(mode=''):
+    """
+    Run NoTrack
     1. Check NoTrack exists
     2. Run NoTrack
 
-Args:
-    None
-Returns:
-    None
-"""
-def run_notrack(mode=''):
-    if not os.path.isfile(folders.ntrk_upgrade):           #Does ntrk-upgrade exist?
-        print('Upgrade_notrack: Error %s is missing' % folders.ntrk_upgrade)
+    Parameters:
+        mode (str): Optional Mode to run NoTrack in
+    Returns:
+        None
+    """
+    if not os.path.isfile(folders.notrack):                #Does notrack exist?
+        print('Error %s is missing :-(' % folders.notrack, file=sys.stderr)
         sys.exit(24)
 
     if mode == '' or mode == 'now':
@@ -305,20 +258,16 @@ def run_notrack(mode=''):
         os.system(folders.notrack + ' --' + mode + ' > /dev/null &')
 
 
-""" Upgrade NoTrack
+def upgrade_notrack():
+    """
+    Upgrade NoTrack
     1. Check ntrk-upgrade exists
     2. Run and wait for ntrk-upgrade to complete
     3. Print the output of ntrk-upgrade
     4. Check for errors
-
-Args:
-    None
-Returns:
-    None
-"""
-def upgrade_notrack():
-    if not os.path.isfile(folders.notrack):           #Does ntrk-upgrade exist?
-        print('Upgrade_notrack: Error %s is missing' % folders.ntrk_upgrade)
+    """
+    if not os.path.isfile(folders.ntrk_upgrade):           #Does ntrk-upgrade exist?
+        print('Upgrade_notrack: Error %s is missing' % folders.ntrk_upgrade, file=sys.stderr)
         sys.exit(20)
 
     process = subprocess.run([folders.ntrk_upgrade], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
@@ -330,15 +279,12 @@ def upgrade_notrack():
         print(process.stderr)                              #TODO no such functionality yet
 
 
-""" Restart System
+def restart_system():
+    """
+    Restart System
     1. Set Restart command depending on OS
     2. Run Restart command
-Args:
-    None
-Returns:
-    None
-"""
-def restart_system():
+    """
     cmd = ''
 
     print('Restarting system')
@@ -350,15 +296,12 @@ def restart_system():
     os.system(cmd)                                         #Run restart command
 
 
-""" Shutdown System
+def shutdown_system():
+    """
+    Shutdown System
     1. Set Shutdown command depending on OS
     2. Run Shutdown command
-Args:
-    None
-Returns:
-    None
-"""
-def shutdown_system():
+    """
     cmd = ''
 
     print('Powering off system')
@@ -373,10 +316,7 @@ def shutdown_system():
 #Main----------------------------------------------------------------
 folders = FolderList()
 
-if os.geteuid() != 0:                                      #Check script is being run as root
-    print('Error - This script must be run as root')
-    print('NoTrack Exec Must be run as root', file=sys.stderr)
-    sys.exit(2)
+check_root()
 
 parser = argparse.ArgumentParser(description = 'NoTrack Exec:')
 parser.add_argument('-p', "--play", help='Start Blocking', action='store_true')
@@ -428,10 +368,11 @@ if args.parsing:                                           #Cron Parsing time
     parsing_time(args.parsing)
 
 if args.deletehistory:                                     #Delete history
-    if check_module('mysql'):
+    if not check_module('mysql'):
         delete_history()
     else:
-        print('Install package python3-mysql.connector')
+        print('Missing package python3-mysql.connector :-(')
+        print('Please install python3-mysql.connector from your package manager', file=sys.stderr)
         sys.exit(30)
 
 if args.accesslog:                                         #Create Access log file
