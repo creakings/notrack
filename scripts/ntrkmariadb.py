@@ -149,3 +149,22 @@ class DBWrapper:
                 print('%-6d %-19s %-40s %s' % (i, row[1], row[2], row[4]))
                 i += 1
         print()
+
+
+    def delete_history(self):
+        """
+        Delete all rows from dnslog and weblog
+        NOTE weblog will be deprecated soon
+        """
+        cursor = self.__db.cursor()
+
+        print('Deleting contents of dnslog and weblog tables')
+
+        cursor.execute('DELETE LOW_PRIORITY FROM dnslog');
+        print('Deleting %d rows from dnslog ' % cursor.rowcount)
+        cursor.execute('ALTER TABLE dnslog AUTO_INCREMENT = 1');
+
+        cursor.execute('DELETE LOW_PRIORITY FROM weblog');
+        print('Deleting %d rows from weblog ' % cursor.rowcount)
+        cursor.execute('ALTER TABLE weblog AUTO_INCREMENT = 1');
+        self.__db.commit()

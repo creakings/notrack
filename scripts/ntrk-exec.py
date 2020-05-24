@@ -19,13 +19,7 @@ import sys
 #Local imports
 from ntrkfolders import FolderList
 from ntrkservices import Services
-
-#DBConfig loads the local settings for accessing MariaDB
-class DBConfig:
-    user = 'ntrk'
-    password = 'ntrkpass'
-    database = 'ntrkdb'
-
+from ntrkshared import *
 
 #Host gets the Name and IP address of this system
 class Host:
@@ -230,34 +224,14 @@ def create_accesslog():
         os.chmod(folders.accesslog, 0o666)
 
 
-""" Delete History
-Args:
-    None
-Returns:
-    None
-"""
 def delete_history():
-    import mysql.connector as mariadb
+    """
+    Call dbwrapper class delete_history to delete all rows from dnslog and weblog
+    """
+    from ntrkmariadb import DBWrapper
+    dbwrapper = DBWrapper()                                    #Declare MariaDB Wrapper
 
-    dbconf = DBConfig()
-
-    print('Opening connection to MariaDB')
-    db = mariadb.connect(user=dbconf.user, password=dbconf.password, database=dbconf.database)
-
-    cursor = db.cursor()
-
-    print('Deleting contents of dnslog and weblog tables')
-
-    cursor.execute('DELETE LOW_PRIORITY FROM dnslog');
-    print('Deleting %d rows from dnslog ' % cursor.rowcount)
-    cursor.execute('ALTER TABLE dnslog AUTO_INCREMENT = 1');
-
-    cursor.execute('DELETE LOW_PRIORITY FROM weblog');
-    print('Deleting %d rows from weblog ' % cursor.rowcount)
-    cursor.execute('ALTER TABLE weblog AUTO_INCREMENT = 1');
-    db.commit()
-    print('Completed, closing connection to MariaDB')
-    db.close()
+    dbwrapper.delete_history();
 
 
 """ Parsing Time
