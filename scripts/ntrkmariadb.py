@@ -30,39 +30,90 @@ class DBWrapper:
         self.__db.close()
 
 
-    def __search(self, table, search=''):
+    def __search(self, search):
         """
         Table searcher
 
         Parameters:
-            table (str): Table to search
             search (str): Search to perform
         """
-        cmd = '';
         rowcount = 0
-        tabledata = []                                         #Results from table
+        tabledata = []                                     #Results from table
         cursor = self.__db.cursor()
 
-        if search == '':
-            cmd = 'SELECT * FROM %s ORDER BY id ASC' % table
-        else:
-            cmd = 'SELECT * FROM %s WHERE %s ORDER BY id ASC' % (table, search)
-
         try:
-            cursor.execute(cmd);
+            cursor.execute(search);
         except:
-            return False
+            print('Search failed :-( {}'.format(error))
         else:
             tabledata = cursor.fetchall()
             rowcount = cursor.rowcount
         finally:
             cursor.close()
 
-
-        if rowcount == 0:
-            return False
+        if rowcount == 0:                                  #Nothing found, return empty
+            return []
 
         return tabledata
+
+
+    def __single_column(self, tabledata, col):
+        """
+        Extract single column of tabledata
+
+        Parameters:
+            tabledata (list): List of tupples from cursor.fetchall
+            col (int): Column number of data to extract
+        Returns
+            list of strings
+        """
+        coldata = []                                       #Data to return
+
+        for row in tabledata:                              #Read each row from table data
+            coldata.append(row[col])                       #Add data from appropriate col
+
+        return coldata
+
+
+    def analytics_createtable(self):
+        """
+        Create SQL table for analytics, in case it has been deleted
+        """
+        cursor = self.__db.cursor()
+
+        cmd = 'CREATE TABLE IF NOT EXISTS analytics (id SERIAL, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, dns_result CHAR(1), issue TINYTEXT, ack BOOLEAN)';
+
+        print('Checking SQL Table for analytics exists')
+        cursor.execute(cmd);
+        cursor.close()
+
+
+    def analytics_searchmalware(self, bl):
+        """
+
+        """
+        cmd = ''
+        tabledata = []
+
+        cmd = "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request IN (SELECT site FROM blocklist WHERE bl_source = '%s') GROUP BY(dns_request) ORDER BY id asc" % bl
+
+        tabledata = self.__search(cmd)
+
+        return(tabledata)
+
+
+    def analytics_searchtracker(self, pattern):
+        """
+
+        """
+        cmd = ''
+        tabledata = []
+
+        cmd = "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request REGEXP '%s' AND dns_result='A' GROUP BY(dns_request) ORDER BY id asc" % pattern
+
+        tabledata = self.__search(cmd)
+
+        return(tabledata)
 
 
     def blocklist_createtable(self):
@@ -73,7 +124,7 @@ class DBWrapper:
 
         cmd = 'CREATE TABLE IF NOT EXISTS blocklist (id SERIAL, bl_source TINYTEXT, site TINYTEXT, site_status BOOLEAN, comment TEXT)';
 
-        print('Checking SQL Table blocklist exists')
+        print('Checking SQL Table for blocklist exists')
         cursor.execute(cmd);
         cursor.close()
 
@@ -87,6 +138,51 @@ class DBWrapper:
         cursor.execute('DELETE FROM blocklist')
         cursor.execute('ALTER TABLE blocklist AUTO_INCREMENT = 1')
         cursor.close()
+
+
+    def blocklist_getactive(self):
+        """
+        Get list of blocklists in use
+        """
+        cmd = ''
+        tabledata = []
+        tabledatalen = 0
+
+        cmd = 'SELECT DISTINCT bl_source FROM blocklist'
+
+        tabledata = self.__search(cmd)
+        tabledatalen = len(tabledata)
+
+        if tabledatalen == 0:
+            print('No blocklists active')
+            return []
+
+        print('%d blocklists active' % tabledatalen)
+
+        return self.__single_column(tabledata, 0)
+
+
+    def blocklist_getwhitelist(self):
+        """
+        Get list of whitelisted domains
+        """
+        cmd = ''
+        tabledata = []
+        tabledatalen = 0
+
+        cmd = "SELECT site from blocklist WHERE bl_source = 'whitelist'"
+
+        tabledata = self.__search(cmd)
+        tabledatalen = len(tabledata)
+
+        if tabledatalen == 0:
+            print('No whitelisted domains')
+            return []
+
+        print('%d domains whitelisted' % tabledatalen)
+
+        return self.__single_column(tabledata, 0)
+
 
 
     def blocklist_insertdata(self, sqldata):
@@ -120,30 +216,39 @@ class DBWrapper:
             s (str): Search string
         """
         i = 1                                              #Table position
-        search = ''                                        #SQL Search string
+        cmd = ''                                           #SQL Search string
+        results = []                                       #Table data
+        resultslen = 0
+
+        print('Blocklist searcher')
 
         if not Regex_ValidInput.findall(s):                #Valid input specified?
             print('Invalid search input')
             return
 
-        search = "site REGEXP '%s' OR comment REGEXP '%s'" % (s, s)
+        cmd = "SELECT * FROM blocklist WHERE site REGEXP '%s' OR comment REGEXP '%s' ORDER BY id ASC" % (s, s)
 
-        results = self.__search('blocklist', search)
+        results = self.__search(cmd)
+        resultslen = len(results)
 
-        if results == False:                               #Any results found?
-            print('Nothing found')
+        if resultslen == 0:                                #Any results found?
+            print('No domains or comments found named %s' % s)
             return
 
-        if len(results) < 5:                               #Small list detailed view
+        print('%d domains found named %s' % (resultslen, s))
+        print()
+
+        if resultslen < 5:                                 #Do a detailed view for a small list
             for row in results:
                 print('Domain    : %s' % row[2])
                 print('Blocklist : %s' % row[1])
                 print('Comment   : %s' % row[4])
                 print()
         else:
+            #Column headers
             print('#      Block List          Domain                                   Comment')
             print('-      ----------          ------                                   -------')
-            for row in results:                            #Large list table view
+            for row in results:                            #Large list, do a table view
                 #Specify column widths
                 #Blocklist name | Domain | Comment
                 print('%-6d %-19s %-40s %s' % (i, row[1], row[2], row[4]))
