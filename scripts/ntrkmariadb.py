@@ -43,8 +43,8 @@ class DBWrapper:
 
         try:
             cursor.execute(search);
-        except:
-            print('Search failed :-( {}'.format(error))
+        except mariadb.Error as e:
+            print('Search failed :-( {}'.format(e))
         else:
             tabledata = cursor.fetchall()
             rowcount = cursor.rowcount
@@ -88,32 +88,36 @@ class DBWrapper:
         cursor.close()
 
 
-    def analytics_searchmalware(self, bl):
+    def analytics_insertrecord(self, log_time, system, dns_request, dns_result, issue):
         """
+        Add a new record to analytics table
 
-        """
-        cmd = ''
-        tabledata = []
-
-        cmd = "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request IN (SELECT site FROM blocklist WHERE bl_source = '%s') GROUP BY(dns_request) ORDER BY id asc" % bl
-
-        tabledata = self.__search(cmd)
-
-        return(tabledata)
-
-
-    def analytics_searchtracker(self, pattern):
-        """
-
+        Parameters:
+            recordnum (int): row id
+            dns_result: New value for dns_result (M, T)
+        Returns:
+            True: Successful update
+            False: Invalid parameter or error occurred
         """
         cmd = ''
-        tabledata = []
+        cursor = self.__db.cursor()
 
-        cmd = "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request REGEXP '%s' AND dns_result='A' GROUP BY(dns_request) ORDER BY id asc" % pattern
+        if dns_result not in ('A', 'B', 'C', 'L', 'M', 'T'):
+            print('Invalid DNS result %s' % dns_result)
+            return False
 
-        tabledata = self.__search(cmd)
+        cmd = "INSERT INTO analytics (id,log_time,sys,dns_request,dns_result,issue,ack) VALUES (NULL,'%s','%s','%s','%s','%s',FALSE)" % (log_time, system, dns_request, dns_result, issue)
 
-        return(tabledata)
+        try:
+            cursor.execute(cmd);
+        except mariadb.Error as e:
+            print('Unable to insert analytics record :-( {}'.format(e))
+            return False
+        finally:
+            self.__db.commit()
+            cursor.close()
+
+        return True
 
 
     def blocklist_createtable(self):
@@ -254,6 +258,71 @@ class DBWrapper:
                 print('%-6d %-19s %-40s %s' % (i, row[1], row[2], row[4]))
                 i += 1
         print()
+
+
+    #DNS Log Table
+    def dnslog_searchmalware(self, bl):
+        """
+
+        """
+        cmd = ''
+        tabledata = []
+
+        cmd = "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request IN (SELECT site FROM blocklist WHERE bl_source = '%s') GROUP BY(dns_request) AND dns_result IN ('A', 'C') ORDER BY id asc" % bl
+
+        tabledata = self.__search(cmd)
+
+        return(tabledata)
+
+
+    def dnslog_searchtracker(self, pattern):
+        """
+
+        """
+        cmd = ''
+        tabledata = []
+
+        cmd = "SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request REGEXP '%s' AND dns_result IN ('A', 'C') ORDER BY id asc" % pattern
+
+        tabledata = self.__search(cmd)
+
+        return(tabledata)
+
+
+    def dnslog_updaterecord(self, recordnum, dns_result):
+        """
+        Update the dns_result value in dnslog table
+
+        Parameters:
+            recordnum (int): row id
+            dns_result: New value for dns_result (M, T)
+        Returns:
+            True: Successful update
+            False: Invalid parameter or error occurred
+        """
+        cmd = ''
+        cursor = self.__db.cursor()
+
+        if not isinstance(recordnum, int):                #Check record
+            print('Invalid record number')
+            return False
+
+        if dns_result not in ('M', 'T'):
+            print('Invalid DNS result %s' % dns_result)
+            return False
+
+        cmd = "UPDATE dnslog SET dns_result = '%s' WHERE id=%d" % (dns_result, recordnum)
+
+        try:
+            cursor.execute(cmd);
+        except mariadb.Error as e:
+            print('Unable to update dnslog record :-( {}'.format(e))
+            return False
+        finally:
+            self.__db.commit()
+            cursor.close()
+
+        return True
 
 
     def delete_history(self):
