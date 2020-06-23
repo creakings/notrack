@@ -218,37 +218,42 @@ function format_row($domain, $dns_result) {
     $event = 'allowed1';
     $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
   }
-  elseif ($dns_result == 'B') {         //Blocked
+  elseif ($dns_result == 'B') {                            //Blocked
     $blocklist = search_blockreason($domain);
-    $severity = '2';
+    $rowseverity = '2';
 
-    if ($blocklist == 'bl_notrack') {        //Show Report icon on NoTrack list
+    if ($blocklist == 'bl_notrack') {                      //Show Report on NoTrack list
       $blockreason = '<p class="small grey">Blocked by NoTrack list</p>';
       $event = 'tracker2'; //TODO change image
       $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, true)">Allow</span>';
     }
-    elseif ($blocklist == 'custom') {        //Users blacklist
+    elseif ($blocklist == 'custom') {                      //Users blacklist
       $blockreason = '<p class="small grey">Blocked by Custom Black list</p>';
       $event = 'custom2';
       $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
     }
-    elseif ($blocklist != '') {
+    elseif ($blocklist != '') {                            //Other blocklist
       $blockreason = '<p class="small grey">Blocked by '.$config->get_blocklistname($blocklist).'</p>';
       $event = $config->get_blocklistevent($blocklist);
-
+      $event .= $rowseverity;
       $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
-
-      if ($event == 'malware') {
-        $severity = '3';
-      }
-      $event .= $severity;
-
     }
     else {  //No reason is probably IP or Search request
       $blockreason = '<p class="small">Invalid request</p>';
       $event = 'invalid2';
-      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
     }
+  }
+  elseif ($dns_result == 'M') {                            //Malware Accessed
+    $blockreason = '<p class="small grey">Malware Accessed</p>';
+    $event = 'malware3';
+    $rowseverity = '3';
+    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
+  }
+  elseif ($dns_result == 'T') {                            //Tracker Accessed
+    $blockreason = '<p class="small grey">Tracker Accessed</p>';
+    $event = 'tracker3';
+    $rowseverity = '3';
+    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
   }
   elseif ($dns_result == 'L') {
     $event = 'local1';

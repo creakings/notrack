@@ -205,19 +205,19 @@ function get_dnssearch($domainsearch) {
 
   $domain = preg_replace('/\*/', '', $domainsearch);
 
-  if (preg_match('/^\*[\w\d\.\-_]+\*$/', $domainsearch) > 0) {
+  if (preg_match('/^\*[\w\.\-_]+\*$/', $domainsearch) > 0) {
     $sqlsearch = "AND dns_request LIKE '%{$domain}%' ";
     //echo '1';
   }
-  elseif (preg_match('/^\*[\w\d\.\-_]+\.[\w\d\-]+$/', $domainsearch) > 0) {
+  elseif (preg_match('/^\*[\w\.\-_]+\.[\w\d\-]+$/', $domainsearch) > 0) {
     $sqlsearch = "AND dns_request LIKE '%{$domain}' ";
     //echo '2';
   }
-  elseif (preg_match('/^[\w\d\.\-_]+\*$/', $domainsearch) > 0) {
+  elseif (preg_match('/^[\w\.\-_]+\*$/', $domainsearch) > 0) {
     $sqlsearch = "AND dns_request LIKE '{$domain}%' ";
     //echo '3';
   }
-  elseif (preg_match('/^[\w\d\.\-_]+\.[\w\d\-]+$/', $domainsearch) > 0) {
+  elseif (preg_match('/^[\w\.\-_]+\.[\w\d\-]+$/', $domainsearch) > 0) {
     $sqlsearch = "AND dns_request = '{$domain}' ";
     //echo '4';
   }
@@ -396,6 +396,9 @@ function draw_filter_toolbar() {
 
   $isactive = ($severity & SEVERITY_MED) ? ' active' : '';
   echo '<span class="filter-nav-button'.$isactive.'" title="Medium - Connection Blocked" onclick="toggleNavButton(this, \''.SEVERITY_MED.'\')"><img src="./svg/filters/severity_med.svg" alt=""></span>'.PHP_EOL;
+
+  $isactive = ($severity & SEVERITY_HIGH) ? ' active' : '';
+  echo '<span class="filter-nav-button'.$isactive.'" title="High - Malware or Tracker Accessed" onclick="toggleNavButton(this, \''.SEVERITY_HIGH.'\')"><img src="./svg/filters/severity_high.svg" alt=""></span>'.PHP_EOL;
 
 
   echo '</div>'.PHP_EOL;                                   //End Group 4 - Severity
@@ -621,11 +624,24 @@ function add_filterstr() {
 
   switch($severity) {
     case SEVERITY_LOW:
-      $searchstr .= " AND (dns_result = 'A' OR dns_result = 'L') ";
+      $searchstr .= " AND dns_result IN ('A','L') ";       //Allowed, Local
       //$searchstr .= " AND dns_result = 'A' ";
       break;
     case SEVERITY_MED:
-      $searchstr .= " AND dns_result = 'B' ";
+      $searchstr .= " AND dns_result = 'B' ";              //Blocked
+      break;
+    case SEVERITY_HIGH:
+      $searchstr .= " AND dns_result IN ('M','T') ";       //Malware, Tracker
+      break;
+    case SEVERITY_LOW + SEVERITY_MED:
+      $searchstr .= " AND dns_result IN ('A','B','L') ";   //Allowed, Blocked, Local
+      //$searchstr .= " AND dns_result = 'A' ";
+      break;
+    case SEVERITY_LOW + SEVERITY_HIGH:
+      $searchstr .= " AND dns_result IN ('A','L','M','T') "; //Allowed, Local, Malware, Tracker
+      break;
+    case SEVERITY_MED + SEVERITY_HIGH:
+      $searchstr .= " AND dns_result IN ('B','M','T') ";  //Blocked, Malware, Tracker
       break;
   }
 
@@ -706,37 +722,42 @@ function format_row($domain, $dns_result) {
     $event = 'allowed1';
     $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
   }
-  elseif ($dns_result == 'B') {         //Blocked
+  elseif ($dns_result == 'B') {                            //Blocked
     $blocklist = search_blockreason($domain);
     $rowseverity = '2';
       
-    if ($blocklist == 'bl_notrack') {        //Show Report icon on NoTrack list
+    if ($blocklist == 'bl_notrack') {                      //Show Report on NoTrack list
       $blockreason = '<p class="small grey">Blocked by NoTrack list</p>';
       $event = 'tracker2'; //TODO change image
       $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, true)">Allow</span>';
     }
-    elseif ($blocklist == 'custom') {        //Users blacklist
+    elseif ($blocklist == 'custom') {                      //Users blacklist
       $blockreason = '<p class="small grey">Blocked by Custom Black list</p>';
       $event = 'custom2';
       $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
     }
-    elseif ($blocklist != '') {
+    elseif ($blocklist != '') {                            //Other blocklist
       $blockreason = '<p class="small grey">Blocked by '.$config->get_blocklistname($blocklist).'</p>';
       $event = $config->get_blocklistevent($blocklist);
-
-      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
-
-      if ($event == 'malware') {
-        $rowseverity = '3';
-      }
       $event .= $rowseverity;
-
+      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
     }
     else {  //No reason is probably IP or Search request
       $blockreason = '<p class="small">Invalid request</p>';
       $event = 'invalid2';
-      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
     }
+  }
+  elseif ($dns_result == 'M') {                            //Malware Accessed
+    $blockreason = '<p class="small grey">Malware Accessed</p>';
+    $event = 'malware3';
+    $rowseverity = '3';
+    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
+  }
+  elseif ($dns_result == 'T') {                            //Tracker Accessed
+    $blockreason = '<p class="small grey">Tracker Accessed</p>';
+    $event = 'tracker3';
+    $rowseverity = '3';
+    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
   }
   elseif ($dns_result == 'L') {
     $event = 'local1';
@@ -935,7 +956,7 @@ if (isset($_GET['page'])) {
 }
 
 if (isset($_GET['severity'])) {                            //Severity
-  $severity = filter_integer($_GET['severity'], 0, 3, 1);
+  $severity = filter_integer($_GET['severity'], 0, 7, 1);
 }
 
 if (isset($_GET['sort'])) {
