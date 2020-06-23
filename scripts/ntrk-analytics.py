@@ -21,6 +21,8 @@ class NoTrackAnalytics():
 
         self.__ignorelist = [
           'akadns\.net$',
+          'amazonaws\.com$',
+          'edgekey\.net$',
         ]
 
         self.__dbwrapper = DBWrapper()                     #Declare MariaDB Wrapper
