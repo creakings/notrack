@@ -94,8 +94,9 @@ class Config {
 
   //Legible names of each blocklist code
   const BLOCKLISTNAMES = array(
-    'custom' => 'Custom',
+    'custom' => 'Custom',                                  #DEPRECATED
     'whitelist' => 'Whitelist',
+    'bl_blacklist' => 'Custom List',
     'bl_tld' => 'Top Level Domain',
     'bl_notrack' => 'NoTrack Block List',
     'bl_notrack_malware' => 'NoTrack Malware',
@@ -147,6 +148,7 @@ class Config {
   //What type of data is in each blocklist
   const BLOCKLISTEVENT = array(
     'custom' => 'custom',
+    'bl_blacklist' => 'custom',
     'bl_tld' => 'tld',
     'bl_notrack' => 'notrack',
     'bl_notrack_malware' => 'malware',
