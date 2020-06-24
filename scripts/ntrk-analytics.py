@@ -15,11 +15,11 @@ from ntrkmariadb import DBWrapper
 
 class NoTrackAnalytics():
     def __init__(self):
-        self.__domainsfound = {}
-        self.__blocklists = []
-        self.__whitelist = []
+        self.__domainsfound = {}                           #Prevent duplicates
+        self.__blocklists = []                             #Active blocklists
+        self.__whitelist = []                              #Users whitelist
 
-        self.__ignorelist = [
+        self.__ignorelist = [                              #Regex pattern of domains to ignore
           'akadns\.net$',
           'amazonaws\.com$',
           'edgekey\.net$',
@@ -27,7 +27,7 @@ class NoTrackAnalytics():
 
         self.__dbwrapper = DBWrapper()                     #Declare MariaDB Wrapper
 
-        #self.__dbwrapper.analytics_createtable()
+        self.__dbwrapper.analytics_createtable()
         self.__blocklists = self.__dbwrapper.blocklist_getactive()
         self.__whitelist = self.__dbwrapper.blocklist_getwhitelist()
 
@@ -40,16 +40,18 @@ class NoTrackAnalytics():
         Parameters:
             bl (str): Blocklist name
         """
-        tabledata = []
+        tabledata = []                                     #Results of MariaDB search
         tabledatalen = 0
 
-        print('Searching for domains from %s' % bl)
+        print('Searching for domains from: %s' % bl)
 
         tabledata = self.__dbwrapper.dnslog_searchmalware(bl)
         tabledatalen = len(tabledata)
 
         if tabledatalen == 0:
             print('No results found :-)')
+            print()
+            return
 
         self.__review_results('Malware-' + bl, tabledata)  #Specify name of malware list
 
@@ -58,17 +60,22 @@ class NoTrackAnalytics():
         """
         Search for specified results pattern
         Parse found results to __review_results
+
+        Parameters:
+            pattern (str): Regex pattern to search
         """
-        tabledata = []
+        tabledata = []                                     #Results of MariaDB search
         tabledatalen = 0
 
-        print('Trying regular expression %s' % pattern)
+        print('Trying regular expression: %s' % pattern)
 
         tabledata = self.__dbwrapper.dnslog_searchtracker(pattern)
         tabledatalen = len(tabledata)
 
         if tabledatalen == 0:
             print('No results found :-)')
+            print()
+            return
 
         self.__review_results('Tracker', tabledata)
 
@@ -76,7 +83,7 @@ class NoTrackAnalytics():
     def __is_ignorelist(self, domain):
         """
         Check if domain is in ignore list
-        Some domains should be ignored as they are secondary DNS lookups or CDN's
+        Some domains should be ignored as they're secondary DNS lookups or CDN's
 
         Parameters:
             domain (str): Domain to check
@@ -85,7 +92,7 @@ class NoTrackAnalytics():
             False: Domain is not in ignorelist
         """
 
-        for pattern in self.__ignorelist:
+        for pattern in self.__ignorelist:                  #Check everything in ignorelist
             if re.match(pattern, domain) is None:
                 return False
 
@@ -102,14 +109,15 @@ class NoTrackAnalytics():
             True: Domain is in whitelist
             False: Domain is not in whitelist
         """
-        if len(self.__whitelist) == 0:                       #Check if whitelist is empty
-            return False
+        if len(self.__whitelist) == 0:                     #Check if whitelist is empty
+            return False                                   #No point in going any further with whitelist checks
 
-        for pattern in self.__whitelist:
-            if re.match(pattern + '$', domain) is None:
+        for pattern in self.__whitelist:                   #Treat whitelist results as a regex pattern
+            if re.match(pattern + '$', domain) is None:    #"domain" could be a subdomain, so we check for a match from the end backwards
                 return False
 
         return True
+
 
     def __is_domainadded(self, domain):
         """
@@ -127,13 +135,14 @@ class NoTrackAnalytics():
 
         return False
 
+
     def __review_results(self, issue, tabledata):
         """
         Check the results found before adding to the analytics table
 
         Parameters:
-            issue (str): Tracker, Malware-x
-            tabledata (list): list of tuples found from the SQL search
+            issue (str): Tracker, or Malware-x
+            tabledata (list): list of tuples found from the MariaDB search
         """
         new_dns_result = ''                                #New result for updating dnslog
 
@@ -156,7 +165,7 @@ class NoTrackAnalytics():
             #Set the new DNS result
             if issue == 'Tracker':                         #Tracker accessed
                 new_dns_result = 'T'
-            else:
+            else:                                          #Malware allowed or blocked. Check further
                 if row[4] == 'B':
                     new_dns_result = 'B'                   #Malware blocked
                 else:
@@ -172,8 +181,9 @@ class NoTrackAnalytics():
                 #log_time, system, dns_request, dns_result, issue
                 self.__dbwrapper.analytics_insertrecord(row[1], row[2], row[3], row[4], issue)
 
-            print(row) #TODO Format
+            print('%d, %s, %s' % (row[0], row[1].isoformat(sep=' '), row[3]))
 
+        print()
 
 
     def checkmalware(self):
@@ -205,8 +215,8 @@ class NoTrackAnalytics():
 
         #Checks for Pixels, Telemetry, and Trackers
         print('Searching for any trackers or advertising domains accessed')
-        self.__searchtracker('^analytics\.')               #analytics as a subdomain
-        self.__searchtracker('^cl(c|ck|ick|kstat)\.')         #clc, clck, click, clkstat as a subdomain
+        self.__searchtracker('^analytics\.')                    #analytics as a subdomain
+        self.__searchtracker('^cl(c|ck|ick|kstat)\.')           #clc, clck, click, clkstat as a subdomain
         self.__searchtracker('^log(s|ger)?\\\.')                #log, logs, logger as a subdomain (exclude login.)
         self.__searchtracker('^pxl?\\\.')                       #px, pxl, as a subdomain
         self.__searchtracker('pixel[^\\\.]{0,8}\\\.')           #pixel, followed by 0 to 8 non-dot chars anywhere

@@ -263,7 +263,10 @@ class DBWrapper:
     #DNS Log Table
     def dnslog_searchmalware(self, bl):
         """
+        Get past hour of results from dnslog looking for results from a blocklist
 
+        Parameters:
+        bl (str): Enabled blocklist to search from
         """
         cmd = ''
         tabledata = []
@@ -277,7 +280,10 @@ class DBWrapper:
 
     def dnslog_searchtracker(self, pattern):
         """
+        Get past hour of results from dnslog based on a regex pattern
 
+        Parameters:
+            pattern (str): Regex pattern to search
         """
         cmd = ''
         tabledata = []

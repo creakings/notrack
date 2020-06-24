@@ -380,7 +380,6 @@ function draw_filter_toolbar() {
   echo '</div>'.PHP_EOL;                                   //End timepicker-grid
   echo '</div>'.PHP_EOL;                                   //End timepicker-item 2
 
-
   /*TODO echo '<div class="timepicker-item" tabindex="0">'.PHP_EOL;
   echo '<h3>Advanced</h3>'.PHP_EOL;
   echo '</div>'.PHP_EOL;*/
@@ -399,8 +398,6 @@ function draw_filter_toolbar() {
 
   $isactive = ($severity & SEVERITY_HIGH) ? ' active' : '';
   echo '<span class="filter-nav-button'.$isactive.'" title="High - Malware or Tracker Accessed" onclick="toggleNavButton(this, \''.SEVERITY_HIGH.'\')"><img src="./svg/filters/severity_high.svg" alt=""></span>'.PHP_EOL;
-
-
   echo '</div>'.PHP_EOL;                                   //End Group 4 - Severity
 
   echo '<div><button id="submit-button" type="submit">Search</button></div>'.PHP_EOL;
