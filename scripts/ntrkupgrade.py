@@ -330,21 +330,21 @@ class NoTrackUpgrade():
 
         #NoTrack
         delete_file(self.__SBINDIR + 'notrack')
-        print('Creating %snotrack symlink' % self.__SBINDIR)
+        print('Creating notrack symlink in %s' % self.__SBINDIR)
         os.chmod(scriptfolder + 'notrack.py', 0o775)
         os.symlink(scriptfolder + 'notrack.py', self.__SBINDIR + 'notrack')
         print()
 
-        #NoTrack Analytics NOTE This is still a bash script
+        #NoTrack Analytics
         delete_file(self.__SBINDIR + 'ntrk-analytics')
-        print('Copying ntrk-analytics.sh to %sntrk-analytics' % self.__SBINDIR)
-        copy_file(scriptfolder + 'ntrk-analytics.sh', self.__SBINDIR + 'ntrk-analytics.sh')
-        move_file(self.__SBINDIR + 'ntrk-analytics.sh', self.__SBINDIR + 'ntrk-analytics', 0o775)
+        print('Creating ntrk-analytics symlink in %s' % self.__SBINDIR)
+        os.chmod(scriptfolder + 'ntrk-analytics.py', 0o775)
+        os.symlink(scriptfolder + 'ntrk-analytics.py', self.__SBINDIR + 'ntrk-analytics')
         print()
 
         #NoTrack Exec
         delete_file(self.__SBINDIR + 'ntrk-exec')
-        print('Creating %sntrk-exec symlink' % self.__SBINDIR)
+        print('Creating ntrk-exec symlink in %s' % self.__SBINDIR)
         os.chmod(scriptfolder + 'ntrk-exec.py', 0o775)
         os.symlink(scriptfolder + 'ntrk-exec.py', self.__SBINDIR + 'ntrk-exec')
         print()
@@ -358,7 +358,7 @@ class NoTrackUpgrade():
 
         #NoTrack Upgrade
         delete_file(self.__SBINDIR + 'ntrk-upgrade')
-        print('Creating %sntrk-upgrade symlink' % self.__SBINDIR)
+        print('Creating ntrk-upgrade symlink in %s' % self.__SBINDIR)
         os.chmod(scriptfolder + 'ntrkupgrade.py', 0o775)
         os.symlink(scriptfolder + 'ntrkupgrade.py', self.__SBINDIR + 'ntrk-upgrade')
         print()
