@@ -712,6 +712,7 @@ function piechart($labels, $data, $cx, $cy, $radius, $colours) {
   return true;
 }
 
+
 /********************************************************************
  *  Load latest version from settings folder
  *
@@ -732,4 +733,24 @@ function load_latestversion() {
   }
 }
 
+
+/********************************************************************
+ *  Run NoTrack Exec
+ *    Checks for a non-zero return and displays output if necessary
+ *
+ *  Params:
+ *    Command
+ *  Return:
+ *    None
+ */
+function notrack_exec($cmd) {
+  exec(NTRK_EXEC.'--'.$cmd, $output, $exitcode);
+
+  if ($exitcode != 0) {
+    echo 'notrack-exec returned exit code '.$exitcode;
+    echo implode('<br>', $output);
+    //var_dump($output);
+    die;
+  }
+}
 ?>
