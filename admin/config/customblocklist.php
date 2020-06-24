@@ -309,25 +309,30 @@ function update_custom_list($actualname, $listname) {
 function write_temp_list($actualname, $listname) {
   global $list, $mem;
 
-  //Open file /tmp/listname.txt for writing
-  $fh = fopen(DIR_TMP.strtolower($actualname).'.txt', 'w') or die('Unable to open '.DIR_TMP.$actualname.'.txt for writing');
+  $filename = '';
+  $listcontents = array();
 
-  //Write Usage Instructions to top of File
-  fwrite($fh, '#Use this file to create your own custom '.$actualname.PHP_EOL);
-  fwrite($fh, '#Run sudo notrack after you make any changes to this file'.PHP_EOL);
+  $filename = DIR_TMP.strtolower($actualname).'.txt';
 
-  foreach ($list as $listitem) {                           //Write list array to temp
-    if ($listitem[2] == true) {                            //Is site enabled?
-      fwrite($fh, $listitem[0].' #'.$listitem[1].PHP_EOL);
+  //Add usage Instructions to top of File
+  $listconents[] = '#Use this file to create your own custom '.$actualname.PHP_EOL;
+  $listconents[] = '#Run sudo notrack after you make any changes to this file'.PHP_EOL;
+
+  foreach ($list as $listitem) {
+    if ($listitem[2] == true) {                            //Is domain enabled?
+      $listconents[] = $listitem[0].' #'.$listitem[1].PHP_EOL;
     }
-    else {                                                 //Site disabled, comment it out by preceding Line with #
-      fwrite($fh, '# '.$listitem[0].' #'.$listitem[1].PHP_EOL);
+    else {                                                 //disabled - comment it out
+      $listconents[] = '# '.$listitem[0].' #'.$listitem[1].PHP_EOL;
     }
   }
-  fclose($fh);                                             //Close file
+
+  if (file_put_contents($filename, $listconents) === false) {
+    die('Unable to save temporary list to '.$filename);
+  }
 
   exec(NTRK_EXEC.'--copy '.$listname); //DEPRECATED
-  exec(NTRK_EXEC.'--save '.$listname);
+  notrack_exec('save '.$listname);
 
   $mem->delete($listname);
   $mem->set($listname, $list, 0, 120);
