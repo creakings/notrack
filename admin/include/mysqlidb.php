@@ -305,10 +305,10 @@ class MySqliDb {
       $query .= "WHERE bl_source = '$validblocklist' ";
     }
     elseif ($validsearchstr != '') {
-      $query .= "WHERE site LIKE '%$validsearchstr%' OR comment LIKE '%$validsearchstr%'";
+      $query .= "WHERE site LIKE '%$validsearchstr%' OR comment LIKE '%$validsearchstr%' ";
     }
 
-    $query .= "ORDER BY id";
+    $query .= "ORDER BY bl_source, site";
 
     if (!$result = $this->db->query($query)) {
       echo '<h4><img src=../svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
