@@ -25,6 +25,11 @@ Config[bl_cbl_browser]=0
 Config[bl_cbl_opt]=0
 Config[bl_cedia]=0
 Config[bl_cedia_immortal]=1
+Config[bl_ddg_confirmed]=0
+Config[bl_ddg_high]=0
+Config[bl_ddg_medium]=0
+Config[bl_ddg_low]=0
+Config[bl_ddg_unknown]=0
 Config[bl_hexxium]=1
 Config[bl_disconnectmalvertising]=0
 Config[bl_easylist]=0
@@ -97,6 +102,11 @@ urls[cbl_browser]="https://zerodot1.gitlab.io/CoinBlockerLists/list_browser.txt"
 urls[cbl_opt]="https://zerodot1.gitlab.io/CoinBlockerLists/list_optional.txt"
 urls[cedia]="http://mirror.cedia.org.ec/malwaredomains/domains.zip"
 urls[cedia_immortal]="http://mirror.cedia.org.ec/malwaredomains/immortal_domains.zip"
+urls[ddg_confirmed]="https://gitlab.com/quidsup/ntrk-tracker-radar/-/raw/master/ddg_tracker_radar_confirmed.txt"
+urls[ddg_high]="https://gitlab.com/quidsup/ntrk-tracker-radar/-/raw/master/ddg_tracker_radar_high.txt"
+urls[ddg_medium]="https://gitlab.com/quidsup/ntrk-tracker-radar/-/raw/master/ddg_tracker_radar_med.txt"
+urls[ddg_low]="https://gitlab.com/quidsup/ntrk-tracker-radar/-/raw/master/ddg_tracker_radar_low.txt"
+urls[ddg_unknown]="https://gitlab.com/quidsup/ntrk-tracker-radar/-/raw/master/ddg_tracker_radar_unknown.txt"
 urls[hexxium]="https://hexxiumcreations.github.io/threat-list/hexxiumthreatlist.txt"
 urls[disconnectmalvertising]="https://s3.amazonaws.com/lists.disconnect.me/simple_malvertising.txt"
 urls[easylist]="https://easylist-downloads.adblockplus.org/easylist_noelemhide.txt"
@@ -1738,6 +1748,11 @@ get_list "hexxium" "match_easyline"
 get_list "cbl_all" "match_plainline"
 get_list "cbl_browser" "match_plainline"
 get_list "cbl_opt" "match_plainline"
+get_list "ddg_confirmed" "match_plainline"
+get_list "ddg_high" "match_plainline"
+get_list "ddg_medium" "match_plainline"
+get_list "ddg_low" "match_plainline"
+get_list "ddg_unknown" "match_plainline"
 get_list "disconnectmalvertising" "match_plainline"
 get_list "easylist" "match_easyline"
 get_list "easyprivacy" "match_easyline"
