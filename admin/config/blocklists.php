@@ -41,54 +41,45 @@ $list = array();                                 //Global array for all the Bloc
  */
 function draw_blocklist_row($bl, $bl_name, $msg, $url) {
   global $config, $dbwrapper;
-  //Txt File = Origniating download file
-  //TLD Is a special case, and the Txt file used is TLD_CSV
 
-
-  $txtfilename = '';
-  $txtlines = 0;
+  $filelines = 0;
   $filename = '';
   $stats = '';
 
-  if (! $config->blocklists[$bl]) {
-    echo '<tr><td><input type="checkbox" name="'.$bl.'"></td><td>'.$bl_name.':</td><td>'.$msg.' <a href="'.$url.'" target="_blank"><img alt="Link" src="../svg/icon_home.svg"></a></td></tr>'.PHP_EOL;
-  }
-  else {
-    $filename = strtolower(substr($bl, 3));
-    if ($bl == 'bl_tld') {
-      $txtfilename = TLD_CSV;
+  if ($config->is_blocklist_active($bl)) {
+    if ($bl == 'bl_tld') {                                 //Set the filename
+      $filename = TLD_CSV;
     }
     else {
-      $txtfilename = DIR_TMP.$filename.'.txt';
+      $filename = DIR_TMP.$bl.'.txt';                      //Temp + Abbreviated blocklist name + .txt
     }
 
-    $rows = $dbwrapper->count_specific_blocklist($bl);
+    $rows = $dbwrapper->count_specific_blocklist($bl);     //Count number of entries for this blocklist in blocklist MariaDB table
 
-    if (($rows > 0) && (file_exists($txtfilename))) {
-
-      //Try and get the number of lines in the file
-      try {
-        $txtlines = count(file($txtfilename));
+    if (($rows > 0) && (file_exists($filename))) {
+      try {                                                //Try and count the number of lines in the file
+        $filelines = count(file($filename));
       }
-      catch(Exception $e) {
-        $txtlines = 0;
+      catch(Exception $e) {                                //Something wrong, default count to zero
+        $filelines = 0;
       }
 
       //Prevent stupid result of lines being higher than the site count
-      if ($rows > $txtlines) {
-        $rows = $txtlines;
+      if ($rows > $filelines) {
+        $rows = $filelines;
       }
 
-      $stats = '<p class="light">'.$rows.' used of '.$txtlines.'</p>';
+      $stats = '<p class="light">'.$rows.' used of '.$filelines.'</p>';
     }
-    else {
+    else {                                                 //Temp file missing, default to unknown count value
       $stats = '<p class="light">'.$rows.' used of ?</p>';
     }
 
     echo '<tr><td><input type="checkbox" name="'.$bl.'" checked="checked"></td><td>'.$bl_name.':</td><td>'.$msg.' <a href="'.$url.'" target="_blank"><img alt="Link" src="../svg/icon_home.svg"></a>'.$stats.'</td></tr>'.PHP_EOL;
   }
-
-  return null;
+  else {
+    echo '<tr><td><input type="checkbox" name="'.$bl.'"></td><td>'.$bl_name.':</td><td>'.$msg.' <a href="'.$url.'" target="_blank"><img alt="Link" src="../svg/icon_home.svg"></a></td></tr>'.PHP_EOL;
+  }
 }
 
 
@@ -102,6 +93,7 @@ function draw_blocklist_row($bl, $bl_name, $msg, $url) {
  */
 function tracking_blocklists() {
   echo '<div id="tab-content-1">'.PHP_EOL;                                    //Start Tab
+
   echo '<h5>Tracker Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
@@ -114,6 +106,16 @@ function tracking_blocklists() {
   draw_blocklist_row('bl_fbenhanced', 'Fanboy&rsquo;s Enhanced Tracking List', 'Blocks common tracking scripts', 'https://www.fanboy.co.nz/');
 
   draw_blocklist_row('bl_windowsspyblocker', 'Windows Spy Blocker', 'Windows Spy Blocker provides a block list to prevent spying and tracking on Windows Systems', 'https://github.com/crazy-max/WindowsSpyBlocker');
+
+  draw_blocklist_row('bl_ddg_confirmed', 'DuckDuckGo Confirmed', 'DuckDuckGo Tracker Radar blocklist domains which have been categorised as Confirmed trackers', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+
+  draw_blocklist_row('bl_ddg_high', 'DuckDuckGo High Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are exclusively using browser APIs associated with tracking', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+
+  draw_blocklist_row('bl_ddg_medium', 'DuckDuckGo Medium Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are using some browser APIs associated with tracking. This may contain some legitimate websites.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+
+  draw_blocklist_row('bl_ddg_low', 'DuckDuckGo Low Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are using a low number of browser APIs associated with tracking. This will contain some legitimate websites that are not associated with tracking.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+
+  draw_blocklist_row('bl_ddg_unknown', 'DuckDuckGo Unknown', 'Domains identified by DuckDuckGo Tracker Radar which have little to no usage of browser APIs associate with tracking. This list contains a mixture of legitimate and suspect websites.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
 
   echo '<tr><td colspan="3"><button type="submit" name="v" value="1">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table

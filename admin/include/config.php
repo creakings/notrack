@@ -49,6 +49,11 @@ class Config {
     'bl_cbl_opt' => false,
     'bl_cedia' => false,
     'bl_cedia_immortal' => true,
+    'bl_ddg_confirmed' => false,
+    'bl_ddg_high' => false,
+    'bl_ddg_medium' => false,
+    'bl_ddg_low' => false,
+    'bl_ddg_unknown' => false,
     'bl_disconnectmalvertising' => false,
     'bl_easylist' => false,
     'bl_easyprivacy' => false,
@@ -105,6 +110,11 @@ class Config {
     'bl_cbl_opt' => 'Coin Block List - Optional',
     'bl_cedia' => 'CEDIA Malware',
     'bl_cedia_immortal' => 'CEDIA Immortal Malware',
+    'bl_ddg_confirmed' => 'DuckDuckGo - Confirmed',
+    'bl_ddg_high' => 'DuckDuckGo - High',
+    'bl_ddg_medium' => 'DuckDuckGo - Medium',
+    'bl_ddg_low' => 'DuckDuckGo - Low',
+    'bl_ddg_unknown' => 'DuckDuckGo - Unknown',
     'bl_someonewhocares' => 'Dan Pollocks&rsquo;s hosts',
     'bl_disconnectmalvertising' => 'Malvertising by Disconnect',
     'bl_easylist' => 'Easy List',
@@ -157,6 +167,11 @@ class Config {
     'bl_cbl_opt' => 'cryptocoin',
     'bl_cedia' => 'malware',
     'bl_cedia_immortal' => 'malware',
+    'bl_ddg_confirmed' => 'tracker',
+    'bl_ddg_high' => 'tracker',
+    'bl_ddg_medium' => 'tracker',
+    'bl_ddg_low' => 'tracker',
+    'bl_ddg_unknown' => 'tracker',
     'bl_someonewhocares' => 'misc',
     'bl_disconnectmalvertising' => 'malware',
     'bl_easylist' => 'advert',
@@ -246,12 +261,12 @@ class Config {
     $matches = array();
 
     //Attempt to load settings and blocklists arrays from Memcache
-    $this->settings = $mem->get('conf-settings');
+    /*$this->settings = $mem->get('conf-settings');
     $this->blocklists = $mem->get('conf-blocklists');
     if ((! empty($this->settings)) && (! empty($this->blocklists))) {
       return null;
     }
-
+    */
     //Nothing loaded from Memcache
     //Firstly Set settings and blocklists arrays to their default values
     $this->settings = $this->DEFAULTCONFIG;
@@ -262,8 +277,9 @@ class Config {
       while (!feof($fh)) {
         $line = fgets($fh);                                //Read Line of LogFile
 
+
         //Check if the line matches a blocklist (excluding bl_custom)
-        if (preg_match('/^(bl_(?!custom)\[a-z_]{5,25}) = (0|1)/', $line, $matches)) {
+        if (preg_match('/^(bl_(?!custom)[a-z_]{5,25}) = (0|1)/', $line, $matches)) {
           if (array_key_exists($matches[1], $this->blocklists)) {
             $this->blocklists[$matches[1]] = (bool)$matches[2];
           }
@@ -433,6 +449,19 @@ class Config {
     $this->latestversion = $newversion;
   }
 
+  /********************************************************************
+   *  Is Blocklist Active
+   *    Returns status of specified blocklist
+   *
+   *  Params:
+   *    $bl (str): Blocklist name
+   *  Return:
+   *    True - Blocklist active
+   *    False - Blocklist disabled
+   */
+  function is_blocklist_active($bl) {
+    return $this->blocklists[$bl];
+  }
 
   /********************************************************************
    *  Constructor

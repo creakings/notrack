@@ -215,15 +215,18 @@ class NoTrackAnalytics():
 
         #Checks for Pixels, Telemetry, and Trackers
         print('Searching for any trackers or advertising domains accessed')
-        self.__searchtracker('^analytics\.')                    #analytics as a subdomain
-        self.__searchtracker('^cl(c|ck|ick|kstat)\.')           #clc, clck, click, clkstat as a subdomain
+        self.__searchtracker('^analytics\\\.')                  #analytics as a subdomain
+        self.__searchtracker('^cl(c|ck|icks?|kstat)\\\.')       #clc, clck, clicks?, clkstat as a subdomain
         self.__searchtracker('^log(s|ger)?\\\.')                #log, logs, logger as a subdomain (exclude login.)
         self.__searchtracker('^pxl?\\\.')                       #px, pxl, as a subdomain
         self.__searchtracker('pixel[^\\\.]{0,8}\\\.')           #pixel, followed by 0 to 8 non-dot chars anywhere
+        self.__searchtracker('^s?metrics\\\.')                  #smetrics, metrics as a subdomain
         self.__searchtracker('telemetry')                       #telemetry anywhere
         self.__searchtracker('trk[^\\\.]{0,3}\\\.')             #trk, followed by 0 to 3 non-dot chars anywhere
         #Have to exclude tracker. (bittorent), security-tracker (Debian), and tracking-protection (Mozilla)
+        self.__searchtracker('^trace\\\.')                      #trace as a subdomain
         self.__searchtracker('track(ing|\\\-[a-z]{2,8})?\\\.')  #track, tracking, track-eu as a subdomain / domain.
+        self.__searchtracker('^visit\\\.')                      #visit as a subdomain
         self.__searchtracker('^v?stats?\\\.')                   #vstat, stat, stats as a subdomain
 
         #Checks for Advertising
