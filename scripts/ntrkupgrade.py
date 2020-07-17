@@ -393,6 +393,21 @@ class NoTrackUpgrade():
 
             f.close()                                      #Close file
 
+    def __reset_latest_version(self):
+        """
+        Reset PHP latest version setting file
+        """
+        print('Resetting latestversion.php')
+        with open (self.__WWWCONFDIR + 'latestversion.php', 'w') as f:
+            f.write('<?php\n')
+            f.write("$config->set_latestversion('0.0.0');\n")
+            f.write('?>\n')
+            f.close()                                      #Close file
+
+        os.chmod(self.__WWWCONFDIR + 'latestversion.php', 0o666) #-rw-rw-rw
+
+        return True                                        #New version updated at this point
+
 
     def __update_latest_version(self):
         """
@@ -429,6 +444,7 @@ class NoTrackUpgrade():
         2. Check if mysql module is available
         3a. If it is install Python3 version of NoTrack
         3b. Otherwise fallback to using the legacy Bash version
+        4. Reset latest version
         """
 
         print('Upgrading NoTrack')
@@ -444,6 +460,8 @@ class NoTrackUpgrade():
             self.__modern_check_localsbin()
         else:
             self.__legacy_copyto_localsbin()
+
+        self.__reset_latest_version()                      #Zero out the latest version
 
 
     def get_latestversion(self):
@@ -472,7 +490,7 @@ def main():
     print('Found Username:', ntrkupgrade.username)
     print()
 
-    #ntrkupgrade.get_latestversion()
+    ntrkupgrade.get_latestversion()
     ntrkupgrade.do_upgrade()
 
     print('NoTrack upgrade complete :-)')
