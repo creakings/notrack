@@ -715,6 +715,7 @@ function piechart($labels, $data, $cx, $cy, $radius, $colours) {
 
 /********************************************************************
  *  Load latest version from settings folder
+ *  Fallback to config->settings if the php file is missing
  *
  *  Params:
  *    None
@@ -729,6 +730,7 @@ function load_latestversion() {
     return true;
   }
   else {
+    $config->set_latestversion($config->settings['LatestVersion']);
     return false;
   }
 }

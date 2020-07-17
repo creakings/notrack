@@ -34,7 +34,7 @@ class Config {
     'ParsingTime' => 4,
     'api_key' => '',
     'api_readonly' => '',
-    //'LatestVersion' => VERSION, DEPRECATED
+    'LatestVersion' => VERSION, //DEPRECATED
     'bl_custom' => '',
   );
 
