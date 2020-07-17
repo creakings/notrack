@@ -6,6 +6,7 @@ sudo dnf install python3 mysql-connector-python3
 
 notrack.sh replaced with notrack.py
 #240 - New domain processing and dedup algorithm built into notrack.py
+ntrk-analytics.sh replaced with ntrk-analytics.py
 ntrk-exec.sh replaced with ntrk-exec.py
 ntrk-pause.sh deprecated
 ntrk-upgrade.sh replaced with ntrk-upgrade.py

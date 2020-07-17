@@ -1,7 +1,5 @@
 # NoTrack  
 
-**NoTrack v0.9.0 is ready for use**
-
 NoTrack is a [DNS-Sinkhole](https://en.wikipedia.org/wiki/DNS_sinkhole) which protects all devices on your home network from visiting Tracking, Advertising, and Malicious websites.   
 
 ## Automated Install
