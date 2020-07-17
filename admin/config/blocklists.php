@@ -109,11 +109,11 @@ function tracking_blocklists() {
 
   draw_blocklist_row('bl_ddg_confirmed', 'DuckDuckGo Confirmed', 'DuckDuckGo Tracker Radar blocklist domains which have been categorised as Confirmed trackers', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
 
-  draw_blocklist_row('bl_ddg_high', 'DuckDuckGo High Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are exclusively using browser APIs associated with tracking', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+  draw_blocklist_row('bl_ddg_high', 'DuckDuckGo High Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are excessively using browser APIs associated with tracking', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
 
-  draw_blocklist_row('bl_ddg_medium', 'DuckDuckGo Medium Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are using some browser APIs associated with tracking. This may contain some legitimate websites.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+  draw_blocklist_row('bl_ddg_medium', 'DuckDuckGo Medium Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are using many browser APIs, possibly for tracking purposes. This may contain some legitimate websites.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
 
-  draw_blocklist_row('bl_ddg_low', 'DuckDuckGo Low Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are using a low number of browser APIs associated with tracking. This will contain some legitimate websites that are not associated with tracking.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+  draw_blocklist_row('bl_ddg_low', 'DuckDuckGo Low Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are using some browser APIs, but not obvoiusly for tracking purposes. This will contain some legitimate websites that are not associated with tracking.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
 
   draw_blocklist_row('bl_ddg_unknown', 'DuckDuckGo Unknown', 'Domains identified by DuckDuckGo Tracker Radar which have little to no usage of browser APIs associate with tracking. This list contains a mixture of legitimate and suspect websites.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
 
