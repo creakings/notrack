@@ -134,6 +134,8 @@ class NoTrackUpgrade():
             return 'root'
 
         for obj in passwd:
+            if obj.pw_dir == '/':                          #Disregard anything for root folder
+                continue
             #Check if there is any match with this users home folder location
             if ntrkdir.startswith(obj.pw_dir):
                 return obj.pw_name                         #Yes, return username
