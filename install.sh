@@ -347,9 +347,11 @@ function copy_scripts() {
   rename_file /usr/local/sbin/ntrk-parse.sh /usr/local/sbin/ntrk-parse
 
   #Ntrk-Analytics
-  delete_file "/usr/local/sbin/ntrk-analytics"
-  sudo ln -s "$INSTALL_LOCATION/scripts/ntrk-analytics.py" "/usr/local/sbin/ntrk-analytics"
-  set_permissions "$INSTALL_LOCATION/scripts/ntrk-analytics" "775"
+  copy_file "$INSTALL_LOCATION/scripts/ntrk-analytics.sh" /usr/local/sbin/
+  rename_file /usr/local/sbin/ntrk-analytics.sh /usr/local/sbin/ntrk-analytics
+  #delete_file "/usr/local/sbin/ntrk-analytics"
+  #sudo ln -s "$INSTALL_LOCATION/scripts/ntrk-analytics.py" "/usr/local/sbin/ntrk-analytics"
+  #set_permissions "$INSTALL_LOCATION/scripts/ntrk-analytics" "775"
 
   echo "========================================================="
   echo
