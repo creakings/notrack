@@ -681,7 +681,12 @@ function format_row($dns_request, $severity, $bl_source) {
     }
   }
   elseif ($severity == 3) {
-    $event = "{$bl_source}3";
+    if (($bl_source == 'advert') or ($bl_source == 'tracker')) {
+      $event = "{$bl_source}3";
+    }
+    else {
+      $event = $config->get_blocklisttype($bl_source).'3';
+    }
     $blockreason = '<p class="small grey">'.ucfirst($bl_source).'Accessed</p>';
     $popupmenu .= "<span onclick=\"reportSite('{$dns_request}', false, true)\">Block</span>";
   }
