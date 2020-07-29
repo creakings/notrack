@@ -57,7 +57,7 @@ class NoTrackAnalytics():
         self.__review_results(f'malware-{bl}', tabledata)  #Specify name of malware list
 
 
-    def __searchregex(self, pattern):
+    def __searchregex(self, pattern, listtype):
         """
         Search for specified results pattern
         Parse found results to __review_results
@@ -78,7 +78,7 @@ class NoTrackAnalytics():
             print()
             return
 
-        self.__review_results('tracker', tabledata)
+        self.__review_results(listtype, tabledata)
 
 
     def __is_ignorelist(self, domain):
@@ -150,7 +150,6 @@ class NoTrackAnalytics():
         analytics_severity = ''
         new_severity = ''                                  #New new_severity for updating dnslog
         new_bl_source = ''
-        new_bl_source = issue
 
         #Columns:
         #0: id
@@ -170,9 +169,10 @@ class NoTrackAnalytics():
                 continue
 
             #Set the new DNS result
-            if issue == 'advertising' or issue == 'tracker':
+            if issue == 'advert' or issue == 'tracker':
                 analytics_severity = '1'
                 new_severity = '3'
+                new_bl_source = issue
             else:                                          #Has Malware been allowed or blocked. Check further
                 if row[4] == '2':                          #Malware blocked
                     analytics_severity = '2'
@@ -226,24 +226,24 @@ class NoTrackAnalytics():
 
         #Checks for Pixels, Telemetry, and Trackers
         print('Searching for any trackers or advertising domains accessed')
-        self.__searchregex('^analytics\\\.')                  #analytics as a subdomain
-        self.__searchregex('^cl(c|ck|icks?|kstat)\\\.')       #clc, clck, clicks?, clkstat as a subdomain
-        self.__searchregex('^log(s|ger)?\\\.')                #log, logs, logger as a subdomain (exclude login.)
-        self.__searchregex('^pxl?\\\.')                       #px, pxl, as a subdomain
-        self.__searchregex('pixel[^\\\.]{0,8}\\\.')           #pixel, followed by 0 to 8 non-dot chars anywhere
-        self.__searchregex('^s?metrics\\\.')                  #smetrics, metrics as a subdomain
-        self.__searchregex('telemetry')                       #telemetry anywhere
-        self.__searchregex('trk[^\\\.]{0,3}\\\.')             #trk, followed by 0 to 3 non-dot chars anywhere
+        self.__searchregex('^analytics\\\.', 'tracker')                  #analytics as a subdomain
+        self.__searchregex('^cl(c|ck|icks?|kstat)\\\.', 'tracker')       #clc, clck, clicks?, clkstat as a subdomain
+        self.__searchregex('^log(s|ger)?\\\.', 'tracker')                #log, logs, logger as a subdomain (exclude login.)
+        self.__searchregex('^pxl?\\\.', 'tracker')                       #px, pxl, as a subdomain
+        self.__searchregex('pixel[^\\\.]{0,8}\\\.', 'tracker')           #pixel, followed by 0 to 8 non-dot chars anywhere
+        self.__searchregex('^s?metrics\\\.', 'tracker')                  #smetrics, metrics as a subdomain
+        self.__searchregex('telemetry', 'tracker')                       #telemetry anywhere
+        self.__searchregex('trk[^\\\.]{0,3}\\\.', 'tracker')             #trk, followed by 0 to 3 non-dot chars anywhere
         #Have to exclude tracker. (bittorent), security-tracker (Debian), and tracking-protection (Mozilla)
-        self.__searchregex('^trace\\\.')                      #trace as a subdomain
-        self.__searchregex('track(ing|\\\-[a-z]{2,8})?\\\.')  #track, tracking, track-eu as a subdomain / domain.
-        self.__searchregex('^visit\\\.')                      #visit as a subdomain
-        self.__searchregex('^v?stats?\\\.')                   #vstat, stat, stats as a subdomain
+        self.__searchregex('^trace\\\.', 'tracker')                      #trace as a subdomain
+        self.__searchregex('track(ing|\\\-[a-z]{2,8})?\\\.', 'tracker')  #track, tracking, track-eu as a subdomain / domain.
+        self.__searchregex('^visit\\\.', 'tracker')                      #visit as a subdomain
+        self.__searchregex('^v?stats?\\\.', 'tracker')                   #vstat, stat, stats as a subdomain
 
         #Checks for Advertising
-        self.__searchregex('^ads\\\.')
-        self.__searchregex('^adserver')
-        self.__searchregex('^advert')
+        self.__searchregex('^ads\\\.', 'advert')
+        self.__searchregex('^adserver', 'advert')
+        self.__searchregex('^advert', 'advert')
 
 
 def main():
