@@ -19,7 +19,7 @@ $INVESTIGATEURL = '';
 ************************************************/
 $dbwrapper = new MySqliDb;
 
-$severity = 0;
+$searchseverity = 0;
 $status = 0;
 
 /************************************************
@@ -65,7 +65,7 @@ function do_action($action) {
 
 /********************************************************************
  *  Draw Filter Toolbar
- *    $severity and $status utise bitwise values to allow multiple buttons to be pressed
+ *    $searchseverity and $status utise bitwise values to allow multiple buttons to be pressed
  *    if status & value then button active, link is status - value
  *    else button inactive, link is status + value
  *  Params:
@@ -75,12 +75,12 @@ function do_action($action) {
  */
 
 function draw_filter_toolbar() {
-  global $severity, $status;
+  global $searchseverity, $status;
 
   $severitylink = '';
   $statuslink = '';
 
-  $severitylink = "severity={$severity}";
+  $severitylink = "severity={$searchseverity}";
   $statuslink = "&amp;status={$status}";
 
   echo '<div class="filter-toolbar analytics-filter-toolbar">'.PHP_EOL;
@@ -108,25 +108,25 @@ function draw_filter_toolbar() {
 
   echo '<div class="filter-nav-group">'.PHP_EOL;           //Start Group 2 - Severity
 
-  if ($severity & SEVERITY_LOW) {
-    echo '<a class="filter-nav-button active" title="Tracker Accessed"  href="?severity='.($severity - SEVERITY_LOW).$statuslink.'"><img src="./svg/filters/severity_lowalt.svg" alt=""></a>'.PHP_EOL;
+  if ($searchseverity & SEVERITY_LOW) {
+    echo '<a class="filter-nav-button active" title="Tracker Accessed"  href="?severity='.($searchseverity - SEVERITY_LOW).$statuslink.'"><img src="./svg/filters/severity_lowalt.svg" alt=""></a>'.PHP_EOL;
   }
   else {
-    echo '<a class="filter-nav-button" title="Tracker Accessed" href="?severity='.($severity + SEVERITY_LOW).$statuslink.'"><img src="./svg/filters/severity_lowalt.svg" alt=""></a>'.PHP_EOL;
+    echo '<a class="filter-nav-button" title="Tracker Accessed" href="?severity='.($searchseverity + SEVERITY_LOW).$statuslink.'"><img src="./svg/filters/severity_lowalt.svg" alt=""></a>'.PHP_EOL;
   }
 
-  if ($severity & SEVERITY_MED) {
-    echo '<a class="filter-nav-button active" title="Malware Blocked"  href="?severity='.($severity - SEVERITY_MED).$statuslink.'"><img src="./svg/filters/severity_med.svg" alt=""></a>'.PHP_EOL;
+  if ($searchseverity & SEVERITY_MED) {
+    echo '<a class="filter-nav-button active" title="Malware Blocked"  href="?severity='.($searchseverity - SEVERITY_MED).$statuslink.'"><img src="./svg/filters/severity_med.svg" alt=""></a>'.PHP_EOL;
   }
   else {
-    echo '<a class="filter-nav-button" title="Malware Blocked" href="?severity='.($severity + SEVERITY_MED).$statuslink.'"><img src="./svg/filters/severity_med.svg" alt=""></a>'.PHP_EOL;
+    echo '<a class="filter-nav-button" title="Malware Blocked" href="?severity='.($searchseverity + SEVERITY_MED).$statuslink.'"><img src="./svg/filters/severity_med.svg" alt=""></a>'.PHP_EOL;
   }
 
-  if ($severity & SEVERITY_HIGH) {
-    echo '<a class="filter-nav-button active" title="Malware Accessed"  href="?severity='.($severity - SEVERITY_HIGH).$statuslink.'"><img src="./svg/filters/severity_high.svg" alt=""></a>'.PHP_EOL;
+  if ($searchseverity & SEVERITY_HIGH) {
+    echo '<a class="filter-nav-button active" title="Malware Accessed"  href="?severity='.($searchseverity - SEVERITY_HIGH).$statuslink.'"><img src="./svg/filters/severity_high.svg" alt=""></a>'.PHP_EOL;
   }
   else {
-    echo '<a class="filter-nav-button" title="Malware Accessed" href="?severity='.($severity + SEVERITY_HIGH).$statuslink.'"><img src="./svg/filters/severity_high.svg" alt=""></a>'.PHP_EOL;
+    echo '<a class="filter-nav-button" title="Malware Accessed" href="?severity='.($searchseverity + SEVERITY_HIGH).$statuslink.'"><img src="./svg/filters/severity_high.svg" alt=""></a>'.PHP_EOL;
   }
   echo '</div>'.PHP_EOL;                                   //End Group 2 - Severity
   echo '</div>'.PHP_EOL;                                   //End filter-toolbar
@@ -141,7 +141,6 @@ function draw_filter_toolbar() {
  *  Return:
  *    None
  */
-
 function draw_table_toolbar() {
   echo '<div class="table-toolbar">'.PHP_EOL;
   echo '<input type="hidden" id="selectedCheckboxes" name="selectedCheckboxes" value="">'.PHP_EOL;
@@ -152,7 +151,6 @@ function draw_table_toolbar() {
   echo '<div class="table-toolbar-options">'.PHP_EOL;      //Start Table Toolbar Export
   echo '<button type="submit" name="action" value="export" class="button-grey material-icon-centre icon-export" title="Export">&nbsp;</button>';
   echo '</div>'.PHP_EOL;                                   //End Table Toolbar Export
-
   echo '</div>'.PHP_EOL;                                   //End filter-toolbar
 }
 
@@ -161,21 +159,22 @@ function draw_table_toolbar() {
  *    Prepare popup menu and contents
  *
  *  Params:
- *    Domain, Blocked (true/false), Show Report Button ('true'/'false')
+ *    Domain (str)
+ *    Severity (int)
  *  Return:
  *    HTML code for popup menu
  */
-function popupmenu($domain, $blocked, $showreport) {
+function popupmenu($domain, $severity) {
   global $config, $INVESTIGATE, $INVESTIGATEURL;
 
   $str = '';
   $str .= '<div class="dropdown-container"><span class="dropbtn"></span><div class="dropdown">';
   
-  if ($blocked) {
-    $str .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
+  if ($severity == 1) {
+    $str .= "<span onclick=\"reportSite('{$domain}', false, true)\">Block</span>";
   }
   else {
-    $str .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
+    $str .= "<span onclick=\"reportSite('{$domain}', true, false)\">Allow</span>";
   }
   $str .= '<a href="'.$INVESTIGATEURL.$domain.'">'.$INVESTIGATE.'</a>';
   $str .= '<a href="'.$config->settings['SearchUrl'].$domain.'" target="_blank">'.$config->settings['Search'].'</a>';
@@ -197,90 +196,80 @@ function popupmenu($domain, $blocked, $showreport) {
  *    false when nothing found, true on success
  */
 function show_analytics() {
-  global $dbwrapper, $severity, $status;
+  global $dbwrapper, $searchseverity, $status;
 
   $action = '';
+  $bl_name = '';
+  $checkboxid = '';                                        //Made up of id and time
   $clipboard = '';                                         //Div for Clipboard
-  $log_time = '';
-  $sys = '';
+  $domaincell = '';
   $dns_request = '';
-  $dns_result = '';
-  $issue = '';
-  $row_colour = '';
-  $list = '';
-  $query = '';
-  $checkboxid = '';
   $investigateurl = '';                                    //URL to investigate.php
-  $itemseverity = 2;
-  $event = '';
-
+  $issue = '';                                             //What problem identified?
+  $log_time = '';
+  $row_colour = '';
+  $severity = 0;
+  $sys = '';
 
   echo '<div class="sys-group">'.PHP_EOL;
   echo '<form method="POST" name="analyticsForm">'.PHP_EOL;
-  echo '<input type="hidden" name="severity" value="'.$severity.'">'.PHP_EOL;
+  echo '<input type="hidden" name="severity" value="'.$searchseverity.'">'.PHP_EOL;
   echo '<input type="hidden" name="status" value="'.$status.'">'.PHP_EOL;
 
   draw_filter_toolbar();
   draw_table_toolbar();
 
-  $analyticsdata = $dbwrapper->analytics_get_data($severity, $status);
+  $analyticsdata = $dbwrapper->analytics_get_data($searchseverity, $status);
 
   if ($analyticsdata === false) {                         //Leave if nothing found
     echo '<h4><img src=./svg/emoji_sad.svg>No results found</h4>'.PHP_EOL;
     return false;
   }
 
-
-
   echo '<table id="analytics-table">'.PHP_EOL;             //Start table
-  echo '<tr><th>&nbsp;</th><th>&nbsp;</th><th>Site</th><th>System</th><th>Time</th><th>&nbsp;</th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp;</th><th>&nbsp;</th><th>Domain</th><th>System</th><th>Time</th><th>&nbsp;</th></tr>'.PHP_EOL;
 
   foreach ($analyticsdata as $row) {                       //Read each row of results
     $log_time = $row['log_time'];
     $sys = $row['sys'];
     $dns_request = $row['dns_request'];
-    $dns_result = $row['dns_result'];
+    $severity = $row['severity'];
+    $issue = $row['issue'];
     $row_colour = ($row['ack'] == 0) ? '' : ' class="dark"';
-    $itemseverity = 2;
 
     $checkboxid = $row['id'].'_'.str_replace(' ', '_', $log_time);
 
-    //$investigateurl = './queries.php?groupby=time&amp;sort=ASC&amp;sysip='.$sys.'&amp;datetime='.$log_time;
     $investigateurl = "./investigate.php?datetime=".rawurlencode($log_time)."&amp;site={$dns_request}&amp;sys={$sys}";
 
     //Create clipboard image and text
     $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
 
-
     //Setup Popup menu Button for blocked malware site
-    if ($dns_result != 'B') {
-      $action = popupmenu($dns_request, false, 'true');
+    $action = popupmenu($dns_request, $severity);
+
+    //Setup Domain Cell for Tracker or Advert accessed
+    if (($issue == 'tracker') or ($issue == 'advert')) {
+      $domaincell = '<a href="'.$investigateurl.'">'.ucfirst($issue).' Accessed - '.$dns_request.'</a>'.$clipboard;
+      $severity = 2;
     }
 
-    //Setup $issue for Tracker or Advert accessed
-    if (($row['issue'] == 'Tracker') || ($row['issue'] == 'Advert')) {
-      $issue = '<a href="'.$investigateurl.'">'.$row['issue'].' Accessed - '.$dns_request.'</a>'.$clipboard;
-      $event = 'tracker';
-    }
-
-    //Setup $issue for Malware blocked or allowed
+    //Setup Domain Cell for Malware blocked or allowed
     else {
-      $list = ucwords(str_replace('_', ' ', substr($row['issue'], 11)));
-      $event = 'malware';
-      $action = ($list == 'Notrack Malware') ? popupmenu($dns_request, true, 'true') : popupmenu($dns_request, true, 'false');
+      //Drop "Malware-", Replace underscore with space and uc first letter of each word
+      $bl_name = ucwords(str_replace('_', ' ', substr($issue, 11)));
+      $issue = 'malware';
       
-      if ($dns_result == 'B') {                            //Malware Blocked
-        $issue = '<a href="'.$investigateurl.'">Malware Blocked - '.$dns_request.'</a>'.$clipboard.'<p class="small grey">Blocked by '.$list.'</p>';
+      if ($severity == 2) {                            //Malware Blocked
+        $domaincell = '<a href="'.$investigateurl.'">Malware Blocked - '.$dns_request.'</a>'.$clipboard.'<p class="small grey">Blocked by '.$bl_name.'</p>';
       }
       else {                                               //Malware Accessed
-        $issue = '<a href="'.$investigateurl.'"><span class="red">Malware Accessed</span> - '.$dns_request.'</a>'.$clipboard.'<p class="small grey">Identified by '.$list.'</p>';
-        $itemseverity = 3;
+        $domaincell = '<a href="'.$investigateurl.'"><span class="red">Malware Accessed</span> - '.$dns_request.'</a>'.$clipboard.'<p class="small grey">Identified by '.$bl_name.'</p>';
       }
     }
 
     //Output table row
-    echo '<tr'.$row_colour.'><td><img src="./svg/events/'.$event.$itemseverity.'.svg" alt=""></td><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
-    echo '<td>'.$issue.'</td><td>'.$sys.'</td><td>'.simplified_time($log_time).'</td><td>'.$action.'</td></tr>'.PHP_EOL;
+    echo '<tr'.$row_colour.'><td><img src="./svg/events/'.$issue.$severity.'.svg" alt=""></td><td><input type="checkbox" name="resolve" id="'.$checkboxid.'" onclick="setIndeterminate()"></td>';
+    echo '<td>'.$domaincell.'</td><td>'.$sys.'</td><td>'.simplified_time($log_time).'</td><td>'.$action.'</td></tr>'.PHP_EOL;
   }
 
   echo '</table>'.PHP_EOL;
@@ -301,33 +290,21 @@ function show_analytics() {
  *    None
  */
 function show_export() {
-  global $dbwrapper, $severity, $status;
-
-  $result = '';
+  global $dbwrapper, $searchseverity, $status;
 
   header('Content-type: text/csv');
   header('Content-Disposition: attachment; filename="notrack_alerts.csv"');
 
-  $analyticsdata = $dbwrapper->analytics_get_data($severity, $status);
+  $analyticsdata = $dbwrapper->analytics_get_data($searchseverity, $status);
 
   if ($analyticsdata === false) {                         //Leave if nothing found
     return;
   }
 
-  echo 'Time,IP,Domain,Result,Issue,Acknowledged'.PHP_EOL;
+  echo 'Time,IP,Domain,Severity,Issue,Acknowledged'.PHP_EOL;
 
   foreach ($analyticsdata as $row) {                       //Read each row of results
-
-    //Convert abreveation of DNS result to the full word
-    if (array_key_exists($row['dns_result'], DNS_RESULT_FULL)) {
-      $result = DNS_RESULT_FULL[$row['dns_result']];
-    }
-    else {
-      $result = '';
-    }
-
-    echo "\"{$row['log_time']}\",{$row['sys']},{$row['dns_request']},{$result},{$row['issue']},{$row['ack']}".PHP_EOL;
-
+    echo "\"{$row['log_time']}\",{$row['sys']},{$row['dns_request']},{$row['severity']},{$row['issue']},{$row['ack']}".PHP_EOL;
   }
 }
 
@@ -338,7 +315,7 @@ function show_export() {
 
 //Review POST values
 if (isset($_POST['severity'])) {                           //Severity to carry value through on reload
-  $severity = filter_integer($_POST['severity'], 0, 7, 1);
+  $searchseverity = filter_integer($_POST['severity'], 0, 7, 1);
 }
 
 if (isset($_POST['status'])) {                             //ACK (acknowledge) carry value through on reload
@@ -359,7 +336,7 @@ if (isset($_POST['action'])) {                             //Any POST actions to
       break;
   }
   //Reload page to prevent repeat action browser alert
-  header("Location: analytics.php?severity={$severity}&status={$status}");
+  header("Location: analytics.php?severity={$searchseverity}&status={$status}");
   exit;
 }
 
@@ -383,7 +360,7 @@ if (isset($_POST['action'])) {                             //Any POST actions to
 //Review GET values
 
 if (isset($_GET['severity'])) {                            //Severity
-  $severity = filter_integer($_GET['severity'], 0, 7, 1);
+  $searchseverity = filter_integer($_GET['severity'], 0, 7, 1);
 }
 
 if (isset($_GET['status'])) {                              //ACK (acknowledge)

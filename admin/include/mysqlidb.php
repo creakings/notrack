@@ -112,16 +112,11 @@ class MySqliDb {
     $values = array();                                     //Array of values to be returned
 
     $query = '';
-    $search_severity = false;
     $search_status = false;
 
     //Work out if any extra searches are required for severity or status
     if ($status < 3) {                                     //STATUS_OPEN + STATUS_RESOLVED
       $search_status = true;
-    }
-
-    if (($severity > 0) && ($severity < 7)) {              //SEVERITY_LOW + SEVERITY_MED + SEVERITY_HIGH
-      $search_severity = true;
     }
 
     $query = 'SELECT * FROM analytics ';
@@ -143,33 +138,28 @@ class MySqliDb {
     }
 
     //AND will need adding if status and a severity search is being done
-    if (($search_status) && ($search_severity)) {
+    if (($search_status) && ($severity > 0) && ($severity < 7)) {
       $query .= 'AND ';
     }
 
-    //Severity uses Bitwise operators
-    //Allowed tracker is low
-    //Blocked malware is medium
-    //Allowed malware is high
-
     switch($severity) {
       case SEVERITY_LOW:
-        $query .= "(dns_result = 'A' AND issue = 'Tracker') ";
+        $query .= "severity = '1' ";
         break;
       case SEVERITY_MED:
-        $query .= "(dns_result = 'B' AND issue REGEXP '^Malware\-') ";
-        break;
-      case SEVERITY_MED + SEVERITY_LOW:
-        $query .= "((dns_result = 'A' AND issue = 'Tracker') OR (dns_result = 'B' AND issue REGEXP '^Malware\-')) ";
+        $query .= "severity = '2' ";
         break;
       case SEVERITY_HIGH:
-        $query .= "(dns_result = 'A' AND issue REGEXP '^Malware\-') ";
+        $query .= "severity = '3' ";
         break;
-      case SEVERITY_HIGH + SEVERITY_LOW:
-        $query .= "dns_result = 'A' ";
+      case SEVERITY_LOW + SEVERITY_MED:
+        $query .= "severity IN ('1','2') ";
         break;
-      case SEVERITY_HIGH + SEVERITY_MED:
-        $query .= "issue REGEXP '^Malware\-' ";
+      case SEVERITY_LOW + SEVERITY_HIGH:
+        $query .= "severity IN ('1','3') ";
+        break;
+      case SEVERITY_MED + SEVERITY_HIGH:
+        $query .= "severity IN ('2','3') ";
         break;
     }
 
