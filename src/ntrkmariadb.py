@@ -319,7 +319,7 @@ class DBWrapper:
         cmd = ''
         tabledata = []
 
-        cmd = f"SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request IN (SELECT site FROM blocklist WHERE bl_source = '{bl}') GROUP BY(dns_request) AND bl_source IN ('allowed', 'cname') ORDER BY id asc"
+        cmd = f"SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request IN (SELECT site FROM blocklist WHERE bl_source = '{bl}') GROUP BY(dns_request) AND severity = 1 AND bl_source IN ('allowed', 'cname') ORDER BY id asc"
 
         tabledata = self.__search(cmd)
 
@@ -336,7 +336,7 @@ class DBWrapper:
         cmd = ''
         tabledata = []
 
-        cmd = f"SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 DAY) AND dns_request REGEXP '{pattern}' AND severity = '1' AND bl_source IN ('allowed', 'cname') ORDER BY id asc"
+        cmd = f"SELECT * FROM dnslog WHERE log_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR) AND dns_request REGEXP '{pattern}' AND severity = '1' AND bl_source IN ('allowed', 'cname') ORDER BY id asc"
 
         tabledata = self.__search(cmd)
 
@@ -363,10 +363,6 @@ class DBWrapper:
 
         if severity not in ('1', '2', '3'):
             print(f'Invalid Severity {severity}')
-            return False
-
-        if bl_source not in ('malware', 'tracker'):
-            print(f'Invalid bl_source {bl_source}')
             return False
 
         cmd = f"UPDATE dnslog SET severity='{severity}', bl_source = '{bl_source}' WHERE id={recordnum}"
