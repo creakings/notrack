@@ -31,8 +31,7 @@ echo '<div id="main">'.PHP_EOL;
 ************************************************/
 DEFINE('DEF_SYSTEM', 'all');
 
-$GROUPLIST = array('name' => 'Site Name',
-                   'time' => 'Time');
+$GROUPLIST = array('name' => 'Site Name', 'time' => 'Time');
 
 $VIEWLIST = array('name', 'time');
 
@@ -50,7 +49,7 @@ $groupby = 'name';
 $searchbox = '';
 $sort = 'DESC';
 $sysip = DEF_SYSTEM;
-$severity = 0;
+$searchseverity = 0;
 
 //Date Time Duration from ISO 8601
 //Note: PHP allows the values to be higher than the normal time period e.g 90S instead of 1M30S
@@ -116,12 +115,12 @@ $TLDBlockList = array();
  *    String of parameters
  */
 function buildlink() {
-  global $datetime, $groupby, $searchbox, $severity, $sysip;
+  global $datetime, $groupby, $searchbox, $searchseverity, $sysip;
 
   $link = "groupby=$groupby";
 
   $link .= ($datetime != '') ? '&amp;datetime='.rawurlencode($datetime) : '';
-  $link .= "&amp;severity={$severity}";
+  $link .= "&amp;severity={$searchseverity}";
   $link .= ($sysip != DEF_SYSTEM) ? "&amp;sysip={$sysip}" : '';
   $link .= ($searchbox != '') ? "&amp;searchbox={$searchbox}" : '';
 
@@ -271,7 +270,7 @@ function get_ipsearch($ipsearch) {
  *    None
  */
 function draw_filter_toolbar() {
-  global $sysiplist, $page, $searchbox, $severity, $sort, $sysip, $groupby, $datetime, $datetime_text;
+  global $sysiplist, $page, $searchbox, $searchseverity, $sort, $sysip, $groupby, $datetime, $datetime_text;
 
   $isactive = '';
 
@@ -280,7 +279,7 @@ function draw_filter_toolbar() {
   echo '<input type="hidden" name="sort" value="'.$sort.'">'.PHP_EOL;
   echo '<input type="hidden" name="groupby" value="'.$groupby.'">'.PHP_EOL;
   echo '<input type="hidden" name="datetime" id="dateTime" value="'.$datetime.'">'.PHP_EOL;
-  echo '<input type="hidden" name="severity" id="severity" value="'.$severity.'">'.PHP_EOL;
+  echo '<input type="hidden" name="severity" id="severity" value="'.$searchseverity.'">'.PHP_EOL;
 
   echo '<div class="filter-toolbar queries-filter-toolbar">'.PHP_EOL;
 
@@ -390,13 +389,13 @@ function draw_filter_toolbar() {
   //Group 4 - Severity
   echo '<div class="filter-nav-group">'.PHP_EOL;
 
-  $isactive = ($severity & SEVERITY_LOW) ? ' active' : '';
+  $isactive = ($searchseverity & SEVERITY_LOW) ? ' active' : '';
   echo '<span class="filter-nav-button'.$isactive.'" title="Low - Connection Allowed" onclick="toggleNavButton(this, \''.SEVERITY_LOW.'\')"><img src="./svg/filters/severity_low.svg" alt=""></span>'.PHP_EOL;
 
-  $isactive = ($severity & SEVERITY_MED) ? ' active' : '';
+  $isactive = ($searchseverity & SEVERITY_MED) ? ' active' : '';
   echo '<span class="filter-nav-button'.$isactive.'" title="Medium - Connection Blocked" onclick="toggleNavButton(this, \''.SEVERITY_MED.'\')"><img src="./svg/filters/severity_med.svg" alt=""></span>'.PHP_EOL;
 
-  $isactive = ($severity & SEVERITY_HIGH) ? ' active' : '';
+  $isactive = ($searchseverity & SEVERITY_HIGH) ? ' active' : '';
   echo '<span class="filter-nav-button'.$isactive.'" title="High - Malware or Tracker Accessed" onclick="toggleNavButton(this, \''.SEVERITY_HIGH.'\')"><img src="./svg/filters/severity_high.svg" alt=""></span>'.PHP_EOL;
   echo '</div>'.PHP_EOL;                                   //End Group 4 - Severity
 
@@ -422,7 +421,7 @@ function draw_filter_toolbar() {
  *    None
  */
 function draw_groupby() {
-  global $page, $searchbox, $severity, $sort, $sysip, $groupby, $datetime;
+  global $page, $searchbox, $searchseverity, $sort, $sysip, $groupby, $datetime;
 
   $domainactive = '';
   $timeactive = '';
@@ -436,7 +435,7 @@ function draw_groupby() {
   echo '<input type="hidden" name="searchbox" value="'.$searchbox.'">'.PHP_EOL;
   echo '<input type="hidden" name="datetime" value="'.$datetime.'">'.PHP_EOL;
   echo '<input type="hidden" name="sys" value="'.$sysip.'">'.PHP_EOL;
-  echo '<input type="hidden" name="severity" value="'.$severity.'">'.PHP_EOL;
+  echo '<input type="hidden" name="severity" value="'.$searchseverity.'">'.PHP_EOL;
   echo '<div id="groupby-container">'.PHP_EOL;
   echo '<input type="radio" id="gbtab1" name="groupby" value="name" onchange="submit()" '.$domainactive.'><label for="gbtab1">Domain</label>'.PHP_EOL;
   echo '<input type="radio" id="gbtab2" name="groupby" value="time" onchange="submit()" '.$timeactive.'><label for="gbtab2">Time</label>'.PHP_EOL;
@@ -596,14 +595,12 @@ function format_datetime_search() {
  *    SQL Query string
  */
 function add_filterstr() {
-  global $datetime, $datetime_search, $searchbox, $severity, $sysip;
+  global $datetime, $datetime_search, $searchbox, $searchseverity, $sysip;
 
   $searchstr = '';
 
   $searchstr = ' WHERE ';
-
   $searchstr .= $datetime_search;
-
 
   if ($searchbox != '') {
     $searchstr .= get_dnssearch($searchbox);
@@ -615,81 +612,29 @@ function add_filterstr() {
   }
 
   //Severity uses Bitwise operators
-  //Low is Allowed or Local
-  //Medium is Blocked
-  //High TODO will be malware accessed
-
-  switch($severity) {
+  switch($searchseverity) {
     case SEVERITY_LOW:
-      $searchstr .= " AND dns_result IN ('A','L') ";       //Allowed, Local
-      //$searchstr .= " AND dns_result = 'A' ";
+      $searchstr .= " AND severity = '1' ";                //Allowed, Cached, Local
       break;
     case SEVERITY_MED:
-      $searchstr .= " AND dns_result = 'B' ";              //Blocked
+      $searchstr .= " AND severity = '2' ";                //Blocked
       break;
     case SEVERITY_HIGH:
-      $searchstr .= " AND dns_result IN ('M','T') ";       //Malware, Tracker
+      $searchstr .= " AND severity = '3' ";                //Malware, Tracker
       break;
     case SEVERITY_LOW + SEVERITY_MED:
-      $searchstr .= " AND dns_result IN ('A','B','L') ";   //Allowed, Blocked, Local
-      //$searchstr .= " AND dns_result = 'A' ";
+      $searchstr .= " AND severity IN ('1','2') ";         //Allowed, Blocked
       break;
     case SEVERITY_LOW + SEVERITY_HIGH:
-      $searchstr .= " AND dns_result IN ('A','L','M','T') "; //Allowed, Local, Malware, Tracker
+      $searchstr .= " AND severity IN ('1','3') ";         //Allowed, Malware, Tracker
       break;
     case SEVERITY_MED + SEVERITY_HIGH:
-      $searchstr .= " AND dns_result IN ('B','M','T') ";  //Blocked, Malware, Tracker
+      $searchstr .= " AND severity IN ('2','3') ";         //Blocked, Malware, Tracker
       break;
   }
 
   //echo $searchstr;                                       //Uncomment to debug sql query
   return $searchstr;
-}
-
-
-/********************************************************************
- *  Search Block Reason
- *    1. Search site.com in blocklist table
- *    2. Search .tld in blocklist table
- *    3. Search for like site.com in blocklist table
- *    4. On fail return ''
- *
- *  Params:
- *    $domain - Domain to search
- *  Return:
- *    blocklist name
- */
-function search_blockreason($domain) {
-  global $db;
-  $res = '';
-
-  preg_match('/[\w\-_]+(\.co|\.com|\.org|\.gov)?\.([\w\-]+)$/', $domain, $matches);
-
-  //Search for site.com
-  //Negate whitelist to prevent stupid results
-  $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '".$matches[0]."' AND bl_source != 'whitelist'");
-  if ($result->num_rows > 0) {
-    $res = $result->fetch_row()[0];
-  }
-  else {
-    $result->free();
-    //Search for .tld
-    $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '.".$matches[2]."' AND bl_source = 'bl_tld'");
-    if ($result->num_rows > 0) {
-      $res = $result->fetch_row()[0];
-    }
-    else {
-      $result->free();
-      //Search for like site.com (possibly prone to misidentifying bl_source)
-      $result = $db->query("SELECT bl_source FROM blocklist WHERE site LIKE '%.".$matches[0]."' AND bl_source != 'whitelist'");
-      if ($result->num_rows > 0) {
-        $res = $result->fetch_row()[0];
-      }
-    }
-  }
-
-  $result->free();
-  return $res;
 }
 
 
@@ -702,70 +647,51 @@ function search_blockreason($domain) {
  *
  *  Return:
  *    Array of variables to be taken using list()
+ *   ($bl_name, $event, $popupmenu)
  */
-function format_row($domain, $dns_result) {
+function format_row($dns_request, $severity, $bl_source) {
   global $config, $INVESTIGATE, $INVESTIGATEURL;
 
-  $blocklist = '';
-  $blockreason = '';
+  $bl_name = '';
   $event = '';
-  $rowseverity = '1';
   $popupmenu = '';
-
 
   $popupmenu = '<div class="dropdown-container"><span class="dropbtn"></span><div class="dropdown">';
 
-  if ($dns_result == 'A') {
-    $event = 'allowed1';
-    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
+  if ($severity == 1) {
+    $event = "{$bl_source}1";
+    if ($bl_source != 'local') {
+      $popupmenu .= "<span onclick=\"reportSite('{$dns_request}', false, true)\">Block</span>";
+    }
   }
-  elseif ($dns_result == 'B') {                            //Blocked
-    $blocklist = search_blockreason($domain);
-    $rowseverity = '2';
-      
-    if ($blocklist == 'bl_notrack') {                      //Show Report on NoTrack list
-      $blockreason = '<p class="small grey">Blocked by NoTrack list</p>';
-      $event = 'tracker2'; //TODO change image
-      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, true)">Allow</span>';
+  elseif ($severity == 2) {                                //Blocked
+    $event = $config->get_blocklisttype($bl_source).'2';
+
+    if ($bl_source == 'bl_notrack') {                      //Show Report on NoTrack list
+      $bl_name = '<p class="small grey">Blocked by NoTrack list</p>';
+      $popupmenu .= "<span onclick=\"reportSite('{$dns_request}', true, true)\">Allow</span>";
     }
-    elseif ($blocklist == 'custom') {                      //Users blacklist
-      $blockreason = '<p class="small grey">Blocked by Custom Black list</p>';
-      $event = 'custom2';
-      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
-    }
-    elseif ($blocklist != '') {                            //Other blocklist
-      $blockreason = '<p class="small grey">Blocked by '.$config->get_blocklistname($blocklist).'</p>';
-      $event = $config->get_blocklistevent($blocklist);
-      $event .= $rowseverity;
-      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
-    }
-    else {  //No reason is probably IP or Search request
-      $blockreason = '<p class="small">Invalid request</p>';
+    elseif ($bl_source == 'invalid') {                     //Other blocklist
+      $bl_name = '<p class="small">Invalid request</p>';
       $event = 'invalid2';
     }
+    else {
+      $bl_name = '<p class="small grey">Blocked by '.$config->get_blocklistname($bl_source).'</p>';
+      $popupmenu .= "<span onclick=\"reportSite('{$dns_request}', true, false)\">Allow</span>";
+    }
   }
-  elseif ($dns_result == 'M') {                            //Malware Accessed
-    $blockreason = '<p class="small grey">Malware Accessed</p>';
-    $event = 'malware3';
-    $rowseverity = '3';
-    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
-  }
-  elseif ($dns_result == 'T') {                            //Tracker Accessed
-    $blockreason = '<p class="small grey">Tracker Accessed</p>';
-    $event = 'tracker3';
-    $rowseverity = '3';
-    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
-  }
-  elseif ($dns_result == 'L') {
-    $event = 'local1';
+  elseif ($severity == 3) {
+    $event = "{$bl_source}3";
+    $blockreason = '<p class="small grey">'.ucfirst($bl_source).'Accessed</p>';
+    $popupmenu .= "<span onclick=\"reportSite('{$dns_request}', false, true)\">Block</span>";
   }
 
-  $popupmenu .= '<a href="'.$INVESTIGATEURL.$domain.'">'.$INVESTIGATE.'</a>';
-  $popupmenu .= '<a href="'.$config->settings['SearchUrl'].$domain.'" target="_blank">'.$config->settings['Search'].'</a>';
-  $popupmenu .= '<a href="https://www.virustotal.com/en/domain/'.$domain.'/information/" target="_blank">VirusTotal</a>';
+  $popupmenu .= '<a href="'.$INVESTIGATEURL.$dns_request.'">'.$INVESTIGATE.'</a>';
+  $popupmenu .= '<a href="'.$config->settings['SearchUrl'].$dns_request.'" target="_blank">'.$config->settings['Search'].'</a>';
+  $popupmenu .= '<a href="https://www.virustotal.com/en/domain/'.$dns_request.'/information/" target="_blank">VirusTotal</a>';
   $popupmenu .= '</div></div>';                                  //End dropdown-container
 
-  return array($blockreason, $event, $rowseverity, $popupmenu);
+  return array($bl_name, $event, $popupmenu);
 }
 
 
@@ -780,15 +706,16 @@ function format_row($domain, $dns_result) {
  */
 function show_group_view() {
   global $db, $TLDBlockList;
-  global $page, $sort, $groupby, $searchbox, $severity, $sysip;
+  global $page, $sort;
 
   $i = 0;
   $k = 1;                                                  //Count within ROWSPERPAGE
-  $blockreason = '';
+  $bl_name = '';
+  $bl_source = '';
   $clipboard = '';                                         //Div for Clipboard
   $event = '';                                             //Image event
   $popupmenu = '';                                         //Div for popup menu
-  $rowseverity = 1;
+  $severity = 0;
   $query = '';
   $dns_request = '';
   $site_cell = '';
@@ -796,7 +723,7 @@ function show_group_view() {
   $sortlink = "?page=$page&amp;".buildlink();
   $paginationlink = buildlink()."&amp;sort=$sort";
 
-  $query = "SELECT sys, dns_request, dns_result, COUNT(*) AS count FROM dnslog".add_filterstr()." GROUP BY dns_request ORDER BY count $sort";
+  $query = "SELECT sys, dns_request, severity, bl_source, COUNT(*) AS count FROM dnslog".add_filterstr()." GROUP BY dns_request ORDER BY count $sort";
 
   if(!$result = $db->query($query)){
     echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
@@ -832,17 +759,20 @@ function show_group_view() {
 
   while($row = $result->fetch_assoc()) {                   //Read each row of results
     $dns_request = $row['dns_request'];
-    list($blockreason, $event, $rowseverity, $popupmenu) = format_row($dns_request, $row['dns_result']);
+    $bl_source = $row['bl_source'];
+    $severity = $row['severity'];
+
+    list($bl_name, $event, $popupmenu) = format_row($dns_request, $severity, $bl_source);
 
     //Create clipboard image and text
     $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
 
     //Contents of domain cell
-    $domain_cell = '<a href="./investigate.php?site='.$dns_request.'" target="_blank">'.$dns_request.'</a>'.$clipboard.$blockreason;
+    $domain_cell = '<a href="./investigate.php?site='.$dns_request.'" target="_blank">'.$dns_request.'</a>'.$clipboard.$bl_name;
 
     //Output table row
     echo "<tr><td><img src=\"./svg/events/{$event}.svg\" alt=\"\"></td><td>{$i}</td><td>{$domain_cell}</td><td>{$row['count']}</td><td>{$popupmenu}</td></tr>".PHP_EOL;
-    $blockreason = '';
+
 
     $i++;
     $k++;
@@ -870,15 +800,16 @@ function show_group_view() {
  */
 function show_time_view() {
   global $db, $TLDBlockList;
-  global $page, $sort, $groupby, $searchbox, $severity, $sysip;
+  global $page, $sort;
 
   $i = 0;
   $k = 1;                                                  //Count within ROWSPERPAGE
-  $blockreason = '';
+  $bl_name = '';
+  $bl_source = '';
   $clipboard = '';                                         //Div for Clipboard
   $event = '';                                             //Image event
   $popupmenu = '';                                         //Div for popup menu
-  $rowseverity = 1;
+  $severity = 0;
   $query = '';
   $dns_request = '';
   $domain_cell = '';
@@ -921,17 +852,19 @@ function show_time_view() {
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
     $dns_request = $row['dns_request'];
-    list($blockreason, $event, $rowseverity, $popupmenu) = format_row($dns_request, $row['dns_result']);
+    $bl_source = $row['bl_source'];
+    $severity = $row['severity'];
+
+    list($bl_name, $event, $popupmenu) = format_row($dns_request, $severity, $bl_source);
 
     //Create clipboard image and text
     $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
 
     //Contents of domain cell with more specific url for investigate
-    $domain_cell = "<a href=\"./investigate.php?datetime={$row['log_time']}&amp;site={$dns_request}&amp;sys={$row['sys']}\" target=\"_blank\">{$dns_request}</a>{$clipboard}{$blockreason}";
+    $domain_cell = "<a href=\"./investigate.php?datetime={$row['log_time']}&amp;site={$dns_request}&amp;sys={$row['sys']}\" target=\"_blank\">{$dns_request}</a>{$clipboard}{$bl_name}";
 
     //Output table row
     echo "<tr><td><img src=\"./svg/events/{$event}.svg\" alt=\"\"><td>{$row['formatted_time']}</td><td>{$row['sys']}</td><td>{$domain_cell}</td><td>{$popupmenu}</td></tr>".PHP_EOL;
-    $blockreason = '';
 
     $k++;
     if ($k > ROWSPERPAGE) break;
@@ -953,7 +886,7 @@ if (isset($_GET['page'])) {
 }
 
 if (isset($_GET['severity'])) {                            //Severity
-  $severity = filter_integer($_GET['severity'], 0, 7, 1);
+  $searchseverity = filter_integer($_GET['severity'], 0, 7, 1);
 }
 
 if (isset($_GET['sort'])) {

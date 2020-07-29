@@ -34,7 +34,6 @@ $dbwrapper = new MySqliDb;
 
 $day_allowed = 0;
 $day_blocked = 0;
-$day_local = 0;
 $allowed_queries = array();
 $blocked_queries = array();
 $chart_labels = array();
@@ -90,7 +89,7 @@ function home_network() {
 
 /********************************************************************
  *  DNS Queries Box
- *    1. Query dnslog table for Total, Blocked, and Local results
+ *    1. Query dnslog table for Total, Blocked results
  *    2. Calculate allowed queries
  *    3. Show icon if no DNS queries have been made
  *    4. Otherwise draw a piechart of the results
@@ -100,20 +99,16 @@ function home_network() {
  *    None
  */
 function home_queries() {
-  global $CHARTCOLOURS, $day_allowed, $day_blocked, $day_local;
+  global $CHARTCOLOURS, $day_allowed, $day_blocked;
 
   $total = 0;
   $chartdata = array();
-  $lables = array('Allowed', 'Blocked', 'Local');
+  $lables = array('Allowed', 'Blocked');
   
-  $total = $day_allowed + $day_blocked + $day_local;
+  $total = $day_allowed + $day_blocked;
 
-  if ($day_local == 0) {                                   //Build array of chartdata, we may not need to include $local
-    $chartdata = array($day_allowed, $day_blocked);
-  }
-  else {                                                   //Local is necessary
-    $chartdata = array($day_allowed, $day_blocked, $day_local);
-  }
+  $chartdata = array($day_allowed, $day_blocked);
+
 
   //Start Drawing Queries Box
   echo '<a href="./queries.php"><span><h2>DNS Queries</h2>' . number_format(floatval($total)) . '<br>Today</span>'.PHP_EOL;
@@ -208,7 +203,7 @@ function home_status() {
 /********************************************************************
  *  Count Queries
  *    1. Create chart labels
- *    2. Query time, system, dns_result for all results from passed 24 hours from dnslog
+ *    2. Query time, system, severity for all results from passed 24 hours from dnslog
  *    3. Use SQL rounding to round time to nearest 30 mins
  *    4. Count by 30 min time blocks into associative array
  *    5. Move values from associative array to daily count indexed array
@@ -221,7 +216,7 @@ function home_status() {
 function count_queries() {
   global $dbwrapper;
   global $allowed_queries, $blocked_queries, $chart_labels, $link_labels;
-  global $day_allowed, $day_blocked, $day_local;
+  global $day_allowed, $day_blocked;
   
   $allowed_arr = array();
   $blocked_arr = array();
@@ -245,19 +240,16 @@ function count_queries() {
     return false;
   }
 
-  //Read each row of results totalling up a count per 30 min period depending whether the query was allowed / blocked / local
+  //Read each row of results totalling up a count per 30 min period depending whether the query was allowed / blocked
   //Also include count per day for the piechart
   foreach ($hourlyvalues as $row) {
-    if ($row['dns_result'] == 'A') {
+    if ($row['severity'] == '1') {
       $allowed_arr[$row['round_time']]++;
       $day_allowed++;
     }
-    elseif ($row['dns_result'] == 'B') {
+    elseif ($row['severity'] == '2') {
       $blocked_arr[$row['round_time']]++;
       $day_blocked++;
-    }
-    elseif ($row['dns_result'] == 'L') {
-      $day_local++;
     }
   }
 

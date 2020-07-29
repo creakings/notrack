@@ -7,7 +7,7 @@
  *
  *  settings and blocklists are stored in Memcache to improve performance.
  *
- *  New blocklists should be added to DEFAULTBLOCKLISTS, BLOCKLISTNAMES, and BLOCKLISTEVENT
+ *  New blocklists should be added to DEFAULTBLOCKLISTS, BLOCKLISTNAMES, and BLOCKLISTTYPE
  *
  *
  */
@@ -156,11 +156,11 @@ class Config {
   );
 
   //What type of data is in each blocklist
-  const BLOCKLISTEVENT = array(
+  const BLOCKLISTTYPE = array(
     'custom' => 'custom',
     'bl_blacklist' => 'custom',
     'bl_tld' => 'tld',
-    'bl_notrack' => 'notrack',
+    'bl_notrack' => 'tracker',
     'bl_notrack_malware' => 'malware',
     'bl_cbl_all' => 'cryptocoin',
     'bl_cbl_browser' => 'cryptocoin',
@@ -210,6 +210,7 @@ class Config {
     'bl_sweeasy' => 'advert',
     'bl_viefb' => 'advert',
     'bl_fblatin' => 'advert',
+    'invalid' => 'invalid',
   );
 
   const SEARCHENGINELIST = array(
@@ -415,24 +416,24 @@ class Config {
 
 
   /********************************************************************
-   *  Get Block List Event
-   *    Returns the name of block list event if it exists in the event array
+   *  Get Block List Type
+   *    Returns the type of blocklist based on bl_source
    *
    *  Params:
    *    $bl - bl_name
    *  Return:
    *    event value
    */
-  function get_blocklistevent($bl) {
+  function get_blocklisttype($bl_source) {
 
-    if (array_key_exists($bl, self::BLOCKLISTEVENT)) {
-      return self::BLOCKLISTEVENT[$bl];
+    if (array_key_exists($bl_source, self::BLOCKLISTTYPE)) {
+      return self::BLOCKLISTTYPE[$bl_source];
     }
-    elseif (substr($bl, 0, 6) == 'custom') {               //Could be a custom_x list
+    /*elseif (substr($bl, 0, 6) == 'custom') {               //Could be a custom_x list
       return 'custom';
-    }
+    }*/
 
-    return $bl;                                            //Shouldn't get to here
+    return 'custom';                                       //Shouldn't get to here
   }
 
   /********************************************************************

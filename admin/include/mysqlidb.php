@@ -356,11 +356,10 @@ class MySqliDb {
    *    Array of values as queries, allowed, blocked, local
    */
   public function count_queries_today() {
-    $allowed = $this->count_table_rows("dnslog WHERE log_time > CURDATE() AND dns_result = 'A'");
-    $blocked = $this->count_table_rows("dnslog WHERE log_time > CURDATE() AND dns_result = 'B'");
-    $local = $this->count_table_rows("dnslog WHERE log_time > CURDATE() AND dns_result = 'L'");
-    $total = strval($allowed + $blocked + $local);
-    return array('queries' => $total, 'allowed' => $allowed, 'blocked' => $blocked, 'local' => $local);
+    $allowed = $this->count_table_rows("dnslog WHERE log_time > CURDATE() AND severity = '1'");
+    $blocked = $this->count_table_rows("dnslog WHERE log_time > CURDATE() AND severity = '2'");
+    $total = strval($allowed + $blocked);
+    return array('queries' => $total, 'allowed' => $allowed, 'blocked' => $blocked);
   }
 
 
@@ -451,7 +450,7 @@ class MySqliDb {
    *    Current Time to start from
    *  Return:
    *    False when nothing found
-   *    Array of single dns_results with round_time
+   *    Array of single severities with round_time
    */
   public function queries_count_hourly($currenttime) {
     $values = array();                                     //Array of values to be returned
@@ -461,8 +460,8 @@ class MySqliDb {
     $starttime = date('Y-m-d H:00:00', $currenttime - 84600); //Start Minus 24 Hours from Current Time
     $endtime = date('Y-m-d H:59:59');                         //End at this hour
 
-    //Only taking rounded time (to 30 min block) and each dns_result
-    $query = "SELECT SEC_TO_TIME((TIME_TO_SEC(log_time) DIV 1800) * 1800) AS round_time, dns_result FROM dnslog WHERE log_time >= '{$starttime}' AND log_time <= '{$endtime}'";
+    //Only taking rounded time (to 30 min block) and each severity
+    $query = "SELECT SEC_TO_TIME((TIME_TO_SEC(log_time) DIV 1800) * 1800) AS round_time, severity FROM dnslog WHERE log_time >= '{$starttime}' AND log_time <= '{$endtime}'";
 
     if (!$result = $this->db->query($query)){
       echo '<h4><img src=./svg/emoji_sad.svg>Error running query</h4>'.PHP_EOL;
