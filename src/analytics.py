@@ -29,8 +29,7 @@ class NoTrackAnalytics():
         self.__dbwrapper = DBWrapper()                     #Declare MariaDB Wrapper
 
         self.__dbwrapper.analytics_createtable()
-        self.__blocklists = self.__dbwrapper.blocklist_getactive()
-        self.__whitelist = self.__dbwrapper.blocklist_getwhitelist()
+        self.get_blocklists()
 
 
     def __searchmalware(self, bl):
@@ -244,6 +243,14 @@ class NoTrackAnalytics():
         self.__searchregex('^ads\\\.', 'advert')
         self.__searchregex('^adserver', 'advert')
         self.__searchregex('^advert', 'advert')
+
+
+    def get_blocklists(self):
+        """
+        Get active blocklists and whitelist
+        """
+        self.__blocklists = self.__dbwrapper.blocklist_getactive()
+        self.__whitelist = self.__dbwrapper.blocklist_getwhitelist()
 
 
 def main():
