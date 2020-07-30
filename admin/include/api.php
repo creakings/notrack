@@ -15,9 +15,7 @@ $readonly = true;
 /********************************************************************
  *  Enable NoTrack
  *    Enable or Disable NoTrack Blocking
- *    Calls NTRK_EXEC with Play or Stop based on current status
- *    Race condition isn't being prevented, however we are assuming the user can't get config to load quicker than ntrk-pause can change the file
- *     
+ *
  *  Params:
  *    None
  *  Return:
@@ -26,24 +24,27 @@ $readonly = true;
 function api_enable_notrack() {
   global $config, $mem, $response;
 
+  $newstatus = 0;
+
   if ($config->status & STATUS_ENABLED) {
-    exec(NTRK_EXEC.'-s');
-    $config->status -= STATUS_ENABLED;
-    $config->status += STATUS_DISABLED;
+    $newstatus = $config->status - STATUS_ENABLED;
+    $newstatus += STATUS_DISABLED;
   }
   elseif ($config->status & STATUS_PAUSED) {
-    exec(NTRK_EXEC.'-p');
-    $config->status -= STATUS_PAUSED;
-    $config->status += STATUS_ENABLED;
+    $newstatus = $config->status - STATUS_PAUSED;
+    $newstatus += STATUS_ENABLED;
   }
   elseif ($config->status & STATUS_DISABLED) {
-    exec(NTRK_EXEC.'-p');
-    $config->status -= STATUS_DISABLED;
-    $config->status += STATUS_ENABLED;
+    $newstatus = $config->status - STATUS_DISABLED;
+    $newstatus += STATUS_ENABLED;
+  }
+  else {                                                   //Fallback in case of error
+    $newstatus = STATUS_ENABLED;
   }
 
-  $mem->delete('conf-settings');                           //Force reload of config
-  $response['status'] = $config->status;
+  $config->save_status($newstatus, 0);
+  //$response['oldstatus'] = $config->status;
+  $response['status'] = $newstatus;
 }
 
 
@@ -60,8 +61,10 @@ function api_enable_notrack() {
  */
 function api_pause_notrack() {
   global $config, $mem, $response;
-  
+
   $mins = 0;
+  $newstatus = 0;
+  $unpausetime = 0;
 
   if (! isset($_POST['mins'])) {
     $response['error'] = 'api_pause_notrack: Mins not specified';
@@ -69,20 +72,18 @@ function api_pause_notrack() {
   }
   
   $mins = filter_integer($_POST['mins'], 1, 1440, 5);      //1440 = 24 hours in mins
-  
-  exec(NTRK_EXEC.'--pause '.$mins);
+  $unpausetime = time() + ($mins * 60);
   
   if ($config->status & STATUS_INCOGNITO) {
-    $config->status = STATUS_INCOGNITO + STATUS_PAUSED;
+    $newstatus = STATUS_INCOGNITO + STATUS_PAUSED;
   }
   else {
-    $config->status = STATUS_PAUSED;
+    $newstatus = STATUS_PAUSED;
   }
-  //sleep(1);
-  $mem->delete('conf-settings');                           //Force reload of config
-  //$config->load();
-  $response['status'] = $config->status;
-  $response['unpausetime'] = date('H:i', (time() + ($mins * 60)));
+
+  $config->save_status($newstatus, $unpausetime);
+  $response['status'] = $newstatus;
+  $response['unpausetime'] = date('H:i', $unpausetime);
   
   return true;
 }
@@ -98,15 +99,18 @@ function api_pause_notrack() {
  */
 function api_incognito() {
   global $config, $response;
-  
-  if ($config->status & STATUS_INCOGNITO) $config->status -= STATUS_INCOGNITO;
-  else $config->status += STATUS_INCOGNITO;
-  $response['status'] = $config->status;
-  
-  $config->save();
+  $newstatus = 0;
+
+  if ($config->status & STATUS_INCOGNITO) {
+    $newstatus = $config->status - STATUS_INCOGNITO;
+  }
+  else {
+    $newstatus = $config->status + STATUS_INCOGNITO;
+  }
+
+  $config->save_status($newstatus, $config->unpausetime);
+  $response['status'] = $newstatus;
 }
-
-
 /********************************************************************
  *  API Restart
  *    Restart the system

@@ -14,6 +14,7 @@ define('DBNAME', 'ntrkdb');
 
 define('ROWSPERPAGE', 200);
 
+define('DIR_SETTINGS', $_SERVER['DOCUMENT_ROOT'].'/admin/settings/');
 define('DIR_TMP', '/tmp/');
 define('ACCESSLOG', '/var/log/ntrk-admin.log');
 define('CONFIGFILE', '/etc/notrack/notrack.conf');

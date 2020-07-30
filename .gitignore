@@ -3,3 +3,4 @@ __pycache__/
 
 #NoTrack PHP settings
 admin/settings/latestversion.php
+admin/settings/status.php

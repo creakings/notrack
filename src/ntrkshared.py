@@ -144,6 +144,38 @@ def move_file(source, destination, permissions=0):
     return True
 
 
+def load_file(filename):
+    """
+    Load contents of file and return as a list
+    1. Check file exists
+    2. Read all lines of file
+
+    Returns:
+        List of all lines in file
+        Empty list if file doesn't exist or error occured
+    """
+    print(f'Loading {filename}')
+    if not os.path.isfile(filename):
+        print(f'Unable to load {filename}, file is missing', file=sys.stderr)
+        return []
+
+    try:
+        f = open(filename, 'r')                            #Open file for reading
+    except IOError as e:
+        print(f'Unable to read to {filename}', file=sys.stder)
+        print(e, file=sys.stder)
+        return []
+    except OSError as e:
+        print(f'Unable to read to {filename}', file=sys.stder)
+        print(e, file=sys.stder)
+        return []
+    else:
+        filelines = f.readlines()
+    finally:
+        f.close()
+
+    return filelines
+
 def download_file(url, destination):
     """
     Download File

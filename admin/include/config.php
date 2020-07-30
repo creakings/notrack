@@ -256,19 +256,9 @@ class Config {
    *    None
    */
   public function load() {
-    global $mem;
-
     $line = '';
     $matches = array();
 
-    //Attempt to load settings and blocklists arrays from Memcache
-    /*$this->settings = $mem->get('conf-settings');
-    $this->blocklists = $mem->get('conf-blocklists');
-    if ((! empty($this->settings)) && (! empty($this->blocklists))) {
-      return null;
-    }
-    */
-    //Nothing loaded from Memcache
     //Firstly Set settings and blocklists arrays to their default values
     $this->settings = $this->DEFAULTCONFIG;
     $this->blocklists = $this->DEFAULTBLOCKLISTS;
@@ -277,7 +267,6 @@ class Config {
       $fh= fopen(CONFIGFILE, 'r');                         //Open config
       while (!feof($fh)) {
         $line = fgets($fh);                                //Read Line of LogFile
-
 
         //Check if the line matches a blocklist (excluding bl_custom)
         if (preg_match('/^(bl_(?!custom)[a-z_]{5,25}) = (0|1)/', $line, $matches)) {
@@ -294,12 +283,6 @@ class Config {
               break;
             case 'ParsingTime':
               $this->settings['ParsingTime'] = filter_integer($matches[2], 1, 60, 7);
-              break;
-            case 'status':
-              $this->status = filter_integer($matches[2], 1, PHP_INT_MAX, 0);
-              break;
-            case 'unpausetime':
-              $this->unpausetime = filter_integer($matches[2], 1, PHP_INT_MAX, 0);
               break;
             default:
               if (array_key_exists($matches[1], $this->settings)) {
@@ -332,9 +315,6 @@ class Config {
         $this->settings['WhoIsUrl'] = self::WHOISLIST['Who.is'];
       }
     }
-
-    $mem->set('conf-settings', $this->settings, 0, 1200);
-    $mem->set('conf-blocklists', $this->blocklists, 0, 1200);
   }
 
 
@@ -450,6 +430,8 @@ class Config {
     $this->latestversion = $newversion;
   }
 
+
+
   /********************************************************************
    *  Is Blocklist Active
    *    Returns status of specified blocklist
@@ -464,6 +446,26 @@ class Config {
     return $this->blocklists[$bl];
   }
 
+  private function load_status() {
+    if (file_exists(DIR_SETTINGS.'status.php')) {
+      include_once DIR_SETTINGS.'status.php';
+    }
+  }
+
+  public function set_status($newstatus, $newunpausetime) {
+    $this->status = $newstatus;
+    $this->unpausetime = $newunpausetime;
+  }
+
+  public function save_status($newstatus, $newunpausetime) {
+    $filelines = array(
+      '<?php'.PHP_EOL,
+      '$this->set_status('.$newstatus.', '.$newunpausetime.');'.PHP_EOL,
+      '?>'.PHP_EOL,
+    );
+
+    file_put_contents(DIR_TMP.'status.php', $filelines);
+  }
   /********************************************************************
    *  Constructor
    *
@@ -474,6 +476,8 @@ class Config {
    */
   public function __construct() {
     $this->load();
+
+    $this->load_status();
   }
 }
 

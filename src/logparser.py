@@ -28,7 +28,7 @@ class NoTrackParser():
         self.__dbwrapper.dnslog_createtable()              #Make sure dnslog table exists
 
 
-    def __blank_dnslog(self):
+    def blank_dnslog(self):
         """
         Overwrite the dnslog file with nothing
         """
@@ -272,7 +272,7 @@ class NoTrackParser():
             print('Nothing in dnslog, skipping')
             return
 
-        self.__blank_dnslog()                              #Empty log file to avoid repeat entries
+        self.blank_dnslog()                                #Empty log file to avoid repeat entries
         self.__process_dnslog(filelines)                   #Process log file then upload to MariaDB
 
 
