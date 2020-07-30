@@ -28,7 +28,6 @@ function changeStatus(newstatus) {
     document.getElementById("pause-button").src = '/admin/svg/tmenu_play.svg';
     document.getElementById("pause-button").title = "Enable Blocking";
   }
-  //document.getElementById("pause-button").blur();
   document.getElementById("dropbutton").blur();
 }
 
@@ -47,25 +46,21 @@ function menuIncognito() {
   var oReq = new XMLHttpRequest();
   var url = "/admin/include/api.php";
   var params = "operation=incognito";
-  
+
   oReq.open("POST", url, true);
   oReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-  /*oReq.onload = function () {
-    // do something to response
-    console.log(this.responseText);
-  };*/
+
   oReq.onreadystatechange = function() {
     if(this.readyState == 4 && this.status == 200) {
+      //console.log(this.responseText);
       var apiResponse = JSON.parse(this.responseText);
       if (apiResponse["status"] & 8) {                     //Bitwise check for STATUS_INCOGNITO
-        //Change incognito elements to purple colour
+        //Change incognito picture to red colour
         document.getElementById("incognito-button").src = "/admin/svg/menu_incognito_active.svg";
-        //document.getElementById("incognito-text").classList.add("purple");
       }
       else {
-        //Turning incognito off, change incognito elements back to grey
+        //Turning incognito off, change picture back to grey
         document.getElementById("incognito-button").src = "/admin/svg/menu_incognito.svg";
-        //document.getElementById("incognito-text").classList.remove("purple");
       }
     }
   }
@@ -95,6 +90,7 @@ function enableNoTrack() {
   
   oReq.onreadystatechange = function() {
     if(this.readyState == 4 && this.status == 200) {
+      //console.log(this.responseText);
       var apiResponse = JSON.parse(this.responseText);
       changeStatus(apiResponse["status"]);
     }
@@ -107,8 +103,7 @@ function enableNoTrack() {
  *  Enable NoTrack
  *    POST enable operation to API
  *    API returns new status value
- *    This is the same function for Enable and Disable. 
- *    Let the API work out what the request is meant to be.
+ *
  *  Params:
  *    mins to pause for
  *  Return:
