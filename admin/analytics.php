@@ -250,7 +250,6 @@ function show_analytics() {
     //Setup Domain Cell for Tracker or Advert accessed
     if (($issue == 'tracker') or ($issue == 'advert')) {
       $domaincell = '<a href="'.$investigateurl.'">'.ucfirst($issue).' Accessed - '.$dns_request.'</a>'.$clipboard;
-      $severity = 2;
     }
 
     //Setup Domain Cell for Malware blocked or allowed
