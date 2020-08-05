@@ -176,6 +176,37 @@ def load_file(filename):
 
     return filelines
 
+
+def save_file(lines, filename):
+    """
+    Save a list into a file
+
+    Parameters:
+        lines (list): lines of ascii data to save to file
+        filename (str): File to save to
+    Returns:
+        True on success
+        False on error
+    """
+
+    try:
+        f = open(filename, 'w')                            #Open file for ascii writing
+    except IOError as e:
+        print(f'Unable to write to {filename}', file=sys.stder)
+        print(e, file=sys.stder)
+        return False
+    except OSError as e:
+        print(f'Unable to write to {filename}', file=sys.stder)
+        print(e, file=sys.stder)
+        return False
+    else:
+        f.writelines(lines)
+    finally:
+        f.close()
+
+    return True
+
+
 def download_file(url, destination):
     """
     Download File
