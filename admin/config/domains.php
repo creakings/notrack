@@ -128,7 +128,7 @@ function show_full_blocklist() {
   $clipboard = '';                                         //Div for Clipboard
   $domain = '';
   $row_class = '';
-  $bl_source = '';
+  $bl_friendlyname = '';
   $linkstr = '';
 
   $result = $dbwrapper->blocklist_domains($selectedbl, $searchbox);
@@ -189,15 +189,10 @@ function show_full_blocklist() {
     }
 
     //Convert abbreviated bl_name to friendly name
-    if (array_key_exists($row['bl_source'], $config::BLOCKLISTNAMES)) {
-      $bl_source = $config::BLOCKLISTNAMES[$row['bl_source']];
-    }
-    else {
-      $bl_source = $row['bl_source'];
-    }
+    $bl_friendlyname = $config->get_blocklistname($row['bl_source']);
 
     //Output table row
-    echo "<tr{$row_class}><td>{$i}</td><td>{$bl_source}</td><td>{$domain}{$clipboard}</td><td>{$row['comment']}</td></tr>".PHP_EOL;
+    echo "<tr{$row_class}><td>{$i}</td><td>{$bl_friendlyname}</td><td>{$domain}{$clipboard}</td><td>{$row['comment']}</td></tr>".PHP_EOL;
 
     $i++;
     $k++;
@@ -231,7 +226,7 @@ if (isset($_GET['page'])) {                                //Page Number
 if (isset($_GET['selectedbl'])) {                          //Selected Blocklist
   //Filtering to check if the selected blocklist exists
   //If it doesn't, keep with the default blocklist option - all
-  if (array_key_exists($_GET['selectedbl'], $config::BLOCKLISTNAMES)) {
+  if (array_key_exists($_GET['selectedbl'], $config->blocklists)) {
     $selectedbl = $_GET['selectedbl'];
   }
 }

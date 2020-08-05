@@ -38,179 +38,66 @@ class Config {
     'bl_custom' => '',
   );
 
-  //Single word code of blocklists
-  private $DEFAULTBLOCKLISTS = array(
-    'bl_notrack' => true,
-    'bl_notrack_malware' => true,
-    'bl_tld' => true,
-    'bl_hexxium' => true,
-    'bl_cbl_all' => false,
-    'bl_cbl_browser' => false,
-    'bl_cbl_opt' => false,
-    'bl_cedia' => false,
-    'bl_cedia_immortal' => true,
-    'bl_ddg_confirmed' => false,
-    'bl_ddg_high' => false,
-    'bl_ddg_medium' => false,
-    'bl_ddg_low' => false,
-    'bl_ddg_unknown' => false,
-    'bl_disconnectmalvertising' => false,
-    'bl_easylist' => false,
-    'bl_easyprivacy' => false,
-    'bl_fbannoyance' => false,
-    'bl_fbenhanced' => false,
-    'bl_fbsocial' => false,
-    'bl_hphosts' => false,
-    'bl_malwaredomainlist' => false,
-    'bl_malwaredomains' => false,
-    'bl_pglyoyo' => false,
-    'bl_someonewhocares' => false,
-    'bl_spam404' => false,
-    'bl_swissransom' => false,
-    'bl_winhelp2002' => false,
-    'bl_windowsspyblocker' => false,
+  public $blocklists = array(
+    'bl_blacklist' => array(true, 'custom', 'Custom List'),
+    'bl_tld' => array(true, 'tld', 'Top Level Domain'),
+    'bl_notrack' => array(true, 'tracker', 'NoTrack Block List'),
+    'bl_notrack_malware' => array(true, 'malware', 'NoTrack Malware'),
+    'bl_cbl_all' => array(false, 'cryptocoin', 'Coin Block List - All'),
+    'bl_cbl_browser' => array(false, 'cryptocoin', 'Coin Block List - Browser'),
+    'bl_cbl_opt' => array(false, 'cryptocoin', 'Coin Block List - Optional'),
+    'bl_cedia' => array(false, 'malware', 'CEDIA Malware'),
+    'bl_cedia_immortal' => array(true, 'malware', 'CEDIA Immortal Malware'),
+    'bl_ddg_confirmed' => array(false, 'tracker', 'DuckDuckGo - Confirmed'),
+    'bl_ddg_high' => array(false, 'tracker', 'DuckDuckGo - High'),
+    'bl_ddg_medium' => array(false, 'tracker', 'DuckDuckGo - Medium'),
+    'bl_ddg_low' => array(false, 'tracker', 'DuckDuckGo - Low'),
+    'bl_ddg_unknown' => array(false, 'tracker', 'DuckDuckGo - Unknown'),
+    'bl_disconnectmalvertising' => array(false, 'malware', 'Malvertising by Disconnect'),
+    'bl_easylist' => array(false, 'advert', 'Easy List'),
+    'bl_easyprivacy' => array(false, 'tracker', 'Easy Privacy'),
+    'bl_fbannoyance' => array(false, 'misc', 'Fanboy&rsquo;s Annoyance'),
+    'bl_fbenhanced' => array(false, 'tracker', 'Fanboy&rsquo;s Enhanced'),
+    'bl_fbsocial' => array(false, 'misc', 'Fanboy&rsquo;s Social'),
+    'bl_hexxium' => array(true, 'malware', 'Hexxium'),
+    'bl_hphosts' => array(false, 'advert', 'hpHosts'),
+    'bl_malwaredomainlist' => array(false, 'malware', 'Malware Domains List'),
+    'bl_malwaredomains' => array(false, 'malware', 'Malware Domain'),
+    'bl_pglyoyo' => array(false, 'advert', 'Peter Lowe&rsquo;s Ad List'),
+    'bl_someonewhocares' => array(false, 'misc', 'Dan Pollocks&rsquo;s hosts'),
+    'bl_spam404' => array(false, 'misc', 'Spam 404'),
+    'bl_swissransom' => array(false, 'malware', 'Swiss Security Ransomware'),
+    'bl_winhelp2002' => array(false, 'advert', 'MVPS Hosts'),
+    'bl_windowsspyblocker' => array(false, 'tracker', 'Windows Spy Blocker'),
     //Region Specific BlockLists
-    'bl_areasy' => false,
-    'bl_chneasy' => false,
-    'bl_deueasy' => false,
-    'bl_dnkeasy' => false,
-    'bl_fraeasy' => false,
-    'bl_grceasy' => false,
-    'bl_huneasy' => false,
-    'bl_idneasy' => false,
-    'bl_isleasy' => false,
-    'bl_itaeasy' => false,
-    'bl_jpneasy' => false,
-    'bl_koreasy' => false,
-    'bl_korfb' => false,
-    'bl_koryous' => false,
-    'bl_ltueasy' => false,
-    'bl_lvaeasy' => false,
-    'bl_nldeasy' => false,
-    'bl_poleasy' => false,
-    'bl_ruseasy' => false,
-    'bl_spaeasy' => false,
-    'bl_svneasy' => false,
-    'bl_sweeasy' => false,
-    'bl_viefb' => false,
-    'bl_fblatin' => false,
-    'bl_yhosts' => false,
-  );
-
-  //Legible names of each blocklist code
-  const BLOCKLISTNAMES = array(
-    'custom' => 'Custom',                                  #DEPRECATED
-    'whitelist' => 'Whitelist',
-    'bl_blacklist' => 'Custom List',
-    'bl_tld' => 'Top Level Domain',
-    'bl_notrack' => 'NoTrack Block List',
-    'bl_notrack_malware' => 'NoTrack Malware',
-    'bl_cbl_all' => 'Coin Block List - All',
-    'bl_cbl_browser' => 'Coin Block List - Browser',
-    'bl_cbl_opt' => 'Coin Block List - Optional',
-    'bl_cedia' => 'CEDIA Malware',
-    'bl_cedia_immortal' => 'CEDIA Immortal Malware',
-    'bl_ddg_confirmed' => 'DuckDuckGo - Confirmed',
-    'bl_ddg_high' => 'DuckDuckGo - High',
-    'bl_ddg_medium' => 'DuckDuckGo - Medium',
-    'bl_ddg_low' => 'DuckDuckGo - Low',
-    'bl_ddg_unknown' => 'DuckDuckGo - Unknown',
-    'bl_someonewhocares' => 'Dan Pollocks&rsquo;s hosts',
-    'bl_disconnectmalvertising' => 'Malvertising by Disconnect',
-    'bl_easylist' => 'Easy List',
-    'bl_easyprivacy' => 'Easy Privacy',
-    'bl_fbannoyance' => 'Fanboy&rsquo;s Annoyance',
-    'bl_fbenhanced' => 'Fanboy&rsquo;s Enhanced',
-    'bl_fbsocial' => 'Fanboy&rsquo;s Social',
-    'bl_hexxium' => 'Hexxium',
-    'bl_hphosts' => 'hpHosts',
-    'bl_malwaredomainlist' => 'Malware Domain List',
-    'bl_malwaredomains' => 'Malware Domains',
-    'bl_winhelp2002' => 'MVPS Hosts',
-    'bl_pglyoyo' => 'Peter Lowe&rsquo;s Ad List',
-    'bl_spam404'=> 'Spam 404',
-    'bl_swissransom' => 'Swiss Security Ransomware',
-    'bl_windowsspyblocker' => 'Windows Spy Blocker',
-    'bl_areasy' => 'AR Easy List',
-    'bl_chneasy' => 'CHN Easy List',
-    'bl_yhosts' => 'CHN Yhosts',
-    'bl_deueasy' => 'DEU Easy List',
-    'bl_dnkeasy' => 'DNK Easy List',
-    'bl_fraeasy' => 'FRA Easy List',
-    'bl_grceasy' => 'GRC Easy List',
-    'bl_huneasy' => 'HUN Easy List',
-    'bl_idneasy' => 'IDN Easy List',
-    'bl_itaeasy' => 'ITA Easy List',
-    'bl_jpneasy' => 'JPN Easy List',
-    'bl_koreasy' => 'KOR Easy List',
-    'bl_korfb' => 'KOR Fanboy',
-    'bl_koryous' => 'KOR Yous List',
-    'bl_ltueasy' => 'LTU Easy List',
-    'bl_nldeasy' => 'NLD Easy List',
-    'bl_ruseasy' => 'RUS Easy List',
-    'bl_spaeasy' => 'SPA Easy List',
-    'bl_svneasy' => 'SVN Easy List',
-    'bl_sweeasy' => 'SWE Easy List',
-    'bl_viefb' => 'VIE Fanboy',
-    'bl_fblatin' => 'Latin Easy List',
-  );
-
-  //What type of data is in each blocklist
-  const BLOCKLISTTYPE = array(
-    'custom' => 'custom',
-    'bl_blacklist' => 'custom',
-    'bl_tld' => 'tld',
-    'bl_notrack' => 'tracker',
-    'bl_notrack_malware' => 'malware',
-    'bl_cbl_all' => 'cryptocoin',
-    'bl_cbl_browser' => 'cryptocoin',
-    'bl_cbl_opt' => 'cryptocoin',
-    'bl_cedia' => 'malware',
-    'bl_cedia_immortal' => 'malware',
-    'bl_ddg_confirmed' => 'tracker',
-    'bl_ddg_high' => 'tracker',
-    'bl_ddg_medium' => 'tracker',
-    'bl_ddg_low' => 'tracker',
-    'bl_ddg_unknown' => 'tracker',
-    'bl_someonewhocares' => 'misc',
-    'bl_disconnectmalvertising' => 'malware',
-    'bl_easylist' => 'advert',
-    'bl_easyprivacy' => 'tracker',
-    'bl_fbannoyance' => 'misc',
-    'bl_fbenhanced' => 'tracker',
-    'bl_fbsocial' => 'misc',
-    'bl_hexxium' => 'malware',
-    'bl_hphosts' => 'advert',
-    'bl_malwaredomainlist' => 'malware',
-    'bl_malwaredomains' => 'malware',
-    'bl_winhelp2002' => 'advert',
-    'bl_pglyoyo' => 'advert',
-    'bl_spam404'=> 'misc',
-    'bl_swissransom' => 'malware',
-    'bl_windowsspyblocker' => 'tracker',
-    'bl_areasy' => 'advert',
-    'bl_chneasy' => 'advert',
-    'bl_yhosts' => 'advert',
-    'bl_deueasy' => 'advert',
-    'bl_dnkeasy' => 'advert',
-    'bl_fraeasy' => 'advert',
-    'bl_grceasy' => 'advert',
-    'bl_huneasy' => 'advert',
-    'bl_idneasy' => 'advert',
-    'bl_itaeasy' => 'advert',
-    'bl_jpneasy' => 'advert',
-    'bl_koreasy' => 'advert',
-    'bl_korfb' => 'advert',
-    'bl_koryous' => 'advert',
-    'bl_ltueasy' => 'advert',
-    'bl_nldeasy' => 'advert',
-    'bl_ruseasy' => 'advert',
-    'bl_spaeasy' => 'advert',
-    'bl_svneasy' => 'advert',
-    'bl_sweeasy' => 'advert',
-    'bl_viefb' => 'advert',
-    'bl_fblatin' => 'advert',
-    'invalid' => 'invalid',
+    'bl_areasy' => array(false, 'advert', 'AR Easy List'),
+    'bl_chneasy' => array(false, 'advert', 'CHN Easy List'),
+    'bl_deueasy' => array(false, 'advert', 'DEU Easy List'),
+    'bl_dnkeasy' => array(false, 'advert', 'DNK Easy List'),
+    'bl_fraeasy' => array(false, 'advert', 'FRA Easy List'),
+    'bl_grceasy' => array(false, 'advert', 'GRC Easy List'),
+    'bl_huneasy' => array(false, 'advert', 'HUN Easy List'),
+    'bl_idneasy' => array(false, 'advert', 'IDN Easy List'),
+    'bl_isleasy' => array(false, 'advert', 'ISL Easy List'),
+    'bl_itaeasy' => array(false, 'advert', 'ITA Easy List'),
+    'bl_jpneasy' => array(false, 'advert', 'JPN Easy List'),
+    'bl_koreasy' => array(false, 'advert', 'KOR Easy List'),
+    'bl_korfb' => array(false, 'advert', 'KOR Fanboy'),
+    'bl_koryous' => array(false, 'advert', 'KOR Yous List'),
+    'bl_ltueasy' => array(false, 'advert', 'LTU Easy List'),
+    'bl_lvaeasy' => array(false, 'advert', 'NLD Easy List'),
+    'bl_nldeasy' => array(false, 'advert', 'RUS Easy List'),
+    'bl_poleasy' => array(false, 'advert', 'POL Easy List'),
+    'bl_ruseasy' => array(false, 'advert', 'RUS Easy List'),
+    'bl_spaeasy' => array(false, 'advert', 'SPA Easy List'),
+    'bl_svneasy' => array(false, 'advert', 'SVN Easy List'),
+    'bl_sweeasy' => array(false, 'advert', 'SWE Easy List'),
+    'bl_viefb' => array(false, 'advert', 'VIE Fanboy'),
+    'bl_fblatin' => array(false, 'advert', 'Latin Easy List'),
+    'bl_yhosts' => array(false, 'advert', 'CHN Yhosts'),
+    'custom' => array(true, 'custom', 'Custom'), #DEPRECATED
+    'invalid' => array(false, 'invalid', 'Invalid'),
+    'whitelist' => array(false, 'custom', 'Whitelist'),
   );
 
   const SEARCHENGINELIST = array(
@@ -235,7 +122,7 @@ class Config {
   );
 
   public $settings = array();
-  public $blocklists = array();
+  //public $blocklists = array();
 
 
   /********************************************************************
@@ -261,7 +148,6 @@ class Config {
 
     //Firstly Set settings and blocklists arrays to their default values
     $this->settings = $this->DEFAULTCONFIG;
-    $this->blocklists = $this->DEFAULTBLOCKLISTS;
 
     if (file_exists(CONFIGFILE)) {                         //Check config file exists
       $fh= fopen(CONFIGFILE, 'r');                         //Open config
@@ -271,7 +157,7 @@ class Config {
         //Check if the line matches a blocklist (excluding bl_custom)
         if (preg_match('/^(bl_(?!custom)[a-z_]{5,25}) = (0|1)/', $line, $matches)) {
           if (array_key_exists($matches[1], $this->blocklists)) {
-            $this->blocklists[$matches[1]] = (bool)$matches[2];
+            $this->blocklists[$matches[1]][0] = (bool)$matches[2];
           }
         }
 
@@ -387,8 +273,8 @@ class Config {
    */
   public function get_blocklistname($bl) {
 
-    if (array_key_exists($bl, self::BLOCKLISTNAMES)) {
-      return self::BLOCKLISTNAMES[$bl];
+    if (array_key_exists($bl, $this->blocklists)) {
+      return $this->blocklists[$bl][2];
     }
 
     return $bl;
@@ -406,8 +292,8 @@ class Config {
    */
   function get_blocklisttype($bl_source) {
 
-    if (array_key_exists($bl_source, self::BLOCKLISTTYPE)) {
-      return self::BLOCKLISTTYPE[$bl_source];
+    if (array_key_exists($bl_source, $this->blocklists)) {
+      return $this->blocklists[$bl_source][1];
     }
     /*elseif (substr($bl, 0, 6) == 'custom') {               //Could be a custom_x list
       return 'custom';
@@ -448,7 +334,7 @@ class Config {
 
   private function load_status() {
     if (file_exists(DIR_SETTINGS.'status.php')) {
-      include_once DIR_SETTINGS.'status.php';
+      include DIR_SETTINGS.'status.php';
     }
   }
 
@@ -460,11 +346,11 @@ class Config {
   public function save_status($newstatus, $newunpausetime) {
     $filelines = array(
       '<?php'.PHP_EOL,
-      '$this->set_status('.$newstatus.', '.$newunpausetime.');'.PHP_EOL,
+      "\$this->set_status({$newstatus}, {$newunpausetime});".PHP_EOL,
       '?>'.PHP_EOL,
     );
 
-    file_put_contents(DIR_TMP.'status.php', $filelines);
+    file_put_contents(DIR_SETTINGS.'status.php', $filelines);
   }
   /********************************************************************
    *  Constructor
