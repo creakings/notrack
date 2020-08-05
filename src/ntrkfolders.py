@@ -26,6 +26,7 @@ class FolderList:
             self.accesslog = '/var/log/ntrk-admin.log'
             self.cron_ntrkparse = '/etc/cron.d/ntrk-parse'
             self.main_blocklist = '/etc/dnsmasq.d/notrack.list'
+            self.temp_blocklist = self.tempdir + 'notracktemp.list'
             self.dnslists = '/etc/dnsmasq.d/'
             self.blacklist = '/etc/notrack/blacklist.txt'
             self.whitelist = '/etc/notrack/whitelist.txt'
