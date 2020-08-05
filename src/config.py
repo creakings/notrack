@@ -9,7 +9,9 @@
 import os
 import re
 import sys
+import time
 
+from statusconsts import *
 from ntrkshared import *
 
 class NoTrackConfig:
@@ -17,18 +19,33 @@ class NoTrackConfig:
         self.__tempdir = tempdir
         self.__wwwconfdir = wwwconfdir
 
-        self.STATUS_ENABLED = 1
-        self.STATUS_DISABLED = 2
-        self.STATUS_PAUSED = 4
-        self.STATUS_INCOGNITO = 8
-        self.STATUS_ERROR = 128
+        self.status_last_mtime = 0.0
 
-        status = self.STATUS_ENABLED
+        status = STATUS_ENABLED
         unpausetime = 0
 
         print()
         print('Loading NoTrack config files')
         self.load_status()
+
+
+    def __get_filemtime(self, filename):
+        if not os.path.isfile(filename):
+            print(f'{filename} is missing')
+            return sys.maxsize
+
+        return os.path.getmtime(filename)
+
+
+
+    def check_status_mtime(self):
+        if (self.status_last_mtime == 0.0):
+            return True
+
+        if (self.__get_filemtime(f'{self.__wwwconfdir}status.php') > self.status_last_mtime):
+            return True
+
+        return False
 
 
     def is_status_valid(self, lines):
@@ -66,26 +83,18 @@ class NoTrackConfig:
         """
         Load status.php to get status and unpausetime
         """
+
         lines = []
         print('Loading config status')
 
         lines = load_file(self.__wwwconfdir + 'status.php')
         self.is_status_valid(lines)
 
+        if self.status & STATUS_PAUSED and self.unpausetime > 0:
+            if self.unpausetime < time.time():
+                self.status -= STATUS_PAUSED
+                self.unpausetime = 0
 
-    def save_status(self):
-        """
-        Check /tmp/status.php
-        """
-        lines = []
+        self.status_last_mtime = self.__get_filemtime(f'{self.__wwwconfdir}status.php')
 
-        print('Checking temporary status file')
-        lines = load_file(self.__tempdir + 'status.php')
-
-        if self.is_status_valid(lines):
-            print('Valid status file')
-            move_file(self.__tempdir + 'status.php', self.__wwwconfdir + 'status.php', 0o666)
-        else:
-            print('Invalid status file')
-            delete_file(self.__tempdir + 'status.php')
 

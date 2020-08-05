@@ -15,44 +15,58 @@ import sys
 
 #Local imports
 from analytics import NoTrackAnalytics
+from blockparser import BlockParser
 from config import NoTrackConfig
 from logparser import NoTrackParser
 from ntrkfolders import FolderList
+from statusconsts import *
 
 runtime_analytics = 0.0
 runtime_blocklist = 0.0
 runtime_parser = 0.0
 
+status_mtime = 0.0
+
 endloop = False
 
 ntrkparser = NoTrackParser()
 ntrkanalytics = NoTrackAnalytics()
+blockparser = BlockParser()
 folders = FolderList()
 config = NoTrackConfig(folders.tempdir, folders.wwwconfdir)
 
-def check_file_age(filename):
+
+def get_status(currentstatus):
     """
-    Does file exist?
-    Check last modified time is within MAX_AGE (2 days)
+    Confirm system status is as config['status'] specifies
+    e.g. main or temp blocklist could be missing
 
     Parameters:
-        filename (str): File
+        currentstatus(int)
     Returns:
-        True update list
-        False list within MAX_AGE
+        Actual Status
     """
-    print('\tChecking age of %s' % filename)
 
-    if not os.path.isfile(filename):
-        print('\tFile missing')
-        return True
+    mainexists = os.path.isfile(folders.main_blocklist)
+    tempexists = os.path.isfile(folders.temp_blocklist)
 
-    if CURRENT_TIME > (os.path.getmtime(filename) + MAX_AGE):
-        print('\tFile older than 2 days')
-        return True
+    if currentstatus & STATUS_ENABLED and mainexists:  #Check Enabled Status
+        return currentstatus
+    elif currentstatus & STATUS_ENABLED:
+        return STATUS_ERROR
 
-    print('\tFile in date, not downloading')
-    return False
+    if currentstatus & STATUS_DISABLED and tempexists: #Check Disabled Status
+        return currentstatus
+    elif currentstatus & STATUS_DISABLED:
+        return STATUS_ERROR
+
+    if currentstatus & STATUS_PAUSED and tempexists:   #Check Paused Status
+        return currentstatus
+    elif currentstatus & STATUS_PAUSED:
+        return STATUS_ERROR
+
+    return STATUS_ERROR                                #Shouldn't get here
+
 
 def exit_gracefully(signum, frame):
     """
@@ -82,15 +96,11 @@ def analytics():
     ntrkanalytics.checktrackers()
 
 def logparser():
-    if config.status & config.STATUS_INCOGNITO:
+    if config.status & STATUS_INCOGNITO:
         print('Incognito mode')
         ntrkparser.blank_dnslog()
     else:
         ntrkparser.parsedns()
-
-def check_tempfiles():
-    if os.path.isfile(folders.tempdir + 'status.php'):
-        config.save_status()
 
 
 def main():
@@ -115,7 +125,11 @@ def main():
     while not endloop:
         current_time = time.time()
 
-        check_tempfiles()
+        if config.check_status_mtime():
+            print('Config updated')
+            config.load_status()
+
+        print(get_status(config.status))
 
         if (runtime_analytics + 3600) <= current_time:
             runtime_analytics = current_time
