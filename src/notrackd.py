@@ -34,6 +34,22 @@ ntrkanalytics = NoTrackAnalytics()
 folders = FolderList()
 config = NoTrackConfig(folders.tempdir, folders.wwwconfdir)
 
+
+def blocklist_update():
+    """
+    Once a day update of the NoTrack blocklists
+    Or when blocklist config has been adjusted by the user TODO
+    """
+    print()
+    print('Updating Blocklist')
+
+    blockparser = BlockParser()
+    blockparser.create_blocklist()                         #Create / Update Blocklists
+    time.sleep(8)                                          #Prevent race condition
+    ntrkparser.readblocklist()                             #Reload the blocklist on the log parser
+    set_lastrun_times()
+
+
 def change_status():
     """
 
@@ -115,10 +131,13 @@ def exit_gracefully(signum, frame):
     endloop = True                                         #Trigger breakout of main loop
 
 def set_lastrun_times():
+    """
+    Ensure jobs when ready
+    """
     global runtime_analytics, runtime_blocklist
 
     dtanalytics = datetime.strptime(time.strftime("%y-%m-%d %H:00:00"), '%y-%m-%d %H:%M:%S')
-    dtblocklist = datetime.strptime(time.strftime("%y-%m-%d 04:11:00"), '%y-%m-%d %H:%M:%S')
+    dtblocklist = datetime.strptime(time.strftime("%y-%m-%d 04:10:00"), '%y-%m-%d %H:%M:%S')
 
     runtime_analytics = dtanalytics.timestamp()
     runtime_blocklist = dtblocklist.timestamp()
@@ -179,6 +198,11 @@ def main():
         if (runtime_parser + 240) <= current_time:
             runtime_parser = current_time
             logparser()
+
+        if (runtime_blocklist + 86400) <= current_time:
+            blocklist_update()
+        else:
+            print(current_time - runtime_blocklist)
 
         time.sleep(2)
 
