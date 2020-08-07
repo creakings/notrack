@@ -9,25 +9,31 @@ import mysql.connector as mariadb
 from ntrkregex import *
 
 class DBWrapper:
+    __instance__ = None
     """
     TODO load unique password out of php file
     Create DB connector
     """
     def __init__(self):
+        #if DBWrapper.__instance__ is None:
+        #   DBWrapper.__instance__ = self
+        #else:
+        #   raise Exception("You cannot create another SingletonGovt class")
+
+
         ntrkuser = 'ntrk'
         ntrkpassword = 'ntrkpass'
         ntrkdb = 'ntrkdb'
 
         #print('Opening connection to MariaDB')
-        self.__db = mariadb.connect(user=ntrkuser, password=ntrkpassword, database=ntrkdb)
+        DBWrapper.__db = mariadb.connect(user=ntrkuser, password=ntrkpassword, database=ntrkdb)
 
 
-    def __del__(self):
+    #def __del__(self):
         """
         Close DB connector
         """
-        #print('Closing connection to MariaDB')
-        self.__db.close()
+        #DBWrapper.__db.close()
 
 
     def __search(self, search):
@@ -39,7 +45,7 @@ class DBWrapper:
         """
         rowcount = 0
         tabledata = []                                     #Results from table
-        cursor = self.__db.cursor()
+        cursor = DBWrapper.__db.cursor()
 
         try:
             cursor.execute(search);
@@ -79,7 +85,7 @@ class DBWrapper:
         """
         Create SQL table for analytics, in case it has been deleted
         """
-        cursor = self.__db.cursor()
+        cursor = DBWrapper.__db.cursor()
         cmd = 'CREATE TABLE IF NOT EXISTS analytics (id SERIAL, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, severity CHAR(1), issue VARCHAR(50), ack BOOLEAN)';
 
         print('Checking SQL Table analytics exists')
@@ -103,7 +109,7 @@ class DBWrapper:
             False: Invalid parameter or error occurred
         """
         cmd = ''
-        cursor = self.__db.cursor()
+        cursor = DBWrapper.__db.cursor()
 
         if severity not in ('1', '2', '3'):
             print(f'Invalid severity {severity}')
@@ -117,7 +123,7 @@ class DBWrapper:
             print('Unable to insert analytics record :-( {}'.format(e))
             return False
         finally:
-            self.__db.commit()
+            DBWrapper.__db.commit()
             cursor.close()
 
         return True
@@ -127,7 +133,7 @@ class DBWrapper:
         """
         Create SQL table for blocklist, in case it has been deleted
         """
-        cursor = self.__db.cursor()
+        cursor = DBWrapper.__db.cursor()
 
         cmd = 'CREATE TABLE IF NOT EXISTS blocklist (id SERIAL, bl_source TINYTEXT, site TINYTEXT, site_status BOOLEAN, comment TEXT)';
 
@@ -140,7 +146,7 @@ class DBWrapper:
         """
         Clear blocklist table and reset serial increment
         """
-        cursor = self.__db.cursor()
+        cursor = DBWrapper.__db.cursor()
 
         cursor.execute('DELETE FROM blocklist')
         cursor.execute('ALTER TABLE blocklist AUTO_INCREMENT = 1')
@@ -214,12 +220,12 @@ class DBWrapper:
             sqldata (list): List of data
         """
         cmd = ''
-        cursor = self.__db.cursor()
+        cursor = DBWrapper.__db.cursor()
 
         cmd = 'INSERT INTO blocklist (id, bl_source, site, site_status, comment) VALUES (NULL, %s, %s, %s, %s)'
 
         cursor.executemany(cmd, sqldata)
-        self.__db.commit()
+        DBWrapper.__db.commit()
         cursor.close()
 
 
@@ -281,7 +287,7 @@ class DBWrapper:
         """
         Create SQL table for dnslog, in case it has been deleted
         """
-        cursor = self.__db.cursor()
+        cursor = DBWrapper.__db.cursor()
 
         cmd = 'CREATE TABLE IF NOT EXISTS dnslog (id SERIAL, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, severity CHAR(1), bl_source VARCHAR(50))';
 
@@ -299,12 +305,12 @@ class DBWrapper:
             sqldata (list): List of data
         """
         cmd = ''
-        cursor = self.__db.cursor()
+        cursor = DBWrapper.__db.cursor()
 
         cmd = 'INSERT INTO dnslog (id, log_time, sys, dns_request, severity, bl_source) VALUES (NULL, %s, %s, %s, %s, %s)'
 
         cursor.executemany(cmd, sqldata)
-        self.__db.commit()
+        DBWrapper.__db.commit()
         print(f'Added {cursor.rowcount} rows to dnslog table')
         cursor.close()
 
@@ -355,7 +361,7 @@ class DBWrapper:
             False: Invalid parameter or error occurred
         """
         cmd = ''
-        cursor = self.__db.cursor()
+        cursor = DBWrapper.__db.cursor()
 
         if not isinstance(recordnum, int):                #Check record is an integer value
             print('Invalid record number')
@@ -373,7 +379,7 @@ class DBWrapper:
             print('Unable to update dnslog record :-( {}'.format(e))
             return False
         finally:
-            self.__db.commit()
+            DBWrapper.__db.commit()
             cursor.close()
 
         return True
@@ -384,7 +390,7 @@ class DBWrapper:
         Delete all rows from dnslog and weblog
         NOTE weblog will be deprecated soon
         """
-        cursor = self.__db.cursor()
+        cursor = DBWrapper.__db.cursor()
 
         print('Deleting contents of dnslog and weblog tables')
 
@@ -395,4 +401,4 @@ class DBWrapper:
         cursor.execute('DELETE LOW_PRIORITY FROM weblog');
         print('Deleting %d rows from weblog ' % cursor.rowcount)
         cursor.execute('ALTER TABLE weblog AUTO_INCREMENT = 1');
-        self.__db.commit()
+        DBWrapper.__db.commit()
