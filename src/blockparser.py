@@ -774,6 +774,31 @@ class BlockParser:
         self.__services.restart_dnsserver()
 
 
+    def disable_blocking(self):
+        """
+        Move blocklist to temp folder
+        """
+        if move_file(self.__folders.main_blocklist, self.__folders.temp_blocklist):
+            print('Moving blocklist to temp folder')
+        else:
+            print('Blocklist missing')
+
+        self.__services.restart_dnsserver()
+
+
+    def enable_blockling(self):
+        """
+        Move temp blocklist back to DNS config folder
+        """
+        if move_file(self.__folders.temp_blocklist, self.__folders.main_blocklist):
+            print('Moving temp blocklist back')
+            self.__services.restart_dnsserver()
+
+        else:
+            print('Temp blocklist missing, I will recreate it')
+            self.create_blocklist()
+
+
 def main():
     check_root()
 

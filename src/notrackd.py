@@ -31,18 +31,50 @@ endloop = False
 
 ntrkparser = NoTrackParser()
 ntrkanalytics = NoTrackAnalytics()
-blockparser = BlockParser()
 folders = FolderList()
 config = NoTrackConfig(folders.tempdir, folders.wwwconfdir)
+
+def change_status():
+    """
+
+    """
+    print()
+    print('Changing status of NoTrack')
+
+    blockparser = BlockParser()
+
+    if config.status & STATUS_ENABLED:
+        blockparser.enable_blockling()
+    else:
+        blockparser.disable_blocking()
+
+
+def check_pause(current_time):
+    """
+    Check if pause time has been reached
+    Function should only be called if status is STATUS_PAUSED
+
+    Parameters:
+        current_time (int): The current epoch time value
+
+    """
+    if config.unpausetime < current_time:
+        print()
+        print('Unpause time reached')
+        blockparser = BlockParser()
+        blockparser.enable_blockling()
+        config.status -= STATUS_PAUSED
+        config.status += STATUS_ENABLED
+        config.unpausetime = 0
 
 
 def get_status(currentstatus):
     """
-    Confirm system status is as config['status'] specifies
+    Confirm system status is as currentstatus specifies
     e.g. main or temp blocklist could be missing
 
     Parameters:
-        currentstatus(int)
+        currentstatus (int): The current belived status
     Returns:
         Actual Status
     """
@@ -117,6 +149,11 @@ def main():
     print()
     print('NoTrack Daemon')
 
+    if get_status(config.status) != config.status:
+        change_status()
+        time.sleep(5)
+
+
     #Initial setup
     ntrkparser.readblocklist()
 
@@ -126,10 +163,14 @@ def main():
         current_time = time.time()
 
         if config.check_status_mtime():
+            print()
             print('Config updated')
             config.load_status()
+            if get_status(config.status) != config.status:
+                change_status()
 
-        print(get_status(config.status))
+        if (config.status & STATUS_PAUSED):
+            check_pause(current_time)
 
         if (runtime_analytics + 3600) <= current_time:
             runtime_analytics = current_time
