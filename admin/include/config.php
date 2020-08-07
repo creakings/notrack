@@ -336,6 +336,16 @@ class Config {
     if (file_exists(DIR_SETTINGS.'status.php')) {
       include DIR_SETTINGS.'status.php';
     }
+
+    //Check unpause time hasn't been exceeded
+    if ($this->status & STATUS_PAUSED) {
+      if ($this->unpausetime < time()) {                   //Unpause needs to happen
+        $this->status -= STATUS_PAUSED;                    //Remove Pause status
+        $this->status += STATUS_ENABLED;                   //Add Enable status
+        $this->unpausetime = 0;
+        $this->save_status($this->status, 0);              //Update the status.php settings file
+      }
+    }
   }
 
   public function set_status($newstatus, $newunpausetime) {

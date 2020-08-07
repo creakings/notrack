@@ -81,13 +81,6 @@ function draw_topmenu($currentpage='') {
     echo '<a href="/admin/"><span id="menu-top-logo" class="logo"><span class="mobile-hide"><b>No</b>Track - </span><small> '.$currentpage.'</small></span></a>'.PHP_EOL;
   }
   
-  
-  //If Status = Paused AND UnpauseTime < Now plus a few seconds then force reload of Config
-  if (($config->status & STATUS_PAUSED) && ($config->unpausetime < (time()+10))) {
-    $mem->delete('conf-settings');
-    $config->load();
-  }
-
   echo '<div id="pause-group">'.PHP_EOL;
   //echo '<input type="hidden" name="pause-time" id="pause-time" value="">'.PHP_EOL;
   if ($config->status & STATUS_PAUSED) {
