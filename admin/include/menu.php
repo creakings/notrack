@@ -32,7 +32,7 @@ function draw_sidemenu() {
   echo '<a href="/admin/help.php"><img src="/admin/svg/smenu_help.svg" alt="" title="Help">Help</a>'.PHP_EOL;
 
   sidemenu_sysstatus();
-  
+
   echo '<span id="menu-side-bottom"><a href="https://quidsup.net/donate" target="_blank"><img src="/admin/svg/smenu_don.svg" alt="Donate" title="Donate"></a></span>'.PHP_EOL;
   echo '</div></nav>'.PHP_EOL;
   echo PHP_EOL;
@@ -53,7 +53,7 @@ function draw_helpmenu() {
   echo '<a href="/admin/help.php"><img src="/admin/svg/smenu_help.svg" alt="">Help</a>'.PHP_EOL;
   echo '<a href="/admin/help.php?p=security">Security</a>'.PHP_EOL;
   echo '<a href="/admin/help.php?p=position" title="Where To Position NoTrack Device">Positioning Device</a>'.PHP_EOL;
-  
+
   echo '</div></nav>'.PHP_EOL;
   echo PHP_EOL;
 }
@@ -70,17 +70,17 @@ function draw_helpmenu() {
  */
 function draw_topmenu($currentpage='') {
   global $config, $mem;
-  
+
   echo '<nav><div id="menu-top">'.PHP_EOL;
   echo '<span class="hamburger pointer mobile-show" onclick="openNav()">&#9776;</span>'.PHP_EOL;   //Hamburger menu to show #menu-side mobile-show
-  
+
   if ($currentpage == '') {                                //Display version number when $currentpage has not been set
     echo '<a href="/admin/"><span id="menu-top-logo" class="logo"><b>No</b>Track <small>v'.VERSION.'</small></span></a>'.PHP_EOL;
   }
   else {                                                   //$currentpage set, display that next to NoTrack logo
     echo '<a href="/admin/"><span id="menu-top-logo" class="logo"><span class="mobile-hide"><b>No</b>Track - </span><small> '.$currentpage.'</small></span></a>'.PHP_EOL;
   }
-  
+
   echo '<div id="pause-group">'.PHP_EOL;
   //echo '<input type="hidden" name="pause-time" id="pause-time" value="">'.PHP_EOL;
   if ($config->status & STATUS_PAUSED) {
@@ -92,18 +92,18 @@ function draw_topmenu($currentpage='') {
   else {
     echo '<img id="pause-button" class="pointer" title="Disable Blocking" onclick="enableNoTrack()" src="/admin/svg/tmenu_pause.svg" alt="">'.PHP_EOL;
   }
-  
+
   //Dropdown menu for default pause times
   echo '<div tabindex="1" id="dropbutton" title="Pause for..."><img class="pointer" src="/admin/svg/tmenu_dropdown.svg" alt="">'.PHP_EOL;
-  echo '<div id="pause-menu">'.PHP_EOL;  
+  echo '<div id="pause-menu">'.PHP_EOL;
   echo '<span class="pointer" onclick="pauseNoTrack(5)">Pause for 5 minutes</span>'.PHP_EOL;
   echo '<span class="pointer" onclick="pauseNoTrack(15)">Pause for 15 minutes</span>'.PHP_EOL;
   echo '<span class="pointer" onclick="pauseNoTrack(30)">Pause for 30 minutes</span>'.PHP_EOL;
   echo '<span class="pointer" onclick="pauseNoTrack(60)">Pause for 1 Hour</span>'.PHP_EOL;
   echo '<span class="pointer" onclick="pauseNoTrack(120)">Pause for 2 Hours</span>'.PHP_EOL;
   echo '</div></div></div>'.PHP_EOL;
-  
-  
+
+
   echo '<div id="menu-top-group">';
   if ($config->status & STATUS_INCOGNITO) {              //Is Incognito set? Draw purple button and text
     echo '<img id="incognito-button" class="pointer" title="Incognito" onclick="menuIncognito()" src="/admin/svg/menu_incognito_active.svg" alt="">'.PHP_EOL;
@@ -111,30 +111,13 @@ function draw_topmenu($currentpage='') {
   else {                                                   //No, draw white button and text
     echo '<img id="incognito-button" class="pointer" title="Incognito" onclick="menuIncognito()" src="/admin/svg/menu_incognito.svg" alt="">'.PHP_EOL;
   }
-  
+
   if (is_password_protection_enabled()) {                  //Show Logout button if there is a password
     echo '<a href="/admin/logout.php"><img title="Logout" src="/admin/svg/menu_logout.svg" alt=""></a>'.PHP_EOL;
   }
 
-  echo '<img class="pointer" title="Options" onclick="showOptions()" src="/admin/svg/menu_option.svg" alt="">'.PHP_EOL;
-
   echo '</div>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
-  echo '</nav>'.PHP_EOL;
-
-  
-  
-  echo '<div id="options-box">'.PHP_EOL;
-  echo '<h2>Options</h2>'.PHP_EOL;
-
-  echo '<button onclick="updateBlocklist()" title="Force Download and Update Blocklist" class="button-grey button-options">Update Blocklist</button>'.PHP_EOL;
-  echo '<button onclick="restartSystem()" class="button-grey">Restart System</button>'.PHP_EOL;
-  echo '<button onclick="shutdownSystem()" class="button-danger">Shutdown System</button>'.PHP_EOL;
-    
-  echo '<div class="close-button"><img src="/admin/svg/button_close.svg" onmouseover="this.src=\'/admin/svg/button_close_over.svg\'" onmouseout="this.src=\'/admin/svg/button_close.svg\'" alt="Close" onclick="hideOptions()"></div>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
-
-  echo '<div id="fade" onclick="hideOptions()"></div>'.PHP_EOL;
+  echo '</div></nav>'.PHP_EOL;                             //End menu-top
 }
 
 
@@ -176,15 +159,15 @@ function sidemenu_get_alert_count() {
  */
 function sidemenu_sysstatus() {
   global $config;
-  
+
   $sysload = sys_getloadavg();
   $freemem = preg_split('/\s+/', exec('free -m | grep Mem'));
-  
+
   $mempercentage = round(($freemem[2]/$freemem[1])*100);
 
   echo '<div id="menu-side-status">'.PHP_EOL;              //Start menu-side-status
   echo '<div><img src="/admin/svg/status_screen.svg" alt="">System Status</div>';
-  
+
   if ($config->status & STATUS_ENABLED) {
     if (file_exists(NOTRACK_LIST)) {
       echo '<div id="menu-side-blocking"><img src="/admin/svg/status_green.svg" alt="">Blocking: Enabled</div>'.PHP_EOL;
@@ -201,14 +184,14 @@ function sidemenu_sysstatus() {
   elseif ($config->status & STATUS_DISABLED) {
     echo '<div id="menu-side-blocking"><img src="/admin/svg/status_red.svg" alt="">Blocking: Disabled</div>'.PHP_EOL;
   }
-  
+
   if ($mempercentage > 85) echo '<div><img src="/admin/svg/status_red.svg" alt="">Memory Used: '.$mempercentage.'%</div>'.PHP_EOL;
   elseif ($mempercentage > 60) echo '<div><img src="/admin/svg/status_yellow.svg" alt="">Memory Used: '.$mempercentage.'%</div>'.PHP_EOL;
   else echo '<div><img src="/admin/svg/status_green.svg" alt="">Memory Used: '.$mempercentage.'%</div>'.PHP_EOL;
-  
+
   if ($sysload[0] > 0.85) echo '<div><img src="/admin/svg/status_red.svg" alt="">Load: ', $sysload[0].' | '.$sysload[1].' | '.$sysload[2].'</div>'.PHP_EOL;
   elseif ($sysload[0] > 0.60) echo '<div><img src="/admin/svg/status_yellow.svg" alt="">Load: ', $sysload[0].' | '.$sysload[1].' | '.$sysload[2].'</div>'.PHP_EOL;
   else echo '<div><img src="/admin/svg/status_green.svg" alt="">Load: ', $sysload[0].' | '.$sysload[1].' | '.$sysload[2].'</div>'.PHP_EOL;
-  
+
   echo '</div>'.PHP_EOL;                                   //End menu-side-status
 }
