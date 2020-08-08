@@ -6,6 +6,11 @@ Make it updateable without having to save changes
 Port options file to /var/www
 blockparser.py needs to be able to read the new config file
 
+Custom Block List
+Port options file to /var/www
+config.php requires new functions to save and load the config file
+Might be easier to keep the file as plain list so no drastic changes will be needed to blockparser.py
+
 analytics.php
 Add Resolve and delete to popup menu
 
