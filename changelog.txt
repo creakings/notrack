@@ -1,15 +1,19 @@
-Development:
+Development future v20.09 - Currently on dev fork:
+
+NoTrackD replaces notrack.py ntrk-exec.py
+Admin webserver moved to /var/www/html
+Performance improvements in queries.php as logparser.py now stores the blocklist information in dnslog table (incompatible with NoTrack v0.9.5)
+
+Retired use of ntrk-exec.py and removed sudo dependency
+Removed options menu
+
 Default webserver is now Nginx
 python3-mysql.connector must be installed to use the new Python3 scripts
 sudo apt install python3 python3-mysql.connector
 sudo dnf install python3 mysql-connector-python3
 
-notrack.sh replaced with notrack.py
-#240 - New domain processing and dedup algorithm built into notrack.py
-ntrk-analytics.sh replaced with ntrk-analytics.py
-ntrk-exec.sh replaced with ntrk-exec.py
-ntrk-pause.sh deprecated
-ntrk-upgrade.sh replaced with ntrk-upgrade.py
+
+
 *************************************************
 
 v0.9.5 Released 7 Mar 2020
@@ -28,41 +32,3 @@ Side menu now shows number of alerts
 Improve Alerts feature to find more elusive tracking domains
 Styling improvements
 Added clipboard buttons
-
-*************************************************
-v0.9.3 Released 08 Dec 2019
-Underlying changes to config code
-Advanced config settings moved into General Config
-Styling improvements for Top Level Domain admin page
-Add Get Latest option to Investigate whois results
-
-*************************************************
-v0.9.2 Released 07 Sep 2019
-New styling for block list selector
-New features added to API to allow construction of notrack-lcd project
-Added Windows Spy Blocker list
-
-*************************************************
-v0.9.1 Released 23 Jul 2019
-DNS Query Line charts are now clickable
-Modern styling for Live page
-Added Block / Investigate menu to Live page
-Styling improvements for Chrome based browsers
-#283 - Fixed pagination on queries.php
-*************************************************
-
-v0.9.0 Released 28 Apr 2019
-Development moved to GitLab
-
-New Live feature
-New Alerts feature
-DNS Logs now stored in one table
-New search capabilities on DNS Queries page
-Improved user-agent recognition on Sites Blocked page #227
-No need to add /admin when accessing the Admin GUI #270 via web browser
-Added ability to configure DHCP via Admin GUI. Browser address: notrack.server/dhcp
-Improved mobile view
-New bulk uploader for custom blocklist
-Wider range of custom blocklists can be added
-New layout for Top Level Domain admin page
-*************************************************
