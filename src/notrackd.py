@@ -201,8 +201,6 @@ def main():
 
         if (runtime_blocklist + 86400) <= current_time:
             blocklist_update()
-        else:
-            print(current_time - runtime_blocklist)
 
         time.sleep(2)
 
