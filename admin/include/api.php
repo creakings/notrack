@@ -12,6 +12,49 @@ header('content-Type: application/json; charset=UTF-8');
 $response = array();
 $readonly = true;
 
+
+/********************************************************************
+ *  Blocklist Status
+ *    Set new status of a blocklist
+ *    Save blocklist settings
+ *    Return a friendly message
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function api_blocklist_status() {
+  global $config, $response;
+
+  $newstatus = false;                                      //True / False status
+  $response_text = '';                                     //Friendly response
+
+  $blname = $_POST['blname'] ?? '';
+  $blstatus = $_POST['blstatus'] ?? '';
+
+  $config->load_blocklists();                              //Load the existing settings
+
+  if ($blstatus == 'true') {
+    $newstatus = true;
+    $response_text = 'Enabled';
+  }
+  else {
+    $response_text = 'Disabled';
+  }
+
+  if ($config->set_blocklist_status($blname, $newstatus)) {//Was status update successful?
+    $config->save_blocklists();                            //Save new blocklist settings
+    $response['message'] = $config->get_blocklistname($blname).' '.$response_text;
+  }
+  else {                                                   //Failed update
+    http_response_code(400);
+    $response['error_code'] = 'missing_required_parameter';
+    $response['error_message'] = 'Invalid blocklist name '.$blname;
+  }
+}
+
+
 /********************************************************************
  *  Enable NoTrack
  *    Enable or Disable NoTrack Blocking
@@ -249,15 +292,16 @@ function do_action() {
 if (isset($_POST['operation'])) {
   ensure_active_session();
   switch ($_POST['operation']) {
-      case 'disable': api_enable_notrack(); break;
-      case 'enable': api_enable_notrack(); break;
-      case 'pause': api_pause_notrack(); break;
-      case 'incognito': api_incognito(); break;
-      default:
-        http_response_code(400);
-        $response['error_code'] = 'missing_required_parameter';
-        $response['error_message'] = 'Your request was missing an operation parameter';
-        break;
+    case 'blocklist_status': api_blocklist_status(); break;
+    case 'disable': api_enable_notrack(); break;
+    case 'enable': api_enable_notrack(); break;
+    case 'pause': api_pause_notrack(); break;
+    case 'incognito': api_incognito(); break;
+    default:
+      http_response_code(400);
+      $response['error_code'] = 'missing_required_parameter';
+      $response['error_message'] = 'Your request was missing an operation parameter';
+      break;
   }
 }
 

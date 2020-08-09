@@ -5,15 +5,15 @@
  *  All blocklists, except for bl_custom are held in the blocklists array.
  *  (Most blocklists are either enabled - true or disabled - false, with the exception of bl_custom which can be a list of addresses / files)
  *
- *  settings and blocklists are stored in Memcache to improve performance.
- *
- *  New blocklists should be added to DEFAULTBLOCKLISTS, BLOCKLISTNAMES, and BLOCKLISTTYPE
  *
  *
  */
 
 class Config {
+  private $settings_bl = DIR_SETTINGS.'bl.php';
+
   private $latestversion = VERSION;
+  private $bl_custom = '';
 
   public $status = STATUS_ENABLED;
   public $unpausetime = 0;
@@ -38,6 +38,7 @@ class Config {
     'bl_custom' => '',
   );
 
+  //0 - Enabled / Disabled, 1 - List Type, 2 - List Name
   public $blocklists = array(
     'bl_blacklist' => array(true, 'custom', 'Custom List'),
     'bl_tld' => array(true, 'tld', 'Top Level Domain'),
@@ -95,7 +96,7 @@ class Config {
     'bl_viefb' => array(false, 'advert', 'VIE Fanboy'),
     'bl_fblatin' => array(false, 'advert', 'Latin Easy List'),
     'bl_yhosts' => array(false, 'advert', 'CHN Yhosts'),
-    'custom' => array(true, 'custom', 'Custom'), #DEPRECATED
+    'custom' => array(true, 'custom', 'Custom'), //DEPRECATED
     'invalid' => array(false, 'invalid', 'Invalid'),
     'whitelist' => array(false, 'custom', 'Whitelist'),
   );
@@ -122,8 +123,21 @@ class Config {
   );
 
   public $settings = array();
-  //public $blocklists = array();
 
+
+  /********************************************************************
+   *  Constructor
+   *
+   *  Params:
+   *    None
+   *  Return:
+   *    None
+   */
+  public function __construct() {
+    $this->load();
+
+    $this->load_status();
+  }
 
   /********************************************************************
    *  Load Config File
@@ -154,15 +168,9 @@ class Config {
       while (!feof($fh)) {
         $line = fgets($fh);                                //Read Line of LogFile
 
-        //Check if the line matches a blocklist (excluding bl_custom)
-        if (preg_match('/^(bl_(?!custom)[a-z_]{5,25}) = (0|1)/', $line, $matches)) {
-          if (array_key_exists($matches[1], $this->blocklists)) {
-            $this->blocklists[$matches[1]][0] = (bool)$matches[2];
-          }
-        }
 
         //Match any other config line. #Comments are ignored
-        elseif (preg_match('/(\w+)\s+=\s+([\S]+)/', $line, $matches)) {
+        if (preg_match('/(\w+)\s+=\s+([\S]+)/', $line, $matches)) {
           switch ($matches[1]) {
             case 'Delay':
               $this->settings['Delay'] = filter_integer($matches[2], 0, 3600, 30);
@@ -318,19 +326,8 @@ class Config {
 
 
 
-  /********************************************************************
-   *  Is Blocklist Active
-   *    Returns status of specified blocklist
-   *
-   *  Params:
-   *    $bl (str): Blocklist name
-   *  Return:
-   *    True - Blocklist active
-   *    False - Blocklist disabled
-   */
-  function is_blocklist_active($bl) {
-    return $this->blocklists[$bl];
-  }
+
+
 
   private function load_status() {
     if (file_exists(DIR_SETTINGS.'status.php')) {
@@ -348,6 +345,106 @@ class Config {
     }
   }
 
+
+  /********************************************************************
+   *  Is Blocklist Active
+   *    Returns status of specified blocklist
+   *
+   *  Params:
+   *    $bl (str): Blocklist name
+   *  Return:
+   *    True - Blocklist active
+   *    False - Blocklist disabled
+   */
+  public function is_blocklist_active($blname) {
+    return $this->blocklists[$blname][0];
+  }
+
+  /********************************************************************
+   *  Get Blocklist Custom
+   *    Replace comma seperated values of bl_custom with new lines
+   *
+   */
+  public function get_blocklist_custom() {
+    if ($this->bl_custom == '') {
+      return '';
+    }
+    else {
+      return str_replace(',', PHP_EOL, $this->bl_custom);
+    }
+  }
+
+  /********************************************************************
+   *  Load Blocklists from Settings
+   *    Include bl.php from settings folder if exists
+   *
+   */
+  public function load_blocklists() {
+    if (file_exists($this->settings_bl)) {
+      include $this->settings_bl;
+    }
+  }
+
+  /********************************************************************
+   *  Save Blocklists to Settings
+   *    Write set_blocklist_status and set_blocklist_custom instructions to bl.php
+   *
+   */
+  public function save_blocklists() {
+    $filelines = array();
+
+    $filelines[] = '<?php'.PHP_EOL;
+
+    foreach($this->blocklists as $key => $value) {         //Go through all blocklists
+      if ($value[0]) {                                     //Enabled?
+        $filelines[] = "\$this->set_blocklist_status('{$key}', true);".PHP_EOL;
+      }
+      else {                                               //Or Disabled
+        $filelines[] = "\$this->set_blocklist_status('{$key}', false);".PHP_EOL;
+      }
+    }
+    $filelines[] = "\$this->set_blocklist_custom('{$this->bl_custom}');".PHP_EOL;
+    $filelines[] = '?>'.PHP_EOL;
+
+    if (file_put_contents($this->settings_bl, $filelines) === false) {
+      die("Unable to save blocklist settings to {$this->settings_bl}");
+    }
+  }
+
+
+  /********************************************************************
+   *  Set Blocklist Custom
+   *
+   *  Params:
+   *    $blname (str): Blocklist name
+   *    $status (bool): Blocklist status
+   *  Return:
+   *    None
+   */
+  public function set_blocklist_custom($custom) {
+    $this->bl_custom = $custom;
+  }
+
+
+  /********************************************************************
+   *  Set Blocklist Status
+   *
+   *  Params:
+   *    $blname (str): Blocklist name
+   *    $status (bool): Blocklist status
+   *  Return:
+   *    True when blname exists
+   *    False on failure
+   */
+  public function set_blocklist_status($blname, $status) {
+    if (array_key_exists($blname, $this->blocklists)) {
+      $this->blocklists[$blname][0] = $status;
+      return true;
+    }
+    return false;
+  }
+
+
   public function set_status($newstatus, $newunpausetime) {
     $this->status = $newstatus;
     $this->unpausetime = $newunpausetime;
@@ -361,19 +458,6 @@ class Config {
     );
 
     file_put_contents(DIR_SETTINGS.'status.php', $filelines);
-  }
-  /********************************************************************
-   *  Constructor
-   *
-   *  Params:
-   *    None
-   *  Return:
-   *    None
-   */
-  public function __construct() {
-    $this->load();
-
-    $this->load_status();
   }
 }
 
