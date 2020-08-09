@@ -26,7 +26,7 @@ blocklistconf = {
     'bl_ddg_medium' : [False, 'https://gitlab.com/quidsup/ntrk-tracker-radar/-/raw/master/ddg_tracker_radar_med.txt', TYPE_PLAIN],
     'bl_ddg_low' : [False, 'https://gitlab.com/quidsup/ntrk-tracker-radar/-/raw/master/ddg_tracker_radar_low.txt', TYPE_PLAIN],
     'bl_ddg_unknown' : [False, 'https://gitlab.com/quidsup/ntrk-tracker-radar/-/raw/master/ddg_tracker_radar_unknown.txt', TYPE_PLAIN],
-    'bl_hexxium' : [False, 'https://hexxiumcreations.github.io/threat-list/hexxiumthreatlist.txt', TYPE_EASYLIST],
+    'bl_hexxium' : [True, 'https://hexxiumcreations.github.io/threat-list/hexxiumthreatlist.txt', TYPE_EASYLIST],
     'bl_disconnectmalvertising' : [False, 'https://s3.amazonaws.com/lists.disconnect.me/simple_malvertising.txt', TYPE_PLAIN],
     'bl_easylist' : [False, 'https://easylist-downloads.adblockplus.org/easylist_noelemhide.txt', TYPE_EASYLIST],
     'bl_easyprivacy' : [False, 'https://easylist-downloads.adblockplus.org/easyprivacy.txt', TYPE_EASYLIST],
