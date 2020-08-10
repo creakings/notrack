@@ -594,7 +594,7 @@ function linechart($values1, $values2, $xlabels, $link_labels, $extraparams, $ti
 
     if ($values1[$i] > 0) {                                //$values1[] (Allowed)
       $y = 700 - (($values1[$i] / $ymax) * 700);           //Calculate Y position of $values1
-      echo '<a href="./queries.php?datetime='.$link_labels[$i].$extraparams.'&amp;groupby=time&amp;sort=ASC" target="_blank">'.PHP_EOL;
+      echo '<a href="./queries.php?datetime='.$link_labels[$i].$extraparams.'&amp;groupby=time&amp;sort=ASC&amp;severity=1" target="_blank">'.PHP_EOL;
       echo '  <circle cx="'.$x.'" cy="'.(700-($values1[$i]/$ymax)*700).'" r="10px" fill="#00b7ba" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px">'.PHP_EOL;
       echo '    <title>'.$xlabels[$i].' '.$values1[$i].' Allowed</title>'.PHP_EOL;
       echo '  </circle>'.PHP_EOL;
@@ -603,7 +603,7 @@ function linechart($values1, $values2, $xlabels, $link_labels, $extraparams, $ti
 
     if ($values2[$i] > 0) {                                //$values2[] (Blocked)
       $y = 700 - (($values2[$i] / $ymax) * 700);           //Calculate Y position of $values2
-      echo '<a href="./queries.php?datetime='.$link_labels[$i].$extraparams.'&amp;groupby=time&amp;sort=ASC&amp;filter=B" target="_blank">'.PHP_EOL;
+      echo '<a href="./queries.php?datetime='.$link_labels[$i].$extraparams.'&amp;groupby=time&amp;sort=ASC&amp;severity=2" target="_blank">'.PHP_EOL;
       echo '  <circle cx="'.$x.'" cy="'.(700-($values2[$i]/$ymax)*700).'" r="10px" fill="#b1244a" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px">'.PHP_EOL;
       echo '    <title>'.$xlabels[$i].' '.$values2[$i].' Blocked</title>'.PHP_EOL;
       echo '  </circle>'.PHP_EOL;
