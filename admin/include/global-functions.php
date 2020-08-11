@@ -304,7 +304,7 @@ function filter_string($var, $method, $maxlen=255) {
  *    True on success, False on failure
  */
 function filter_url($url) {
-  if (preg_match('/^(ftp|https?):\/\/([\w\-_\.]+)\/?[\w\.\-\?&=]*$/', $url)) {
+  if (preg_match('/^(ftp|https?):\/\/([\w\-\.]{0,254})(\/[\w\-\.\/]*)?([\w#!:.?+=&%@!\-\/]+)?$/', $url)) {
     return true;
   }
   else {
