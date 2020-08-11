@@ -23,8 +23,6 @@ define('DNS_LOG', '/var/log/notrack.log');
 define('TLD_CSV', '../include/tld.csv');
 define('NTRK_EXEC', 'sudo /usr/local/sbin/ntrk-exec ');
 define('NOTRACK_LIST', '/etc/dnsmasq.d/notrack.list');
-define('BLACKLIST_FILE', '/etc/notrack/blacklist.txt');
-define('WHITELIST_FILE', '/etc/notrack/whitelist.txt');
 
 //Status values for Analytics ACK (acknowledged)
 define('STATUS_OPEN', 1);
