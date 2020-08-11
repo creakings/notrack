@@ -19,6 +19,7 @@ class NoTrackConfig:
         self.__tempdir = tempdir
         self.__wwwconfdir = wwwconfdir
 
+        self.bl_last_mtime = 0.0
         self.status_last_mtime = 0.0
 
         status = STATUS_ENABLED
@@ -36,6 +37,29 @@ class NoTrackConfig:
 
         return os.path.getmtime(filename)
 
+
+    def check_bl_mtime(self):
+        """
+        Compare last modified time of blocklist config bl.php with last known modified time
+
+        Parameters:
+            None
+        Returns:
+            True when modified time has changed or is unknown
+            False when modified time is the same
+        """
+        mtime = 0.0
+        mtime = self.__get_filemtime(f'{self.__wwwconfdir}bl.php')
+
+        if self.bl_last_mtime == mtime:
+            return False
+
+        elif self.bl_last_mtime == 0.0:
+            self.bl_last_mtime = mtime
+            return False
+        else:
+            self.bl_last_mtime = mtime
+            return True
 
 
     def check_status_mtime(self):
@@ -85,7 +109,7 @@ class NoTrackConfig:
         """
 
         lines = []
-        print('Loading config status')
+        print('Loading status config:')
 
         lines = load_file(self.__wwwconfdir + 'status.php')
         self.is_status_valid(lines)

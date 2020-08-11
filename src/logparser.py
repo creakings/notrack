@@ -282,7 +282,7 @@ class NoTrackParser():
         """
         tabledata = []
 
-        print('Loading blocklist data from MariaDB')
+        print('Loading blocklist data from MariaDB into Log Parser')
         tabledata = self.__dbwrapper.blocklist_getdomains_listsource()
 
         self.__blocklist_sources.clear()                   #Clear old data
@@ -292,6 +292,7 @@ class NoTrackParser():
             self.__blocklist_sources[domain] = bl_source
 
         print(f'Number of domains in blocklist: {len(self.__blocklist_sources)}')
+        print()
 
 
 def main():

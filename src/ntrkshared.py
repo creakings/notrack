@@ -234,7 +234,7 @@ def download_file(url, destination):
 
 
 
-    print('\tDownloading %s' % url)
+    print('Downloading %s' % url)
 
     for i in range(1, 4):
         req = Request(url, headers={'User-Agent': user_agents[i]})
@@ -243,39 +243,39 @@ def download_file(url, destination):
         except HTTPError as e:
             if e.code >= 500 and e.code < 600:
                 #Take another attempt up to max of for loop
-                print('\tHTTP Error %d: Server side error' % e.code)
+                print('HTTP Error %d: Server side error' % e.code)
             elif e.code == 400:
-                print('\tHTTP Error 400: Bad request')
+                print('HTTP Error 400: Bad request')
                 return False
             elif e.code == 403:
-                print('\tHTTP Error 403: Unauthorised Access')
+                print('HTTP Error 403: Unauthorised Access')
                 #return False
             elif e.code == 404:
-                print('\tHTTP Error 404: Not Found')
+                print('HTTP Error 404: Not Found')
                 return False
             elif e.code == 429:
-                print('\tHTTP Error 429: Too many requests')
-            print('\t%s' % url)
+                print('HTTP Error 429: Too many requests')
+            print('%s' % url)
         except URLError as e:
             if hasattr(e, 'reason'):
-                print('\tError downloading %s' % url)
-                print('\tReason: %s' % e.reason)
+                print('Error downloading %s' % url)
+                print('Reason: %s' % e.reason)
                 return False
             elif hasattr(e, 'code'):
-                print('\t%s' % url)
+                print('%s' % url)
                 print('Server was unable to fulfill the request')
-                print('\tHTTP Error: %d' % e.code)
+                print('HTTP Error: %d' % e.code)
                 return False
         else:
             res_code = response.getcode()
             if res_code == 200:                            #200 - Success
                 break
             elif res_code == 204:                          #204 - Success but nothing
-                print('\tHTTP Response 204: No data found')
+                print('HTTP Response 204: No data found')
                 return False
             else:
-                print('\t%s' % url)
-                print('\tHTTP Response %d' % res_code)
+                print('%s' % url)
+                print('HTTP Response %d' % res_code)
 
         time.sleep(i * 2)                                  #Throttle repeat attemps
 

@@ -64,6 +64,7 @@ class BlockParser:
     def __init__(self):
         print('Initialising Block List Parser')
 
+        self.bl_custom = ''
         self.__dedupcount = 0                              #Per list deduplication count
         self.__domaincount = 0                             #Per list of added domains
         self.__totaldedupcount = 0
@@ -79,7 +80,6 @@ class BlockParser:
         self.__services = Services()                       #Declare service class
         self.__dbwrapper = DBWrapper()                     #Declare MariaDB Wrapper
 
-        blocklistconf['bl_usersblacklist'] = [True, self.__folders.blacklist, TYPE_PLAIN]
         blocklistconf['bl_blacklist'][1] = self.__folders.blacklist
 
         host = Host(config['ipaddress'])                   #Declare host class
@@ -524,7 +524,7 @@ class BlockParser:
             print('File older than 2 days')
             return True
 
-        print('File in date, not downloading new copy')
+        print('File in date, skip downloading new copy')
         return False
 
 
@@ -640,17 +640,17 @@ class BlockParser:
         customurllist = list()
 
         print('Processing Custom Blocklists:')
-        if config['bl_custom'] == '':
+        if self.bl_custom == '':
             print('No custom blocklists set')
             print()
             return
 
-        customurllist = config['bl_custom'].split(',')     #Explode comma seperated vals
+        customurllist = self.bl_custom.split(',')     #Explode comma seperated vals
 
         for blurl in customurllist:
             i += 1
             blname = 'bl_custom%d' % i                     #Make up a name
-            print(f'Processing {blname} - {blurl}')
+            print(f'{blname} - {blurl}')
 
             #Is this a downloadable file or locally stored?
             if blurl.startswith('http') or blurl.startswith('ftp'):
@@ -756,6 +756,7 @@ class BlockParser:
         """
         Create blocklist and restart DNS Server
         """
+        print()
         self.__dbwrapper.blocklist_createtable()                      #Create SQL Tables
         self.__dbwrapper.blocklist_cleartable()                       #Clear SQL Tables
 
@@ -799,10 +800,55 @@ class BlockParser:
             self.create_blocklist()
 
 
+    def load_blconfig(self):
+        """
+        """
+        blconfig = ''
+        filelines = list()
+
+        blconfig = f'{self.__folders.wwwconfdir}bl.php'
+
+        print()
+        print('Loading blocklist config:')
+
+        if not os.path.isfile(blconfig):
+            print('Blocklist config is missing, using default values')
+            return
+
+        filelines = load_file(blconfig)
+
+        for line in filelines:
+            matches = Regex_BlockListStatus.match(line)
+            if matches is not None:
+                self.set_blocklist_status(matches[1], matches[2])
+                continue
+
+            matches = Regex_BlockListCustom.match(line)
+            if matches is not None:
+                self.bl_custom = matches[1]
+                continue
+
+
+    def set_blocklist_status(self, blname, status):
+        """
+        """
+        newstatus = False
+
+        if status == 'true':
+            newstatus = True
+
+        if blname in blocklistconf:
+            blocklistconf[blname][0] = newstatus;
+            return True;
+
+        return False;
+
+
 def main():
     check_root()
 
     blockparser = BlockParser()
+    blockparser.load_blconfig()
     blockparser.create_blocklist()
 
 if __name__ == "__main__":

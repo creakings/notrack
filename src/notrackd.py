@@ -44,8 +44,9 @@ def blocklist_update():
     print('Updating Blocklist')
 
     blockparser = BlockParser()
+    blockparser.load_blconfig()
     blockparser.create_blocklist()                         #Create / Update Blocklists
-    time.sleep(8)                                          #Prevent race condition
+    time.sleep(4)                                          #Prevent race condition
     ntrkparser.readblocklist()                             #Reload the blocklist on the log parser
     set_lastrun_times()
 
@@ -142,6 +143,9 @@ def set_lastrun_times():
     runtime_analytics = dtanalytics.timestamp()
     runtime_blocklist = dtblocklist.timestamp()
 
+    #Set initial update times for the config files
+    config.check_bl_mtime()
+
 def analytics():
     ntrkanalytics.checkmalware()
     ntrkanalytics.checktrackers()
@@ -183,10 +187,15 @@ def main():
 
         if config.check_status_mtime():
             print()
-            print('Config updated')
+            print('Status config updated')
             config.load_status()
             if get_status(config.status) != config.status:
                 change_status()
+
+        elif config.check_bl_mtime():
+            print()
+            print('Blocklist config updated')
+            blocklist_update()
 
         if (config.status & STATUS_PAUSED):
             check_pause(current_time)
