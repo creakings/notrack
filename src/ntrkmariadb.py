@@ -1,6 +1,11 @@
-#NoTrack MariaDB Wrapper
-#Author: QuidsUp
-#MariaDB Wrapper provides a functions for interacting with the SQL tables that NoTrack uses.
+#!/usr/bin/env python3
+#Title       : NoTrack MariaDB Wrapper
+#Description : MariaDB Wrapper provides a functions for interacting with the SQL tables that NoTrack uses.
+#Author      : QuidsUp
+#Version     : 20.08
+
+#Standard Imports
+import logging
 
 #Additional standard import
 import mysql.connector as mariadb
@@ -8,24 +13,22 @@ import mysql.connector as mariadb
 #Local imports
 from ntrkregex import *
 
+#Create logger
+logger = logging.getLogger(__name__)
+#logger.setLevel(logging.INFO)
+
 class DBWrapper:
-    __instance__ = None
     """
     TODO load unique password out of php file
-    Create DB connector
     """
     def __init__(self):
-        #if DBWrapper.__instance__ is None:
-        #   DBWrapper.__instance__ = self
-        #else:
-        #   raise Exception("You cannot create another SingletonGovt class")
-
-
+        """
+        Create static value for DBWrapper and open connection to MariaDB
+        """
         ntrkuser = 'ntrk'
         ntrkpassword = 'ntrkpass'
         ntrkdb = 'ntrkdb'
 
-        #print('Opening connection to MariaDB')
         DBWrapper.__db = mariadb.connect(user=ntrkuser, password=ntrkpassword, database=ntrkdb)
 
 
@@ -50,7 +53,8 @@ class DBWrapper:
         try:
             cursor.execute(search);
         except mariadb.Error as e:
-            print('Search failed :-( {}'.format(e))
+            #print('Search failed :-( {}'.format(e))
+            logger.warning('Search failed', exc_info=True)
         else:
             tabledata = cursor.fetchall()
             rowcount = cursor.rowcount
@@ -112,7 +116,7 @@ class DBWrapper:
         cursor = DBWrapper.__db.cursor()
 
         if severity not in ('1', '2', '3'):
-            print(f'Invalid severity {severity}')
+            logger.warning(f'Invalid severity {severity}')
             return False
 
         cmd = "INSERT INTO analytics (id,log_time,sys,dns_request,severity,issue,ack) VALUES (NULL,'%s','%s','%s','%s','%s',FALSE)" % (log_time, system, dns_request, severity, issue)
@@ -120,7 +124,7 @@ class DBWrapper:
         try:
             cursor.execute(cmd);
         except mariadb.Error as e:
-            print('Unable to insert analytics record :-( {}'.format(e))
+            logger.warning('Unable to insert analytics record', exc_info=True)
             return False
         finally:
             DBWrapper.__db.commit()
@@ -174,11 +178,11 @@ class DBWrapper:
 
         return self.__single_column(tabledata, 0)
 
+
     def blocklist_getdomains_listsource(self):
         """
         Get Domains and List source
         """
-
         cmd = ''
         tabledata = []
 
@@ -205,7 +209,7 @@ class DBWrapper:
             print('No whitelisted domains')
             return []
 
-        print('%d domains whitelisted' % tabledatalen)
+        print(f'{tabledatalen} domains whitelisted')
 
         return self.__single_column(tabledata, 0)
 

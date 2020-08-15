@@ -1,35 +1,43 @@
 #!/usr/bin/env python3
 #Title       : NoTrack Analytics
-#Description : Analyse dns_logs table for suspect lookups to malicious or unknown tracking sites
+#Description : Analyse dns_logs table for suspect lookups to malicious or unknown tracking domains
 #Author      : QuidsUp
 #Date        : 2020-06-20
-#Version     : 20.07
+#Version     : 20.08
 #Usage       : python3 ntrk-analytics.py
 
 
 #Standard Imports
+import logging
 import re
 
 #Local imports
 from ntrkmariadb import DBWrapper
 
+#Create logger
+logger = logging.getLogger(__name__)
+#logger.setLevel(logging.INFO)
+
 class NoTrackAnalytics():
     def __init__(self):
         self.__domainsfound = set()                        #Prevent duplicates
-        self.__blocklists = []                             #Active blocklists
-        self.__whitelist = []                              #Users whitelist
+        self.__blocklists = list()                         #Active blocklists
+        self.__whitelist = list()                          #Users whitelist
 
         self.__ignorelist = {                              #Regex pattern of domains to ignore
           'akadns\.net$',
           'amazonaws\.com$',
           'edgekey\.net$',
+          'elasticbeanstalk\.com$',
           '\w{3}pixel\.[\w-]{1,63}$',                      #Prevent false positive where pixel is part of domain name e.g. retropixel
         }
 
         self.__dbwrapper = DBWrapper()                     #Declare MariaDB Wrapper
+        self.__dbwrapper.analytics_createtable()           #Check analytics table exists
 
-        self.__dbwrapper.analytics_createtable()
-        self.get_blocklists()
+        #Load the black and whitelists from blocklist table
+        self.__blocklists = self.__dbwrapper.blocklist_getactive()
+        self.__whitelist = self.__dbwrapper.blocklist_getwhitelist()
 
 
     def __searchmalware(self, bl):
@@ -41,16 +49,12 @@ class NoTrackAnalytics():
             bl (str): Blocklist name
         """
         tabledata = []                                     #Results of MariaDB search
-        tabledatalen = 0
 
-        print(f'Searching for domains from: {bl}')
-
+        logger.info(f'Searching for domains from: {bl}')
         tabledata = self.__dbwrapper.dnslog_searchmalware(bl)
-        tabledatalen = len(tabledata)
 
-        if tabledatalen == 0:
-            print('No results found :-)')
-            print()
+        if len(tabledata) == 0:
+            logger.info('No results found :-)')
             return
 
         self.__review_results(f'malware-{bl}', tabledata)  #Specify name of malware list
@@ -65,16 +69,12 @@ class NoTrackAnalytics():
             pattern (str): Regex pattern to search
         """
         tabledata = []                                     #Results of MariaDB search
-        tabledatalen = 0
 
-        print('Trying regular expression: %s' % pattern)
-
+        logger.info(f'Searching for regular expression: {pattern}')
         tabledata = self.__dbwrapper.dnslog_searchregex(pattern)
-        tabledatalen = len(tabledata)
 
-        if tabledatalen == 0:
-            print('No results found :-)')
-            print()
+        if len(tabledata) == 0:
+            logger.info('No results found :-)')
             return
 
         self.__review_results(listtype, tabledata)
@@ -91,11 +91,11 @@ class NoTrackAnalytics():
             True: Domain is in ignorelist
             False: Domain is not in ignorelist
         """
+        pattern = ''                                       #Regex pattern to check
 
         for pattern in self.__ignorelist:                  #Check everything in ignorelist
-            #print(pattern)
-            #print(re.search(pattern, domain))
-            if re.search(pattern, domain) is not None:
+            if re.search(pattern, domain) is not None:     #Something matched?
+                logger.info(f'{domain} matched pattern {pattern} in ignorelist')
                 return True
 
         return False
@@ -114,11 +114,15 @@ class NoTrackAnalytics():
         if len(self.__whitelist) == 0:                     #Check if whitelist is empty
             return False                                   #No point in going any further with whitelist checks
 
-        for pattern in self.__whitelist:                   #Treat whitelist results as a regex pattern
-            if re.match(pattern + '$', domain) is None:    #"domain" could be a subdomain, so we check for a match from the end backwards
-                return False
+        pattern = ''                                       #Regex pattern to check
 
-        return True
+        for pattern in self.__whitelist:                   #Treat whitelist results as a regex pattern
+            #"domain" could be a subdomain, so we check for a match from the end backwards
+            if re.match(pattern + '$', domain) is not None:
+                logger.info(f'{domain} matched pattern {pattern} in whitelist')
+                return True
+
+        return False
 
 
     def __is_domainadded(self, domain):
@@ -131,8 +135,8 @@ class NoTrackAnalytics():
             True: Domain has been added
             False: Domain has not been added
         """
-
         if domain in self.__domainsfound:
+            logger.info(f'{domain} has already been added')
             return True
 
         return False
@@ -160,11 +164,9 @@ class NoTrackAnalytics():
 
         for row in tabledata:
             if self.__is_ignorelist(row[3]):               #Check if domain is in ignore list
-                print('%s is in ignore list' % row[3])
                 continue
 
             if self.__is_whitelist(row[3]):                #Check if domain is in whitelist
-                print(f'{row[3]} is in whitelist')
                 continue
 
             #Set the new DNS result
@@ -184,16 +186,13 @@ class NoTrackAnalytics():
             #Update dnslog record to show malware / tracker accessed instead of blocked / allowed
             self.__dbwrapper.dnslog_updaterecord(row[0], new_severity, new_bl_source)
 
-            if self.__is_domainadded(row[3]):              #Has domain been added to analytics recently?
-                print(f'{row[3]} has already been added')
-            else:
+            #Make sure that domain has not been added to analytics recently?
+            if not self.__is_domainadded(row[3]):
                 self.__domainsfound.add(row[3])         #Add domain to domainsfound dict
                 #log_time, system, dns_request, analytics_severity, issue
                 self.__dbwrapper.analytics_insertrecord(row[1], row[2], row[3], analytics_severity, issue)
 
             print(f'{row[0]}, {row[1].isoformat(sep=" ")}, {row[3]}')
-
-        print()
 
 
     def checkmalware(self):
@@ -224,7 +223,7 @@ class NoTrackAnalytics():
         """
 
         #Checks for Pixels, Telemetry, and Trackers
-        print('Searching for any trackers or advertising domains accessed')
+        print('Checking to see if any trackers or advertising domains have been accessed')
         self.__searchregex('^analytics\\\.', 'tracker')                  #analytics as a subdomain
         self.__searchregex('^cl(c|ck|icks?|kstat)\\\.', 'tracker')       #clc, clck, clicks?, clkstat as a subdomain
         self.__searchregex('^log(s|ger)?\\\.', 'tracker')                #log, logs, logger as a subdomain (exclude login.)
@@ -257,8 +256,8 @@ def main():
     print('NoTrack DNS Log Analytics')
     ntrkanalytics = NoTrackAnalytics()
 
-    ntrkanalytics.checkmalware()
     ntrkanalytics.checktrackers()
+    ntrkanalytics.checkmalware()
 
     print('NoTrack log analytics complete :-)')
     print()
