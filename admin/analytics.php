@@ -413,6 +413,9 @@ draw_copymsg();
 <div class="centered"><button class="button-grey" onclick="hideQueriesBox()">Cancel</button></div>
 <div class="close-button" onclick="hideQueriesBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
 </div>
+
+<div id="fade" onclick="hideQueriesBox()"></div>
+
 <script>
 const SEARCHNAME = <?php echo json_encode($config->settings['Search'])?>;
 const SEARCHURL = <?php echo json_encode($config->settings['SearchUrl'])?>;

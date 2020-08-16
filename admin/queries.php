@@ -951,6 +951,8 @@ $db->close();
 <div id="scrollup" class="button-scroll" onclick="scrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
 <div id="scrolldown" class="button-scroll" onclick="scrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
 
+<div id="fade" onclick="hideQueriesBox()"></div>'
+
 <div id="queries-box">
 <h2 id="sitename">site</h2>
 <span id="reportmsg">something</span>
