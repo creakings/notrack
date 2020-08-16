@@ -500,8 +500,6 @@ function toggleNavButton(item, value) {
   let severity = document.getElementById('severity');
   let severityInt = Number(severity.value);
 
-  //console.log("Before" + item.classList);
-  //console.log(severity.value);
   if (item.classList.contains('active')) {
     severityInt -= Number(value);
     item.classList.remove('active');
@@ -512,7 +510,4 @@ function toggleNavButton(item, value) {
   }
 
   severity.value = severityInt.toString();
-
-  //console.log("After" + item.classList);
-  //console.log(severity.value);
 }
