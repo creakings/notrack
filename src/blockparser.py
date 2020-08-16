@@ -496,7 +496,7 @@ class BlockParser:
 
         if whitedict_len > 0:
             print(f'Number of domains in whitelist: {whitedict_len}')
-            dbwrapper.blocklist_insertdata(sqldata)
+            self.__dbwrapper.blocklist_insertdata(sqldata)
         else:
             print('Nothing in whitelist')
             delete_file(self.__folders.dnslists + 'whitelist.list')
