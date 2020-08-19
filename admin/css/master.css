@@ -979,7 +979,6 @@ span.key-green {
   overflow: hidden;
 }
 #menu-side:hover{
-/*   position: fixed; */
   width: 14rem;
 }
 #menu-side a {
@@ -1019,10 +1018,6 @@ span.key-green {
 #menu-side-status {
   margin-top: 1em;
   font-size: 0.9rem;
-}
-#menu-side-bottom {
-  display: inline-block;
-  margin-top: 2rem;
 }
 .alert-count {
   position: absolute;
