@@ -66,7 +66,7 @@ h1 {
   letter-spacing: 0.1rem;
 }
 h2 {
-  font-size: 1.6rem;
+  font-size: 1.2rem;
   font-weight: normal;
 }
 h4 {                                                       /*Font for Error*/
@@ -1340,26 +1340,17 @@ span.key-green {
   margin-left: 0.9rem;
   display: inline;
 }
-#options-box,
-#queries-box h3 {
-  margin: 1.2rem 0.5rem 1.2rem 1rem;
-  font-size: 1.4rem;
-  font-weight: normal;
-}
-#options-box {
-  width: 24rem;
-  height: 16rem;
-/*   margin: -12rem 0 0 -12rem; */
-  z-index: 502;
-}
-#options-box h2,
 #queries-box h2 {
   line-height: 1.9rem;
   margin: 0;
   color: #f7f7f7;
   background-color: #262626;
-  font-size: 1.2rem;
   text-align: center;
+}
+#queries-box h3 {
+  margin: 1.2rem 0.5rem 1.2rem 1rem;
+  font-size: 1.4rem;
+  font-weight: normal;
 }
 #options-box button {
   margin: 1.8rem auto 1rem;

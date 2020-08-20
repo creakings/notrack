@@ -55,14 +55,8 @@ function home_blocklist() {
 
   $rows = 0;
 
-  exec('pgrep notrack', $pids);
-  if(empty($pids)) {
-    $rows = $dbwrapper->count_blocklists();
-    echo '<a class="home-nav-item" href="./config/blocklists.php"><span><h2>Block List</h2>'.number_format(floatval($rows)).'<br>Domains</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></a>'.PHP_EOL;
-  }
-  else {
-    echo '<a href="./config/blocklists.php"><span><h2>Block List</h2>Processing</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></a>'.PHP_EOL;
-  }
+  $rows = $dbwrapper->count_blocklists();
+  echo '<a href="./config/blocklists.php"><h2>Block List</h2><div>'.number_format(floatval($rows)).'<br>Domains</div><div><img src="./svg/home_trackers.svg" alt=""></div></a>'.PHP_EOL;
 }
 
 
@@ -79,10 +73,10 @@ function home_blocklist() {
  */
 function home_network() {
   if (file_exists('/var/lib/misc/dnsmasq.leases')) {       //DHCP Active
-    echo '<a href="./dhcp.php"><span><h2>Network</h2>'.number_format(floatval(exec('wc -l /var/lib/misc/dnsmasq.leases | cut -d\  -f 1'))).'<br>Systems</span><div class="icon-box"><img src="./svg/home_dhcp.svg" alt=""></div></a>'.PHP_EOL;
+    echo '<a href="./dhcp.php"><h2>Network</h2><div>'.number_format(floatval(exec('wc -l /var/lib/misc/dnsmasq.leases | cut -d\  -f 1'))).'<br>Systems</div><div><img src="./svg/home_dhcp.svg" alt=""></div></a>'.PHP_EOL;
   }
   else {                                                   //DHCP Disabled
-    echo '<a class="home-bgred" href="./dhcp.php"><span><h2>Network</h2>DHCP Disabled</span><div class="icon-box"><img class="full" src="./svg/home_dhcp.svg" alt=""></div></a>'.PHP_EOL;
+    echo '<a class="home-bgred" href="./dhcp.php"><h2>Network</h2><div>DHCP Disabled</div><div><img src="./svg/home_dhcp.svg" alt=""></div></a>'.PHP_EOL;
   }
 }
 
@@ -106,21 +100,19 @@ function home_queries() {
   $lables = array('Allowed', 'Blocked');
   
   $total = $day_allowed + $day_blocked;
-
   $chartdata = array($day_allowed, $day_blocked);
 
-
   //Start Drawing Queries Box
-  echo '<a href="./queries.php"><span><h2>DNS Queries</h2>' . number_format(floatval($total)) . '<br>Today</span>'.PHP_EOL;
+  echo '<a href="./queries.php"><h2>DNS Queries</h2><div>' . number_format(floatval($total)) . '<br>Today</div>'.PHP_EOL;
 
   if ($total == 0) {                                       //Alternative if no DNS queries have been made
-    echo '<div class="icon-box"><img src="./svg/home_queries.svg" alt=""></div>'.PHP_EOL;
+    echo '<div><img src="./svg/home_queries.svg" alt=""></div>'.PHP_EOL;
     echo '</a>'.PHP_EOL;
-    return null;
+    return;
   }
-  
+
   //1 or more queries made, draw a piechart
-  echo '<div class="chart-box">'.PHP_EOL;                  //Start Pie Chart
+  echo '<div>'.PHP_EOL;                                    //Start Pie Chart
   echo '<svg width="100%" height="90%" viewbox="0 0 200 200">'.PHP_EOL;
   piechart($lables, $chartdata, 100, 100, 98, $CHARTCOLOURS);
   echo '<circle cx="100" cy="100" r="26" stroke="#262626" stroke-width="2" fill="#f7f7f7" />'.PHP_EOL;  //Small overlay circle
@@ -128,8 +120,6 @@ function home_queries() {
   echo '</div>'.PHP_EOL;                                   //End Pie Chart
 
   echo '</a>'.PHP_EOL;                                     //End Queries Box
-  
-  return null;
 }
 
 
@@ -187,16 +177,6 @@ function home_status() {
   }
 
   echo '<div><h2>Last Updated</h2>'.$date_msg.$date_submsg.'</div>'.PHP_EOL;
-  /* DEPRECATED
-  if ((VERSION != $config->settings['LatestVersion']) && check_version($config->settings['LatestVersion'])) {
-    $date_msg = '<h3 class="darkgray">Upgrade</h3>';
-    $date_submsg = '<p>New version available: v'.$config->settings['LatestVersion'].'</p>';
-    
-    echo '<a class="home-bggreen" href="./upgrade.php"><span><h2>Status</h2>'.$date_msg.$date_submsg.'</span></a>'.PHP_EOL;
-    //TODO Image for upgrade
-  }
-  else {
-  */
 }
 
 

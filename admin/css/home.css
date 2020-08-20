@@ -29,85 +29,71 @@
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
+  text-align: center;
 }
 .home-nav-container > a,
 .home-nav-container > div {
+  display: block;
   margin-bottom: 1.2rem;
+  padding: 0.6rem 2% 0.5rem;
   background-color: #f7f7f7;
-  text-align:center;
-  padding: 0.9rem 2% 2% 2%;
   border-left: 7px solid #00b7ba;
   border-radius: 2px;
-  display: block;
   box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
   flex-basis: 18%;
   flex-grow: 0;
 }
-.home-nav-container > a > span {
-  float:left;
-  font-size: 2rem;
-  width: 50%;
-  display: inline-block;
+.home-nav-container > a > div:nth-of-type(1) {
+  width: 55%;
+  margin-top: 0.5rem;
+  font-size: 1.8rem;
+  float: left;
 }
-.home-nav-container > a > span > h2,
-.home-nav-container > div > h2 {
+.home-nav-container > a > div:nth-of-type(2) {
+  width: 35%;
+  max-width: 7rem;
+  padding: 0.2rem 0.7rem 0 0.2rem;
+  float: right;
+}
+.home-nav-container h2 {
   margin: 0 0 1rem 0;
   padding-bottom: 0.2rem;
   border-bottom: 2px solid #00b7ba;
+  font-size: 1.6rem;
 }
-.home-nav-container > a > span > h3,
-.home-nav-container > div > h3 {
+.home-nav-container h3 {
   margin: 0.1rem 0 0.4rem;
   font-size: 2.8rem;
   font-weight: bold;
 }
-.home-nav-container > div > p {
-  margin: 1rem 0 0 0;
+.home-nav-container p {
+  margin-top: 1rem;
   font-size: 1.2rem;
 }
-.chart-box {
-  margin-top: 1.5rem;
-  float:right;
-  width: 40%;
-  max-width: 9rem;
-}
-.icon-box {
-  margin-top: 1.5rem;
-  padding-top: 0.7rem;
-  float:right;
-  border-radius: 50%;
-  border: 2px solid #666;
-  width: 40%;
-  max-width: 9rem;
-}
-.icon-box img {
-  width: 80%;
-  padding-bottom: 0.9rem;
+
+.home-nav-container img {
+  width: 100%;
 }
 @media only screen and (max-width:1200px), only screen and (max-device-width:1200px) {  /*Windowed view for Home Nav*/
   .home-nav-container {
     flex-wrap: wrap;
   }
-
   .home-nav-container > a,
   .home-nav-container > div {
      flex-basis: 40%;
   }
-
 }
 
 @media only screen and (max-width:480px), only screen and (max-device-width:480px) {  /*Mobile view for Home Nav*/
-  .home-nav-container > a > span {
-    font-size: 1.1rem;
+  .home-nav-container p,
+  .home-nav-container > a > div:nth-of-type(1) {
+    font-size: 3.5vw;
   }
-  .home-nav-container > div > p,
-  .home-nav-container > a > span > h2,
-  .home-nav-container > div > h2 {
-    font-size: 1rem;
-  }
-  .home-nav-container > a > span > h3,
-  .home-nav-container > div > h3 {
+  .home-nav-container h2 {
     font-size: 1.2rem;
+  }
+  .home-nav-container h3 {
+    font-size: 1.4rem;
   }
 }
 
