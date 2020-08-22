@@ -83,7 +83,6 @@ class BlockParser:
         blocklistconf['bl_blacklist'][1] = self.__folders.blacklist
 
         host = Host(config['ipaddress'])                   #Declare host class
-        print('NoTrack version %s' % VERSION)
         print('Hostname: %s' % host.name)
         print('IP Address: %s' % host.ip)
 
@@ -469,7 +468,6 @@ class BlockParser:
         splitline = list()
 
         print('Processing whitelist:')
-        print(f'Loading whitelist {self.__folders.whitelist}')
 
         filelines = load_file(self.__folders.whitelist)    #Load White list
 
@@ -607,7 +605,7 @@ class BlockParser:
             filelines = load_file(blfilename)              #Read temp file
 
             if not filelines:                              #Anything read from file?
-                print('\tData missing unable to process %s' % blname)
+                print(f'Data missing unable to process {blname}')
                 print()
                 continue
 
@@ -645,11 +643,11 @@ class BlockParser:
             print()
             return
 
-        customurllist = self.bl_custom.split(',')     #Explode comma seperated vals
+        customurllist = self.bl_custom.split(',')          #Explode comma seperated vals
 
         for blurl in customurllist:
             i += 1
-            blname = 'bl_custom%d' % i                     #Make up a name
+            blname = f'bl_custom{i}'                       #Make up a name
             print(f'{blname} - {blurl}')
 
             #Is this a downloadable file or locally stored?
@@ -711,47 +709,6 @@ class BlockParser:
         self.__dbwrapper.blocklist_insertdata(sqldata)
 
 
-    def __generate_blacklist(self):
-        """
-        Check to see if black list exists in NoTrack config folder
-        If it doesn't then generate some example commented out domains to block
-        """
-
-        if os.path.isfile(self.__folders.blacklist):       #Check if black list exists
-            return False
-
-        tmp = list()                                       #List to build contents of file
-        print('Creating Black List')
-        tmp.append('#Use this file to create your own custom block list\n')
-        tmp.append('#Run notrack script (sudo notrack) after you make any changes to this file\n')
-        tmp.append('#doubleclick.net\n')
-        tmp.append('#googletagmanager.com\n')
-        tmp.append('#googletagservices.com\n')
-        tmp.append('#polling.bbc.co.uk #BBC Breaking News Popup\n')
-        save_file(tmp, self.__folders.blacklist)
-        print()
-
-
-    def __generate_whitelist(self):
-        """
-        Check to see if white list exists in NoTrack config folder
-        If it doesn't then generate some example commented out domains to allow
-        """
-
-        if os.path.isfile(self.__folders.whitelist):       #Check if white list exists
-            return False
-
-        tmp = list()                                       #List to build contents of file
-        print('Creating White List')
-        tmp.append('#Use this file to create your own custom block list\n')
-        tmp.append('#Run notrack script (sudo notrack) after you make any changes to this file\n')
-        tmp.append('#doubleclick.net\n')
-        tmp.append('#googletagmanager.com\n')
-        tmp.append('#googletagservices.com\n')
-        save_file(tmp, self.__folders.whitelist)
-        print()
-
-
     def create_blocklist(self):
         """
         Create blocklist and restart DNS Server
@@ -759,9 +716,6 @@ class BlockParser:
         print()
         self.__dbwrapper.blocklist_createtable()                      #Create SQL Tables
         self.__dbwrapper.blocklist_cleartable()                       #Clear SQL Tables
-
-        self.__generate_blacklist()
-        self.__generate_whitelist()
 
         self.__process_whitelist()                                    #Need whitelist first
         self.__action_lists()                                         #Action default lists
@@ -803,10 +757,10 @@ class BlockParser:
     def load_blconfig(self):
         """
         """
-        blconfig = ''
+        blconfig = ''                                      #Blocklist Config File
         filelines = list()
 
-        blconfig = f'{self.__folders.wwwconfdir}bl.php'
+        blconfig = f'{self.__folders.webconfigdir}/bl.php'
 
         print()
         print('Loading blocklist config:')
@@ -831,6 +785,7 @@ class BlockParser:
 
     def set_blocklist_status(self, blname, status):
         """
+        Set Blocklist status from config
         """
         newstatus = False
 
