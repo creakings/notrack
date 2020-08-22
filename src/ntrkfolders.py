@@ -17,43 +17,49 @@ class FolderList:
     """
     def __init__(self):
         if os.name == 'posix':
+
             #Directories
             self.etcdir = '/etc/'
             self.tempdir = tempfile.gettempdir() + '/'
-            self.sbindir = '/usr/local/sbin/'
+            self.sbindir = '/usr/local/sbin/'              #DEPRECATED
+            self.webdir = ''
             #self.logdir = '/var/log/'
+
+            self.__find_unix_webdir()                      #Get webserver location
 
             self.accesslog = '/var/log/ntrk-admin.log'
             self.cron_ntrkparse = '/etc/cron.d/ntrk-parse'
             self.main_blocklist = '/etc/dnsmasq.d/notrack.list'
             self.temp_blocklist = self.tempdir + 'notracktemp.list'
             self.dnslists = '/etc/dnsmasq.d/'
-            self.blacklist = '/etc/notrack/blacklist.txt'
-            self.whitelist = '/etc/notrack/whitelist.txt'
+            self.blacklist = f'{self.webconfigdir}/blacklist.txt'
+            self.whitelist = f'{self.webconfigdir}/whitelist.txt'
             self.tld_blacklist = '/etc/notrack/domain-blacklist.txt'
             self.tld_whitelist = '/etc/notrack/domain-whitelist.txt'
-            self.tld_csv = '/var/www/html/admin/include/tld.csv'
+            self.tld_csv = f'{self.webdir}/include/tld.csv'
             self.notrack_config = '/etc/notrack/notrack.conf'
             self.etc_notrack = '/etc/notrack/'
 
             #NoTrack Apps
-            self.notrack = '/usr/local/sbin/notrack'
-            self.ntrk_pause = '/usr/local/sbin/ntrk-pause'
-            self.ntrk_upgrade = '/usr/local/sbin/ntrk-upgrade'
+            self.notrack = '/usr/local/sbin/notrack'       #DEPRECATED
+            self.ntrk_pause = '/usr/local/sbin/ntrk-pause' #DEPRECATED
+            self.ntrk_upgrade = '/usr/local/sbin/ntrk-upgrade' #DEPRECATED
 
-            self.__find_unix_webdir()
+
 
 
     def __find_unix_webdir(self):
         """
         Find UNIX webdir
         """
-        if os.path.isdir('/var/www/html/notrack'):
-            self.wwwconfdir = '/var/www/html/notrack/admin/settings/'
-            self.wwwsink = '/var/www/html/notrack/sink/'
-        elif os.path.isdir('/var/www/html'):
-            self.wwwconfdir = '/var/www/html/admin/settings/'
-            self.wwwsink = '/var/www/html/sink/'
+        if os.path.isdir('/var/www/html/notrack/admin'):   #Optional location for notrack
+            self.webconfigdir = '/var/www/html/notrack/admin/settings'
+            self.webdir = '/var/www/html/notrack/admin'
+            self.wwwsink = '/var/www/html/notrack/sink/'   #DEPRECATED
+        elif os.path.isdir('/var/www/html/admin'):
+            self.webconfigdir = '/var/www/html/admin/settings'
+            self.webdir = '/var/www/html/admin'
+            self.wwwsink = '/var/www/html/sink/'           #DEPRECATED
         else:
             print('Find_Unix_WebDir: Fatal Error - Unable to find web folder', file=sys.stderr)
             sys.exit(10)

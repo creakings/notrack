@@ -32,7 +32,7 @@ endloop = False
 ntrkparser = NoTrackParser()
 ntrkanalytics = NoTrackAnalytics()
 folders = FolderList()
-config = NoTrackConfig(folders.tempdir, folders.wwwconfdir)
+config = NoTrackConfig(folders.tempdir, folders.webconfigdir)
 
 
 def blocklist_update():

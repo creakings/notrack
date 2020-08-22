@@ -15,9 +15,9 @@ from statusconsts import *
 from ntrkshared import *
 
 class NoTrackConfig:
-    def __init__(self, tempdir, wwwconfdir):
+    def __init__(self, tempdir, webconfigdir):
         self.__tempdir = tempdir
-        self.__wwwconfdir = wwwconfdir
+        self.__webconfigdir = webconfigdir
 
         self.bl_last_mtime = 0.0
         self.status_last_mtime = 0.0
@@ -49,7 +49,7 @@ class NoTrackConfig:
             False when modified time is the same
         """
         mtime = 0.0
-        mtime = self.__get_filemtime(f'{self.__wwwconfdir}bl.php')
+        mtime = self.__get_filemtime(f'{self.__webconfigdir}/bl.php')
 
         if self.bl_last_mtime == mtime:
             return False
@@ -66,7 +66,7 @@ class NoTrackConfig:
         if (self.status_last_mtime == 0.0):
             return True
 
-        if (self.__get_filemtime(f'{self.__wwwconfdir}status.php') > self.status_last_mtime):
+        if (self.__get_filemtime(f'{self.__webconfigdir}/status.php') > self.status_last_mtime):
             return True
 
         return False
@@ -111,7 +111,7 @@ class NoTrackConfig:
         lines = []
         print('Loading status config:')
 
-        lines = load_file(self.__wwwconfdir + 'status.php')
+        lines = load_file(f'{self.__webconfigdir}/status.php')
         self.is_status_valid(lines)
 
         if self.status & STATUS_PAUSED and self.unpausetime > 0:
@@ -119,6 +119,6 @@ class NoTrackConfig:
                 self.status -= STATUS_PAUSED
                 self.unpausetime = 0
 
-        self.status_last_mtime = self.__get_filemtime(f'{self.__wwwconfdir}status.php')
+        self.status_last_mtime = self.__get_filemtime(f'{self.__webconfigdir}/status.php')
 
 
