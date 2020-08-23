@@ -3,7 +3,7 @@
 #Description :
 #Author      : QuidsUp
 #Date        : 2020-07-30
-#Version     : 20.07
+#Version     : 20.08
 #Usage       : python3 config.py
 
 import os
@@ -15,12 +15,23 @@ from statusconsts import *
 from ntrkshared import *
 
 class NoTrackConfig:
-    def __init__(self, tempdir, webconfigdir):
-        self.__tempdir = tempdir
+    def __init__(self, webconfigdir):
         self.__webconfigdir = webconfigdir
 
-        self.bl_last_mtime = 0.0
-        self.status_last_mtime = 0.0
+        self.__settingsfiles = {                           #Actual filenames for settings
+            'bl.php' : f'{self.__webconfigdir}/bl.php',
+            'status.php' : f'{self.__webconfigdir}/status.php',
+            'blacklist.txt' : f'{self.__webconfigdir}/blacklist.txt',
+            'whitelist.txt' : f'{self.__webconfigdir}/whitelist.txt',
+        }
+
+        self.__blocklist_mtimes = {                        #Files for blocklist configs
+            'bl.php' : self.__get_filemtime('bl.php'),
+            'blacklist.txt' : self.__get_filemtime('blacklist.txt'),
+            'whitelist.txt' : self.__get_filemtime('whitelist.txt'),
+        }
+
+        self.status_mtime = 0.0
 
         status = STATUS_ENABLED
         unpausetime = 0
@@ -30,15 +41,26 @@ class NoTrackConfig:
         self.load_status()
 
 
-    def __get_filemtime(self, filename):
-        if not os.path.isfile(filename):
-            print(f'{filename} is missing')
-            return sys.maxsize
+    def __get_filemtime(self, setting):
+        """
+        Get last modified time of a file
 
-        return os.path.getmtime(filename)
+        Parameters:
+            setting (str): name of a file in __settingsfiles
+        Returns:
+            Last modified time when file exists
+            0.0 when file is missing
+        """
+        filename = ''                                      #Actual filename
+        filename = self.__settingsfiles.get(setting)       #Get actual filename
+
+        if os.path.isfile(filename):                       #Check file exists
+            return os.path.getmtime(filename)              #Return last modified time
+        else:
+            return 0.0                                     #File missing - return zero
 
 
-    def check_bl_mtime(self):
+    def check_blocklist_mtimes(self):
         """
         Compare last modified time of blocklist config bl.php with last known modified time
 
@@ -49,76 +71,48 @@ class NoTrackConfig:
             False when modified time is the same
         """
         mtime = 0.0
-        mtime = self.__get_filemtime(f'{self.__webconfigdir}/bl.php')
 
-        if self.bl_last_mtime == mtime:
-            return False
-
-        elif self.bl_last_mtime == 0.0:
-            self.bl_last_mtime = mtime
-            return False
-        else:
-            self.bl_last_mtime = mtime
-            return True
-
-
-    def check_status_mtime(self):
-        if (self.status_last_mtime == 0.0):
-            return True
-
-        if (self.__get_filemtime(f'{self.__webconfigdir}/status.php') > self.status_last_mtime):
-            return True
+        for blfile in self.__blocklist_mtimes:
+            mtime = self.__get_filemtime(blfile)
+            if self.__blocklist_mtimes[blfile] != mtime:   #Compare file modified time
+                self.__blocklist_mtimes[blfile] = mtime    #Set new modified time
+                return True
 
         return False
 
 
-    def is_status_valid(self, lines):
+    def check_status_mtime(self):
         """
-        Validate either temp new or existing status config
-
-        Parameters:
-            lines (list): lines from a file
-        Returns:
-            True on success, False on invalid file
+        Check last modified time of status.php compared to last known value
         """
-        if len(lines) != 3:
-            print(f'Invalid file length: {len(lines)}')
-            return False
+        if self.__get_filemtime('status.php') != self.status_mtime:
+            return True
 
-        if lines[0] != '<?php\n':                          #Require PHP start
-            return False
-
-        matches = re.match(r'^\$this\->set_status\((\d{1,2}), (\d+)\);\s$', lines[1])
-        if matches is not None:
-            self.status = int(matches[1])
-            self.unpausetime = int(matches[2])
-            print(f'Status: {self.status}')                #Show new status
-            print(f'Unpausetime: {self.unpausetime}')      #Show new unpausetime
-        else:
-            return False
-
-        if lines[2] != '?>\n':                             #Require PHP end
-            return False
-
-        return True
+        return False
 
 
     def load_status(self):
         """
         Load status.php to get status and unpausetime
         """
+        filelines = []
 
-        lines = []
-        print('Loading status config:')
+        filelines = load_file(self.__settingsfiles.get('status.php'))
+        for line in filelines:
+            matches = re.match(r'^\$this\->set_status\((\d{1,2}), (\d+)\);\n$', line)
+            if matches is not None:
+                self.status = int(matches[1])
+                self.unpausetime = int(matches[2])
+                print(f'Status: {self.status}')            #Show new status
+                print(f'Unpausetime: {self.unpausetime}')  #Show new unpausetime
 
-        lines = load_file(f'{self.__webconfigdir}/status.php')
-        self.is_status_valid(lines)
-
+        #Make sure status should be paused by checking if unpausetime < current time
         if self.status & STATUS_PAUSED and self.unpausetime > 0:
             if self.unpausetime < time.time():
+                print('Incorrect status, setting as unpaused')
                 self.status -= STATUS_PAUSED
                 self.unpausetime = 0
 
-        self.status_last_mtime = self.__get_filemtime(f'{self.__webconfigdir}/status.php')
+        self.status_mtime = self.__get_filemtime('status.php')
 
 
