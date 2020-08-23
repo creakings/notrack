@@ -175,7 +175,7 @@ function extract_domain($url) {
 
 
 /********************************************************************
- *  Filter Boolean Value
+ *  Filter Boolean Value possibly DEPRECATED
  *    Checks if value given is 'true' or 'false'
  *  Params:
  *    Value to Check

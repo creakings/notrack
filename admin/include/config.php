@@ -10,6 +10,14 @@
  */
 
 class Config {
+  private $dhcp_authoritative = false;
+  private $dhcp_enabled = false;
+  private $dhcp_leasetime = '24h';
+  private $dhcp_gateway = '';
+  private $dhcp_rangestart = '';
+  private $dhcp_rangeend = '';
+  private $dhcp_hosts = array();
+
   private $settings_bl = DIR_SETTINGS.'bl.php';
 
   private $latestversion = VERSION;
@@ -269,7 +277,145 @@ class Config {
   }
 
 
-   /********************************************************************
+  /********************************************************************
+   *  Get Value
+   *    Checks private value exists, then returns it
+   *
+   *  Params:
+   *    $bl - bl_name
+   *  Return:
+   *    Full block list name
+   *    Or what it has been named as
+   */
+  public function __get($name) {
+    if (property_exists($this, $name)) {
+      return $this->{$name};
+    }
+    else {
+      trigger_error("Undefined variable {$name}", E_USER_WARNING);
+    }
+  }
+
+  /********************************************************************
+   *  Set Value
+   *    1. Check value exists
+   *    2. Apply appropriate filter
+   *
+   *  Params:
+   *    name (str)
+   *    value (mixed)
+   *  Return:
+   *    Value on success
+   *    False on failure
+   */
+  public function __set($name, $value) {
+    switch($name) {
+      case 'dhcp_authoritative':
+      case 'dhcp_enabled':
+        if (filter_var($value, FILTER_VALIDATE_BOOLEAN) === false) return false;
+        break;
+      case 'dhcp_leasetime':
+        if ($this->dhcp_filter_leasetime($value) === false) return false;
+        break;
+      case 'dhcp_gateway':
+      case 'dhcp_rangestart':
+      case 'dhcp_rangeend':
+        if (filter_var($value, FILTER_VALIDATE_IP) === false) return false;
+        break;
+      default:
+        trigger_error("Undefined variable {$name}", E_USER_WARNING);
+        return false;
+
+    }
+
+    $this->{$name} = $value;
+    //echo "setting {$name} {$value}";
+    return $value;
+  }
+
+
+  /********************************************************************
+   *  DHCP Add Host
+   *
+   *
+   */
+  public function dhcp_addhost($ip, $mac, $sysname, $sysicon)  {
+    if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
+      return false;
+    }
+
+    $this->dhcp_hosts[$ip] = array('mac' => $mac, 'sysname' => $sysname, 'sysicon' => $sysicon);
+  }
+
+
+  /********************************************************************
+   *  Check DHCP Lease Time is Valid
+   *    Regex match: 1-2 digits followed by d or h
+   *
+   *  Params:
+   *    $value (str): Value to check
+   *  Return:
+   *    True valid value
+   *    False invalid value
+   */
+  private function dhcp_filter_leasetime($value) {
+    if (preg_match('/^\d{2}(d|h)$/', $value)) {
+      return true;
+    }
+    else {
+      trigger_error('invalid value for dhcp_leasetime', E_USER_WARNING);
+      return false;
+    }
+  }
+
+  public function dhcp_gethosts() {
+    return $this->dhcp_hosts;
+  }
+
+
+  /********************************************************************
+   *  Save DHCP to Settings
+   *    Write set_blocklist_status and set_blocklist_custom instructions to bl.php
+   *
+   */
+  public function dhcp_savesettings() {
+    $filelines = array();
+
+    $filelines[] = '<?php'.PHP_EOL;
+
+    //Write basic DHCP variables first
+    if ($this->dhcp_authoritative) {
+      $filelines[] = "\$config->dhcp_authoritative = true;".PHP_EOL;
+    }
+    else {
+      $filelines[] = "\$config->dhcp_authoritative = false;".PHP_EOL;
+    }
+    if ($this->dhcp_enabled) {
+      $filelines[] = "\$config->dhcp_enabled = true;".PHP_EOL;
+    }
+    else {
+      $filelines[] = "\$config->dhcp_enabled = false;".PHP_EOL;
+    }
+    $filelines[] = "\$config->dhcp_leasetime = '{$this->dhcp_leasetime}';".PHP_EOL;
+    $filelines[] = "\$config->dhcp_gateway = '{$this->dhcp_gateway}';".PHP_EOL;
+    $filelines[] = "\$config->dhcp_rangestart = '{$this->dhcp_rangestart}';".PHP_EOL;
+    $filelines[] = "\$config->dhcp_rangeend = '{$this->dhcp_rangeend}';".PHP_EOL;
+
+    //Then write all the DHCP hosts
+    foreach($this->dhcp_hosts as $key => $value) {        //Go through all hosts
+      $filelines[] = "\$config->dhcp_addhost('{$key}', '{$value['mac']}', '{$value['sysname']}', '{$value['systype']}');".PHP_EOL;
+    }
+
+    //Final line closing PHP tag
+    $filelines[] = '?>'.PHP_EOL;
+
+    if (file_put_contents(DIR_SETTINGS.'dhcp.php', $filelines) === false) {
+      die('Unable to save DHCP settings to '.DIR_SETTINGS.'dhcp.php');
+    }
+  }
+
+
+  /********************************************************************
    *  Get Block List Name
    *    Returns the name of block list if it exists in the names array
    *
