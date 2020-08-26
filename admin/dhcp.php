@@ -27,13 +27,13 @@ ensure_active_session();
 ************************************************/
 //define('DHCP_CONF', '/etc/dnsmasq.d/dhcp.conf');
 define('LEASES_FILE', '/var/lib/misc/dnsmasq.leases');
-define('REGEX_DEVICEICONS', '(computer|laptop|nas|phone|raspberrypi|server|tv)');
+define('REGEX_DEVICEICONS', 'device\-(computer|laptop|nas|phone|raspberrypi|server|tv)');
 
 /************************************************
 *Global Variables                               *
 ************************************************/
 $view = 1;
-$privacy = false;
+
 /************************************************
 *Arrays                                         *
 ************************************************/
@@ -59,7 +59,7 @@ $leases = array();                                         //Array of leases fro
  *    not captured - * or MAC address
  */
 function load_activeleases() {
-  global $leases, $privacy;
+  global $leases;
 
   $matches = array();
 
@@ -72,8 +72,6 @@ function load_activeleases() {
     //Create new value in leases by key - IP
     //Value is an array of: mac, name, icon, active
     if (preg_match('/^(\d+) ([\da-f:]{17}) ([\d:\.]+) ([\w\*\-_\.]+)/i', $line, $matches)) {
-      if ($privacy) $matches[2] = '**:**:**:**:**:**';
-
       $leases[$matches[3]] = array('exptime' => $matches[1], 'mac' => $matches[2], 'sysname' => $matches[4], 'sysicon' => 'computer', 'active' => true);
     }
   }
@@ -100,8 +98,7 @@ function load_dhcpsettings() {
   if (file_exists($settings_dhcp)) {
     include_once $settings_dhcp;
   }
-  else {
-    echo 'config missing';
+  else {                                                   //File missing, set defaults
     set_default_network();
   }
 }
@@ -142,14 +139,14 @@ function add_statichosts() {
 
 
 /********************************************************************
- *  Get Icon Menu
+ *  Draw Icon Menu
  *    Build icon select menu
  *  Params:
  *    None
  *  Return:
- *    code for a select box
+ *    HTML code for a select box
  */
-function get_iconmenu() {
+function draw_iconmenu() {
   $menu = '';
 
   $menu = '<ul>';
@@ -160,7 +157,7 @@ function get_iconmenu() {
   $menu .= '<li class="device-phone" title="Phone" onclick="setIcon(this)"></li>';
   $menu .= '<li class="device-raspberrypi" title="Raspberry Pi" onclick="setIcon(this)"></li>';
   $menu .= '<li class="device-tv" title="TV" onclick="setIcon(this)"></li>';
-  $menu .= '</ul>'.PHP_EOL;
+  $menu .= '</ul>';
 
   return $menu;
 }
@@ -195,87 +192,6 @@ function set_default_network() {
       $config->dhcp_rangestart = '192.168.0.50';
       $config->dhcp_rangeend   = '192.168.0.150';
     }
-  }
-}
-
-
-/********************************************************************
- *  Update Static Hosts Array
- *    Validate POST data in newhosts then write to statichosts array
- *    Write the contents of statichosts array to /tmp/localhosts.list
- *    1. Check if data has been posted to newhosts
- *    2. Explode the new line seperated data from newhosts into an array
- *    3. Carry out regex check on each line
- *
- *  Params:
- *    None
- *  Return:
- *    None
- *  Regex:
- *    Group 1: IPv4 or IPv6 address
- *    Group 2: MAC Address
- *    Group 3: Surplus of MAC Address
- *    Group 4: Surplus of MAC Address
- *    Group 5: Name (optional)
- *    Group 6: Icon from REGEX_DEVICEICONS
- */
-function update_statichosts() {
-  global $config;
-
-  $matches = array();
-  $newhosts = array();
-  $host = '';
-  $ip = '';
-
-  $regex_newhost = '/^\s*([\d\.:]+)\s*,\s*((?:[\dA-Fa-f]{2}:){5}[\dA-Fa-f]{2})\s*,\s*([\w\.\-_]+)?\s*,\s*'.REGEX_DEVICEICONS.'/';
-
-  if (! isset($_POST['newhosts'])) return;                 //Leave if there is nothing in newhosts
-
-  $newhosts = json_decode($_POST['newhosts']);             //Decode JSON data into an array
-
-  //print_r($newhosts);
-  foreach($newhosts as $host) {
-
-    //Regex check on user data entered to ensure the it's valid and avoid XSS vulnerabilities
-    if (preg_match($regex_newhost, $host, $matches)) {
-      //Filtering is done in $config
-      $config->dhcp_addhost($matches[1], $matches[2], $matches[3], $matches[4]);
-      //$statichosts[$ip] = array('mac' => $matches[2], 'name' => $matches[3], 'icon' => $matches[4]);
-    }
-  }
-}
-
-
-/********************************************************************
- *  Update DHCP
- *    Assign POST items to $config->dhcp values
- *    Validation is carried out by $config
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function update_dhcp() {
-  global $config;
-
-  $config->dhcp_enabled = isset($_POST['enabled']);
-  $config->dhcp_authoritative = isset($_POST['authoritative']);
-
-  if (isset($_POST['gateway_ip'])) {
-    $config->dhcp_gateway = $_POST['gateway_ip'];
-  }
-
-  if (isset($_POST['start_ip'])) {
-    $config->dhcp_rangestart = $_POST['start_ip'];
-  }
-
-  if (isset($_POST['end_ip'])) {
-    $config->dhcp_rangeend = $_POST['end_ip'];
-  }
-
-  if (isset($_POST['lease_time'])) {
-    $config->dhcp_leasetime = $_POST['lease_time'];
   }
 }
 
@@ -322,8 +238,8 @@ function show_leases() {
     $icon = '<div class="device-'.$leases[$ip]['sysicon'].'">&nbsp;</div>';
 
     //Make sure expired time below current time is shown as 'Expired'
-    if ($leases[$ip]['exptime'] >= $currenttime) {
-      $valid_until = date("d M Y \- H:i:s", $leases[$ip]['exptime']);
+    if ($leases[$ip]['exptime'] > $currenttime) {
+      $valid_until = date("d M \- H:i:s", $leases[$ip]['exptime']);
     }
     else {
       $valid_until = 'Expired';
@@ -359,7 +275,7 @@ function show_statichosts()
   $icon = '';                                              //Code for icon div and class
   $iconmenu = '';                                          //Code for icon menu
 
-  $iconmenu = get_iconmenu();
+  $iconmenu = draw_iconmenu();
 
   $statichosts = $config->dhcp_hosts;
   $iplist = array_keys($statichosts);                      //Get list of IP Addresses
@@ -393,7 +309,7 @@ function show_statichosts()
   echo '<tr><td><div contenteditable="true" placeholder="192.168.0.2"></div></td><td>'.$icon.$iconmenu.'</button></td><td><div contenteditable="true" placeholder="new.host"></div></td><td><div contenteditable="true" placeholder="11:22:33:aa:bb:cc"></div></td><td>'.$delbutton.'</td></tr>'.PHP_EOL;
 
   //Save button
-  echo '<tr><td colspan="5"><button type="button" onclick=submitForm(2)>Save Changes</button></td></tr>'.PHP_EOL;
+  echo '<tr><td colspan="5"><button type="button" onclick="submitForm(2)">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End contenteditable table
   echo '</div>'.PHP_EOL;                                   //End Tab
 }
@@ -495,6 +411,79 @@ function draw_tabbedview($view) {
   echo '</form>'.PHP_EOL;                                  //End form
 }
 
+
+/********************************************************************
+ *  Update Static Hosts Array
+ *    Process newhosts POST data which was built from JS function submitForm
+ *    1. Check if data has been posted to newhosts
+ *    2. Explode the new line seperated data from newhosts into an array
+ *    3. Carry out basic regex check on each line to avoid XSS vulnerabilities
+ *       Further filtering of add_host is done in config
+ *
+ *  Regex:
+ *    Group 1: IPv4 or IPv6 address
+ *    Group 2: MAC Address
+ *    Group 3: Name (optional)
+ *    Group 4: Icon from REGEX_DEVICEICONS
+ */
+function update_statichosts() {
+  global $config;
+
+  $matches = array();
+  $newhosts = array();
+  $host = '';
+  $ip = '';
+
+  $regex_newhost = '/^\s*([\d\.:]+)\s*,\s*((?:[\dA-Fa-f]{2}:){5}[\dA-Fa-f]{2})\s*,\s*([\w\.\-_]+)?\s*,\s*'.REGEX_DEVICEICONS.'/';
+
+  if (! isset($_POST['newhosts'])) return;                 //Leave if there is nothing in newhosts
+
+  $newhosts = json_decode($_POST['newhosts']);             //Decode JSON data into an array
+
+  foreach($newhosts as $host) {
+    if (preg_match($regex_newhost, $host, $matches)) {     //Ensure line is valid
+      //Further filtering is done in $config
+      $config->dhcp_addhost($matches[1], $matches[2], $matches[3], $matches[4]);
+    }
+  }
+
+}
+
+
+/********************************************************************
+ *  Update DHCP
+ *    Assign POST items to $config->dhcp values
+ *    Validation is carried out by $config
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function update_dhcp() {
+  global $config;
+
+  $config->dhcp_enabled = isset($_POST['enabled']);
+  $config->dhcp_authoritative = isset($_POST['authoritative']);
+
+  if (isset($_POST['gateway_ip'])) {
+    $config->dhcp_gateway = $_POST['gateway_ip'];
+  }
+
+  if (isset($_POST['start_ip'])) {
+    $config->dhcp_rangestart = $_POST['start_ip'];
+  }
+
+  if (isset($_POST['end_ip'])) {
+    $config->dhcp_rangeend = $_POST['end_ip'];
+  }
+
+  if (isset($_POST['lease_time'])) {
+    $config->dhcp_leasetime = $_POST['lease_time'];
+  }
+}
+
+
 /********************************************************************/
 
 draw_topmenu('DHCP');
@@ -513,15 +502,10 @@ if (count($_POST) > 2) {                                   //Anything in POST ar
   $config->dhcp_savesettings();
 
   //Reload page making sure the last view is selected
-  //header('Location: ?view='.$view);
+  header('Location: ?view='.$view);
 }
 
 load_dhcpsettings();                                       //Load DHCP Settings
-
-//Optional GET value to blank out MAC addresses
-if (isset($_GET['privacy'])) {
-  $privacy = true;
-}
 
 //Set value for view from GET value
 if (isset($_GET['view'])) {
@@ -627,9 +611,6 @@ function deleteRow(btn) {
 /********************************************************************
  *  Set Icon
  *    Change the icon div to show the image user has selected from dropdown menu
- *    1. Get the table cell for the button which was pressed
- *    2. Delete the parent of the cell (the table row)
- *    3. Use regex to check the menu value is one of the specified Device Icons
  *
  *  Params:
  *    None
@@ -637,19 +618,10 @@ function deleteRow(btn) {
  *    None
  */
 function setIcon(item) {
-  /*let regexDevice = /^$/;
-  let p = menu.parentNode.parentNode;
-
-  //Check if selected menu value is one of the Device Icons
-  if (regexDevice.test(menu.value)) {
-    p.children[1].innerHTML = '<div class="device-'+menu.value+'"></div>';
-  }
-*/
   let p = item.parentNode.parentNode;
   p.className = item.className;
 
   p.blur()
-  //console.log(item.parentNode.parentNode);
 }
 
 
@@ -657,7 +629,7 @@ function setIcon(item) {
  *  Submit Form
  *    Collect contenteditable data then add it as a JSON encoded value to newHosts
  *    1. tbl element (the contenteditable table) may be null if show_basicview is used
- *    2. Extract the device icon class from innerHTML
+ *    2. Extract the device icon class from button className
  *    3. Extract other values using innerText
  *    4. Add as an array to hostList
  *    5. JSON Encode hostlist
@@ -669,7 +641,6 @@ function setIcon(item) {
  *    None
  */
 function submitForm(returnTab) {
-  let regexDevice = /^<button type=\"button\" class="device\-<?php echo REGEX_DEVICEICONS?>">/;
   let tbl = document.getElementById('hostsTable');
 
   let deviceIcon = '';
@@ -686,15 +657,8 @@ function submitForm(returnTab) {
   rowCount = tbl.rows.length - 1;
 
   for (let i = 1; i < rowCount; i++) {
-
-    //Extract the div class from the device icon cell
-    matches = regexDevice.exec(tbl.rows[i].children[1].innerHTML);
-    if (matches != undefined) {
-      deviceIcon = matches[1];
-    }
-    else {
-      deviceIcon = '';
-    }
+    //TD > Button > Button Class Name
+    deviceIcon = tbl.rows[i].children[1].children[0].className;
 
     //Set the elemets for host based on the row cells
     host = tbl.rows[i].children[0].innerText + ',';        //IP
@@ -703,11 +667,12 @@ function submitForm(returnTab) {
     host += deviceIcon + '\n';                             //Device Icon
     hostList.push(host);
   }
-  //console.log(tbl);
+
+  //console.log(hostList);
   document.getElementById('newHosts').value = JSON.stringify(hostList);
   document.getElementById('viewTab').value = returnTab;
 
-  document.getElementById('dhcpForm').submit();
+  document.getElementById('dhcpForm').submit();            //Submit the form data
 }
 
 
