@@ -341,6 +341,7 @@ class Config {
    */
   public function dhcp_addhost($ip, $mac, $sysname, $sysicon)  {
     if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
+      trigger_error("Invalid IP Address {$ip}", E_USER_WARNING);
       return false;
     }
 
@@ -403,7 +404,7 @@ class Config {
 
     //Then write all the DHCP hosts
     foreach($this->dhcp_hosts as $key => $value) {        //Go through all hosts
-      $filelines[] = "\$config->dhcp_addhost('{$key}', '{$value['mac']}', '{$value['sysname']}', '{$value['systype']}');".PHP_EOL;
+      $filelines[] = "\$config->dhcp_addhost('{$key}', '{$value['mac']}', '{$value['sysname']}', '{$value['sysicon']}');".PHP_EOL;
     }
 
     //Final line closing PHP tag
