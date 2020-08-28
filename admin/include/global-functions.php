@@ -260,30 +260,18 @@ function filter_macaddress($str) {
 
 /********************************************************************
  *  Filter String
- *    Checks if $var exists in POST or GET array
- *    Check strlen
+ *    Validates a string
  *
  *  Params:
- *    Array value to check, method - POST / GET, max string length
+ *    value (str): Value to check
+ *    maxlen (int): Maximum length of string
  *  Return:
  *    true on acceptable value
  *    false for unacceptable value
  */
-function filter_string($var, $method, $maxlen=255) {
-  if ($method == 'POST') {
-    if (isset($_POST[$var])) {
-      if (strlen($_POST[$var]) <= $maxlen) {
-        return true;
-      }
-    }
-  }
-
-  elseif ($method == 'GET') {
-    if (isset($_GET[$var])) {
-      if (strlen($_GET[$var]) <= $maxlen) {
-        return true;
-      }
-    }
+function filter_string($value, $maxlen=255) {
+  if (strlen($value) < $maxlen) {
+    return true;
   }
 
   return false;

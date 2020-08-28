@@ -213,7 +213,8 @@ function show_full_blocklist() {
  */
 
 //Process GET Requests
-if (filter_string('s', 'GET', 255)) {                      //Search box
+$searchbox = $_GET['s'] ?? '';                             //Search box
+if (filter_string($searchbox, 255)) {
   //Allow only alphanumeric . - _
   $searchbox = preg_replace('/[^\w\.\-_]/', '', $_GET['s']);
   $searchbox = strtolower($searchbox);

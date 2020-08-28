@@ -353,9 +353,11 @@ function update_blocklists() {
   $customlist = array();                                   //Array of items from customstr
   $validlist = array();                                    //Valid items from customlist
 
-  if (filter_string('bl_custom', 'POST', 2000)) {
+  $customstr = $_POST['bl_custom'] ?? '';
+
+  if (filter_string($customstr, 2000)) {
     //Split array
-    $customstr = preg_replace('#\s+#',',',trim(strip_tags($_POST['bl_custom'])));
+    $customstr = preg_replace('#\s+#',',',trim(strip_tags($customstr)));
     $customlist = explode(',', $customstr);                //Split string into array
 
     //Check if each item is a valid URL or file location?

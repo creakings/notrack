@@ -46,12 +46,11 @@ function do_action($action) {
   $boxes = array();
   $box = '';
 
-  if (filter_string('selectedCheckboxes', 'POST', 2300)) {
-    $boxstr = $_POST['selectedCheckboxes'];
-  }
-  else {
-    return false;
-  }
+  $boxstr = $_POST['selectedCheckboxes'] ?? '';
+
+  if (filter_string($boxstr, 4800) === false) return false;//Invalid string
+
+  if ($boxstr == '') return false;                         //Nothing to do
 
   $boxes = explode(',', $boxstr);
 
