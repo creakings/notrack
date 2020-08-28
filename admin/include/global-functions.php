@@ -11,10 +11,9 @@
  */ 
 function draw_systable($title) {
   echo '<div class="sys-group">'.PHP_EOL;
-  echo '<h5>'.$title.'</h5>'.PHP_EOL;
+  echo "<h5>{$title}</h5>".PHP_EOL;
   echo '<table class="sys-table">'.PHP_EOL;
-  
-  return null;
+
 }
 
 
@@ -27,9 +26,7 @@ function draw_systable($title) {
  *    None
  */
 function draw_sysrow($description, $value) {
-  echo '<tr><td>'.$description.': </td><td>'.$value.'</td></tr>'.PHP_EOL;
-  
-  return null;
+  echo "<tr><td>{$description}: </td><td>{$value}</td></tr>".PHP_EOL;
 }
 
 /********************************************************************
