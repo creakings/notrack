@@ -1,15 +1,12 @@
 <?php
 /*Class for NoTrack config
- *  Holds the users settings from /etc/notrack/notrack.conf
- *  Values are split between two arrays: settings and blocklists
- *  All blocklists, except for bl_custom are held in the blocklists array.
- *  (Most blocklists are either enabled - true or disabled - false, with the exception of bl_custom which can be a list of addresses / files)
  *
  *
  *
  */
 
 class Config {
+  //DHCP Settings
   private $dhcp_authoritative = false;
   private $dhcp_enabled = false;
   private $dhcp_leasetime = '24h';
@@ -17,6 +14,14 @@ class Config {
   private $dhcp_rangestart = '';
   private $dhcp_rangeend = '';
   private $dhcp_hosts = array();
+
+  //DNS Settings
+  private $dns_interface = 'eth0';
+  private $dns_listenip = '127.0.0.1';
+  private $dns_logretention = 60;
+  private $dns_server = 'opendns';
+  private $dns_serverip1 = '208.67.222.222';
+  private $dns_serverip2 = '208.67.220.220';
 
   private $settings_bl = DIR_SETTINGS.'bl.php';
 
@@ -310,25 +315,45 @@ class Config {
    */
   public function __set($name, $value) {
     switch($name) {
+      //DHCP Settings
       case 'dhcp_authoritative':
       case 'dhcp_enabled':
         if (filter_var($value, FILTER_VALIDATE_BOOLEAN) === false) return false;
+        $this->{$name} = (bool)$value;
         break;
       case 'dhcp_leasetime':
         if ($this->dhcp_filter_leasetime($value) === false) return false;
+        $this->dhcp_leasetime = $value;
         break;
       case 'dhcp_gateway':
       case 'dhcp_rangestart':
       case 'dhcp_rangeend':
         if (filter_var($value, FILTER_VALIDATE_IP) === false) return false;
+        $this->{$name} = $value;
         break;
+
+      //DNS Settings
+      case 'dns_interface':
+      case 'dns_server':
+        if (filter_string($value, 64) === false) return false;
+        $this->{$name} = $value;
+        break;
+      case 'dns_logretention':
+        $this->dns_logretention = filter_integer($value, 0, 365, 60);
+        break;
+      case 'dns_listenip':
+      case 'dns_serverip1':
+      case 'dns_serverip2':
+        if (filter_var($value, FILTER_VALIDATE_IP) === false) return false;
+        $this->{$name} = $value;
+        break;
+
       default:
         trigger_error("Undefined variable {$name}", E_USER_WARNING);
         return false;
 
     }
 
-    $this->{$name} = $value;
     //echo "setting {$name} {$value}";
     return $value;
   }
