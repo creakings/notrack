@@ -16,10 +16,12 @@ class Config {
   private $dhcp_hosts = array();
 
   //DNS Settings
+  private $dns_blockip = '192.168.0.2';
   private $dns_interface = 'eth0';
   private $dns_listenip = '127.0.0.1';
+  private $dns_listenport = 53;
   private $dns_logretention = 60;
-  private $dns_server = 'opendns';
+  private $dns_server = 'OpenDNS';
   private $dns_serverip1 = '208.67.222.222';
   private $dns_serverip2 = '208.67.220.220';
 
@@ -338,15 +340,18 @@ class Config {
         if (filter_string($value, 64) === false) return false;
         $this->{$name} = $value;
         break;
-      case 'dns_logretention':
-        $this->dns_logretention = filter_integer($value, 0, 365, 60);
-        break;
+      case 'dns_blockip':
       case 'dns_listenip':
       case 'dns_serverip1':
       case 'dns_serverip2':
         if (filter_var($value, FILTER_VALIDATE_IP) === false) return false;
         $this->{$name} = $value;
         break;
+      case 'dns_logretention':
+        $this->dns_logretention = filter_integer($value, 0, 365, 60);
+        break;
+      case 'dns_listenport':
+        $this->dns_listenport = filter_integer($value, 1, 65536, 53);
 
       default:
         trigger_error("Undefined variable {$name}", E_USER_WARNING);
