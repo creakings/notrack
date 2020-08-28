@@ -12,21 +12,18 @@ require('../include/global-vars.php');
 require('../include/global-functions.php');
 require('../include/config.php');
 require('../include/menu.php');
-require('../include/mysqlidb.php');
 
 ensure_active_session();
 
 /************************************************
 *Constants                                      *
 ************************************************/
-define('DNSLIST', ['dnsmasq', 'bind']);
 define('WEBLIST', ['lighttpd', 'apache', 'nginx']);
 
 
 /************************************************
 *Global Variables                               *
 ************************************************/
-$dbwrapper = new MySqliDb();
 
 
 /************************************************
@@ -142,57 +139,6 @@ function server_section() {
 
   draw_sysrow('JsonWhois API <a href="https://jsonwhois.com/"><div class="help-icon"></div></a>', '<input type="text" name="whoisapi" class="input-conf" value="'.$config->settings['whoisapi'].'" onkeydown="if (event.keyCode == 13) { submitForm(\'server\'); return false; }">');
 
-  echo '</table></div>'.PHP_EOL;
-  echo '</section>'.PHP_EOL;
-}
-
-
-/********************************************************************
- *  Show DNS Server Section
- *    1. Find running dns server from DNSLIST using ps
- *    2. Split result of ps into an $pidarray using delimiter of one or more spaces
- *    3. $pidarray elements:
- *       0 - Process
- *       1 - PID
- *       2 - Date Opened
- *       3 - Memory Usage
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function dns_section() {
-  global $dbwrapper;
-
-  $pidstr = '';
-  $pidarray = array();
-
-  foreach (DNSLIST AS $app) {
-    $pidstr = exec("ps -eo fname,pid,stime,pmem | grep $app");
-
-    //Has valid process been found?
-    if ($pidstr != '') {
-      $pidarray = preg_split('/\s+/', $pidstr);            //Explode into array
-      $pidarray[0] = ucfirst($pidarray[0]).' is Active';   //Prettify process name
-      break;
-    }
-  }
-
-  //Fallback if no process hasn't been found
-  if ($pidstr == '') {
-    $pidarray = array('<span class="red">Inactive</span>', '-', '-', '-');
-  }
-
-  echo '<section id="dns">'.PHP_EOL;
-  draw_systable('DNS Server');
-  draw_sysrow('Status', $pidarray[0]);
-  draw_sysrow('Pid', $pidarray[1]);
-  draw_sysrow('Started On', $pidarray[2]);
-  draw_sysrow('Memory Used', $pidarray[3].' MB');
-  draw_sysrow('Historical Logs', $dbwrapper->queries_historical_days().' Days');
-  draw_sysrow('DNS Queries', number_format($dbwrapper->count_total_queries()));
-  draw_sysrow('Delete All History', '<button class="button-danger" type="button" onclick="confirmLogDelete();">Purge</button>');
   echo '</table></div>'.PHP_EOL;
   echo '</section>'.PHP_EOL;
 }
