@@ -375,28 +375,17 @@ class Config {
 
 
   /********************************************************************
-   *  Save DHCP to Settings
-   *    Write set_blocklist_status and set_blocklist_custom instructions to bl.php
+   *  Save DHCP and DNS config to server.php
    *
    */
-  public function dhcp_savesettings() {
+  public function save_serversettings() {
     $filelines = array();
 
     $filelines[] = '<?php'.PHP_EOL;
 
-    //Write basic DHCP variables first
-    if ($this->dhcp_authoritative) {
-      $filelines[] = "\$config->dhcp_authoritative = true;".PHP_EOL;
-    }
-    else {
-      $filelines[] = "\$config->dhcp_authoritative = false;".PHP_EOL;
-    }
-    if ($this->dhcp_enabled) {
-      $filelines[] = "\$config->dhcp_enabled = true;".PHP_EOL;
-    }
-    else {
-      $filelines[] = "\$config->dhcp_enabled = false;".PHP_EOL;
-    }
+    //Write basic DHCP variables first, convert boolean values to integer
+    $filelines[] = "\$config->dhcp_authoritative = ".(int)$this->dhcp_authoritative.";".PHP_EOL;
+    $filelines[] = "\$config->dhcp_enabled = ".(int)$this->dhcp_enabled.";".PHP_EOL;
     $filelines[] = "\$config->dhcp_leasetime = '{$this->dhcp_leasetime}';".PHP_EOL;
     $filelines[] = "\$config->dhcp_gateway = '{$this->dhcp_gateway}';".PHP_EOL;
     $filelines[] = "\$config->dhcp_rangestart = '{$this->dhcp_rangestart}';".PHP_EOL;
@@ -410,8 +399,8 @@ class Config {
     //Final line closing PHP tag
     $filelines[] = '?>'.PHP_EOL;
 
-    if (file_put_contents(DIR_SETTINGS.'dhcp.php', $filelines) === false) {
-      die('Unable to save DHCP settings to '.DIR_SETTINGS.'dhcp.php');
+    if (file_put_contents(DIR_SETTINGS.'server.php', $filelines) === false) {
+      die('Unable to save settings to '.DIR_SETTINGS.'server.php');
     }
   }
 

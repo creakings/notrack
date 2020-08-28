@@ -25,7 +25,6 @@ ensure_active_session();
 /************************************************
 *Constants                                      *
 ************************************************/
-//define('DHCP_CONF', '/etc/dnsmasq.d/dhcp.conf');
 define('LEASES_FILE', '/var/lib/misc/dnsmasq.leases');
 define('REGEX_DEVICEICONS', 'device\-(computer|laptop|nas|phone|raspberrypi|server|tv)');
 
@@ -82,9 +81,10 @@ function load_activeleases() {
 
 
 /********************************************************************
- *  Load DHCP Values from DHCP_CONF
- *    1. Check dhcp.php exists in settings folder
- *    2. Execute dhcp.php
+ *  Load DHCP Values from server.php
+ *    1. Check server.php exists in settings folder
+ *    2. Execute server.php
+ *    3. Set default values for network if any DHCP IP settings are blank
  *
  *  Params:
  *    None
@@ -93,12 +93,14 @@ function load_activeleases() {
  */
 function load_dhcpsettings() {
   global $config;
-  $settings_dhcp = DIR_SETTINGS.'dhcp.php';
+  $settings_file = DIR_SETTINGS.'server.php';
 
-  if (file_exists($settings_dhcp)) {
-    include_once $settings_dhcp;
+  if (file_exists($settings_file)) {
+    include_once $settings_file;
   }
-  else {                                                   //File missing, set defaults
+
+  //Check if any IP settings are blank
+  if (($config->dhcp_gateway == '') || ($config->dhcp_rangestart == '') || ($config->dhcp_rangeend == '')) {
     set_default_network();
   }
 }
@@ -171,27 +173,25 @@ function draw_iconmenu() {
 function set_default_network() {
   global $config;
 
-  if (($config->dhcp_gateway == '') || ($config->dhcp_rangestart == '') || ($config->dhcp_rangeend == '')) {
-    //Example (192.168.0).x
-    if (preg_match('/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.)\d{1,3}/', $_SERVER['SERVER_ADDR'], $matches)) {
-      $config->dhcp_gateway    = $matches[1].'1';
-      $config->dhcp_rangestart = $matches[1].'64';
-      $config->dhcp_rangeend   = $matches[1].'254';
-    }
+  //Example (192.168.0).x
+  if (preg_match('/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.)\d{1,3}/', $_SERVER['SERVER_ADDR'], $matches)) {
+    $config->dhcp_gateway    = $matches[1].'1';
+    $config->dhcp_rangestart = $matches[1].'64';
+    $config->dhcp_rangeend   = $matches[1].'254';
+  }
 
-    // TODO No idea about IPv6
-    elseif (preg_match('/^[0-9a-f:]+/i', $_SERVER['SERVER_ADDR'], $matches)) {
-      $config->dhcp_gateway    = $matches[0].'';
-      $config->dhcp_rangestart = $matches[0].':00FF';
-      $config->dhcp_rangeend   = $matches[0].':FFFF';
-    }
+  // TODO No idea about IPv6
+  elseif (preg_match('/^[0-9a-f:]+/i', $_SERVER['SERVER_ADDR'], $matches)) {
+    $config->dhcp_gateway    = $matches[0].'';
+    $config->dhcp_rangestart = $matches[0].':00FF';
+    $config->dhcp_rangeend   = $matches[0].':FFFF';
+  }
 
-    //Not known, use the default values from Dnsmasq
-    else {
-      $config->dhcp_gateway    = '192.168.0.1';
-      $config->dhcp_rangestart = '192.168.0.50';
-      $config->dhcp_rangeend   = '192.168.0.150';
-    }
+  //Not known, use the default values from Dnsmasq
+  else {
+    $config->dhcp_gateway    = '192.168.0.1';
+    $config->dhcp_rangestart = '192.168.0.50';
+    $config->dhcp_rangeend   = '192.168.0.150';
   }
 }
 
@@ -499,7 +499,7 @@ if (count($_POST) > 2) {                                   //Anything in POST ar
   //Update statichosts and DHCP config based on users input
   update_statichosts();
   update_dhcp();
-  $config->dhcp_savesettings();
+  $config->save_serversettings();
 
   //Reload page making sure the last view is selected
   header('Location: ?view='.$view);
