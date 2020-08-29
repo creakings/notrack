@@ -23,7 +23,7 @@ function extract_urls() {
     $paramlist[strip_tags($key)] = $taglessvalue;          //Store parameter
 
     //Is the taglessvalue a URL?
-    if (preg_match('/^https?:\/\/[\w-._]{3,256}(\/[\w-_.%\/]*)?(\?[\w%&=.:#@~$]*)?$/', $taglessvalue)) {
+    if (preg_match('/^https?:\/\/[\w\-\.]{3,256}(\/[\w\-\.%\/]*)?(\?[\w%&=\.:#@~\$]*)?$/', $taglessvalue)) {
       if (! in_array($taglessvalue, $urllist)) {           //Prevent duplicates
         $urllist[] = $taglessvalue;                        //Add array to list
       }
