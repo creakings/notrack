@@ -143,9 +143,9 @@ class BlockParser:
         with ZipFile(sourcezip) as zipobj:
             for compressedfile in zipobj.namelist():
                 if compressedfile.endswith('.txt'):
-                    zipobj.extract(compressedfile, self.__folders.tempdir)
+                    zipobj.extract(compressedfile, f'{self.__folders.tempdir}/')
                     print(f'Extracting {compressedfile}')
-                    move_file(self.__folders.tempdir + compressedfile, destination)
+                    move_file(f'{self.__folders.tempdir}/{compressedfile}', destination)
 
 
     def __add_domain(self, subdomain, comment, source):
@@ -545,7 +545,7 @@ class BlockParser:
         #Prepare for writing downloaded file to temp folder
         if url.endswith('zip'):                            #Check file extension
             extension = 'zip'
-            outputfile = '%s%s.zip' % (self.__folders.tempdir, listname)
+            outputfile = f'{self.__folders.tempdir}/{listname}.zip'
 
         else:                                              #Other - Assume txt for output
             extension = 'txt'
@@ -590,7 +590,7 @@ class BlockParser:
 
             #Is this a downloadable file or locally stored?
             if blurl.startswith('http') or blurl.startswith('ftp'):
-                blfilename = self.__folders.tempdir + blname + '.txt' #Download to temp folder
+                blfilename = f'{self.__folders.tempdir}/{blname}.txt' #Download to temp folder
                 if self.__check_file_age(blfilename):                 #Does file need freshening?
                     self.__download_list(blurl, blname, blfilename)
 
@@ -653,7 +653,7 @@ class BlockParser:
             #Is this a downloadable file or locally stored?
             if blurl.startswith('http') or blurl.startswith('ftp'):
                 #Download to temp folder with loop position in file name
-                blfilename = f'{self.__folders.tempdir}{blname}.txt'
+                blfilename = f'{self.__folders.tempdir}/{blname}.txt'
                 if self.__check_file_age(blfilename):      #Does file need freshening?
                     self.__download_list(blurl, blname, blfilename)
 

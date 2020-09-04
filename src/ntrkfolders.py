@@ -3,7 +3,7 @@
 #Description: FoldersList Class for Multiple NoTrack components
 #Author     : QuidsUp
 #Date       : 2020-04-04
-#Version    : 0.9.5
+#Version    : 20.09
 
 #Standard imports
 import os
@@ -17,35 +17,28 @@ class FolderList:
     """
     def __init__(self):
         if os.name == 'posix':
-
             #Directories
-            self.etcdir = '/etc/'
-            self.tempdir = tempfile.gettempdir() + '/'
-            self.sbindir = '/usr/local/sbin/'              #DEPRECATED
-            self.webdir = ''
-            #self.logdir = '/var/log/'
+            etcdir = '/etc'
+            FolderList.tempdir = tempfile.gettempdir()
+            FolderList.webdir = ''
+            #FolderList.logdir = '/var/log/'
 
             self.__find_unix_webdir()                      #Get webserver location
 
-            self.accesslog = '/var/log/ntrk-admin.log'
-            self.cron_ntrkparse = '/etc/cron.d/ntrk-parse'
-            self.main_blocklist = '/etc/dnsmasq.d/notrack.list'
-            self.temp_blocklist = self.tempdir + 'notracktemp.list'
-            self.dnslists = '/etc/dnsmasq.d/'
-            self.blacklist = f'{self.webconfigdir}/blacklist.txt'
-            self.whitelist = f'{self.webconfigdir}/whitelist.txt'
-            self.tld_blacklist = '/etc/notrack/domain-blacklist.txt'
-            self.tld_whitelist = '/etc/notrack/domain-whitelist.txt'
-            self.tld_csv = f'{self.webdir}/include/tld.csv'
-            self.notrack_config = '/etc/notrack/notrack.conf'
-            self.etc_notrack = '/etc/notrack/'
+            #FolderList.accesslog = '/var/log/ntrk-admin.log' DEPRECATED
+            FolderList.main_blocklist = '/etc/dnsmasq.d/notrack.list'
+            FolderList.temp_blocklist = f'{FolderList.tempdir}/notracktemp.list'
+            FolderList.dnslists = '/etc/dnsmasq.d/'
+            FolderList.blacklist = f'{FolderList.webconfigdir}/blacklist.txt'
+            FolderList.whitelist = f'{FolderList.webconfigdir}/whitelist.txt'
+            FolderList.tld_blacklist = '/etc/notrack/domain-blacklist.txt'
+            FolderList.tld_whitelist = '/etc/notrack/domain-whitelist.txt'
+            FolderList.tld_csv = f'{FolderList.webdir}/include/tld.csv'
 
-            #NoTrack Apps
-            self.notrack = '/usr/local/sbin/notrack'       #DEPRECATED
-            self.ntrk_pause = '/usr/local/sbin/ntrk-pause' #DEPRECATED
-            self.ntrk_upgrade = '/usr/local/sbin/ntrk-upgrade' #DEPRECATED
-
-
+            #Output Config Files
+            FolderList.localhosts = f'{etcdir}/localhosts.list'
+            FolderList.dhcpconf = f'{etcdir}/dnsmasq.d/dhcp.conf'
+            FolderList.serverconf = f'{etcdir}/dnsmasq.d/server.conf'
 
 
     def __find_unix_webdir(self):
@@ -53,13 +46,11 @@ class FolderList:
         Find UNIX webdir
         """
         if os.path.isdir('/var/www/html/notrack/admin'):   #Optional location for notrack
-            self.webconfigdir = '/var/www/html/notrack/admin/settings'
-            self.webdir = '/var/www/html/notrack/admin'
-            self.wwwsink = '/var/www/html/notrack/sink/'   #DEPRECATED
+            FolderList.webconfigdir = '/var/www/html/notrack/admin/settings'
+            FolderList.webdir = '/var/www/html/notrack/admin'
         elif os.path.isdir('/var/www/html/admin'):
-            self.webconfigdir = '/var/www/html/admin/settings'
-            self.webdir = '/var/www/html/admin'
-            self.wwwsink = '/var/www/html/sink/'           #DEPRECATED
+            FolderList.webconfigdir = '/var/www/html/admin/settings'
+            FolderList.webdir = '/var/www/html/admin'
         else:
             print('Find_Unix_WebDir: Fatal Error - Unable to find web folder', file=sys.stderr)
             sys.exit(10)
