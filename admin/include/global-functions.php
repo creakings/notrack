@@ -195,10 +195,8 @@ function filter_bool($value) {
  *    2. Perform regex match to see if domain is in the form of some-site.com, or some_site.co.uk
  *
  *  Regex:
- *    Group 1: *. (optional)
- *    Group 2: subdomain(s) (optional)
- *    Group 3: domain 1 to 63 chars
- *    Group 4: TLD 2 to 63 chars
+ *    subdomain or domain 1 to 63 chars
+ *    TLD 2 to 63 chars
  *  Params:
  *    Domain to check
  *  Return:
@@ -209,7 +207,7 @@ function filter_domain($domain) {
     return false;
   }
 
-  if (preg_match('/^(\*\.)?([\w\-_\.]+)?[\w\-_]{1,63}\.[\w\-]{2,63}$/', $domain) > 0) {
+  if (preg_match('/^[\w\-]{1,63}\.[\w\-\.]{2,63}$/', $domain) > 0) {
     return true;
   }
   else {
@@ -260,18 +258,22 @@ function filter_macaddress($str) {
  *    Validates a string
  *
  *  Params:
- *    value (str): Value to check
+ *    str (str): String to check
  *    maxlen (int): Maximum length of string
  *  Return:
  *    true on acceptable value
  *    false for unacceptable value
  */
-function filter_string($value, $maxlen=255) {
-  if (strlen($value) < $maxlen) {
-    return true;
+function filter_string($str, $maxlen=255) {
+  if (strlen($str) > $maxlen) {                            //Check length of string
+    return false;
   }
 
-  return false;
+  if (preg_match('/[<>]/', $str)) {                        //Check there are no HTML Tags
+    return false;
+  }
+
+  return true;
 }
 
 

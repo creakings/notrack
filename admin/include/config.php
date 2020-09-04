@@ -21,6 +21,7 @@ class Config {
   private $dns_listenip = '127.0.0.1';
   private $dns_listenport = 53;
   private $dns_logretention = 60;
+  private $dns_name = 'notrack.local';
   private $dns_server = 'OpenDNS';
   private $dns_serverip1 = '208.67.222.222';
   private $dns_serverip2 = '208.67.220.220';
@@ -347,12 +348,16 @@ class Config {
         if (filter_var($value, FILTER_VALIDATE_IP) === false) return false;
         $this->{$name} = $value;
         break;
+      case 'dns_name':
+        if (filter_string($value, 253) == false) return false;
+        $this->dns_name = $value;
+        break;
       case 'dns_logretention':
         $this->dns_logretention = filter_integer($value, 0, 365, 60);
         break;
       case 'dns_listenport':
         $this->dns_listenport = filter_integer($value, 1, 65536, 53);
-
+        break;
       default:
         trigger_error("Undefined variable {$name}", E_USER_WARNING);
         return false;
@@ -420,6 +425,17 @@ class Config {
     $filelines[] = "\$config->dhcp_gateway = '{$this->dhcp_gateway}';".PHP_EOL;
     $filelines[] = "\$config->dhcp_rangestart = '{$this->dhcp_rangestart}';".PHP_EOL;
     $filelines[] = "\$config->dhcp_rangeend = '{$this->dhcp_rangeend}';".PHP_EOL;
+
+    $filelines[] = "\$config->dns_blockip = '{$this->dns_blockip}';".PHP_EOL;
+    $filelines[] = "\$config->dns_interface = '{$this->dns_interface}';".PHP_EOL;
+    $filelines[] = "\$config->dns_listenip = '{$this->dns_listenip}';".PHP_EOL;
+    $filelines[] = "\$config->dns_listenport = '{$this->dns_listenport}';".PHP_EOL;
+    $filelines[] = "\$config->dns_logretention = '{$this->dns_logretention}';".PHP_EOL;
+    $filelines[] = "\$config->dns_name = '{$this->dns_name}';".PHP_EOL;
+    $filelines[] = "\$config->dns_server = '{$this->dns_server}';".PHP_EOL;
+    $filelines[] = "\$config->dns_serverip1 = '{$this->dns_serverip1}';".PHP_EOL;
+    $filelines[] = "\$config->dns_serverip2 = '{$this->dns_serverip2}';".PHP_EOL;
+
 
     //Then write all the DHCP hosts
     foreach($this->dhcp_hosts as $key => $value) {        //Go through all hosts

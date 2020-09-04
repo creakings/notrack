@@ -109,6 +109,8 @@ function draw_form() {
   echo '<h5>Configuration</h5>'.PHP_EOL;
   echo '<table class="sys-table">'.PHP_EOL;
 
+  draw_sysrow('NoTrack Server Name', '<input type="text" name="dnsName" id="dnsName" value="'.$config->dns_name.'" placeholder="notrack.local" pattern="[\w\-]{1,63}\.[\w\-\.]{2,253}">');
+
   draw_sysrow('DNS Server', "{$ipoptions}<br>{$ipbox1} {$ipbox2}");
   draw_sysrow('IP Version', $ipversion);
 
@@ -178,7 +180,7 @@ function menu_serveroptions($dnsserver) {
   //Make sure the current selection is in OPTIONSLIST, set to Custom if it isn't
   $current = (array_key_exists($dnsserver, OPTIONSLIST)) ? $dnsserver : 'Custom';
 
-  $str = '<select id="serverName" onchange="setIP()">';
+  $str = '<select id="serverName" name="serverName" onchange="setIP()">';
 
   foreach (OPTIONSLIST as $key => $value) {
     $selected = ($key == $current) ? ' selected' : '';
@@ -190,12 +192,30 @@ function menu_serveroptions($dnsserver) {
   return $str;
 }
 
+
+/********************************************************************
+ *  Load DNS and DHCP Values from server.php
+ *    1. Check server.php exists in settings folder
+ *    2. Execute server.php
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function load_dnssettings() {
+  global $config;
+  $settings_file = DIR_SETTINGS.'server.php';
+
+  if (file_exists($settings_file)) {
+    include_once $settings_file;
+  }
+}
+
 /********************************************************************
  *  Save Changes
- *    1. Check POST vars have been set
- *    2. Carry out input validation using regex
- *    3. Failed input validation results in Config settings remaining unchanged
- *    4. Save Config array to file
+ *
+ *
  *
  *  Params:
  *    None
@@ -205,25 +225,40 @@ function menu_serveroptions($dnsserver) {
 function save_changes() {
   global $config;
 
-  $apikey = '';
-  $apireadonly = '';
+  $blockip = $_POST['blockIP'] ?? '';
+  $dnsname = $_POST['dnsName'] ?? '';
+  $listeninterface = $_POST['listenInterface'] ?? '';
+  $listenip = $_POST['listenIP'] ?? '';
+  $listenport = $_POST['listenPort'] ?? 53;
+  $logretention = $_POST['logRetention'] ?? 60;
+  $serverip1 = $_POST['serverIP1'] ?? '';
+  $serverip2 = $_POST['serverIP2'] ?? '';
+  $server = $_POST['serverName'] ?? '';
 
-  //Use null coalescing operator in PHP 7 to check if POST vars have been set
-  $apikey = $_POST['apikey'] ?? '';
-  $apireadonly = $_POST['apireadonly'] ?? '';
+  $config->dns_blockip = $blockip;
+  $config->dns_interface = $listeninterface;
+  $config->dns_listenip = $listenip;
+  $config->dns_listenport = $listenport;
+  $config->dns_logretention = $logretention;
+  $config->dns_name = $dnsname;
+  $config->dns_server = $server;
+  $config->dns_serverip1 = $serverip1;
+  $config->dns_serverip2 = $serverip2;
 
-  //Carry out input validation of apikey
-  if (preg_match(REGEX_VALIDAPI, $apikey)) {
-    $config->settings['api_key'] = $apikey;
-  }
-
-  //Carry out input validation of apireadonly
-  if (preg_match(REGEX_VALIDAPI, $apireadonly)) {
-    $config->settings['api_readonly'] = $apireadonly;
-  }
-
-  $config->save();
+  $config->save_serversettings();
 }
+
+/********************************************************************
+ Main
+*/
+
+load_dnssettings();
+
+if (sizeof($_POST) > 0) {                                  //Anything in POST to process?
+  save_changes();
+}
+
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -239,18 +274,11 @@ function save_changes() {
 </head>
 <?php
 
-/********************************************************************
- Main
-*/
 draw_topmenu('DNS Server');
 draw_sidemenu();
 
 echo '<div id="main">'.PHP_EOL;
 
-/*if (sizeof($_POST) > 0) {                                  //Anything in POST to process?
-  save_changes();
-}
-*/
 draw_form();
 dns_status();
 
