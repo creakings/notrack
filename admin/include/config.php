@@ -16,15 +16,15 @@ class Config {
   private $dhcp_hosts = array();
 
   //DNS Settings
-  private $dns_blockip = '192.168.0.2';
+  private $dns_blockip = '127.0.0.1';
   private $dns_interface = 'eth0';
   private $dns_listenip = '127.0.0.1';
   private $dns_listenport = 53;
   private $dns_logretention = 60;
   private $dns_name = 'notrack.local';
-  private $dns_server = 'OpenDNS';
-  private $dns_serverip1 = '208.67.222.222';
-  private $dns_serverip2 = '208.67.220.220';
+  private $dns_server = 'Cloudflare';
+  private $dns_serverip1 = '1.1.1.1';
+  private $dns_serverip2 = '1.0.0.1';
 
   private $settings_bl = DIR_SETTINGS.'bl.php';
 
@@ -381,6 +381,16 @@ class Config {
     }
 
     $this->dhcp_hosts[$ip] = array('mac' => $mac, 'sysname' => $sysname, 'sysicon' => $sysicon);
+  }
+
+
+  /********************************************************************
+   *  DHCP Clear Hosts
+   *    Prevent duplication of values when saving from dhcp.php
+   *
+   */
+  public function dhcp_clearhosts() {
+    $this->dhcp_hosts = array();
   }
 
 

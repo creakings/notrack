@@ -18,9 +18,21 @@ from ntrkfolders import FolderList
 from ntrkshared import *
 from statusconsts import *
 
+#Regex for PHP Code from a config file
+#Non-capturing group: $config or $this
+#->
+#Group 1: variable or function name
+#Non-capturing group: =
+#Group 2: - Non-capturing group: value / Non-capturing group: Function contents
+#End with ;\n
+Regex_PHPLine = re.compile(r"^\$(?:config|this)\->([\w]+)(?:\s*=\s*'?)?((?:[\w\.:\-]+)|(?:\(.+\)))'?;$\n$")
 
 class NoTrackConfig:
     def __init__(self):
+        """
+        Settings for DHCP and DNS are stored in dictionaries and default values assigned
+        Filter dictionaries hold Regex strings to validate user input
+        """
         self.__folders = FolderList()
 
         #DHCP Settings
@@ -45,7 +57,7 @@ class NoTrackConfig:
 
         #DNS Settings
         self.__dns = {
-            'dns_blockip': '192.168.0.2',
+            'dns_blockip': '127.0.0.1',
             'dns_interface': 'eth0',
             'dns_listenip': '127.0.0.1',
             'dns_listenport': '53',
@@ -88,6 +100,7 @@ class NoTrackConfig:
         print()
         print('Loading NoTrack config files')
         self.load_status()
+        self.load_serverconf()
 
     @property
     def dns_blockip(self):
@@ -116,13 +129,12 @@ class NoTrackConfig:
     def __load_settingsfile(self, filename):
         """
         """
-
         filelines = []
 
         filelines = load_file(filename)
 
         for line in filelines:
-            matches = re.match(r"^\$(?:config|this)\->([\w]+)(?: = '?)?((?:[\w\.:\-]+)|(?:\(.+\)))'?;\n$", line)
+            matches = Regex_PHPLine.match(line)
             if matches is not None:
                 if matches[1] == 'dhcp_addhost':
                     self.__dhcp_addhost(matches[2])
@@ -239,8 +251,7 @@ class NoTrackConfig:
             #MAC, IP
             filelines.append(f"dhcp-host={self.__dhcp_hosts[sysip][0]},{sysip}\n")
 
-        print(filelines)
-        #save_file(filelines, self.__folders.dhcpconf)
+        save_file(filelines, self.__folders.dhcpconf)
 
     def save_localhosts(self):
         """
@@ -253,8 +264,7 @@ class NoTrackConfig:
         for sysip in self.__dhcp_hosts:
             filelines.append(f"{sysip}\t{self.__dhcp_hosts[sysip][1]}\n")
 
-        print(filelines)
-        #save_file(filelines, self.__folders.localhosts')
+        save_file(filelines, self.__folders.localhosts)
 
 
     def save_serverconf(self):
@@ -271,14 +281,11 @@ class NoTrackConfig:
         if self.__dns['dns_listenport'] != '53':
             filelines.append(f"port={self.__dns['dns_listenport']}\n")
 
-
-        print(filelines)
-        #save_file(filelines, self.__folders.serverconf')
+        save_file(filelines, self.__folders.serverconf)
 
 
 def main():
     ntrkconfig = NoTrackConfig()
-    ntrkconfig.load_serverconf()
     ntrkconfig.save_localhosts()
     ntrkconfig.save_dhcpconf()
     ntrkconfig.save_serverconf()

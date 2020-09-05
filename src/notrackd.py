@@ -38,7 +38,6 @@ config = NoTrackConfig()
 def blocklist_update():
     """
     Once a day update of the NoTrack blocklists
-    Or when blocklist config has been adjusted by the user TODO
     """
     print()
     print('Updating Blocklist')

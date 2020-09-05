@@ -6,22 +6,6 @@ require('./include/menu.php');
 
 ensure_active_session();
 
-?>
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <link href="./css/master.css" rel="stylesheet" type="text/css">
-  <link href="./css/icons.css" rel="stylesheet" type="text/css">
-  <link href="./css/tabbed.css" rel="stylesheet" type="text/css">
-  <link rel="icon" type="image/png" href="./favicon.png">
-  <script src="./include/menu.js"></script>
-  <title>NoTrack - DHCP Config</title>
-</head>
-
-<body>
-<?php
-
 /************************************************
 *Constants                                      *
 ************************************************/
@@ -96,7 +80,7 @@ function load_dhcpsettings() {
   $settings_file = DIR_SETTINGS.'server.php';
 
   if (file_exists($settings_file)) {
-    include_once $settings_file;
+    include $settings_file;
   }
 
   //Check if any IP settings are blank
@@ -436,6 +420,8 @@ function update_statichosts() {
 
   $regex_newhost = '/^\s*([\d\.:]+)\s*,\s*((?:[\dA-Fa-f]{2}:){5}[\dA-Fa-f]{2})\s*,\s*([\w\.\-_]+)?\s*,\s*'.REGEX_DEVICEICONS.'/';
 
+  $config->dhcp_clearhosts();
+
   if (! isset($_POST['newhosts'])) return;                 //Leave if there is nothing in newhosts
 
   $newhosts = json_decode($_POST['newhosts']);             //Decode JSON data into an array
@@ -486,6 +472,24 @@ function update_dhcp() {
 
 /********************************************************************/
 
+load_dhcpsettings();                                       //Load DHCP Settings
+
+?>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link href="./css/master.css" rel="stylesheet" type="text/css">
+  <link href="./css/icons.css" rel="stylesheet" type="text/css">
+  <link href="./css/tabbed.css" rel="stylesheet" type="text/css">
+  <link rel="icon" type="image/png" href="./favicon.png">
+  <script src="./include/menu.js"></script>
+  <title>NoTrack - DHCP Config</title>
+</head>
+
+<body>
+<?php
+
 draw_topmenu('DHCP');
 draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;
@@ -500,12 +504,7 @@ if (count($_POST) > 2) {                                   //Anything in POST ar
   update_statichosts();
   update_dhcp();
   $config->save_serversettings();
-
-  //Reload page making sure the last view is selected
-  header('Location: ?view='.$view);
 }
-
-load_dhcpsettings();                                       //Load DHCP Settings
 
 //Set value for view from GET value
 if (isset($_GET['view'])) {
