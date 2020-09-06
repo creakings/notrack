@@ -275,8 +275,8 @@ class NoTrackConfig:
 
         filelines.append(f"server={self.__dns['dns_serverip1']}\n")
         filelines.append(f"server={self.__dns['dns_serverip2']}\n")
-        filelines.append(f"interface={self.__dns['dns_listenip']}\n")
-        filelines.append(f"listen-address={self.__dns['dns_interface']}\n")
+        filelines.append(f"interface={self.__dns['dns_interface']}\n")
+        filelines.append(f"listen-address={self.__dns['dns_listenip']}\n")
 
         if self.__dns['dns_listenport'] != '53':
             filelines.append(f"port={self.__dns['dns_listenport']}\n")
