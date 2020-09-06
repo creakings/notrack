@@ -5,6 +5,11 @@
  *
  */
 
+define('SETTINGS_BL', $_SERVER['DOCUMENT_ROOT'].'/admin/settings/bl.php');
+define('SETTINGS_SERVER', $_SERVER['DOCUMENT_ROOT'].'/admin/settings/server.php');
+define('SETTINGS_STATUS', $_SERVER['DOCUMENT_ROOT'].'/admin/settings/status.php');
+
+
 class Config {
   //DHCP Settings
   private $dhcp_authoritative = false;
@@ -26,10 +31,29 @@ class Config {
   private $dns_serverip1 = '1.1.1.1';
   private $dns_serverip2 = '1.0.0.1';
 
-  private $settings_bl = DIR_SETTINGS.'bl.php';
-
   private $latestversion = VERSION;
   private $bl_custom = '';
+
+  //Filters used in filter_var to validate user input
+  private $setfilters = array(
+    //DHCP Settings
+    'dhcp_authoritative' => FILTER_VALIDATE_BOOLEAN,
+    'dhcp_enabled' => FILTER_VALIDATE_BOOLEAN,
+    'dhcp_leasetime' => FILTER_SANITIZE_STRING,
+    'dhcp_gateway' => FILTER_VALIDATE_IP,
+    'dhcp_rangestart' => FILTER_VALIDATE_IP,
+    'dhcp_rangeend' => FILTER_VALIDATE_IP,
+    //DNS Settings
+    'dns_blockip' => FILTER_VALIDATE_IP,
+    'dns_interface' => FILTER_SANITIZE_STRING,
+    'dns_listenip' => FILTER_VALIDATE_IP,
+    'dns_listenport' => FILTER_VALIDATE_INT,
+    'dns_logretention' => FILTER_VALIDATE_INT,
+    'dns_name' => FILTER_SANITIZE_URL,
+    'dns_server' => FILTER_SANITIZE_STRING,
+    'dns_serverip1' => FILTER_VALIDATE_IP,
+    'dns_serverip2' => FILTER_VALIDATE_IP,
+  );
 
   public $status = STATUS_ENABLED;
   public $unpausetime = 0;
@@ -287,13 +311,12 @@ class Config {
 
   /********************************************************************
    *  Get Value
-   *    Checks private value exists, then returns it
+   *    Checks private variable exists, then returns it
    *
    *  Params:
-   *    $bl - bl_name
+   *    Name (str): variable name to get
    *  Return:
-   *    Full block list name
-   *    Or what it has been named as
+   *    Specified private variable
    */
   public function __get($name) {
     if (property_exists($this, $name)) {
@@ -304,10 +327,13 @@ class Config {
     }
   }
 
+
   /********************************************************************
    *  Set Value
-   *    1. Check value exists
-   *    2. Apply appropriate filter
+   *    1. Check value exists in $setfilters array
+   *    2. Carry out filter_var using the filter set in $setfilters
+   *    3. If filter was FILTER_VALIDATE_INT then carry out range checks
+   *    4. Assign value
    *
    *  Params:
    *    name (str)
@@ -317,52 +343,31 @@ class Config {
    *    False on failure
    */
   public function __set($name, $value) {
-    switch($name) {
-      //DHCP Settings
-      case 'dhcp_authoritative':
-      case 'dhcp_enabled':
-        if (filter_var($value, FILTER_VALIDATE_BOOLEAN) === false) return false;
-        $this->{$name} = (bool)$value;
-        break;
-      case 'dhcp_leasetime':
-        if ($this->dhcp_filter_leasetime($value) === false) return false;
-        $this->dhcp_leasetime = $value;
-        break;
-      case 'dhcp_gateway':
-      case 'dhcp_rangestart':
-      case 'dhcp_rangeend':
-        if (filter_var($value, FILTER_VALIDATE_IP) === false) return false;
-        $this->{$name} = $value;
-        break;
-
-      //DNS Settings
-      case 'dns_interface':
-      case 'dns_server':
-        if (filter_string($value, 64) === false) return false;
-        $this->{$name} = $value;
-        break;
-      case 'dns_blockip':
-      case 'dns_listenip':
-      case 'dns_serverip1':
-      case 'dns_serverip2':
-        if (filter_var($value, FILTER_VALIDATE_IP) === false) return false;
-        $this->{$name} = $value;
-        break;
-      case 'dns_name':
-        if (filter_string($value, 253) == false) return false;
-        $this->dns_name = $value;
-        break;
-      case 'dns_logretention':
-        $this->dns_logretention = filter_integer($value, 0, 365, 60);
-        break;
-      case 'dns_listenport':
-        $this->dns_listenport = filter_integer($value, 1, 65536, 53);
-        break;
-      default:
-        trigger_error("Undefined variable {$name}", E_USER_WARNING);
-        return false;
-
+    //Does specified name exist in $setfilters array?
+    if (! array_key_exists($name, $this->setfilters)) {
+      trigger_error("Undefined variable {$name}", E_USER_WARNING);
+      return false;
     }
+
+    //Filter the user input based on setfilters value
+    $newvalue = filter_var($value, $this->setfilters[$name]);
+
+    //User input failed, exit this function
+    if ($newvalue === false) {
+      return false;
+    }
+
+    //Carry out range checks for integer values
+    if ($this->setfilters[$name] == FILTER_VALIDATE_INT) {
+      if ($name == 'dns_logretention') {
+        $this->dns_logretention = filter_integer($value, 0, 365, 60);
+      }
+      elseif ($name == 'dns_listenport') {
+        $this->dns_listenport = filter_integer($value, 1, 65536, 53);
+      }
+    }
+
+    $this->{$name} = $newvalue;                            //User input valid
 
     //echo "setting {$name} {$value}";
     return $value;
@@ -371,7 +376,7 @@ class Config {
 
   /********************************************************************
    *  DHCP Add Host
-   *
+   *    TODO Complete input validation
    *
    */
   public function dhcp_addhost($ip, $mac, $sysname, $sysicon)  {
@@ -395,25 +400,9 @@ class Config {
 
 
   /********************************************************************
-   *  Check DHCP Lease Time is Valid
-   *    Regex match: 1-2 digits followed by d or h
+   *  Getter for DHCP Hosts Array
    *
-   *  Params:
-   *    $value (str): Value to check
-   *  Return:
-   *    True valid value
-   *    False invalid value
    */
-  private function dhcp_filter_leasetime($value) {
-    if (preg_match('/^\d{2}(d|h)$/', $value)) {
-      return true;
-    }
-    else {
-      trigger_error('invalid value for dhcp_leasetime', E_USER_WARNING);
-      return false;
-    }
-  }
-
   public function dhcp_gethosts() {
     return $this->dhcp_hosts;
   }
@@ -455,8 +444,8 @@ class Config {
     //Final line closing PHP tag
     $filelines[] = '?>'.PHP_EOL;
 
-    if (file_put_contents(DIR_SETTINGS.'server.php', $filelines) === false) {
-      die('Unable to save settings to '.DIR_SETTINGS.'server.php');
+    if (file_put_contents(SETTINGS_SERVER, $filelines) === false) {
+      die('Unable to save settings to '.SETTINGS_SERVER);
     }
   }
 
@@ -522,8 +511,8 @@ class Config {
 
 
   private function load_status() {
-    if (file_exists(DIR_SETTINGS.'status.php')) {
-      include DIR_SETTINGS.'status.php';
+    if (file_exists(SETTINGS_STATUS)) {
+      include SETTINGS_STATUS;
     }
 
     //Check unpause time hasn't been exceeded
@@ -572,8 +561,8 @@ class Config {
    *
    */
   public function load_blocklists() {
-    if (file_exists($this->settings_bl)) {
-      include $this->settings_bl;
+    if (file_exists(SETTINGS_BL)) {
+      include SETTINGS_BL;
     }
   }
 
@@ -598,8 +587,8 @@ class Config {
     $filelines[] = "\$this->set_blocklist_custom('{$this->bl_custom}');".PHP_EOL;
     $filelines[] = '?>'.PHP_EOL;
 
-    if (file_put_contents($this->settings_bl, $filelines) === false) {
-      die("Unable to save blocklist settings to {$this->settings_bl}");
+    if (file_put_contents(SETTINGS_BL, $filelines) === false) {
+      die('Unable to save blocklist settings to '.SETTINGS_BL);
     }
   }
 
@@ -649,8 +638,28 @@ class Config {
       '?>'.PHP_EOL,
     );
 
-    file_put_contents(DIR_SETTINGS.'status.php', $filelines);
+    file_put_contents(SETTINGS_STATUS, $filelines);
   }
 }
 
 $config = new Config;
+
+
+
+/********************************************************************
+ *  Load DNS and DHCP Values from server.php
+ *    1. Check server.php exists in settings folder
+ *    2. Execute server.php
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function load_serversettings() {
+  global $config;
+
+  if (file_exists(SETTINGS_SERVER)) {
+    include SETTINGS_SERVER;
+  }
+}

@@ -63,33 +63,6 @@ function load_activeleases() {
 }
 
 
-
-/********************************************************************
- *  Load DHCP Values from server.php
- *    1. Check server.php exists in settings folder
- *    2. Execute server.php
- *    3. Set default values for network if any DHCP IP settings are blank
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function load_dhcpsettings() {
-  global $config;
-  $settings_file = DIR_SETTINGS.'server.php';
-
-  if (file_exists($settings_file)) {
-    include $settings_file;
-  }
-
-  //Check if any IP settings are blank
-  if (($config->dhcp_gateway == '') || ($config->dhcp_rangestart == '') || ($config->dhcp_rangeend == '')) {
-    set_default_network();
-  }
-}
-
-
 /********************************************************************
  *  Add Static Hosts
  *    Add Static Hosts to Leases in order to fill out the DHCP Leases view
@@ -472,7 +445,7 @@ function update_dhcp() {
 
 /********************************************************************/
 
-load_dhcpsettings();                                       //Load DHCP Settings
+load_serversettings();                                     //Load DHCP Settings
 
 ?>
 <!DOCTYPE html>
@@ -509,6 +482,11 @@ if (count($_POST) > 2) {                                   //Anything in POST ar
 //Set value for view from GET value
 if (isset($_GET['view'])) {
   $view = filter_integer($_GET['view'], 1, 3, 1);
+}
+
+//Check if any IP settings are blank
+if (($config->dhcp_gateway == '') || ($config->dhcp_rangestart == '') || ($config->dhcp_rangeend == '')) {
+  set_default_network();
 }
 
 if (file_exists(LEASES_FILE)) {                            //Is DHCP Active?

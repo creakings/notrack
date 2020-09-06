@@ -194,28 +194,9 @@ function menu_serveroptions($dnsserver) {
 
 
 /********************************************************************
- *  Load DNS and DHCP Values from server.php
- *    1. Check server.php exists in settings folder
- *    2. Execute server.php
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function load_dnssettings() {
-  global $config;
-  $settings_file = DIR_SETTINGS.'server.php';
-
-  if (file_exists($settings_file)) {
-    include_once $settings_file;
-  }
-}
-
-/********************************************************************
  *  Save Changes
- *
- *
+ *    Get values from POST
+ *    Assign values to config (input validation is carried out by config)
  *
  *  Params:
  *    None
@@ -252,7 +233,7 @@ function save_changes() {
  Main
 */
 
-load_dnssettings();
+load_serversettings();
 
 if (sizeof($_POST) > 0) {                                  //Anything in POST to process?
   save_changes();
