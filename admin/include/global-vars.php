@@ -6,7 +6,7 @@ define('STATUS_INCOGNITO', 8);
 define('STATUS_NOTRACKRUNNING', 64);
 define('STATUS_ERROR', 128);
 
-define('VERSION', '0.9.5');
+define('VERSION', '20.10');
 define('SERVERNAME', 'localhost');
 define('USERNAME', 'ntrk');
 define('PASSWORD', 'ntrkpass');
@@ -19,7 +19,7 @@ define('ACCESSLOG', '/var/log/ntrk-admin.log');
 define('CONFIGFILE', '/etc/notrack/notrack.conf');
 define('CONFIGTEMP', '/tmp/notrack.conf');
 define('DNS_LOG', '/var/log/notrack.log');
-define('TLD_CSV', '../include/tld.csv');
+define('TLD_CSV', '../include/tld.csv'); //DEPRECATED
 define('NTRK_EXEC', 'sudo /usr/local/sbin/ntrk-exec ');
 define('NOTRACK_LIST', '/etc/dnsmasq.d/notrack.list');
 
