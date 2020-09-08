@@ -1,6 +1,6 @@
 <?php
 /********************************************************************
-
+https://github.com/lipis/flag-icon-css
 ********************************************************************/
 
 require('../include/global-vars.php');
@@ -10,78 +10,78 @@ require('../include/menu.php');
 
 ensure_active_session();
 
-/************************************************
-*Constants                                      *
-************************************************/
-define('DOMAIN_BLACKLIST', '/etc/notrack/domain-blacklist.txt');
-define('DOMAIN_WHITELIST', '/etc/notrack/domain-whitelist.txt');
+/*************************************************
+*Constants                                       *
+*************************************************/
+//define('DOMAIN_BLACKLIST', '/etc/notrack/domain-blacklist.txt');
+//define('DOMAIN_WHITELIST', '/etc/notrack/domain-whitelist.txt');
+//define('TLD_CSV', '../include/tld.csv');
+define('TLD_BL', '../settings/tldlist.txt');
+/*************************************************
+*Global Variables                                *
+*************************************************/
+$view = 0;
 
-/************************************************
-*Global Variables                               *
-************************************************/
-
-
-/************************************************
-*Arrays                                         *
-************************************************/
-$list = array();                                //Contents of tld.csv
+/*************************************************
+*Arrays                                          *
+*************************************************/
+$tldlist = array();                              //Contents of tld.csv
+$usersbl = array();
 
 
 /********************************************************************
- *  Load CSV List
- *    Load TLD List CSV file into $list
+ *  Load TLD CSV List
+ *    Load TLD List CSV file into $tldlist
  *  Params:
- *    listname - blacklist or whitelist, filename
+ *    None
  *  Return:
- *    true on completion
+ *    None
  */
-function load_csv($filename, $listname) {
-  global $list, $mem;
+function load_tldcsv() {
+  global $tldlist, $usersbl;
 
-  $list = $mem->get($listname);
-  if (empty($list)) {
-    $fh = fopen($filename, 'r') or die('Error unable to open '.$filename);
-    while (!feof($fh)) {
-      $list[] = fgetcsv($fh);
+  $line = array();
+
+  $fh = fopen(TLD_CSV, 'r') or die('Error unable to open '.TLD_CSV);
+  while(!feof($fh) && ($line = fgetcsv($fh)) !== false) {
+    if (sizeof($line) == 4) {                              //Check array length is valid
+      if (array_key_exists($line[0], $usersbl)) {          //Check for user-set value
+        $line[] = $usersbl[$line[0]];
+      }
+      elseif ($line[2] == '1') {                           //Enable priority one by default
+        $line[] = true;
+      }
+      else {                                               //Unset, leave disabled
+        $line[] = false;
+      }
+      $tldlist[] = $line;                                  //Add line of CSV to $tldlist
     }
-
-    fclose($fh);
-
-    $mem->set($listname, $list, 0, 600);                   //10 Minutes
   }
 
-  return true;
+  fclose($fh);
 }
 
 
 /********************************************************************
- *  Load List
- *    Loads a a List from File and returns it in Array form
- *    Saves $list into respective Memcache array
+ *  Load Users TLD Blocklist
+ *    Load tldlist.txt into $
  *  Params:
- *    listname - blacklist or whitelist, filename
+ *
  *  Return:
- *    array of file
+ *    None
  */
-function load_list($filename, $listname) {
-  global $mem;
+function load_bl() {
+  global $usersbl;
 
-  $filearray = array();
+  if (file_exists(TLD_BL)) {
+    $fh = fopen(TLD_BL, 'r') or die('Error unable to open '.TLD_BL);
+    while (!feof($fh)) {
+      $line = trim(fgets($fh));
 
-  $filearray = $mem->get($listname);
-  if (empty($filearray)) {
-    if (file_exists($filename)) {
-      $fh = fopen($filename, 'r') or die('Error unable to open '.$filename);
-      while (!feof($fh)) {
-        $filearray[] = trim(fgets($fh));
-      }
-
-      fclose($fh);
-      $mem->set($listname, $filearray, 0, 300);
     }
-  }
 
-  return $filearray;
+    fclose($fh);
+  }
 }
 
 /********************************************************************
@@ -121,8 +121,7 @@ function tld_help() {
 
 /********************************************************************
  *  Show Domain List
- *    1. Load Users Domain Black list and convert into associative array
- *    2. Load Users Domain White list and convert into associative array
+ *
  *    3. Display list
  *
  *  Params:
@@ -131,7 +130,7 @@ function tld_help() {
  *    None
  */
 function show_domain_list() {
-  global $list;
+  global $tldlist;
 
   $cell1 = '';                                             //Tickbox cell
   $cell2 = '';                                             //TLD Name cell
@@ -140,22 +139,16 @@ function show_domain_list() {
   $domain_name = '';
   $flag_image = '';                                        //HTML Code for flag
   $flag_filename = '';                                     //Filename of flag
-  $blackarray = array();                                   //TLD Blacklist
-  $whitearray = array();                                   //TLD Whitelist
-  $view = 1;                                               //Current Tab view
 
-  $blackarray = array_flip(load_list(DOMAIN_BLACKLIST, 'tldblacklist'));
-  $whitearray = array_flip(load_list(DOMAIN_WHITELIST, 'tldwhitelist'));
-  $listsize = count($list);
+  $tabview = 1;                                            //Current Tab view
 
-  if ($list[$listsize-1][0] == '') {                       //Last line is sometimes blank
-    array_splice($list, $listsize-1);                      //Cut last blank line out
-  }
+
+  $listsize = count($tldlist);
 
   echo '<div>'.PHP_EOL;                                    //Start Tab
 
   if ($listsize == 0) {                                    //Is List blank?
-    echo '<h4><img src=./svg/emoji_sad.svg>No sites found in Block List</h4>'.PHP_EOL;
+    echo '<h4><img src=../svg/emoji_sad.svg>No sites found in Block List</h4>'.PHP_EOL;
     echo '</div>';
     return;
   }
@@ -164,7 +157,7 @@ function show_domain_list() {
   echo '<input type="hidden" name="action" value="tld">'.PHP_EOL;
   echo '<table class="tld-table">'.PHP_EOL;                //Start tld-table
 
-  foreach ($list as $line) {
+  foreach ($tldlist as $line) {
     //1. Domain
     //2. Domain Name
     //3. Risk
@@ -172,11 +165,11 @@ function show_domain_list() {
 
     //Risk score of zero means draw new table
     if ($line[2] == 0) {
-      echo '<tr><td colspan="3"><button type="submit" name="v" value="'.$view.'">Save Changes</button></td></tr>'.PHP_EOL;
+      echo '<tr><td colspan="3"><button type="submit" name="v" value="'.$tabview.'">Save Changes</button></td></tr>'.PHP_EOL;
       echo '</table>'.PHP_EOL;                             //End current tld-table
       echo '</div>'.PHP_EOL;                               //End Tab
 
-      $view++;
+      $tabview++;
       echo '<div>'.PHP_EOL;                                //Start new Tab
       echo '<h5>'.$line[1].'</h5>'.PHP_EOL;                //Title
       echo '<table class="tld-table">'.PHP_EOL;            //Start new tld-table
@@ -208,12 +201,7 @@ function show_domain_list() {
     }
 
     //Set tickbox checked: Condition (Risk 1 & NOT in White List) OR (in Black List)
-    if ((($line[2] == 1) && (! array_key_exists($line[0], $whitearray))) || (array_key_exists($line[0], $blackarray))) {
-      $checked = ' checked="checked"';
-    }
-    else {
-      $checked = '';
-    }
+    $checked = $line[4] ? ' checked="checked"' : '';
 
     $cell1 = '<input type="checkbox" name="'.$domain_name.'"'.$checked.'>';
     $cell2 .= '<div class="centered">'.$line[0].'</div>';
@@ -223,7 +211,7 @@ function show_domain_list() {
 
   }
 
-  echo '<tr><td colspan="3"><button type="submit" name="v" value="'.$view.'">Save Changes</button></td></tr>'.PHP_EOL;
+  echo '<tr><td colspan="3"><button type="submit" name="v" value="'.$tabview.'">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End final table
 
   echo '</div>'.PHP_EOL;                                   //End Tab
@@ -243,7 +231,7 @@ function show_domain_list() {
  *    None
  */
 function update_domain_list() {
-  global $list, $mem;
+  global $tldlist, $mem;
 
   //Start with White List
   $fh = fopen(DIR_TMP.'domain-whitelist.txt', 'w') or die('Unable to open '.DIR_TMP.'domain-whitelist.txt for writing');
@@ -251,7 +239,7 @@ function update_domain_list() {
   fwrite($fh, '#Domain White list generated by tld.php'.PHP_EOL);
   fwrite($fh, '#Do not make any changes to this file'.PHP_EOL);
 
-  foreach ($list as $site) {                               //Generate White list based on unticked Risk 1 items
+  foreach ($tldlist as $site) {                               //Generate White list based on unticked Risk 1 items
     if ($site[2] == 1) {
       if (! isset($_POST[substr($site[0], 1)])) {          //Check POST for domain minus preceding .
         fwrite($fh, $site[0].PHP_EOL);                     //Add domain to White list
@@ -348,14 +336,13 @@ function draw_welcome() {
 ************************************************/
 //Deal with POST actions first, that way we can reload the page and remove POST requests from browser history.
 if ((isset($_POST['action'])) && (isset($_POST['v']))) {
-  load_csv(TLD_CSV, 'csvtld');                             //Load tld.csv
+  load_tldcsv();                                           //Load tld.csv
   update_domain_list();
   usleep(250000);                                          //Prevent race condition
   header('Location: ?v='.$_POST['v']);                     //Reload page
 }
 
 
-load_csv(TLD_CSV, 'csvtld');
 
 //-------------------------------------------------------------------
 ?>
@@ -377,6 +364,7 @@ draw_topmenu('Domains');
 draw_sidemenu();
 
 echo '<div id="main">'.PHP_EOL;
+load_tldcsv();
 
 if (isset($_GET['v'])) {
   draw_tabbedview($_GET['v']);
@@ -384,6 +372,9 @@ if (isset($_GET['v'])) {
 else {
   draw_welcome();
 }
+
+
+
 
 ?>
 
