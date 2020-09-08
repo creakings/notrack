@@ -597,8 +597,7 @@ class Config {
    *  Set Blocklist Custom
    *
    *  Params:
-   *    $blname (str): Blocklist name
-   *    $status (bool): Blocklist status
+   *    $custom (str): new line for blocklist custom
    *  Return:
    *    None
    */
