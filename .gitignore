@@ -8,3 +8,4 @@ admin/settings/server.php
 admin/settings/status.php
 admin/settings/blacklist.txt
 admin/settings/whitelist.txt
+admin/settings/tldlist.txt
