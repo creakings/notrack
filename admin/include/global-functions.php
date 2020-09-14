@@ -192,22 +192,23 @@ function filter_bool($value) {
 /********************************************************************
  *  Filter Domain
  *    1. Check Domain length (must be less than 253 chars)
- *    2. Perform regex match to see if domain is in the form of some-site.com, or some_site.co.uk
+ *    2. Perform regex match to see if domain is in the form of:
+ *       some-site.com, or some_site.co.uk or .country
  *
  *  Regex:
- *    subdomain or domain 1 to 63 chars
- *    TLD 2 to 63 chars
+ *    Match either 1 label and maximum of 251 chars (i.e. a.verylongdomain) or .country
+ *    Maximum length of DNS is 255, but includes two bytes for length
  *  Params:
  *    Domain to check
  *  Return:
- *    True on success, False on failure
+ *    True on successful validation
+ *    False on failure
  */
 function filter_domain($domain) {
   if (strlen($domain) > 253) {
     return false;
   }
-
-  if (preg_match('/^[\w\-]{1,63}\.[\w\-\.]{2,63}$/', $domain) > 0) {
+  if (preg_match('/^([\w\-]{1,63}\.[\w\-\.]{1,251}|\.[\w\-]{1,63})$/', $domain)) {
     return true;
   }
   else {

@@ -116,7 +116,7 @@ function load_customlist($listname, $filename) {
   $fh = fopen($filename, 'r') or die('Error unable to open '.$filename);
   while (! feof($fh)) {
     $line = fgets($fh);
-    if (preg_match('/^(#)?\s?([\w\-]{1,63}\.[\w\-\.]{2,254})\s?(#)?(.{0,254})\n$/', $line, $matches)) {
+    if (preg_match('/^(#)?\s?([\w\-\.]{3,253})\s?(#)?(.{0,500})\n$/', $line, $matches)) {
       if ($matches[1] == '#') {
         $list[] = array($matches[2], $matches[4], false);
       }
