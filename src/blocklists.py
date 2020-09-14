@@ -9,11 +9,10 @@ TYPE_PLAIN = 1
 TYPE_UNIXLIST = 2
 TYPE_EASYLIST = 4
 TYPE_CSV = 8
-TYPE_SPECIAL = 64
 
 blocklistconf = {
-    'bl_tld' : [True, '', TYPE_SPECIAL],
     'bl_blacklist' : [True, '', TYPE_PLAIN],
+    'bl_tld' : [True, '', TYPE_PLAIN],
     'bl_notrack' : [True, 'https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-blocklist.txt', TYPE_PLAIN],
     'bl_notrack_malware' : [True, 'https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-malware.txt', TYPE_PLAIN],
     'bl_cbl_all' : [False, 'https://zerodot1.gitlab.io/CoinBlockerLists/list.txt', TYPE_PLAIN],

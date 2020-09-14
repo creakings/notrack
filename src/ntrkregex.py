@@ -30,7 +30,7 @@ Regex_EasyLine = re.compile('^\|\|([\w\.\-_]{1,250}\.[a-zA-Z][\w\-]{1,62})(?:\^|
 #Group 2: optional comment.
 #Utilise negative lookahead to make sure that two hashes aren't next to each other,
 # as this could be an EasyList element hider
-Regex_PlainLine = re.compile('^([\w\.\-_]{1,250}\.[\w\-]{2,63})( #(?!#).*)?\n$')
+Regex_PlainLine = re.compile(r'^([\w\-\.]{1,253})( #(?!#).*)?\n$')
 
 #Regex TLD Line:
 Regex_TLDLine = re.compile('^(\.\w{1,63})(?:\s#.*)?\n$')

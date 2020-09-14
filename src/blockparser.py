@@ -81,6 +81,7 @@ class BlockParser:
         self.__dbwrapper = DBWrapper()                     #Declare MariaDB Wrapper
 
         blocklistconf['bl_blacklist'][1] = self.__folders.blacklist
+        blocklistconf['bl_tld'][1] = self.__folders.tldist
 
         host = Host(config['ipaddress'])                   #Declare host class
         print('Hostname: %s' % host.name)
@@ -166,7 +167,8 @@ class BlockParser:
 
         matches = Regex_Domain.search(subdomain)
 
-        if matches == None:                                #Shouldn't happen
+        if matches == None:                                #Could be a TLD instead?
+            self.__add_tld(subdomain, comment, source)
             return
 
         if matches.group(0) in self.__blockdomianset:      #Blocked by domain or whitelisted?
@@ -189,6 +191,25 @@ class BlockParser:
         self.__blocklist.append(tuple([reverse, subdomain, comment, source]))
         self.__domaincount += 1
 
+
+    def __add_tld(self, tld, comment, source):
+        """
+        Process TLD and add it to __blocktldset
+
+        Parameters:
+            tld (str): A possible Top Level Domain
+            comment (str): A comment
+            source (str): Block list name
+        """
+        matches = Regex_TLD.search(tld)
+
+        if matches == None:                                #Don't know what it is
+            return
+
+        self.__blocktldset.add(tld)
+        reverse = tld[::-1] + '.'
+        self.__blocklist.append(tuple([reverse, tld, comment, source]))
+        self.__domaincount += 1
 
     def __match_defanged(self, line, listname):
         """
@@ -388,76 +409,6 @@ class BlockParser:
         print(f'Deduplicated {self.__dedupcount} domains')
 
 
-    def __process_tldlist(self):
-        """
-        Load users black & white tld lists
-        Load NoTrack provided tld csv
-        Create self.__blocktldset from high risk tld not in whitelist and low risk tld in blacklist
-        Check for any domains in users whitelist that would be blocked by tld
-        Save whitelist of domains from previous step
-        """
-        reverse = ''                                       #Reversed TLD
-        dns_whitelist = list()
-        tld_black = set()
-        tld_white = set()
-        tld_blackfile = list()
-        tld_whitefile = list()
-        tld_csv = list()
-
-        self.__domaincount = 0                             #Reset per list domain count
-
-        print('Processing Top Level Domain list')
-        tld_blackfile = load_file(self.__folders.tld_blacklist)
-        tld_whitefile = load_file(self.__folders.tld_whitelist)
-        tld_csv = self.__read_csv(self.__folders.tld_csv)
-
-        #Read tld's from tld_blacklist into tld_black dictionary
-        for line in tld_blackfile:
-            matches = Regex_TLDLine.search(line)
-            if matches is not None:
-                tld_black.add(matches.group(1))
-
-        #Read tld's from tld_whitelist into tld_white dictionary
-        for line in tld_whitefile:
-            matches = Regex_TLDLine.search(line)
-            if matches is not None:
-                tld_white.add(matches.group(1))
-
-        for row in tld_csv:
-            reverse = row[0][::-1] + '.'
-
-            if row[2] == '1':                              #Risk 1 - High Risk
-                if row[0] not in tld_white:                #Is tld not in whitelist?
-                    self.__blocktldset.add(row[0])         #Add high risk tld
-                    self.__blocklist.append(tuple([reverse, row[0], row[1], 'bl_tld', ]))
-                    self.__domaincount += 1
-
-            else:
-                if row[0] in tld_black:                    #Low risk, but in Black list
-                    self.__blocktldset.add(row[0])         #Add low risk tld
-                    self.__blocklist.append(tuple([reverse, row[0], row[1], 'bl_tld', ]))
-                    self.__domaincount += 1
-
-        print(f'Added {self.__domaincount} Top Level Domains')
-
-        #Check for white listed domains that are blocked by tld
-        for line in self.__whiteset:
-            matches = Regex_Domain.search(line)            #Only need the tld
-            if matches.group(2) in self.__blocktldset:     #Is tld in self.__blocktldset?
-                dns_whitelist.append(self.__add_whitelist(line))
-
-        if len(dns_whitelist) > 0:                         #Any domains in whitelist?
-            print(f'{len(dns_whitelist)} domains added to whitelist in order avoid block from TLD')
-            save_file(dns_whitelist, self.__folders.dnslists + 'whitelist.list')
-
-        else:
-            print('No domains require whitelisting')
-            delete_file(self.__folders.dnslists + 'whitelist.list')
-
-        self.__whiteset.clear()                            #self.__whiteset no longer required
-        print()
-
-
     def __process_whitelist(self):
         """
         Load items from whitelist file into self.__blockdomianset array
@@ -498,6 +449,32 @@ class BlockParser:
         else:
             print('Nothing in whitelist')
             delete_file(self.__folders.dnslists + 'whitelist.list')
+        print()
+
+
+    def __tld_whitelist(self):
+        """
+        Any domains in whitelist impacted by the TLD blocks?
+        This should be done after TLD and users block lists are processed
+        """
+
+        filelines = list()
+
+        #Check for white listed domains that are blocked by tld
+        for line in self.__whiteset:
+            matches = Regex_Domain.search(line)            #Only need the tld
+            if matches.group(2) in self.__blocktldset:     #Is tld in self.__blocktldset?
+                filelines.append(self.__add_whitelist(line))
+
+        if len(filelines) > 0:                         #Any domains in whitelist?
+            print(f'{len(filelines)} domains added to whitelist in order avoid block from TLD')
+            save_file(filelines, self.__folders.dnslists + 'whitelist.list')
+
+        else:
+            print('No domains require whitelisting')
+            delete_file(self.__folders.dnslists + 'whitelist.list')
+
+        self.__whiteset.clear()                            #self.__whiteset no longer required
         print()
 
 
@@ -596,11 +573,6 @@ class BlockParser:
 
             else:                                          #Local file
                 blfilename = blurl;                        #URL is actually the filename
-
-            if bltype == TYPE_SPECIAL:
-                if blname == 'bl_tld':
-                    self.__process_tldlist()
-                    continue
 
             filelines = load_file(blfilename)              #Read temp file
 
@@ -720,6 +692,7 @@ class BlockParser:
         self.__process_whitelist()                                    #Need whitelist first
         self.__action_lists()                                         #Action default lists
         self.__action_customlists()                                   #Action users custom lists
+        self.__tld_whitelist()
 
         print('Finished processing all block lists')
         print('Total number of domains added: %d' % len(self.__blocklist))

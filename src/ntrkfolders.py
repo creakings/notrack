@@ -31,6 +31,7 @@ class FolderList:
             FolderList.dnslists = '/etc/dnsmasq.d/'
             FolderList.blacklist = f'{FolderList.webconfigdir}/blacklist.txt'
             FolderList.whitelist = f'{FolderList.webconfigdir}/whitelist.txt'
+            FolderList.tldist = f'{FolderList.webconfigdir}/tldlist.txt'
             FolderList.tld_blacklist = '/etc/notrack/domain-blacklist.txt'
             FolderList.tld_whitelist = '/etc/notrack/domain-whitelist.txt'
             FolderList.tld_csv = f'{FolderList.webdir}/include/tld.csv'
