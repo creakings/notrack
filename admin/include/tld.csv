@@ -13,13 +13,17 @@ TLD,Name,Title,ISO 3166-1,Risk Score,Description
 .accountant,accountant,Accountant,,1,
 .ads,ads,Ads,,1,Used for Marketing and Advertising campaigns
 .bid,bid,Bid,,2,
+.buzz,buzz,Buzz,,2,
 .click,click,Click,,1,
-.club,club,Club,,2,Mixture of malware and legitimate sites
+.club,club,Club,,2,
 .country,country,Country,,1,
 .cricket,cricket,Cricket,,1,
 .date,date,Date,,1,
 .diet,diet,Diet,,3,
 .download,download,Download,,1,
+.email,email,Email,,1,52% Bad domains (Spamhaus September 2020 Report)
+.fail,fail,Fail,,1,58% Bad domains (Spamhaus September 2020 Report)
+.fit,fit,Fit,,1,49% Bad domains (Spamhaus September 2020 Report)
 .gdn,gdn,GDN,,1,
 .icu,icu,I See You,,1,Abused in phishing campaigns and for various second-stage malware downloaders
 .kim,kim,Kim,,2,
@@ -31,16 +35,18 @@ TLD,Name,Title,ISO 3166-1,Risk Score,Description
 .pink,pink,Pink,,3,
 .racing,racing,Racing,,1,
 .review,review,Review,,1,
+.run,run,Run,,2,
 .science,science,Science,,1,
 .space,space,Space,,3,
 .stream,stream,Stream,,2,Hosts a lot of risky Streaming sites
 .study,study,Study,,1,
 .trade,trade,Trade,,1,
 .top,top,Top,,1,
+.viajes,viajes,Viajes,,1,47% Bad domains (Spamhaus September 2020 Report)
 .webcam,webcam,Webcam,,2,
 .win,win,Win,,1,
 .work,work,Work,,3,
-.xyz,xyz,xyz,,3,
+.xyz,xyz,xyz,,2,
 #,#,Country Domains,,0,
 .ac,ac,Ascension Island,sh,3,Commonly used for academic websites
 .ad,ad,Andorra,ad,3,
@@ -289,4 +295,7 @@ TLD,Name,Title,ISO 3166-1,Risk Score,Description
 .zw,zw,Zimbabwe,zw,3,
 #,#,New Country Domains,,0,
 .cymru,cymru,Wales,gb-wls,3,Wales Welsh language
+.scot,scot,Scotland,gb-sct,3,Scotland Gaelic and English language
+.XN--11B4C3D,XN--11B4C3D,कॉम,in,3,Hindi language
+.XN--O3CW4H,XN--O3CW4H,ไทย,th,3,Thailand
 .wales,wales,Wales,gb-wls,3,Wales English language
