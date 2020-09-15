@@ -4,7 +4,6 @@
    Flag Icon and Colours
    ========================================================================== */
 .flag-icon {
-/*   position: relative; */
   display: inline-block;
   height: 2.8rem;
   line-height: 2.8rem;
@@ -26,8 +25,10 @@
   background-color: #00aa00;
 }
 .flag-icon img {
-  width: 86%;
+  width: 82%;
+  max-height: 1.4rem;
   margin: 0.6rem auto;
+  border: 1px solid #444;
   border-radius: 2px;
 }
 .flag-icon img:hover {
