@@ -188,20 +188,16 @@ def save_file(lines, filename):
         True on success
         False on error
     """
-
     try:
         f = open(filename, 'w')                            #Open file for ascii writing
     except IOError as e:
-        print(f'Unable to write to {filename}', file=sys.stder)
-        print(e, file=sys.stder)
+        print(f'Unable to write to file {e}', file=sys.stderr)
         return False
     except OSError as e:
-        print(f'Unable to write to {filename}', file=sys.stder)
-        print(e, file=sys.stder)
+        print(f'Unable to write to file {e}', file=sys.stderr)
         return False
     else:
         f.writelines(lines)
-    finally:
         f.close()
 
     return True
