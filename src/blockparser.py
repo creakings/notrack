@@ -3,20 +3,18 @@
 #Description : This script will download latest block lists from various sources, then parse them into Dnsmasq
 #Author : QuidsUp
 #Date : 2015-01-14
-#Version : 0.9.5
+#Version : 20.10
 #Usage : sudo python notrack.py
+
 #Standard imports
-
-
-import csv
 import os
-import re #TODO load_config still have regular expressions to move to ntrkregex
 import shutil
 import sys
 import time
 
 #Local imports
 from blocklists import *
+from config import NoTrackConfig
 from host import Host
 from ntrkfolders import FolderList
 from ntrkshared import *
@@ -30,38 +28,9 @@ from statusconsts import *
 # Constants
 #######################################
 MAX_AGE = 172800 #2 days in seconds
-CURRENT_TIME = time.time()
-
-
-#######################################
-# Global Variables
-#######################################
-
-config = {
-    'NetDev' : 'eth0',
-    'IPVersion' : 'IPv4',
-    'Search' : 'DuckDuckGo',
-    'SearchUrl' : 'https://duckduckgo.com/?q=',
-    'WhoIs' : 'Who.is',
-    'WhoIsUrl' : 'https://who.is/whois/',
-    'Username' : '',
-    'Password' : '',
-    'Delay' : '30',
-    'Suppress' : '',
-    'ParsingTime' : '4',
-    'api_key' : '',
-    'api_readonly' : '',
-    'bl_custom' : '',                                      #Special processing required
-    'blockmessage' : 'pixel',
-    'ipaddress' : '127.0.0.1',
-    'whoisapi' : '',
-    'status' : '1',
-    'unpausetime' : '0',
-    'autoupgrade' : '0'
-}
 
 class BlockParser:
-    def __init__(self):
+    def __init__(self, dns_blockip):
         print('Initialising Block List Parser')
 
         self.bl_custom = ''
@@ -80,15 +49,12 @@ class BlockParser:
         self.__services = Services()                       #Declare service class
         self.__dbwrapper = DBWrapper()                     #Declare MariaDB Wrapper
 
+        #Fill in users blacklist and tld list locations
         blocklistconf['bl_blacklist'][1] = self.__folders.blacklist
         blocklistconf['bl_tld'][1] = self.__folders.tldist
 
-        host = Host(config['ipaddress'])                   #Declare host class
-        print('Hostname: %s' % host.name)
-        print('IP Address: %s' % host.ip)
-
-        #Setup the template strings for writing out to black/white list files
-        [self.__dnsserver_blacklist, self.__dnsserver_whitelist] = self.__services.get_dnstemplatestr(host.name, host.ip)
+        #Fill in __dnsserver_blacklist and __dnsserver_whitelist based on host IP
+        self.__get_hostdetails(dns_blockip)
 
 
     def __add_blacklist(self, domain):
@@ -105,30 +71,15 @@ class BlockParser:
         return self.__dnsserver_whitelist % domain
 
 
-    def __read_csv(self, filename):
+    def __get_hostdetails(self, dns_blockip):
         """
-        Load contents of csv and return as a list
-        1. Check file exists
-        2. Read all lines of csv
-
-        Parameters:
-            filename (str): File to load
-        Returns:
-            List of all lines in file
-            Empty list if file doesn't exist
+        Get Host Name and IP address for __dnsserver_blacklist and __dnsserver_whitelist
         """
-        data = []
+        host = Host(dns_blockip)                   #Declare host class
+        print(f'Hostname: {host.name}, IP Address: {host.ip}')
 
-        if not os.path.isfile(filename):
-            print(f'Unable to load {filename}, file is missing', file=sys.stderr)
-            return []
-
-        f = open(filename)
-        reader = csv.reader(f)
-        data = (list(reader))
-        f.close()
-
-        return data
+        #Setup the template strings for writing out to black/white list files
+        [self.__dnsserver_blacklist, self.__dnsserver_whitelist] = self.__services.get_dnstemplatestr(host.name, host.ip)
 
 
     def __extract_list(self, sourcezip, destination):
@@ -495,7 +446,7 @@ class BlockParser:
             print('File missing')
             return True
 
-        if CURRENT_TIME > (os.path.getmtime(filename) + MAX_AGE):
+        if time.time() > (os.path.getmtime(filename) + MAX_AGE):
             print('File older than 2 days')
             return True
 
@@ -611,7 +562,7 @@ class BlockParser:
 
         print('Processing Custom Blocklists:')
         if self.bl_custom == '':
-            print('No custom blocklists set')
+            print('No custom blocklists files or URLs set')
             print()
             return
 
@@ -773,9 +724,10 @@ class BlockParser:
 
 
 def main():
+    config = NoTrackConfig()
     check_root()
 
-    blockparser = BlockParser()
+    blockparser = BlockParser(config.dns_blockip)
     blockparser.load_blconfig()
     blockparser.create_blocklist()
 
