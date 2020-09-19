@@ -19,6 +19,7 @@ from blockparser import BlockParser
 from config import NoTrackConfig
 from logparser import NoTrackParser
 from ntrkfolders import FolderList
+from ntrkservices import Services
 from statusconsts import *
 
 runtime_analytics = 0.0
@@ -42,7 +43,7 @@ def blocklist_update():
     print()
     print('Updating Blocklist')
 
-    blockparser = BlockParser()
+    blockparser = BlockParser(config.dns_blockip)
     blockparser.load_blconfig()
     blockparser.create_blocklist()                         #Create / Update Blocklists
     time.sleep(6)                                          #Prevent race condition
@@ -57,7 +58,7 @@ def change_status():
     print()
     print('Changing status of NoTrack')
 
-    blockparser = BlockParser()
+    blockparser = BlockParser(config.dns_blockip)
 
     if config.status & STATUS_ENABLED:
         blockparser.enable_blockling()
@@ -77,7 +78,7 @@ def check_pause(current_time):
     if config.unpausetime < current_time:
         print()
         print('Unpause time reached')
-        blockparser = BlockParser()
+        blockparser = BlockParser(config.dns_blockip)
         blockparser.enable_blockling()
         config.status -= STATUS_PAUSED
         config.status += STATUS_ENABLED
@@ -162,6 +163,42 @@ def logparser():
         ntrkparser.parsedns()
 
 
+def check_config_files():
+    """
+    Check config to see if any files have been modified
+    Action any changes depending on which config file has been updated
+    If statements are ordered in the most likely config to be updated
+    """
+    filechanged = ''
+
+    filechanged = config.check_modified_times()            #Check for the first file modified
+
+    if filechanged == 'status.php':                        #Status Config
+        print('Status config updated')
+        if get_status(config.status) != config.status:
+            change_status()
+
+    elif filechanged == 'bl.php':                          #Blocklist Config
+        print('Blocklist config updated')
+        blocklist_update()
+
+    #One of the domain list files
+    elif filechanged == 'blacklist.txt' or filechanged == 'whitelist.txt' or filechanged == 'tldlist.txt':
+        print('Domain lists updated')
+        blocklist_update()
+
+    elif filechanged == 'server.php':                      #Server Config
+        restart_dns()
+
+
+def restart_dns():
+    """
+    Restart the DNS server
+    """
+    services = Services()
+    services.restart_dnsserver()
+
+
 def main():
     global endloop
     global runtime_analytics, runtime_blocklist, runtime_parser
@@ -186,17 +223,7 @@ def main():
     while not endloop:
         current_time = time.time()
 
-        if config.check_status_mtime():
-            print()
-            print('Status config updated')
-            config.load_status()
-            if get_status(config.status) != config.status:
-                change_status()
-
-        elif config.check_blocklist_mtimes():
-            print()
-            print('Blocklist config updated')
-            blocklist_update()
+        check_config_files()
 
         if (config.status & STATUS_PAUSED):
             check_pause(current_time)
@@ -212,7 +239,7 @@ def main():
         if (runtime_blocklist + 86400) <= current_time:
             blocklist_update()
 
-        time.sleep(3)
+        time.sleep(5)
 
 
 if __name__ == "__main__":
