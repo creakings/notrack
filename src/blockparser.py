@@ -272,6 +272,34 @@ class BlockParser:
         print(f'Deduplicated {self.__dedupcount} domains')
 
 
+    def __process_csv(self, filelines, listname):
+        """
+        List of domains in a CSV file, assuming cell 1 = domain, cell 2 = comment
+        1. Reset dedup and domain counters
+        2. Read list of filelines
+        3. Check regex match against Regex_CSV
+        4. Add domain and comment
+
+        Parameters:
+            filelines (list): List of lines from file to being processed
+            listname (str): Blocklist name
+        """
+        self.__dedupcount = 0                              #Reset per list dedup count
+        self.__domaincount = 0                             #Reset per list domain count
+
+        print(f'{len(filelines)} lines to process')
+
+        for line in filelines:                                 #Read through list
+            matches = Regex_CSV.match(line)
+
+            if matches is not None:                        #Has a match been found?
+                #Add Group 1 - Domain, Group 2 - Comment
+                self.__add_domain(matches.group(1), matches.group(2), listname)
+
+        print(f'Added {self.__domaincount} domains')       #Show stats for the list
+        print(f'Deduplicated {self.__dedupcount} domains')
+
+
     def __process_easylist(self, lines, listname):
         """
         List of domains in Adblock+ filter format [https://adblockplus.org/filter-cheatsheet]
@@ -538,6 +566,8 @@ class BlockParser:
                 self.__process_easylist(filelines, blname)
             elif bltype == TYPE_UNIXLIST:
                 self.__process_unixlist(filelines, blname)
+            elif bltype == TYPE_CSV:
+                self.__process_csv(filelines, blname)
 
             print(f'Finished processing {blname}')
             print()
