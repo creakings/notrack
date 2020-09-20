@@ -2,7 +2,10 @@
 #Title       : NoTrack MariaDB Wrapper
 #Description : MariaDB Wrapper provides a functions for interacting with the SQL tables that NoTrack uses.
 #Author      : QuidsUp
-#Version     : 20.08
+#Version     : 20.10
+#TODO use the __execute function more
+#TODO use f strings
+#TODO load unique password out of php file
 
 #Standard Imports
 import logging
@@ -39,6 +42,34 @@ class DBWrapper:
         #DBWrapper.__db.close()
 
 
+    def __execute(self, cmd):
+        """
+        Execute a SQL command
+
+        Parameters:
+            cmd (str): Command to execute
+        Returns:
+            Success: Row Count
+            Failure: False
+        """
+        cursor = DBWrapper.__db.cursor()                   #Create a cursor
+        rowcount = 0                                       #Variable to hold rowcount
+
+        try:
+            cursor.execute(cmd)
+        except mariadb.Error as e:                         #Catch any errors
+            logger.warning(f'Unable to execute command :-( {cmd}')
+            logger.warning(e)                              #Log the error message
+            return False
+        else:                                              #Successful execution
+            DBWrapper.__db.commit()
+            rowcount = cursor.rowcount                     #Get the rowcount
+        finally:
+            cursor.close()                                 #Close the cursor
+
+        return rowcount
+
+
     def __search(self, search):
         """
         Table searcher
@@ -53,8 +84,8 @@ class DBWrapper:
         try:
             cursor.execute(search);
         except mariadb.Error as e:
-            #print('Search failed :-( {}'.format(e))
-            logger.warning('Search failed', exc_info=True)
+            logger.warning('Search failed :-(')
+            logger.warning(e)                              #Log the error message
         else:
             tabledata = cursor.fetchall()
             rowcount = cursor.rowcount
@@ -133,6 +164,32 @@ class DBWrapper:
         return True
 
 
+    def analytics_trim(self, days):
+        """
+        Trim rows older than a specified number of days from analytics table
+        Parameters:
+            days (int): Interval of days to keep
+                        When days is set to zero nothing will be deleted
+        Returns:
+            Success: Number of rows deleted
+            Failure: False
+        """
+        if not isinstance(days, int):                      #Check Days is an integer value
+            logger.warning('Invalid number of days specified for analytics_trim')
+            return False
+
+        if days == 0:
+            logger.info('Days set to zero, keeping logs forever')
+            return True
+
+        res = self.__execute(f"DELETE FROM analytics WHERE log_time < NOW() - INTERVAL '{days}' DAY")
+
+        if res != False:
+            print(f'Trimmed {res} rows from analytics table')
+
+        return res
+
+
     def blocklist_createtable(self):
         """
         Create SQL table for blocklist, in case it has been deleted
@@ -174,7 +231,7 @@ class DBWrapper:
             print('No blocklists active')
             return []
 
-        print('%d blocklists active' % tabledatalen)
+        print(f'{tabledatalen} blocklists active')
 
         return self.__single_column(tabledata, 0)
 
@@ -351,6 +408,32 @@ class DBWrapper:
         tabledata = self.__search(cmd)
 
         return(tabledata)
+
+
+    def dnslog_trim(self, days):
+        """
+        Trim rows older than a specified number of days from dnslog table
+        Parameters:
+            days (int): Interval of days to keep
+                        When days is set to zero nothing will be deleted
+        Returns:
+            Success: Number of rows deleted
+            Failure: False
+        """
+        if not isinstance(days, int):                      #Check Days is an integer value
+            logger.warning('Invalid number of days specified for dnslog_trim')
+            return False
+
+        if days == 0:
+            logger.info('Days set to zero, keeping logs forever')
+            return True
+
+        res = self.__execute(f"DELETE FROM dnslog WHERE log_time < NOW() - INTERVAL '{days}' DAY")
+
+        if res != False:
+            print(f'Trimmed {res} rows from dnslog table')
+
+        return res
 
 
     def dnslog_updaterecord(self, recordnum, severity, bl_source):

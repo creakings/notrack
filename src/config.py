@@ -103,6 +103,10 @@ class NoTrackConfig:
         return self.__config['dns_blockip']
 
     @property
+    def dns_logretention(self):
+        return int(self.__config['dns_logretention'])
+
+    @property
     def status(self):
         return self.__status
 

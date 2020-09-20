@@ -25,8 +25,7 @@ from statusconsts import *
 runtime_analytics = 0.0
 runtime_blocklist = 0.0
 runtime_parser = 0.0
-
-status_mtime = 0.0
+runtime_trim = 0.0
 
 endloop = False
 
@@ -34,7 +33,6 @@ ntrkparser = NoTrackParser()
 ntrkanalytics = NoTrackAnalytics()
 folders = FolderList()
 config = NoTrackConfig()
-
 
 def blocklist_update():
     """
@@ -135,14 +133,17 @@ def set_lastrun_times():
     Ensure jobs run when ready
     1. Analytics - On the hour
     2. Blocklist Parser - 04:10 AM
+    3. Trim - 03:10 AM
     """
-    global runtime_analytics, runtime_blocklist
+    global runtime_analytics, runtime_blocklist, runtime_trim
 
     dtanalytics = datetime.strptime(time.strftime("%y-%m-%d %H:00:00"), '%y-%m-%d %H:%M:%S')
     dtblocklist = datetime.strptime(time.strftime("%y-%m-%d 04:10:00"), '%y-%m-%d %H:%M:%S')
+    dttrim = datetime.strptime(time.strftime("%y-%m-%d 03:10:00"), '%y-%m-%d %H:%M:%S')
 
     runtime_analytics = dtanalytics.timestamp()
     runtime_blocklist = dtblocklist.timestamp()
+    runtime_trim = dttrim.timestamp()
 
 
 def analytics():
@@ -201,7 +202,7 @@ def restart_dns():
 
 def main():
     global endloop
-    global runtime_analytics, runtime_blocklist, runtime_parser
+    global runtime_analytics, runtime_blocklist, runtime_parser, runtime_trim
 
     signal.signal(signal.SIGINT, exit_gracefully)  #2 Inturrupt
     signal.signal(signal.SIGABRT, exit_gracefully) #6 Abort
@@ -238,6 +239,10 @@ def main():
 
         if (runtime_blocklist + 86400) <= current_time:
             blocklist_update()
+
+        if (runtime_trim + 86400) <= current_time:
+            runtime_trim = current_time                    #Reset runtime_trim
+            ntrkparser.trimlogs(config.dns_logretention)
 
         time.sleep(5)
 

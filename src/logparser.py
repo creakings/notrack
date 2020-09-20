@@ -295,6 +295,17 @@ class NoTrackParser():
         print()
 
 
+    def trimlogs(self, days):
+        """
+        Trim rows older than a specified number of days from analytics and dnslog table
+        Parameters:
+            days (int): Interval of days to keep
+                        When days is set to zero nothing will be deleted
+        """
+        self.__dbwrapper.analytics_trim(days)
+        self.__dbwrapper.dnslog_trim(days)
+
+
 def main():
     print('NoTrack Log Parser')
 
