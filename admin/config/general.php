@@ -36,8 +36,6 @@ define('WEBLIST', ['lighttpd', 'apache', 'nginx']);
 ************************************************/
 //Deal with POST actions first, that way we can reload the page and remove POST requests from browser history.
 if (isset($_POST['action'])) {
-  update_dnsqueries();
-  update_webserver_config();
   update_server_config();
   usleep(15000);                             //Short pause to prevent race condition
   $config->save();
@@ -100,16 +98,6 @@ function server_section() {
 
   echo '<section id="server">'.PHP_EOL;
   draw_systable('Server');
-  draw_sysrow('Name', gethostname());
-  draw_sysrow('Network Device', $config->settings['NetDev']);
-  if (($config->settings['IPVersion'] == 'IPv4') || ($config->settings['IPVersion'] == 'IPv6')) {
-    draw_sysrow('Internet Protocol', $config->settings['IPVersion']);
-    draw_sysrow('IP Address', $_SERVER['SERVER_ADDR']);
-  }
-  else {
-    draw_sysrow('IP Address', $config->settings['IPVersion']);
-  }
-
   draw_sysrow('Memory Used', $freemem[2].' MB');
   draw_sysrow('Free Memory', $freemem[3].' MB');
   draw_sysrow('Uptime', $uptime);
@@ -190,34 +178,10 @@ function web_section() {
   draw_sysrow('Started On', $pidarray[2]);
   draw_sysrow('Memory Used', $pidarray[3].' MB');
 
-  if ($config->settings['blockmessage'] == 'pixel') draw_sysrow('Block Message', '<input type="radio" name="block" value="pixel" checked onclick="submitForm(\'webserver\')">1x1 Blank Pixel (default)<br><input type="radio" name="block" value="message" onclick="submitForm(\'webserver\')">Message - Blocked by NoTrack<br>');
-  else draw_sysrow('Block Message', '<input type="radio" name="block" value="pixel" onclick="submitForm(\'webserver\')">1x1 Blank Pixel (default)<br><input type="radio" name="block" value="messge" checked onclick="onclick="submitForm(\'webserver\')">Message - Blocked by NoTrack<br>');
   echo '</table></div>'.PHP_EOL;
   echo '</section>'.PHP_EOL;
 }
 
-
-/********************************************************************
- *  DNS Queries
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function dnsqueries_section() {
-  global $config;
-
-  echo '<section id="dnsqueries">'.PHP_EOL;
-
-  draw_systable('DNS Queries');
-  draw_sysrow('DNS Log Parsing Interval', '<input type="number" class="fixed10" name="parsing" min="1" max="60" value="'.$config->settings['ParsingTime'].'" title="Time between log parsing in Minutes">');
-  draw_sysrow('Suppress Domains <div class="help-icon" title="Group together certain domains on the DNS Queries page"></div>', '<textarea rows="5" name="suppress">'.str_replace(',', PHP_EOL, $config->settings['Suppress']).'</textarea>');
-  echo '<tr><td colspan="2"><div class="centered"><button type="button" onclick="submitForm(\'dnsqueries\')">Save Changes</button></div></td></tr>'.PHP_EOL;
-  echo '</table>'.PHP_EOL;
-  echo '</div>'.PHP_EOL;
-  echo '</section>'.PHP_EOL;
-}
 
 /********************************************************************
  *  Update Server Config
@@ -262,93 +226,6 @@ function update_server_config() {
 
 
 /********************************************************************
- *  Update Webserver Config
- *    1. Check POST value block is valid
- *    2. Run ntrk-exec with appropriate change to Webserver setting
- *    3. Onward function is config->save()
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function update_webserver_config() {
-  global $config;
-
-  if (filter_string('block', 'POST', 16)) {
-    switch ($_POST['block']) {
-      case 'message':
-        $config->settings['blockmessage'] = 'message';
-        exec(NTRK_EXEC.'--bm-msg'); // DEPRECATED
-        exec(NTRK_EXEC.'--sink message');
-        break;
-      case 'pixel':
-        $config->settings['blockmessage'] = 'pixel';
-        exec(NTRK_EXEC.'--bm-pxl'); // DEPRECATED
-        exec(NTRK_EXEC.'--sink pixel');
-        break;
-    }
-  }
-}
-
-
-/********************************************************************
- *  Update DNS Queries
- *    1. Update parsing time if valid
- *    2. Make sure Suppress list is valid
- *    3. Replace new line and space with commas (since list maybe in any format)
- *    4. Copy Valid domains to a validarray
- *    5. Write valid domains to Config suppress string seperated by commas
- *    6. Onward function is config->save()
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function update_dnsqueries() {
-  global $config;
-
-  $domain = '';                                            //Each domain identified
-  $suppress = '';                                          //POST value suppress
-  $suppressarray = array();                                //Array of items in suppress
-  $validarray = array();                                   //Array of valid domains
-
-  if (isset($_POST['parsing'])) {
-    $config->settings['ParsingTime'] = filter_integer($_POST['parsing'], 1, 60, 4);
-    //Update /etc/cron.d/ntrk-parse with new time
-    exec(NTRK_EXEC.'--parsing '.$config->settings['ParsingTime']);
-  }
-
-  if (filter_string('suppress', 'POST', 4096)) {
-    $suppress = strip_tags($_POST['suppress']);
-
-    //Replace spaces / newlines with commas for processing below
-    $suppress = preg_replace('/\s+/',',', $suppress);
-
-    if (strlen($suppress) <= 2) {                //Is string too short?
-      $config->settings['Suppress'] = '';
-    }
-
-    $suppressarray = explode(',', $suppress);              //Split string into array
-    foreach ($suppressarray as $domain) {                  //Check if each item is a valid domain
-      if (filter_var($domain, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
-        $validarray[] = $domain;                           //Add valid domain to array
-      }
-    }
-
-    //Use a blank string for suppress if nothing is in validarray
-    if (sizeof($validarray) == 0) {
-      $config->settings['Suppress'] = '';
-    }
-    //Or implode validarray into comma seperated values
-    else {
-      $config->settings['Suppress'] = implode(',', $validarray);
-    }
-  }
-}
-
-/********************************************************************
  Main
 */
 draw_topmenu('Status');
@@ -360,9 +237,7 @@ echo '<div id="main">'.PHP_EOL;
 echo '<form name="generalform" method="post">'.PHP_EOL;   //Form is to encapsulate all sections
 echo '<input type="hidden" id="action" name="action" value="">'.PHP_EOL;
 server_section();
-dns_section();
 web_section();
-dnsqueries_section();
 echo '</form>'.PHP_EOL;                                    //End Form
 echo '</div>'.PHP_EOL;                                     //End main
 ?>

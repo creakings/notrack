@@ -59,9 +59,6 @@ class Config {
   public $unpausetime = 0;
 
   public $DEFAULTCONFIG = array(
-    'NetDev' => 'eth0',
-    'IPVersion' => 'IPv4',
-    'blockmessage' => 'pixel',
     'Search' => 'DuckDuckGo',
     'SearchUrl' => '',
     'WhoIs' => 'Who.is',
@@ -71,11 +68,9 @@ class Config {
     'Password' => '',
     'Delay' => 30,
     'Suppress' => '',
-    'ParsingTime' => 4,
     'api_key' => '',
     'api_readonly' => '',
     'LatestVersion' => VERSION, //DEPRECATED
-    'bl_custom' => '',
   );
 
   //0 - Enabled / Disabled, 1 - List Type, 2 - List Name
@@ -214,9 +209,6 @@ class Config {
           switch ($matches[1]) {
             case 'Delay':
               $this->settings['Delay'] = filter_integer($matches[2], 0, 3600, 30);
-              break;
-            case 'ParsingTime':
-              $this->settings['ParsingTime'] = filter_integer($matches[2], 1, 60, 7);
               break;
             default:
               if (array_key_exists($matches[1], $this->settings)) {
@@ -602,7 +594,7 @@ class Config {
    *    None
    */
   public function set_blocklist_custom($custom) {
-    $this->bl_custom = $custom;
+    $this->bl_custom = strip_tags($custom);
   }
 
 
