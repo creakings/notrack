@@ -92,6 +92,7 @@ function server_section() {
 
   $key = '';
   $value = '';
+  $selected = '';
 
   $freemem = preg_split('/\s+/', exec('free -m | grep Mem'));
   $uptime = exec('uptime -p');
@@ -106,26 +107,22 @@ function server_section() {
   //Search Engine select box
   echo '<tr><td>Search Engine: </td>'.PHP_EOL;
   echo '<td><select name="search" class="input-conf" onchange="submitForm(\'server\')">'.PHP_EOL;
-  echo '<option value="'.$config->settings['Search'].'">'.$config->settings['Search'].'</option>'.PHP_EOL;
   foreach ($config::SEARCHENGINELIST as $key => $value) {
-    if ($key != $config->settings['Search']) {
-      echo '<option value="'.$key.'">'.$key.'</option>'.PHP_EOL;
-    }
+    $selected = ($key == $config->search_engine) ? ' selected' : '';
+    echo "<option value=\"{$key}\"{$selected}>{$key}</option>".PHP_EOL;
   }
   echo '</select></td></tr>'.PHP_EOL;
 
   //Whois select box
   echo '<tr><td>Who Is Lookup: </td>'.PHP_EOL;
   echo '<td><select name="whois" class="input-conf" onchange="submitForm(\'server\')">'.PHP_EOL;
-  echo '<option value="'.$config->settings['WhoIs'].'">'.$config->settings['WhoIs'].'</option>'.PHP_EOL;
   foreach ($config::WHOISLIST as $key => $value) {
-    if ($key != $config->settings['WhoIs']) {
-      echo '<option value="'.$key.'">'.$key.'</option>'.PHP_EOL;
-    }
+    $selected = ($key == $config->whois_provider) ? ' selected' : '';
+    echo "<option value=\"{$key}\"{$selected}>{$key}</option>".PHP_EOL;
   }
   echo '</select></td></tr>'.PHP_EOL;
 
-  draw_sysrow('JsonWhois API <a href="https://jsonwhois.com/"><div class="help-icon"></div></a>', '<input type="text" name="whoisapi" class="input-conf" value="'.$config->settings['whoisapi'].'" onkeydown="if (event.keyCode == 13) { submitForm(\'server\'); return false; }">');
+  draw_sysrow('JsonWhois API <a href="https://jsonwhois.com/"><div class="help-icon"></div></a>', '<input type="text" name="whoisapi" class="input-conf" value="'.$config->whois_api.'" onkeydown="if (event.keyCode == 13) { submitForm(\'server\'); return false; }">');
 
   echo '</table></div>'.PHP_EOL;
   echo '</section>'.PHP_EOL;
@@ -200,26 +197,30 @@ function web_section() {
 function update_server_config() {
   global $config;
 
-  if (filter_string('search', 'POST', 16)) {
-    if (array_key_exists($_POST['search'], $config::SEARCHENGINELIST)) {
-      $config->settings['Search'] = $_POST['search'];
-      $config->settings['SearchUrl'] = $config::SEARCHENGINELIST[$_POST['search']];
+  $newsearch = $_POST['search'] ?? '';
+  $newwhois = $_POST['whois'] ?? '';
+  $newwhois_api = $_POST['whoisapi'] ?? '';
+
+  if (filter_string($newsearch, 16)) {
+    if (array_key_exists($newsearch, $config::SEARCHENGINELIST)) {
+      $config->search_engine = $newsearch;
+      $config->search_url = $config::SEARCHENGINELIST[$newsearch];
     }
   }
 
-  if (filter_string('whois', 'POST', 16)) {
-    if (array_key_exists($_POST['whois'], $config::WHOISLIST)) {
-      $config->settings['WhoIs'] = $_POST['whois'];
-      $config->settings['WhoIsUrl'] = $config::WHOISLIST[$_POST['whois']];
+  if (filter_string($newwhois, 16)) {
+    if (array_key_exists($newwhois, $config::WHOISLIST)) {
+      $config->whois_provider = $newwhois;
+      $config->whois_url = $config::WHOISLIST[$newwhois];
     }
   }
 
-  if (filter_string('whoisapi', 'POST', 48)) {
-    if (ctype_xdigit($_POST['whoisapi'])) {              //Is input hexadecimal?
-      $config->settings['whoisapi'] = $_POST['whoisapi'];
+  if (filter_string($newwhois_api, 48)) {
+    if (ctype_xdigit($newwhois_api)) {                     //Is input hexadecimal?
+      $config->whois_api = $newwhois_api;
     }
-    elseif($_POST['whoisapi'] == '') {
-      $config->settings['whoisapi'] = '';
+    elseif($newwhois_api == '') {
+      $config->whois_api = '';
     }
   }
 }

@@ -176,7 +176,7 @@ function popupmenu($domain, $severity) {
     $str .= "<span onclick=\"reportSite('{$domain}', true, false)\">Allow</span>";
   }
   $str .= '<a href="'.$INVESTIGATEURL.$domain.'">'.$INVESTIGATE.'</a>';
-  $str .= '<a href="'.$config->settings['SearchUrl'].$domain.'" target="_blank">'.$config->settings['Search'].'</a>';
+  $str .= "<a href=\"{$config->search_url}{$domain}\" target=\"_blank\">{$config->search_engine}</a>";
   $str .= '<a href="https://www.virustotal.com/en/domain/'.$domain.'/information/" target="_blank">VirusTotal</a>';
   $str .= '</div></div>';                                  //End dropdown-container
 
@@ -369,9 +369,9 @@ draw_topmenu('Alerts');
 draw_sidemenu();
 echo '<div id="main">'.PHP_EOL;
 
-if ($config->settings['whoisapi'] == '') {                 //Setup Investigate / Whois for popupmenu
-  $INVESTIGATE = $config->settings['WhoIs'];
-  $INVESTIGATEURL = $config->settings['WhoIsUrl'];
+if ($config->whois_api == '') {                            //Setup Investigate / Whois for popupmenu
+  $INVESTIGATE = $config->whois_provider;
+  $INVESTIGATEURL = $config->whois_url;
 }
 else {
   $INVESTIGATE = 'Investigate';
@@ -416,11 +416,11 @@ draw_copymsg();
 <div id="fade" onclick="hideQueriesBox()"></div>
 
 <script>
-const SEARCHNAME = <?php echo json_encode($config->settings['Search'])?>;
-const SEARCHURL = <?php echo json_encode($config->settings['SearchUrl'])?>;
-const WHOISNAME = <?php echo json_encode($config->settings['WhoIs'])?>;
-const WHOISURL = <?php echo json_encode($config->settings['WhoIsUrl'])?>;
-const WHOISAPI = <?php echo ($config->settings['whoisapi'] == '') ? 0 : 1;?>;
+const SEARCHNAME = <?php echo json_encode($config->search_engine)?>;
+const SEARCHURL = <?php echo json_encode($config->search_url)?>;
+const WHOISNAME = <?php echo json_encode($config->whois_provider)?>;
+const WHOISURL = <?php echo json_encode($config->whois_url)?>;
+const WHOISAPI = <?php echo ($config->whois_api == '') ? 0 : 1;?>;
 
 
 /********************************************************************

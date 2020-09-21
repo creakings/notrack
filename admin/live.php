@@ -74,12 +74,12 @@ echo '</div>'.PHP_EOL;
 </form>
 
 <script>
+const SEARCH = <?php echo json_encode($config->search_engine)?>;
+const SEARCHURL = <?php echo json_encode($config->search_url)?>;
 <?php
-echo 'const SEARCH = "'.$config->settings['Search'].'";'.PHP_EOL;
-echo 'const SEARCHURL = "'.$config->settings['SearchUrl'].'";'.PHP_EOL;
-if ($config->settings['whoisapi'] == '') {                           //Setup Investigate / Whois for popupmenu
-  echo 'const INVESTIGATE = "'.$config->settings['WhoIs'].'";'.PHP_EOL;
-  echo 'const INVESTIGATEURL = "'.$config->settings['WhoIsUrl'].'";'.PHP_EOL;
+if ($config->whois_api == '') {                            //Setup Investigate / Whois for popupmenu
+  echo 'const INVESTIGATE = "'.$config->whois_provider.'";'.PHP_EOL;
+  echo 'const INVESTIGATEURL = "'.$config->whois_url.'";'.PHP_EOL;
 }
 else {
   echo 'const INVESTIGATE = "Investigate";'.PHP_EOL;

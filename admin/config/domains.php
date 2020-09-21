@@ -216,7 +216,7 @@ function show_full_blocklist() {
 $searchbox = $_GET['s'] ?? '';                             //Search box
 if (filter_string($searchbox, 255)) {
   //Allow only alphanumeric . - _
-  $searchbox = preg_replace('/[^\w\.\-_]/', '', $_GET['s']);
+  $searchbox = preg_replace('/[^\w\.\-_]/', '', $searchbox);
   $searchbox = strtolower($searchbox);
 }
 

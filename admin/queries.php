@@ -692,7 +692,7 @@ function format_row($dns_request, $severity, $bl_source) {
   }
 
   $popupmenu .= '<a href="'.$INVESTIGATEURL.$dns_request.'">'.$INVESTIGATE.'</a>';
-  $popupmenu .= '<a href="'.$config->settings['SearchUrl'].$dns_request.'" target="_blank">'.$config->settings['Search'].'</a>';
+  $popupmenu .= "<a href=\"{$config->search_url}{$dns_request}\" target=\"_blank\">{$config->search_engine}</a>";
   $popupmenu .= '<a href="https://www.virustotal.com/en/domain/'.$dns_request.'/information/" target="_blank">VirusTotal</a>';
   $popupmenu .= '</div></div>';                                  //End dropdown-container
 
@@ -923,9 +923,9 @@ if (isset($_GET['datetime'])) {
 
 format_datetime_search();
 
-if ($config->settings['whoisapi'] == '') {                 //Setup Investigate / Whois for popupmenu
-  $INVESTIGATE = $config->settings['WhoIs'];
-  $INVESTIGATEURL = $config->settings['WhoIsUrl'];
+if ($config->whois_api == '') {                            //Setup Investigate / Whois for popupmenu
+  $INVESTIGATE = $config->whois_provider;
+  $INVESTIGATEURL = $config->whois_url;
 }
 else {
   $INVESTIGATE = 'Investigate';
@@ -978,11 +978,11 @@ $db->close();
 <div class="close-button" onclick="hideQueriesBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
 </div>
 <script>
-const SEARCHNAME = <?php echo json_encode($config->settings['Search'])?>;
-const SEARCHURL = <?php echo json_encode($config->settings['SearchUrl'])?>;
-const WHOISNAME = <?php echo json_encode($config->settings['WhoIs'])?>;
-const WHOISURL = <?php echo json_encode($config->settings['WhoIsUrl'])?>;
-const WHOISAPI = <?php echo ($config->settings['whoisapi'] == '') ? 0 : 1;?>;
+const SEARCHNAME = <?php echo json_encode($config->search_engine)?>;
+const SEARCHURL = <?php echo json_encode($config->search_url)?>;
+const WHOISNAME = <?php echo json_encode($config->whois_provider)?>;
+const WHOISURL = <?php echo json_encode($config->whois_url)?>;
+const WHOISAPI = <?php echo ($config->whois_api == '') ? 0 : 1;?>;
 </script>
 </body>
 </html>

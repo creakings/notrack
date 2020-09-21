@@ -11,6 +11,14 @@ define('SETTINGS_STATUS', $_SERVER['DOCUMENT_ROOT'].'/admin/settings/status.php'
 
 
 class Config {
+  //Front-End PHP Settings
+  private $api_key = '';
+  private $api_readonly = '';
+  private $search_engine = 'DuckDuckGo';
+  private $search_url = 'https://duckduckgo.com/?q=';
+  private $whois_api = '';
+  private $whois_provider = 'who.is';
+  private $whois_url = 'https://who.is/whois/';
   //DHCP Settings
   private $dhcp_authoritative = false;
   private $dhcp_enabled = false;
@@ -36,6 +44,14 @@ class Config {
 
   //Filters used in filter_var to validate user input
   private $setfilters = array(
+    //Front-End PHP Settings
+    'api_key' => FILTER_SANITIZE_STRING,
+    'api_readonly' => FILTER_SANITIZE_STRING,
+    'search_engine' => FILTER_SANITIZE_STRING,
+    'search_url' => FILTER_SANITIZE_STRING,
+    'whois_api' => FILTER_SANITIZE_STRING,
+    'whois_provider' => FILTER_SANITIZE_STRING,
+    'whois_url' => FILTER_SANITIZE_STRING,
     //DHCP Settings
     'dhcp_authoritative' => FILTER_VALIDATE_BOOLEAN,
     'dhcp_enabled' => FILTER_VALIDATE_BOOLEAN,
@@ -54,25 +70,15 @@ class Config {
     'dns_serverip1' => FILTER_VALIDATE_IP,
     'dns_serverip2' => FILTER_VALIDATE_IP,
   );
-
   public $status = STATUS_ENABLED;
   public $unpausetime = 0;
 
   public $DEFAULTCONFIG = array(
-    'Search' => 'DuckDuckGo',
-    'SearchUrl' => '',
-    'WhoIs' => 'Who.is',
-    'WhoIsUrl' => '',
-    'whoisapi' => '',
     'Username' => '',
     'Password' => '',
     'Delay' => 30,
-    'Suppress' => '',
-    'api_key' => '',
-    'api_readonly' => '',
     'LatestVersion' => VERSION, //DEPRECATED
   );
-
   //0 - Enabled / Disabled, 1 - List Type, 2 - List Name
   public $blocklists = array(
     'bl_blacklist' => array(true, 'custom', 'Custom List'),
@@ -220,26 +226,6 @@ class Config {
       }
 
       fclose($fh);
-    }
-
-    //Set SearchUrl if User hasn't configured a custom string via notrack.conf
-    if ($this->settings['SearchUrl'] == '') {
-      if (array_key_exists($this->settings['Search'], self::SEARCHENGINELIST)) {
-        $this->settings['SearchUrl'] = self::SEARCHENGINELIST[$this->settings['Search']];
-      }
-      else {
-        $this->settings['SearchUrl'] = self::SEARCHENGINELIST['DuckDuckGo'];
-      }
-    }
-
-    //Set WhoIsUrl if User hasn't configured a custom string via notrack.conf
-    if ($this->settings['WhoIsUrl'] == '') {
-      if (array_key_exists($this->settings['WhoIs'], self::WHOISLIST)) {
-        $this->settings['WhoIsUrl'] = self::WHOISLIST[$this->settings['WhoIs']];
-      }
-      else {
-        $this->settings['WhoIsUrl'] = self::WHOISLIST['Who.is'];
-      }
     }
   }
 

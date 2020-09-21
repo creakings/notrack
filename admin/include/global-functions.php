@@ -149,6 +149,7 @@ function count_rows($query) {
   return $rows;
 }
 
+
 /********************************************************************
  *  Extract Domain
  *    Extract domain with optional double-barrelled tld
@@ -158,17 +159,13 @@ function count_rows($query) {
  *    Filtered domain
  */
 function extract_domain($url) {
-  $regex_domain = '/[\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-]+$/';
-  $regex_suppressed_domain = '/^(\*\.)([\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-]+)$/';
-  
-  if (preg_match($regex_suppressed_domain, $url, $matches)) {
-    return $matches[2];
+  $regex_domain = '/[\w\-]{1,63}\.(org\.|co\.|com\.|gov\.)?[\w\-]{1,63}$/';
+
+  if (preg_match($regex_domain, $url, $matches)) {
+    return $matches[0];
   }
-  preg_match($regex_domain, $url, $matches);
-
-  return $matches[0];
+  return $url;
 }
-
 
 
 /********************************************************************

@@ -36,8 +36,8 @@ function draw_form() {
   echo '<div class="sys-group">'.PHP_EOL;                  //Start sys-group box
   echo '<h5>API Setup</h5>'.PHP_EOL;
   echo '<table class="sys-table">'.PHP_EOL;
-  echo '<tr><td>API Key</td><td><input type="text" name="apikey" id="apikey" value="'.$config->settings['api_key'].'">&nbsp;<button class="button-grey icon-generate" type="button" onclick="generateKey(\'apikey\')">Generate</button></td></tr>'.PHP_EOL;
-  echo '<tr><td>Read Only</td><td><input type="text" name="apireadonly" id="apireadonly" value="'.$config->settings['api_readonly'].'">&nbsp;<button class="button-grey icon-generate" type="button" onclick="generateKey(\'apireadonly\')">Generate</button></td></tr>'.PHP_EOL;
+  echo '<tr><td>API Key</td><td><input type="text" name="apikey" id="apikey" value="'.$config->api_key.'">&nbsp;<button class="button-grey icon-generate" type="button" onclick="generateKey(\'apikey\')">Generate</button></td></tr>'.PHP_EOL;
+  echo '<tr><td>Read Only</td><td><input type="text" name="apireadonly" id="apireadonly" value="'.$config->api_readonly.'">&nbsp;<button class="button-grey icon-generate" type="button" onclick="generateKey(\'apireadonly\')">Generate</button></td></tr>'.PHP_EOL;
   
   echo '<tr><td colspan="2"><div class="centered"><button class="icon-tick" type="submit">Save Changes</button></div></td></tr>'.PHP_EOL;
   
@@ -52,7 +52,7 @@ function draw_form() {
  *  Save Changes
  *    1. Check POST vars have been set
  *    2. Carry out input validation using regex
- *    3. Failed input validation results in Config settings remaining unchanged
+ *    3. Failed input validation results in API Key remaining unchanged
  *    4. Save Config array to file
  *
  *  Params:
@@ -72,12 +72,12 @@ function save_changes() {
 
   //Carry out input validation of apikey
   if (preg_match(REGEX_VALIDAPI, $apikey)) {
-    $config->settings['api_key'] = $apikey;
+    $config->api_key = $apikey;
   }
 
   //Carry out input validation of apireadonly
   if (preg_match(REGEX_VALIDAPI, $apireadonly)) {
-    $config->settings['api_readonly'] = $apireadonly;
+    $config->api_readonly = $apireadonly;
   }
 
   $config->save();

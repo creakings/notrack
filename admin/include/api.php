@@ -225,16 +225,16 @@ function is_key_valid() {
 
   $key = '';
 
-  if ($config->settings['api_key'] == '') return false;
+  if ($config->api_key == '') return false;
 
   $key = $_GET['api_key'] ?? '';
 
   if (preg_match(REGEX_VALIDAPI, $key)) {
-    if ($key == $config->settings['api_key']) {
+    if ($key == $config->api_key) {
       $readonly = false;
       return true;
     }
-    elseif ($key == $config->settings['api_readonly']) {
+    elseif ($key == $config->api_readonly) {
       $readonly = true;
       return true;
     }

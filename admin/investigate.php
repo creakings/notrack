@@ -259,7 +259,7 @@ function format_row($domain, $dns_result) {
     $event = 'local1';
   }
 
-  $popupmenu .= '<a href="'.$config->settings['SearchUrl'].$domain.'" target="_blank">'.$config->settings['Search'].'</a>';
+  $popupmenu .= "<a href=\"{$config->search_url}{$domain}\" target=\"_blank\">{$config->search_engine}</a>";
   $popupmenu .= '<a href="https://www.virustotal.com/en/domain/'.$domain.'/information/" target="_blank">VirusTotal</a>';
   $popupmenu .= '</div></div>';                                  //End dropdown-container
 
@@ -443,7 +443,7 @@ function show_rawwhoisdata($whois_record) {
 
 
 /********************************************************************
- *  Show Who Is Error when no API is set
+ *  Show Who Is Error when no API has been set
  *
  *  Params:
  *    None
@@ -451,9 +451,9 @@ function show_rawwhoisdata($whois_record) {
  *    None
  */
 function show_whoiserror() {
-  //echo '<div class="sys-group">'.PHP_EOL;
+  echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Domain Information</h5>'.PHP_EOL;
-  echo '<p>Error: No WhoIs API key set. In order to use this feature you will need to add a valid JsonWhois API key to NoTrack config</p>'.PHP_EOL;
+  echo '<p>In order to use this feature you will need to add a valid JsonWhois API key to NoTrack config</p>'.PHP_EOL;
   echo '<p>Instructions:</p>'.PHP_EOL;
   echo '<ol>'.PHP_EOL;
   echo '<li>Sign up to <a href="https://jsonwhois.com/">JsonWhois.com</a></li>'.PHP_EOL;
@@ -577,7 +577,7 @@ if (!table_exists('whois')) {                              //Does whois sql tabl
   sleep(1);                                                //Delay to wait for MariaDB to create the table
 }
 
-if ($config->settings['whoisapi'] == '') {                 //Has user set an API key?
+if ($config->whois_api == '') {                            //Has user set an API key?
   show_whoiserror();                                       //No - Don't go any further
   $db->close();
   exit;
@@ -591,7 +591,7 @@ else {                                                     //Load whois data?
   echo '<div class="sys-group">'.PHP_EOL;
   draw_filter_toolbar();
 
-  $whois = new WhoisApi($config->settings['whoisapi'], $domain);
+  $whois = new WhoisApi($config->whois_api, $domain);
   if ($datetime != '') {                                   //Show time view if datetime in parameters
     show_time_view();
     echo '<div class="sys-group">'.PHP_EOL;
@@ -644,11 +644,11 @@ $db->close();
 <div class="close-button" onclick="hideQueriesBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
 </div>
 <script>
-const SEARCHNAME = <?php echo json_encode($config->settings['Search'])?>;
-const SEARCHURL = <?php echo json_encode($config->settings['SearchUrl'])?>;
-const WHOISNAME = <?php echo json_encode($config->settings['WhoIs'])?>;
-const WHOISURL = <?php echo json_encode($config->settings['WhoIsUrl'])?>;
-const WHOISAPI = <?php echo ($config->settings['whoisapi'] == '') ? 0 : 1;?>;
+const SEARCHNAME = <?php echo json_encode($config->search_engine)?>;
+const SEARCHURL = <?php echo json_encode($config->search_url)?>;
+const WHOISNAME = <?php echo json_encode($config->whois_provider)?>;
+const WHOISURL = <?php echo json_encode($config->whois_url)?>;
+const WHOISAPI = <?php echo ($config->whois_api == '') ? 0 : 1;?>;
 </script>
 </body>
 </html>
