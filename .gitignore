@@ -3,6 +3,7 @@ __pycache__/
 
 #NoTrack PHP settings
 admin/settings/bl.php
+admin/settings/front.php
 admin/settings/latestversion.php
 admin/settings/server.php
 admin/settings/status.php
