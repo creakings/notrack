@@ -57,7 +57,9 @@ function activate_session() {
 }
 
 function ensure_active_session() {
-  if (is_password_protection_enabled()) {
+  global $config;
+
+  if ($config->is_password_protection_enabled()) {
     session_start();
     if (isset($_SESSION['session_start'])) {
       if (!is_active_session()) {
@@ -81,13 +83,6 @@ function is_active_session() {
       return true;
     }
   }
-  return false;
-}
-
-function is_password_protection_enabled() {
-  global $config;
-  
-  if ($config->settings['Password'] != '') return true;
   return false;
 }
 
@@ -715,7 +710,6 @@ function load_latestversion() {
     return true;
   }
   else {
-    $config->set_latestversion($config->settings['LatestVersion']);
     return false;
   }
 }

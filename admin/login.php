@@ -3,7 +3,7 @@
 //Description : Controls loin for NoTrack, validating username and password, and throttling password attemtps
 //Author : QuidsUp
 //Date : 2015-03-25
-//Password attempts are throttled by use of Memcache, a variable is placed in there with the duration set by $config->settings['Delay']. If this variable is present then no checking will take place until the variable is cleared.
+
 
 //1. Start Session
 //2. Check if session is already active then return to index.php
@@ -14,7 +14,7 @@
 //4ai. If yes then set $message to wait and don't evaluate logon attempt, jump to 5.
 //4b. Username is optional, check if it has been set in HTTP POST, otherwise set it to blank
 //4c. Create access log file if it doesn't exist
-//4d. Use PHP password_verify function to check hashed version of user input with hash in $config->settings['Password']
+//4d. Use PHP password_verify function to check hashed version of user input with hash in $config->password
 //4ei. If username and password match set SESSION['sid'] to 1 (Future version may use a random number, to make it even harder to hijack a session)
 //4eii. On failure write Delay into Memcache and show message of Incorrect Username or Password
 //      Add entry into ntrk-access.log to allow functionality with Fail2ban
@@ -35,7 +35,7 @@ $message = '';
 $password = '';
 $username = '';
 
-if (! is_password_protection_enabled()) {
+if (! $config->is_password_protection_enabled()) {
   header('Location: ./index.php');
   exit;
 }
@@ -44,10 +44,6 @@ session_start();
 if (is_active_session()) {
   header('Location: ./index.php');
   exit;  
-}
-
-if (!file_exists(ACCESSLOG)) {                   //Create ntrk-access.log file
-  exec(NTRK_EXEC.'--accesslog');
 }
 
 if (isset($_POST['password'])) {
@@ -61,8 +57,8 @@ if (isset($_POST['password'])) {
     else $username = '';
         
     
-    //Use built in password_verify function to compare with $config->settings['Password'] hash
-    if (($username == $config->settings['Username']) && (password_verify($password, $config->settings['Password']))) {
+    //Use built in password_verify function to compare with $config->password hash
+    if (($username == $config->username) && (password_verify($password, $config->password))) {
       activate_session();                      //Set session to enabled
       header('Location: ./index.php');         //Redirect to index.php
       exit;
@@ -71,11 +67,11 @@ if (isset($_POST['password'])) {
     
     
     //At this point the Password is Wrong
-    $mem->set('delay', $config->settings['Delay'], 0, $config->settings['Delay']);
+    $mem->set('delay', 10, 0, 10);
     $message = "Incorrect username or password";   //Deny attacker knowledge of whether username OR password is wrong
     
-    //Output attempt to ACCESSLOG
-    error_log(date('d/m/Y H:i:s').': Authentication failure for '.$username.' from '.$_SERVER['REMOTE_ADDR'].' port '.$_SERVER['REMOTE_PORT'].PHP_EOL, 3, ACCESSLOG);    
+    //Output attempt to error.log
+    trigger_error("Failed login from {$_SERVER['REMOTE_ADDR']} with username {$username}", E_USER_NOTICE);
   }
 }
 ?>

@@ -37,18 +37,18 @@ define('WEBLIST', ['lighttpd', 'apache', 'nginx']);
 //Deal with POST actions first, that way we can reload the page and remove POST requests from browser history.
 if (isset($_POST['action'])) {
   update_server_config();
-  usleep(15000);                             //Short pause to prevent race condition
   $config->save();
+  usleep(15000);                             //Short pause to prevent race condition
 
-  //Refresh page to anchor point if action is valid
-  if (($_POST['action'] == 'dnsqueries') || ($_POST['action'] == 'webserver') || ($_POST['action'] == 'server')) {
-    header('Location: #'.$_POST['action']);
-    exit;
-  }
-  else {
-    header('Location: #');
-    exit;
-  }
+//   //Refresh page to anchor point if action is valid
+//   if (($_POST['action'] == 'dnsqueries') || ($_POST['action'] == 'webserver') || ($_POST['action'] == 'server')) {
+//     header('Location: #'.$_POST['action']);
+//     exit;
+//   }
+//   else {
+//     header('Location: #');
+//     exit;
+//   }
 }
 
 if (isset($_GET['action'])) {

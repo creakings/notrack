@@ -109,7 +109,7 @@ function draw_topmenu($currentpage='') {
     echo '<img id="incognito-button" class="pointer" title="Incognito" onclick="menuIncognito()" src="/admin/svg/menu_incognito.svg" alt="">'.PHP_EOL;
   }
 
-  if (is_password_protection_enabled()) {                  //Show Logout button if there is a password
+  if ($config->is_password_protection_enabled()) {         //Show Logout button if there is a password
     echo '<a href="/admin/logout.php"><img title="Logout" src="/admin/svg/menu_logout.svg" alt=""></a>'.PHP_EOL;
   }
 

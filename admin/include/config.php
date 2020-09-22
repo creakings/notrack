@@ -4,21 +4,24 @@
  *
  *
  */
-
 define('SETTINGS_BL', $_SERVER['DOCUMENT_ROOT'].'/admin/settings/bl.php');
+define('SETTINGS_FRONT',  $_SERVER['DOCUMENT_ROOT'].'/admin/settings/front.php');
 define('SETTINGS_SERVER', $_SERVER['DOCUMENT_ROOT'].'/admin/settings/server.php');
 define('SETTINGS_STATUS', $_SERVER['DOCUMENT_ROOT'].'/admin/settings/status.php');
-
 
 class Config {
   //Front-End PHP Settings
   private $api_key = '';
   private $api_readonly = '';
+  private $password = '';
+  private $username = '';
   private $search_engine = 'DuckDuckGo';
   private $search_url = 'https://duckduckgo.com/?q=';
   private $whois_api = '';
   private $whois_provider = 'who.is';
   private $whois_url = 'https://who.is/whois/';
+  //Version Info
+  private $latestversion = VERSION;
   //DHCP Settings
   private $dhcp_authoritative = false;
   private $dhcp_enabled = false;
@@ -39,7 +42,6 @@ class Config {
   private $dns_serverip1 = '1.1.1.1';
   private $dns_serverip2 = '1.0.0.1';
 
-  private $latestversion = VERSION;
   private $bl_custom = '';
 
   //Filters used in filter_var to validate user input
@@ -47,6 +49,9 @@ class Config {
     //Front-End PHP Settings
     'api_key' => FILTER_SANITIZE_STRING,
     'api_readonly' => FILTER_SANITIZE_STRING,
+    'latestversion' => FILTER_SANITIZE_STRING,
+    'password' => FILTER_SANITIZE_STRING,
+    'username' => FILTER_SANITIZE_STRING,
     'search_engine' => FILTER_SANITIZE_STRING,
     'search_url' => FILTER_SANITIZE_STRING,
     'whois_api' => FILTER_SANITIZE_STRING,
@@ -73,12 +78,6 @@ class Config {
   public $status = STATUS_ENABLED;
   public $unpausetime = 0;
 
-  public $DEFAULTCONFIG = array(
-    'Username' => '',
-    'Password' => '',
-    'Delay' => 30,
-    'LatestVersion' => VERSION, //DEPRECATED
-  );
   //0 - Enabled / Disabled, 1 - List Type, 2 - List Name
   public $blocklists = array(
     'bl_blacklist' => array(true, 'custom', 'Custom List'),
@@ -163,8 +162,6 @@ class Config {
     'Who.is' => 'https://who.is/whois/'
   );
 
-  public $settings = array();
-
 
   /********************************************************************
    *  Constructor
@@ -175,115 +172,7 @@ class Config {
    *    None
    */
   public function __construct() {
-    $this->load();
-
     $this->load_status();
-  }
-
-  /********************************************************************
-   *  Load Config File
-   *    1. Attempt to load settings and blocklist arrays from Memcache
-   *    2. Write default values to settings and blocklist arrays
-   *    3. Read Config File
-   *    4. Split Line into "key" = "value" using regex
-   *       matches[1] = key, matches[2] = value
-   *    5. Certain values need filtering to prevent XSS
-   *    6. For other values, check if key exists, then replace with new value
-   *    7. Setup SearchUrl
-   *    8. Write Config to Memcache
-   *
-   *  Params:
-   *    None
-   *  Return:
-   *    None
-   */
-  public function load() {
-    $line = '';
-    $matches = array();
-
-    //Firstly Set settings and blocklists arrays to their default values
-    $this->settings = $this->DEFAULTCONFIG;
-
-    if (file_exists(CONFIGFILE)) {                         //Check config file exists
-      $fh= fopen(CONFIGFILE, 'r');                         //Open config
-      while (!feof($fh)) {
-        $line = fgets($fh);                                //Read Line of LogFile
-
-
-        //Match any other config line. #Comments are ignored
-        if (preg_match('/(\w+)\s+=\s+([\S]+)/', $line, $matches)) {
-          switch ($matches[1]) {
-            case 'Delay':
-              $this->settings['Delay'] = filter_integer($matches[2], 0, 3600, 30);
-              break;
-            default:
-              if (array_key_exists($matches[1], $this->settings)) {
-                $this->settings[$matches[1]] = strip_tags($matches[2]);
-              }
-              break;
-          }
-        }
-      }
-
-      fclose($fh);
-    }
-  }
-
-
-  /********************************************************************
-   *  Save Config
-   *    1. Check if Latest Version is less than Current Version
-   *    2. Open Temp Config file for writing
-   *    3. Loop through settings and blocklist arrays
-   *    4. Write other non-array values
-   *    5. Close Config File
-   *    6. Delete Config Array out of Memcache, in order to force reload
-   *    7. Call ntrk-exec to replace old /etc/notrack/notrack.conf with temp config
-   *
-   *  Params:
-   *    None
-   *  Return:
-   *    SQL Query string
-   */
-  public function save() {
-    global $mem;
-
-    $key = '';
-    $value = '';
-
-    //DEPRECATED
-    //Prevent wrong version being written to config file if user has just upgraded and old LatestVersion is still stored in Memcache
-    /*if (check_version($this->settings['LatestVersion'])) {
-        $this->settings['LatestVersion'] = VERSION;
-    }*/
-
-    $fh = fopen(CONFIGTEMP, 'w');                          //Open temp config for writing
-
-    //Write each value of settings array to temp config
-    foreach ($this->settings as $key => $value) {
-      fwrite($fh, $key.' = '.$value.PHP_EOL);
-    }
-
-    //Write each value of blocklists array to temp config
-    foreach ($this->blocklists as $key => $value) {
-      if ($value) {
-        fwrite($fh, $key.' = 1'.PHP_EOL);
-      }
-      else {
-        fwrite($fh, $key.' = 0'.PHP_EOL);
-      }
-    }
-
-    //Write other non-array items to temp config
-    fwrite($fh, 'status = '.$this->status.PHP_EOL);
-    fwrite($fh, 'unpausetime = '.$this->unpausetime.PHP_EOL);
-    fclose($fh);                                           //Close temp file
-
-    $mem->delete('conf-settings');                         //Delete config from Memcache
-    $mem->delete('conf-blocklists');                       //Delete config from Memcache
-
-    exec(NTRK_EXEC.'--save-conf'); // DEPRECATED
-    exec(NTRK_EXEC.'--save conf');
   }
 
 
@@ -429,6 +318,37 @@ class Config {
 
 
   /********************************************************************
+   *  Save Config
+   *
+   *  Params:
+   *    None
+   *  Return:
+   *    None
+   */
+  public function save() {
+    $filelines = array();
+
+    $filelines[] = '<?php'.PHP_EOL;
+
+    $filelines[] = "\$config->api_key = '{$this->api_key}';".PHP_EOL;
+    $filelines[] = "\$config->api_readonly = '{$this->api_readonly}';".PHP_EOL;
+    $filelines[] = "\$config->password = '{$this->password}';".PHP_EOL;
+    $filelines[] = "\$config->username = '{$this->username}';".PHP_EOL;
+    $filelines[] = "\$config->search_engine = '{$this->search_engine}';".PHP_EOL;
+    $filelines[] = "\$config->search_url = '{$this->search_url}';".PHP_EOL;
+    $filelines[] = "\$config->whois_api = '{$this->whois_api}';".PHP_EOL;
+    $filelines[] = "\$config->whois_provider = '{$this->whois_provider}';".PHP_EOL;
+    $filelines[] = "\$config->whois_url = '{$this->whois_url}';".PHP_EOL;
+
+    //Final line closing PHP tag
+    $filelines[] = '?>'.PHP_EOL;
+
+    if (file_put_contents(SETTINGS_FRONT, $filelines) === false) {
+      die('Unable to save settings to '.SETTINGS_FRONT);
+    }
+  }
+
+  /********************************************************************
    *  Get Block List Name
    *    Returns the name of block list if it exists in the names array
    *
@@ -484,10 +404,9 @@ class Config {
   }
 
 
-
-
-
-
+  /********************************************************************
+   *  Load Status File
+   */
   private function load_status() {
     if (file_exists(SETTINGS_STATUS)) {
       include SETTINGS_STATUS;
@@ -502,6 +421,21 @@ class Config {
         $this->save_status($this->status, 0);              //Update the status.php settings file
       }
     }
+  }
+
+
+  /********************************************************************
+   *  Is Password Protection Enabled
+   *
+   *  Params:
+   *    None
+   *  Return:
+   *    True - Password Enabled
+   *    False - Password Disabled
+   */
+  public function is_password_protection_enabled() {
+    if ($this->password != '') return true;
+    return false;
   }
 
 
@@ -619,19 +553,11 @@ class Config {
   }
 }
 
-$config = new Config;
-
-
-
 /********************************************************************
  *  Load DNS and DHCP Values from server.php
  *    1. Check server.php exists in settings folder
  *    2. Execute server.php
  *
- *  Params:
- *    None
- *  Return:
- *    None
  */
 function load_serversettings() {
   global $config;
@@ -640,3 +566,26 @@ function load_serversettings() {
     include SETTINGS_SERVER;
   }
 }
+
+
+/********************************************************************
+ *  Load Front End Config Settings from front.php
+ *    1. Check front.php exists in settings folder
+ *    2. Execute front.php
+ *
+ */
+function load_frontsettings() {
+  global $config;
+
+  if (file_exists(SETTINGS_FRONT)) {
+    include SETTINGS_FRONT;
+  }
+}
+
+
+
+
+$config = new Config;
+load_frontsettings();
+
+
