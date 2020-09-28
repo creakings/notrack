@@ -35,7 +35,181 @@ $message = '';
 $password = '';
 $username = '';
 
-if (! $config->is_password_protection_enabled()) {
+/********************************************************************
+ *  Check IP Delay
+ *    Check Memcache to see if a delay should be imposed against visitor IP
+ *    Delay is last recorded time + no. attemps squared
+ *
+ *  Params:
+ *    Username (str): Username value to retrieve from Memcache
+ *  Return:
+ *    False: No delay should be imposed
+ *    True: Impose delay
+ */
+function check_ip_delay($userip) {
+  global $mem;
+
+  if ($userip == '') {                                     //Can't proceed with blank
+    return false;
+  }
+
+  //Attempt to load values from Memcache
+  $time_userip = $mem->get($userip) ?? false;
+  $attempts_userip = $mem->get("{$userip}_attempts") ?? 0;
+
+  if ($time_userip === false) {                            //No delay set
+    return false;
+  }
+
+  $calcdelay = ($time_userip + ($attempts_userip ** 2));
+  $difference = $calcdelay - time();
+  if (time() > $calcdelay) {                               //Has delay passed?
+    return false;
+  }
+  echo "IP Fail {$attempts_userip}, Delay {$difference}";
+  return true;
+}
+
+
+/********************************************************************
+ *  Check Username Delay
+ *    Check Memcache to see if a delay should be imposed against username
+ *    Delay is last recorded time + no. attemps squared
+ *
+ *  Params:
+ *    Username (str): Username value to retrieve from Memcache
+ *  Return:
+ *    False: No delay should be imposed
+ *    True: Impose delay
+ */
+function check_username_delay($username) {
+  global $mem;
+
+  if ($username == '') {                                   //Can't proceed with blank
+    return false;
+  }
+
+  //Attempt to load values from Memcache
+  $time_username = $mem->get($username) ?? false;
+  $attempts_username = $mem->get("{$username}_attempts") ?? 0;
+
+  if ($time_username === false) {                          //No delay set
+    return false;
+  }
+
+  $calcdelay = ($time_username + ($attempts_username ** 2));
+  $difference = $calcdelay - time();
+  if (time() > $calcdelay) {                               //Has delay passed?
+    return false;
+  }
+  echo "User Fail {$attempts_username}, Delay {$difference}";
+  return true;
+}
+
+
+/********************************************************************
+ *  Set Delay against visitor IP
+ *    Record current time and increase attempts
+ *    Hold values for 900 seconds (15 mins)
+ *  Params:
+ *    UserIP (str): IP value to Set to from Memcache
+ *  Return:
+ *    None
+ */
+function delay_ip($userip) {
+  global $mem;
+
+  if ($userip == '') {
+    return;
+  }
+
+  $memkey = "{$userip}_attempts";
+
+  if ($mem->get($userip)) {                                //Is userip value known?
+    $mem->replace($userip, time(), 0, 900);                //Yes - Replace old time value
+  }
+  else {
+    $mem->set($userip, time(), 0, 900);                    //No - Set a new time value
+  }
+
+  if ($mem->get($memkey)) {                                //Is user attempts value known?
+    $mem->increment($memkey, 1);                           //Yes - Increase by 1
+  }
+  else {
+    $mem->set($memkey, 1, 0, 900);
+  }
+}
+
+
+/********************************************************************
+ *  Set Delay against Username
+ *    Record current time and increase attempts
+ *    Hold values for 900 seconds (15 mins)
+ *  Params:
+ *    Username (str): Username value to Set to from Memcache
+ *  Return:
+ *    None
+ */
+function delay_username($username) {
+  global $mem;
+
+  if ($username == '') {
+    return;
+  }
+
+  $memkey = "{$username}_attempts";
+
+  if ($mem->get($username)) {                              //Is username value known?
+    $mem->replace($username, time(), 0, 900);              //Yes - Replace old time value
+  }
+  else {
+    $mem->set($username, time(), 0, 900);                  //No - Set a new time value
+  }
+
+  if ($mem->get($memkey)) {                                //Is user attempts value known?
+    $mem->increment($memkey, 1);                           //Yes - Increase by 1
+  }
+  else {
+    $mem->set($memkey, 1, 0, 900);
+  }
+}
+/********************************************************************
+ *  Validate Password
+ *    Populates filter bar with Mark resolved
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function validate_password($username, $password, $userip) {
+  global $config;
+  $message = '';
+
+  if (check_ip_delay($userip)) {
+    $message = 'Unable to verify';
+    return $message;
+  }
+
+  if (check_username_delay($username)) {
+    $message = 'Unable to verify';
+    return $message;
+  }
+
+  if (($username == $config->username) && (password_verify($password, $config->password))) {
+    activate_session();                      //Set session to enabled
+    header('Location: ./index.php');         //Redirect to index.php
+    exit;
+  }
+
+  $message = "Incorrect username or password";   //Deny attacker knowledge of whether username OR password is wrong
+
+  delay_ip($userip);
+  delay_username($username);
+
+  return $message;
+}
+
+if (! $config->is_password_protection_enabled()) {         //Leave if password protection disabled
   header('Location: ./index.php');
   exit;
 }
@@ -43,36 +217,37 @@ if (! $config->is_password_protection_enabled()) {
 session_start();
 if (is_active_session()) {
   header('Location: ./index.php');
-  exit;  
+  exit;
 }
 
+
 if (isset($_POST['password'])) {
-                     
-  if ($mem->get('delay')) {                      //Load Delay from Memcache
+  $username = $_POST['username'] ?? '';
+  $password = $_POST['password'];
+  $userip = $_SERVER['REMOTE_ADDR'];
+
+  $username = strip_tags($username);
+
+  $message = validate_password($username, $password, $userip);
+  /*if ($mem->get('delay')) {                      //Load Delay from Memcache
     $message = 'Wait';                           //If it is set then Wait
   }
   else {                                         //No Delay, check Password
     $password = $_POST['password'];
-    if (isset($_POST['username'])) $username = $_POST['username'];
-    else $username = '';
-        
-    
+
+
     //Use built in password_verify function to compare with $config->password hash
-    if (($username == $config->username) && (password_verify($password, $config->password))) {
-      activate_session();                      //Set session to enabled
-      header('Location: ./index.php');         //Redirect to index.php
-      exit;
-    }
-    
-    
-    
+
+
+
+
     //At this point the Password is Wrong
     $mem->set('delay', 10, 0, 10);
     $message = "Incorrect username or password";   //Deny attacker knowledge of whether username OR password is wrong
-    
+
     //Output attempt to error.log
     trigger_error("Failed login from {$_SERVER['REMOTE_ADDR']} with username {$username}", E_USER_NOTICE);
-  }
+  }*/
 }
 ?>
 <!DOCTYPE html>

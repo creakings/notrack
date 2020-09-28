@@ -6,7 +6,7 @@ body {
   background-color: #F1F1F1;
   margin: 0;
   padding: 0;
-  background: url("../svg/background.svg") no-repeat center center fixed;
+/*   background: url("../svg/background.svg") no-repeat center center fixed; */
   background-size: cover;
   width: 100vw;
   min-height: 95vh;                                        /*Fix for mobiles*/
@@ -25,7 +25,7 @@ input[type="text"], input[type="password"] {
   font-size: 1em;
   color: #00000A;
   background-color: #FBFBFB;
-  border: 2px solid #21BBFF;  
+  border: 2px solid #21BBFF;
   border-radius: 5px;
   box-shadow: 0 0 12px #21BBFF;
   margin: 0.3em 0 0.8em 0;
