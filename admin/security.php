@@ -29,7 +29,6 @@ echo '<div id="main">';
 /************************************************
 *Constants                                      *
 ************************************************/
-define ('DEF_DELAY', 30);
 
 /********************************************************************
  *  Disable Password Protection
@@ -42,8 +41,8 @@ define ('DEF_DELAY', 30);
 function disable_password_protection() {
   global $config;
   
-  $config->settings['Username'] = '';
-  $config->settings['Password'] = '';
+  $config->username = '';
+  $config->password = '';
   $config->save();
 }
 
@@ -88,12 +87,11 @@ function new_password_input_form() {
   echo '<form name="security" method="post">';
   echo '<table class="sys-table">'.PHP_EOL;
     
-  draw_sysrow('NoTrack Username', '<input type="text" name="username" value="'.$config->settings['Username'].'" placeholder="Username"><p><i>Optional authentication username</i></p>');
+  draw_sysrow('NoTrack Username', '<input type="text" name="username" value="'.$config->username.'" placeholder="Username"><p><i>Optional authentication username</i></p>');
   
   draw_sysrow('NoTrack Password', '<input type="password" name="password" id="password" placeholder="Password" onkeyup="checkPassword();" required><p><i>Authentication password</i></p>');
   draw_sysrow('Confirm Password', '<input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" onkeyup="checkPassword();">');
   
-  draw_sysrow('Delay', '<input type="number" class="fixed10" name="delay" min="5" max="2400" value="'.$config->settings['Delay'].'"><p><i>Delay in seconds between attempts</i></p>');
   echo '<tr><td colspan="2"><div class="centered"><input type="submit" value="Save Changes"></div></td></tr>';
   echo '</table></form>'.PHP_EOL;
 }
@@ -109,40 +107,32 @@ function new_password_input_form() {
 function update_password_config($username) {
   global $config, $message;
   
-  $confirm_password = '';
-  $password = $_POST['password'];
-  if (isset($_POST['confirm_password'])) $confirm_password = $_POST['confirm_password'];
-  
-  
+  $password = $_POST['password'] ?? '';
+  $confirm_password = $_POST['confirm_password'] ?? '';
+
   //Is username valid?
   if (preg_match('/[!\"£\$%\^&\*\(\)\[\]+=<>:\,\|\/\\\\]/', $username) != 0) {
     $message = 'Invalid Username';
     return false;
   }
   
-  if ($password != $confirm_password) {                              //Does validate password match?
+  if ($password != $confirm_password) {                    //Does confirm password match?
     $message = 'Passwords don\'t match';
     return false;
   }
   
-  if (($username == '') && ($password == '')) {                      //Removing password
-    $config->settings['Username'] = '';
-    $config->settings['Password'] = '';
+  if (($username == '') && ($password == '')) {            //Removing password
+    $config->username = '';
+    $config->password = '';
   }
   else {  
-    $config->settings['Username'] = $username;
-    $config->settings['Password'] = password_hash($password, PASSWORD_DEFAULT);
-    
-    if (isset($_POST['delay'])) {                                    //Set Delay
-      $config->settings['Delay'] = filter_integer($_POST['delay'], 5, 2401, DEF_DELAY);
-    }
-    else {                                                           //Fallback if Delay not posted
-      $config->settings['Delay'] = DEF_DELAY;
-    }
+    $config->username = $username;
+    $config->password = password_hash($password, PASSWORD_DEFAULT);
   }
   
   return true;
 }
+
 
 /********************************************************************
  *  Validate Old Password
@@ -156,13 +146,9 @@ function update_password_config($username) {
 function validate_oldpassword() {
   global $config;
   
-  if (! isset($_POST['old_password'])) return false;                 //Has old password been entered?
-  
-  if (password_verify($_POST['old_password'], $config->settings['Password'])) {
-    return true;
-  }
-  
-  return false;
+  $old_password = $_POST['old_password'] ?? '';
+
+  return password_verify($old_password, $config->password);
 }
 //-------------------------------------------------------------------
 $show_password_input_form = false;
@@ -175,7 +161,7 @@ if (isset($_POST['enable_password'])) {
 }
 elseif (isset($_POST['change_password']) && (isset($_POST['password']))) {
   if (validate_oldpassword()) {
-    if (update_password_config($config->settings['Username'])) {
+    if (update_password_config($config->username)) {
       $config->save();
       $message = 'Password Changed';
     }
@@ -203,7 +189,7 @@ elseif ((isset($_POST['username']) && (isset($_POST['password'])))) {
 echo '<div class="sys-group">'.PHP_EOL;
 echo '<h5>Security&nbsp;<a href="./help.php?p=security"><div class="help-icon"></div></a></h5>'.PHP_EOL;
 
-if (is_password_protection_enabled()) {
+if ($config->is_password_protection_enabled()) {
   change_password_form();
   
   $show_password_input_form = false;

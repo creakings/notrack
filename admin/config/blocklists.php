@@ -41,54 +41,45 @@ $list = array();                                 //Global array for all the Bloc
  */
 function draw_blocklist_row($bl, $bl_name, $msg, $url) {
   global $config, $dbwrapper;
-  //Txt File = Origniating download file
-  //TLD Is a special case, and the Txt file used is TLD_CSV
 
-
-  $txtfilename = '';
-  $txtlines = 0;
+  $filelines = 0;
   $filename = '';
   $stats = '';
 
-  if (! $config->blocklists[$bl]) {
-    echo '<tr><td><input type="checkbox" name="'.$bl.'"></td><td>'.$bl_name.':</td><td>'.$msg.' <a href="'.$url.'" target="_blank"><img alt="Link" src="../svg/icon_home.svg"></a></td></tr>'.PHP_EOL;
-  }
-  else {
-    $filename = strtolower(substr($bl, 3));
-    if ($bl == 'bl_tld') {
-      $txtfilename = TLD_CSV;
+  if ($config->is_blocklist_active($bl)) {
+    if ($bl == 'bl_tld') {                                 //Set the filename
+      $filename = TLD_CSV;
     }
     else {
-      $txtfilename = DIR_TMP.$filename.'.txt';
+      $filename = DIR_TMP.$bl.'.txt';                      //Temp + Abbreviated blocklist name + .txt
     }
 
-    $rows = $dbwrapper->count_specific_blocklist($bl);
+    $rows = $dbwrapper->count_specific_blocklist($bl);     //Count number of entries for this blocklist in blocklist MariaDB table
 
-    if (($rows > 0) && (file_exists($txtfilename))) {
-
-      //Try and get the number of lines in the file
-      try {
-        $txtlines = count(file($txtfilename));
+    if (($rows > 0) && (file_exists($filename))) {
+      try {                                                //Try and count the number of lines in the file
+        $filelines = count(file($filename));
       }
-      catch(Exception $e) {
-        $txtlines = 0;
+      catch(Exception $e) {                                //Something wrong, default count to zero
+        $filelines = 0;
       }
 
       //Prevent stupid result of lines being higher than the site count
-      if ($rows > $txtlines) {
-        $rows = $txtlines;
+      if ($rows > $filelines) {
+        $rows = $filelines;
       }
 
-      $stats = '<p class="light">'.$rows.' used of '.$txtlines.'</p>';
+      $stats = '<p class="light">'.$rows.' used of '.$filelines.'</p>';
     }
-    else {
+    else {                                                 //Temp file missing, default to unknown count value
       $stats = '<p class="light">'.$rows.' used of ?</p>';
     }
 
-    echo '<tr><td><input type="checkbox" name="'.$bl.'" checked="checked"></td><td>'.$bl_name.':</td><td>'.$msg.' <a href="'.$url.'" target="_blank"><img alt="Link" src="../svg/icon_home.svg"></a>'.$stats.'</td></tr>'.PHP_EOL;
+    echo '<tr><td><input type="checkbox" name="'.$bl.'" checked="checked" onChange="setBlocklist(this)"></td><td>'.$bl_name.':</td><td>'.$msg.' <a href="'.$url.'" target="_blank"><img alt="Link" src="../svg/icon_home.svg"></a>'.$stats.'</td></tr>'.PHP_EOL;
   }
-
-  return null;
+  else {
+    echo '<tr><td><input type="checkbox" name="'.$bl.'" onChange="setBlocklist(this)"></td><td>'.$bl_name.':</td><td>'.$msg.' <a href="'.$url.'" target="_blank"><img alt="Link" src="../svg/icon_home.svg"></a></td></tr>'.PHP_EOL;
+  }
 }
 
 
@@ -102,6 +93,7 @@ function draw_blocklist_row($bl, $bl_name, $msg, $url) {
  */
 function tracking_blocklists() {
   echo '<div id="tab-content-1">'.PHP_EOL;                                    //Start Tab
+
   echo '<h5>Tracker Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
@@ -115,7 +107,16 @@ function tracking_blocklists() {
 
   draw_blocklist_row('bl_windowsspyblocker', 'Windows Spy Blocker', 'Windows Spy Blocker provides a block list to prevent spying and tracking on Windows Systems', 'https://github.com/crazy-max/WindowsSpyBlocker');
 
-  echo '<tr><td colspan="3"><button type="submit" name="v" value="1">Save Changes</button></td></tr>'.PHP_EOL;
+  draw_blocklist_row('bl_ddg_confirmed', 'DuckDuckGo Confirmed', 'DuckDuckGo Tracker Radar blocklist domains which have been categorised as Confirmed trackers', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+
+  draw_blocklist_row('bl_ddg_high', 'DuckDuckGo High Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are excessively using browser APIs associated with tracking', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+
+  draw_blocklist_row('bl_ddg_medium', 'DuckDuckGo Medium Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are using many browser APIs, possibly for tracking purposes. This may contain some legitimate websites.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+
+  draw_blocklist_row('bl_ddg_low', 'DuckDuckGo Low Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are using some browser APIs, but not obvoiusly for tracking purposes. This will contain some legitimate websites that are not associated with tracking.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+
+  draw_blocklist_row('bl_ddg_unknown', 'DuckDuckGo Unknown', 'Domains identified by DuckDuckGo Tracker Radar which have little to no usage of browser APIs associate with tracking. This list contains a mixture of legitimate and suspect websites.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
 }
@@ -138,7 +139,6 @@ function advertising_blocklists() {
 
   draw_blocklist_row('bl_pglyoyo', 'Peter Lowe&rsquo;s Ad server list‎', 'Some of this list is already in NoTrack', 'https://pgl.yoyo.org/adservers/');
 
-  echo '<tr><td colspan="3"><button type="submit" name="v" value="2">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
 }
@@ -175,7 +175,6 @@ function malware_blocklists() {
 
   draw_blocklist_row('bl_swissransom', 'Swiss Security - Ransomware Tracker', 'Protects against downloads of several variants of Ransomware, including Cryptowall and TeslaCrypt', 'https://ransomwaretracker.abuse.ch/');
 
-  echo '<tr><td colspan="3"><button type="submit" name="v" value="3">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
 }
@@ -199,7 +198,6 @@ function cryptocoin_blocklists() {
 
   draw_blocklist_row('bl_cbl_browser', 'Coin Blocker Lists - Browser', 'This list contains all browser mining domains - A list to prevent browser mining only.', 'https://gitlab.com/ZeroDot1/CoinBlockerLists');
 
-  echo '<tr><td colspan="3"><button type="submit" name="v" value="4">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
 }
@@ -222,7 +220,6 @@ function social_blocklists() {
   draw_blocklist_row('bl_fbannoyance', 'Fanboy&rsquo;s Annoyance List', 'Block Pop-Ups and other annoyances.', 'https://www.fanboy.co.nz/');
   draw_blocklist_row('bl_fbsocial', 'Fanboy&rsquo;s Social Blocking List', 'Block social content, widgets, scripts and icons.', 'https://www.fanboy.co.nz/');
 
-  echo '<tr><td colspan="3"><button type="submit" name="v" value="5">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
 }
@@ -246,11 +243,8 @@ function multipurpose_blocklists() {
 
   draw_blocklist_row('bl_hphosts', 'hpHosts', 'Inefficient list', 'http://hosts-file.net');
 
-  //draw_blocklist_row('bl_securemecca', 'Secure Mecca', 'Mixture of Adult, Gambling and Advertising sites <a href="http://securemecca.com/" target="_blank">(securemecca.com)</a>');
-
   draw_blocklist_row('bl_winhelp2002', 'MVPS Hosts‎', 'Very inefficient list', 'http://winhelp2002.mvps.org/');
 
-  echo '<tr><td colspan="3"><button type="submit" name="v" value="6">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
 }
@@ -315,7 +309,6 @@ function regional_blocklists() {
 
   draw_blocklist_row('bl_svneasy', 'SVN EasyList', 'Slovenska lista (Slovenia)', 'https://github.com/betterwebleon/slovenian-list');
 
-  echo '<tr><td colspan="3"><button type="submit" name="v" value="7">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
 }
@@ -323,7 +316,7 @@ function regional_blocklists() {
 
 /********************************************************************
  *  Custom Block Lists
- *    Replace comma seperated values of bl_custom with new lines
+ *    Save button required here
  *  Params:
  *    None
  *  Return:
@@ -335,8 +328,7 @@ function custom_blocklists() {
   echo '<div>'.PHP_EOL;                                    //Start Tab
   echo '<h5>Custom Block Lists</h5>'.PHP_EOL;
 
-  echo '<tr><td>&nbsp;</td><td><p>Use either Downloadable or Localy stored Block Lists</p><textarea rows="18" name="bl_custom">'.str_replace(',', PHP_EOL, $config->settings['bl_custom']).'</textarea></td></tr>';
-  echo '</table>'.PHP_EOL;
+  echo '<p>Use either Downloadable or Localy stored Block Lists</p><textarea rows="18" name="bl_custom">'.$config->get_blocklist_custom().'</textarea>';
 
   echo '<table class="bl-table">'.PHP_EOL;
   echo '<tr><td colspan="3"><button type="submit" name="v" value="8">Save Changes</button></td></tr>'.PHP_EOL;
@@ -347,10 +339,8 @@ function custom_blocklists() {
 
 /********************************************************************
  *  Update Blocks
- *    1: Search through Config blocklist array
- *    2: Check if bl_? appears in POST[bl_?]
- *    3: Set bl_custom by splitting and filtering values from POST[bl_custom]
- *    4: Save the config file
+ *    1: Set bl_custom by splitting and filtering values from POST[bl_custom]
+ *    2: Save the config file
  *  Params:
  *    None
  *  Return:
@@ -362,26 +352,12 @@ function update_blocklists() {
   $customstr = '';                                         //Filtered string of POST bl_custom
   $customlist = array();                                   //Array of items from customstr
   $validlist = array();                                    //Valid items from customlist
-  $key = '';
-  $value = '';
 
-  //Go through the blocklists array from Config
-  foreach($config->blocklists as $key => $value) {
-    //Is there an equivilent POST value?
-    if (isset($_POST[$key])) {
-      if ($_POST[$key] == 'on') {                          //Is it set to on (ticked)?
-        $config->blocklists[$key] = true;                  //Yes - enable block list
-      }
-    }
-    else {                                                 //No POST value means unticked
-      $config->blocklists[$key] = false;                   //Disable blocklist
-    }
-  }
+  $customstr = $_POST['bl_custom'] ?? '';
 
-  //bl_custom requires extra processing
-  if (filter_string('bl_custom', 'POST', 2000)) {
+  if (filter_string($customstr, 2000)) {
     //Split array
-    $customstr = preg_replace('#\s+#',',',trim(strip_tags($_POST['bl_custom'])));
+    $customstr = preg_replace('#\s+#',',',trim(strip_tags($customstr)));
     $customlist = explode(',', $customstr);                //Split string into array
 
     //Check if each item is a valid URL or file location?
@@ -396,19 +372,17 @@ function update_blocklists() {
 
     //Are there any items in the valid list?
     if (sizeof($validlist) == 0) {                         //No - blank out bl_custom
-      $config->settings['bl_custom'] = '';
+      $config->set_blocklist_custom('');
     }
-    else {                                                 //Yes - Implode the validlist
-      $config->settings['bl_custom'] = implode(',', $validlist);
+    else {                                                 //Yes - save as comma seperated values
+      $config->set_blocklist_custom(implode(',', $validlist));
     }
   }
   else {
-    $config->settings['bl_custom'] = '';
+    $config->set_blocklist_custom('');                     //Nothing set - blank bl_custom
   }
-  
-  $config->save();
 
-  return null;
+  $config->save_blocklists();
 }
 
 
@@ -503,12 +477,13 @@ function draw_welcome() {
 draw_topmenu('Block Lists');
 draw_sidemenu();
 
+$config->load_blocklists();
+
 echo '<div id="main">'.PHP_EOL;
 
 //Has the Save Changes button been clicked?
 if (isset($_POST['action'])) {                             //Yes - Update block list conf
   update_blocklists();
-  exec(NTRK_EXEC.'--run-notrack');
 }
 
 if (isset($_GET['v'])) {
@@ -521,8 +496,37 @@ else {
   draw_welcome();
 }
 
+draw_copymsg();
+
 ?>
 
 </div>
+<script>
+function setBlocklist(box) {
+  var xhr = new XMLHttpRequest();
+  var url = '/admin/include/api.php';
+  var params = 'operation=blocklist_status&blname=' + box.name + '&blstatus=' + box.checked;
+
+  xhr.open('POST', url, true);
+  xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+  xhr.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      //console.log(this.responseText);
+      var apiResponse = JSON.parse(this.responseText);
+
+      document.getElementById('copymsg').innerText = apiResponse['message'];
+      document.getElementById('copymsg').style.display = 'block';
+
+      //Delay for 3 seconds, then Hide copymsg element
+      setTimeout(function(){
+        document.getElementById('copymsg').style.display = 'none';
+      },3000);
+    }
+  }
+  xhr.send(params);
+}
+
+</script>
 </body>
 </html>

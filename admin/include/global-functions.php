@@ -11,10 +11,9 @@
  */ 
 function draw_systable($title) {
   echo '<div class="sys-group">'.PHP_EOL;
-  echo '<h5>'.$title.'</h5>'.PHP_EOL;
+  echo "<h5>{$title}</h5>".PHP_EOL;
   echo '<table class="sys-table">'.PHP_EOL;
-  
-  return null;
+
 }
 
 
@@ -27,9 +26,7 @@ function draw_systable($title) {
  *    None
  */
 function draw_sysrow($description, $value) {
-  echo '<tr><td>'.$description.': </td><td>'.$value.'</td></tr>'.PHP_EOL;
-  
-  return null;
+  echo "<tr><td>{$description}: </td><td>{$value}</td></tr>".PHP_EOL;
 }
 
 /********************************************************************
@@ -60,7 +57,9 @@ function activate_session() {
 }
 
 function ensure_active_session() {
-  if (is_password_protection_enabled()) {
+  global $config;
+
+  if ($config->is_password_protection_enabled()) {
     session_start();
     if (isset($_SESSION['session_start'])) {
       if (!is_active_session()) {
@@ -87,16 +86,9 @@ function is_active_session() {
   return false;
 }
 
-function is_password_protection_enabled() {
-  global $config;
-  
-  if ($config->settings['Password'] != '') return true;
-  return false;
-}
-
 
 /********************************************************************
- *  Check Version
+ *  Compare Version possibly DEPRECATED
  *    1. Split strings by '.'
  *    2. Combine back together and multiply with Units array
  *    e.g 1.0 - 1x10000 + 0x100 = 10,000
@@ -107,7 +99,7 @@ function is_password_protection_enabled() {
  *  Return:
  *    true if latestversion >= currentversion, or false if latestversion < currentversion
  */
-function check_version($latestversion) {
+function compare_version($latestversion) {
   //If LatestVersion is less than Current Version then function returns false
   
   $numversion = 0;
@@ -152,6 +144,7 @@ function count_rows($query) {
   return $rows;
 }
 
+
 /********************************************************************
  *  Extract Domain
  *    Extract domain with optional double-barrelled tld
@@ -161,21 +154,17 @@ function count_rows($query) {
  *    Filtered domain
  */
 function extract_domain($url) {
-  $regex_domain = '/[\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-]+$/';
-  $regex_suppressed_domain = '/^(\*\.)([\w\d\-\_]+\.(org\.|co\.|com\.|gov\.)?[\w\d\-]+)$/';
-  
-  if (preg_match($regex_suppressed_domain, $url, $matches)) {
-    return $matches[2];
-  }
-  preg_match($regex_domain, $url, $matches);
+  $regex_domain = '/[\w\-]{1,63}\.(org\.|co\.|com\.|gov\.)?[\w\-]{1,63}$/';
 
-  return $matches[0];
+  if (preg_match($regex_domain, $url, $matches)) {
+    return $matches[0];
+  }
+  return $url;
 }
 
 
-
 /********************************************************************
- *  Filter Boolean Value
+ *  Filter Boolean Value possibly DEPRECATED
  *    Checks if value given is 'true' or 'false'
  *  Params:
  *    Value to Check
@@ -194,20 +183,24 @@ function filter_bool($value) {
 
 /********************************************************************
  *  Filter Domain
- *    perform regex match to see if url is in the form of some-site.com, or some_site.co.uk
+ *    1. Check Domain length (must be less than 253 chars)
+ *    2. Perform regex match to see if domain is in the form of:
+ *       some-site.com, or some_site.co.uk or .country
  *
  *  Regex:
- *    Group 1: *. (optional)
- *    Group 2: subdomain(s) (optional)
- *    Group 3: domain
- *    Group 4: TLD
+ *    Match either 1 label and maximum of 251 chars (i.e. a.verylongdomain) or .country
+ *    Maximum length of DNS is 255, but includes two bytes for length
  *  Params:
  *    Domain to check
  *  Return:
- *    True on success, False on failure
+ *    True on successful validation
+ *    False on failure
  */
 function filter_domain($domain) {
-  if (preg_match('/^(\*\.)?([\w\-_\.]+)?[\w\-_]+\.[\w\-]+$/', $domain) > 0) {
+  if (strlen($domain) > 253) {
+    return false;
+  }
+  if (preg_match('/^([\w\-]{1,63}\.[\w\-\.]{1,251}|\.[\w\-]{1,63})$/', $domain)) {
     return true;
   }
   else {
@@ -255,33 +248,25 @@ function filter_macaddress($str) {
 
 /********************************************************************
  *  Filter String
- *    Checks if $var exists in POST or GET array
- *    Check strlen
+ *    Validates a string
  *
  *  Params:
- *    Array value to check, method - POST / GET, max string length
+ *    str (str): String to check
+ *    maxlen (int): Maximum length of string
  *  Return:
  *    true on acceptable value
  *    false for unacceptable value
  */
-function filter_string($var, $method, $maxlen=255) {
-  if ($method == 'POST') {
-    if (isset($_POST[$var])) {
-      if (strlen($_POST[$var]) <= $maxlen) {
-        return true;
-      }
-    }
+function filter_string($str, $maxlen=255) {
+  if (strlen($str) > $maxlen) {                            //Check length of string
+    return false;
   }
 
-  elseif ($method == 'GET') {
-    if (isset($_GET[$var])) {
-      if (strlen($_GET[$var]) <= $maxlen) {
-        return true;
-      }
-    }
+  if (preg_match('/[<>]/', $str)) {                        //Check there are no HTML Tags
+    return false;
   }
 
-  return false;
+  return true;
 }
 
 
@@ -299,7 +284,7 @@ function filter_string($var, $method, $maxlen=255) {
  *    True on success, False on failure
  */
 function filter_url($url) {
-  if (preg_match('/^(ftp|http?s):\/\/([\w\-_\.]+)\/?[\w\.\-\?&=]*$/', $url) > 0) {
+  if (preg_match('/^(ftp|https?):\/\/([\w\-\.]{0,254})(\/[\w\-\.\/]*)?([\w#!:.?+=&%@!\-\/]+)?$/', $url)) {
     return true;
   }
   else {
@@ -545,8 +530,8 @@ function linechart($values1, $values2, $xlabels, $link_labels, $extraparams, $ti
   $numvalues = count($values1);
   $values1[] = 0;                                          //Ensure line returns to 0
   $values2[] = 0;                                          //Ensure line returns to 0
-  $xlabels[] = $xlabels[$numvalues-1] + 1;                 //Increment xlables
-  
+  $xlabels[] = $xlabels[$numvalues-1];                     //Increment xlables
+
   $xstep = 1900 / $numvalues;                              //Calculate x axis increment
   if ($max_value < 200) {                                  //Calculate y axis maximum
     $ymax = (ceil($max_value / 10) * 10) + 10;             //Change offset for low values
@@ -589,7 +574,7 @@ function linechart($values1, $values2, $xlabels, $link_labels, $extraparams, $ti
 
     if ($values1[$i] > 0) {                                //$values1[] (Allowed)
       $y = 700 - (($values1[$i] / $ymax) * 700);           //Calculate Y position of $values1
-      echo '<a href="./queries.php?datetime='.$link_labels[$i].'&amp;'.$extraparams.'&amp;groupby=time&amp;sort=ASC" target="_blank">'.PHP_EOL;
+      echo '<a href="./queries.php?datetime='.$link_labels[$i].$extraparams.'&amp;groupby=time&amp;sort=ASC&amp;severity=1" target="_blank">'.PHP_EOL;
       echo '  <circle cx="'.$x.'" cy="'.(700-($values1[$i]/$ymax)*700).'" r="10px" fill="#00b7ba" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px">'.PHP_EOL;
       echo '    <title>'.$xlabels[$i].' '.$values1[$i].' Allowed</title>'.PHP_EOL;
       echo '  </circle>'.PHP_EOL;
@@ -598,7 +583,7 @@ function linechart($values1, $values2, $xlabels, $link_labels, $extraparams, $ti
 
     if ($values2[$i] > 0) {                                //$values2[] (Blocked)
       $y = 700 - (($values2[$i] / $ymax) * 700);           //Calculate Y position of $values2
-      echo '<a href="./queries.php?datetime='.$link_labels[$i].'&amp;'.$extraparams.'&amp;groupby=time&amp;sort=ASC&amp;filter=B" target="_blank">'.PHP_EOL;
+      echo '<a href="./queries.php?datetime='.$link_labels[$i].$extraparams.'&amp;groupby=time&amp;sort=ASC&amp;severity=2" target="_blank">'.PHP_EOL;
       echo '  <circle cx="'.$x.'" cy="'.(700-($values2[$i]/$ymax)*700).'" r="10px" fill="#b1244a" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px">'.PHP_EOL;
       echo '    <title>'.$xlabels[$i].' '.$values2[$i].' Blocked</title>'.PHP_EOL;
       echo '  </circle>'.PHP_EOL;
@@ -705,5 +690,48 @@ function piechart($labels, $data, $cx, $cy, $radius, $colours) {
   }
 
   return true;
+}
+
+
+/********************************************************************
+ *  Load latest version from settings folder
+ *  Fallback to config->settings if the php file is missing
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    true - latestversion.php loaded successfully
+ *    false - latestversion.php missing
+ */
+function load_latestversion() {
+  global $config;
+  if (file_exists('./settings/latestversion.php')) {       //Attempt to load latestversion
+    include_once './settings/latestversion.php';
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+
+/********************************************************************
+ *  Run NoTrack Exec
+ *    Checks for a non-zero return and displays output if necessary
+ *
+ *  Params:
+ *    Command
+ *  Return:
+ *    None
+ */
+function notrack_exec($cmd) {
+  exec(NTRK_EXEC.'--'.$cmd, $output, $exitcode);
+
+  if ($exitcode != 0) {
+    echo 'notrack-exec returned exit code '.$exitcode;
+    echo implode('<br>', $output);
+    //var_dump($output);
+    die;
+  }
 }
 ?>

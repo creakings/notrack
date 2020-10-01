@@ -92,6 +92,10 @@ function show_export() {
 
   $result = $dbwrapper->blocklist_domains($selectedbl, $searchbox);
 
+  header('Content-type: text/dns');
+  header('Content-Disposition: attachment; filename="notrack_blocklist_'.$selectedbl.'.txt"');
+  echo '#Title: NoTrack Blocklist'.PHP_EOL;
+
   echo "#Selected Block List: {$selectedbl}".PHP_EOL;
 
   if ($result->num_rows == 0) {                            //Leave if nothing found
@@ -105,8 +109,6 @@ function show_export() {
   }
 
   $result->free();
-
-  return true;
 }
 
 
@@ -126,7 +128,7 @@ function show_full_blocklist() {
   $clipboard = '';                                         //Div for Clipboard
   $domain = '';
   $row_class = '';
-  $bl_source = '';
+  $bl_friendlyname = '';
   $linkstr = '';
 
   $result = $dbwrapper->blocklist_domains($selectedbl, $searchbox);
@@ -187,15 +189,10 @@ function show_full_blocklist() {
     }
 
     //Convert abbreviated bl_name to friendly name
-    if (array_key_exists($row['bl_source'], $config::BLOCKLISTNAMES)) {
-      $bl_source = $config::BLOCKLISTNAMES[$row['bl_source']];
-    }
-    else {
-      $bl_source = $row['bl_source'];
-    }
+    $bl_friendlyname = $config->get_blocklistname($row['bl_source']);
 
     //Output table row
-    echo "<tr{$row_class}><td>{$i}</td><td>{$bl_source}</td><td>{$domain}{$clipboard}</td><td>{$row['comment']}</td></tr>".PHP_EOL;
+    echo "<tr{$row_class}><td>{$i}</td><td>{$bl_friendlyname}</td><td>{$domain}{$clipboard}</td><td>{$row['comment']}</td></tr>".PHP_EOL;
 
     $i++;
     $k++;
@@ -216,9 +213,10 @@ function show_full_blocklist() {
  */
 
 //Process GET Requests
-if (filter_string('s', 'GET', 255)) {                      //Search box
+$searchbox = $_GET['s'] ?? '';                             //Search box
+if (filter_string($searchbox, 255)) {
   //Allow only alphanumeric . - _
-  $searchbox = preg_replace('/[^\w\.\-_]/', '', $_GET['s']);
+  $searchbox = preg_replace('/[^\w\.\-_]/', '', $searchbox);
   $searchbox = strtolower($searchbox);
 }
 
@@ -229,14 +227,12 @@ if (isset($_GET['page'])) {                                //Page Number
 if (isset($_GET['selectedbl'])) {                          //Selected Blocklist
   //Filtering to check if the selected blocklist exists
   //If it doesn't, keep with the default blocklist option - all
-  if (array_key_exists($_GET['selectedbl'], $config::BLOCKLISTNAMES)) {
+  if (array_key_exists($_GET['selectedbl'], $config->blocklists)) {
     $selectedbl = $_GET['selectedbl'];
   }
 }
 
 if (isset($_GET['export'])) {                              //Export file has a different content type
-  header('Content-Disposition: attachment; filename="blocklist.txt"');
-  echo '#Title: NoTrack Blocklist'.PHP_EOL;
   show_export();
   exit;
 }

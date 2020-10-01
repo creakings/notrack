@@ -7,7 +7,10 @@
  * Primary: #00c2c8          *
  * Primary Dark: #00b7ba     *
  * Inverse: #b1244a          *
- * Divider: #bdbdbd          */
+ * Divider: #bdbdbd          *
+ * Input Background: #fafafa *
+ * Input Border: #757575     *
+ * Hover: brightness 90%     */
 body {
   min-height: 92vh;                                        /*Fix for mobiles*/
   margin: 0;
@@ -17,6 +20,10 @@ body {
   color: #00000a;
   background: url("../svg/background_circles.svg") no-repeat center center fixed;
   background-size: cover;
+}
+*:active,                                        /*Prevent black border in Chrome*/
+*:focus {
+  outline: none;
 }
 a:link,
 a:visited,
@@ -46,8 +53,9 @@ p.small {
 }
 p.light {
   margin: 0 0 0 0.5em;
-  font-size: 0.8rem;
   color: grey;
+  font-size: 0.8rem;
+  font-style: italic;
 }
 ol,
 ul {
@@ -63,7 +71,7 @@ h1 {
   letter-spacing: 0.1rem;
 }
 h2 {
-  font-size: 1.6rem;
+  font-size: 1.2rem;
   font-weight: normal;
 }
 h4 {                                                       /*Font for Error*/
@@ -141,6 +149,7 @@ pre {
    Form Items
    ========================================================================== */
 input[type="date"],
+input[type="time"],
 input[type="number"],
 input[type="text"],
 input[type="password"] {
@@ -156,7 +165,8 @@ input[type="password"] {
   font-size: 0.94rem;
 }
 select {
-  width: 98%;/*calc(96% - 1rem);*/
+  width: 98%;
+  max-width: 24.5rem;
   height: 1.9rem;
   margin: 0.2rem 0rem;
   padding-left: 0.2rem;
@@ -177,6 +187,7 @@ textarea {
   font-size: 0.94rem;
 }
 input[type="date"]:focus,
+input[type="time"]:focus,
 input[type="number"]:focus,
 input[type="text"]:focus,
 input[type="password"]:focus,
@@ -316,11 +327,16 @@ button:active {
 }
 .filter-toolbar select,
 .filter-toolbar input[type="text"] {
-  width: 100%;
+  width: 95%;
 }
 
-.analytics-filter-toolbar {
+/* Column sizes for different pages
+   ========================================================================== */
+.single-filter-toolbar {
   grid-template-columns: auto;
+}
+.analytics-filter-toolbar {
+  grid-template-columns: fit-content(13.6rem) auto;
 }
 .custombl-filter-toolbar {
   grid-template-columns: 50% fit-content(6rem);
@@ -329,17 +345,72 @@ button:active {
   grid-template-columns: 40% auto 30%;
 }
 .live-filter-toolbar {
-  grid-template-columns: auto auto;
-}
-.live-filter-toolbar img {
-  height: 1.1rem;
-  width: 1.1rem;
-  margin-bottom: -0.15rem;
+  grid-template-columns: auto fit-content(12.8rem) auto;
 }
 .queries-filter-toolbar {
-  grid-template-columns: 25% auto auto auto fit-content(12rem);
+  grid-template-columns: 25% auto auto fit-content(12.8rem) fit-content(6rem);
+}
+@media only screen and (max-width:640px), only screen and (max-device-width:640px) {
+  .queries-filter-toolbar {
+    grid-template-columns: auto fit-content(8.6rem) fit-content(6rem);
+  }
+  .queries-filter-toolbar > div:nth-child(1) {grid-column: 1; grid-row: 1;}
+  .queries-filter-toolbar > div:nth-child(2) {grid-column: 1; grid-row: 3;}
+  .queries-filter-toolbar > div:nth-child(3) {grid-column: 2; grid-row: 1;}
+  .queries-filter-toolbar > div:nth-child(4) {grid-column: 2; grid-row: 3;}
+  .queries-filter-toolbar > div:nth-child(5) {grid-column: 3; grid-row: 1;}
+  .queries-filter-toolbar > div:nth-child(6) {grid-column: 1; grid-row: 2;}
+  .queries-filter-toolbar > div:nth-child(7) {grid-column: 1; grid-row: 4;}
+  .queries-filter-toolbar > div:nth-child(8) {grid-column: 2; grid-row: 2;}
+  .queries-filter-toolbar > div:nth-child(9) {grid-column: 2 / span 2; grid-row: 4;}
+  .queries-filter-toolbar > div:nth-child(10) {grid-column: 3; grid-row: 2;}
 }
 
+
+/* Filter nav buttons
+   ========================================================================== */
+.filter-nav-group {
+  margin: 0.2rem 0.4rem;
+}
+.filter-nav-button {
+  display: inline-block;
+  height: 1.3rem;
+  margin-left: -4px;
+  padding: 0.3rem 0.9rem 0;
+  border: 2px solid #757575;
+  background-color: #fafafa;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.4);
+}
+.filter-nav-button:active,
+.filter-nav-button:hover {
+  filter: brightness(90%);
+}
+.filter-nav-button:active {
+  border: 2px solid #00c2c8;
+}
+.filter-nav-button:first-of-type {
+  border-radius: 4px 0 0 4px;
+}
+.filter-nav-button:last-of-type {
+  border-radius: 0 4px 4px 0;
+}
+.filter-nav-button:not(:last-of-type):not(:active) {
+  border-right: none;
+}
+.filter-nav-button.active {
+  background-color: #00c2c8;
+}
+.filter-nav-button > span {
+  display: inline-block;
+  width: 4.2rem;
+  border-radius: 2px;
+  text-align: center;
+}
+.filter-nav-button > img {
+  max-width: 1.6rem;
+  max-height: 0.8rem;
+  margin-top: 0.2rem;
+}
 
 /* ==========================================================================
    Table Toolbar
@@ -362,8 +433,8 @@ button:active {
    ========================================================================== */
 
 .pag-nav {
-  margin: 0 0.2em 0.4em;
-  font-size: 0.9em;
+/*   margin: 0 0.2em 0.4em; */
+  font-size: 0.85rem;
   float: left;
 }
 .pag-nav ul {
@@ -372,35 +443,34 @@ button:active {
 }
 .pag-nav a,
 .pag-nav span {
-  display: inline-block;
-  padding: 0.5em 0.8em;
+  display: block;
+  padding: 0.4rem 0.62rem;
 }
 .pag-nav li {
   margin-right: 0.15rem;
+  border: 1px solid #757575;
   border-radius: 4px;
-  background-color: #c8c8c8;
-  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5), inset 0 0 4px #666;
+  background-color: #fafafa;
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.4);
   display: inline-block;
 }
 .pag-nav li.active {
   background-color: #00c2c8;
 }
 a.pag-exwide {                                                       /*Wide button on blocked.php*/
-  width: 7em;
+  width: 6.5rem;
   text-align: center;
 }
+.pag-nav li:active,
+.pag-nav li:focus,
 .pag-nav li:hover {
-  opacity: 0.92;
-}
-.pag-nav li:focus {
-  opacity: 0.82;
-}
-.pag-nav li:active {
-  transform: translateY(3px);
-  box-shadow: 1px 2px 2px rgba(0, 0, 0, 0.5), inset 0 0 4px #666;
-  opacity: 0.74;
+  border: 1px solid #00c2c8;
+  filter: brightness(90%);
 }
 
+.pag-nav li:active {
+  transform: translateY(2px);
+}
 
 /* ==========================================================================
    Group By (similar to pag-nav, but using radio buttons instead)
@@ -471,35 +541,14 @@ tr {
 /*tr:hover {
   filter: brightness(90%);
 }*/
-/*tr.blocked, DEPRECATED with modern styling
-td.blocked {
-  background-color: #eb5d66;
-}*/
-/*tr.invalid,*/
-td.red,
-span.key-red {
-  background-color: #ee202b;
-}
-/*tr.local, DEPRECATED with modern styling
-td.local {
-  background-color: #93a0ff;
-}*/
 tr.dark {
-  background-color: #999;
+  background-color: darkgray;
 }
 tr.cyan {  /*Used on investigate.php*/
-  background-color: #00eaee;
+  background-color: cyan;
 }
 tr.gray {
-  color: Grey;
-}
-td.orange,
-span.key-orange {
-  background-color: #ffa704;
-}
-td.green,
-span.key-green {
-  background-color: #06c36b;
+  color: grey;
 }
 
 
@@ -632,7 +681,6 @@ span.key-green {
 #query-group-table td:nth-child(5),
 #query-group-table th:nth-child(5) {
   width: 2rem;
-  text-align: center;
 }
 
 #query-time-table td:nth-child(2),
@@ -653,7 +701,6 @@ span.key-green {
 #query-time-table td:nth-child(5),
 #query-time-table th:nth-child(5) {
   width: 2rem;
-/*   text-align: center; */
 }
 #query-group-table th a, #query-time-table th a {
   font-size: 1.4rem;
@@ -680,6 +727,7 @@ span.key-green {
 .dhcp-table td:nth-child(1),
 .dhcp-table th:nth-child(1) {
   width: 21%;
+  font-variant-numeric: tabular-nums;
   text-align: left;
 }
 .dhcp-table td:nth-child(2),
@@ -693,7 +741,8 @@ span.key-green {
 .dhcp-table td:nth-child(4),
 .dhcp-table th:nth-child(4) {
   width: 20%;
-  text-align: center;
+  font-variant-numeric: tabular-nums;
+/*   text-align: center; */
 }
 .dhcp-table td:nth-child(5),
 .dhcp-table th:nth-child(5) {
@@ -819,23 +868,23 @@ span.key-green {
 /* Top Level Domain Tables on tld.php
    ========================================================================== */
 .tld-table td:nth-child(1) {
-  width: 2rem;
+  width: 3.4rem;
   text-align: center;
 }
 .tld-table td:nth-child(2) {
-  width: 18%;
+  width: 2rem;
   text-align: center;
-  font-weight: bold;
 }
 .tld-table td:nth-child(3) {
-  width: 72%;
+  width: 5rem;
+  font-weight: bold;
 }
-.tld-table a {
-  font-size: 0.7em;
+.tld-table td:nth-child(4) {
+  width: 10rem;
+  text-align: left;
 }
-.tld-table img {
-  margin: 0 0.1rem;
-  width: 1.8rem;
+.tld-table td:nth-child(5) {
+  text-align: left;
 }
 
 /* Sys Table on global-functions.php, security.php
@@ -917,7 +966,6 @@ span.key-green {
   overflow: hidden;
 }
 #menu-side:hover{
-/*   position: fixed; */
   width: 14rem;
 }
 #menu-side a {
@@ -957,10 +1005,6 @@ span.key-green {
 #menu-side-status {
   margin-top: 1em;
   font-size: 0.9rem;
-}
-#menu-side-bottom {
-  display: inline-block;
-  margin-top: 2rem;
 }
 .alert-count {
   position: absolute;
@@ -1283,26 +1327,17 @@ span.key-green {
   margin-left: 0.9rem;
   display: inline;
 }
-#options-box,
-#queries-box h3 {
-  margin: 1.2rem 0.5rem 1.2rem 1rem;
-  font-size: 1.4rem;
-  font-weight: normal;
-}
-#options-box {
-  width: 24rem;
-  height: 16rem;
-/*   margin: -12rem 0 0 -12rem; */
-  z-index: 502;
-}
-#options-box h2,
 #queries-box h2 {
   line-height: 1.9rem;
   margin: 0;
   color: #f7f7f7;
   background-color: #262626;
-  font-size: 1.2rem;
   text-align: center;
+}
+#queries-box h3 {
+  margin: 1.2rem 0.5rem 1.2rem 1rem;
+  font-size: 1.4rem;
+  font-weight: normal;
 }
 #options-box button {
   margin: 1.8rem auto 1rem;
@@ -1507,15 +1542,98 @@ span.investigatelink > a {
   text-decoration: underline;
 }
 
-/* Key for config-functions TLD Blocking
+/* ==========================================================================
+   Time Picker on queries.php
    ========================================================================== */
-span.key {
-  width: 10em;
-  line-height: 1.5rem;
-  margin: 0 0 0.2rem 1rem;
-  text-align: center;
-  font-weight: bold;
-  border: 1px solid #00000a;
-  border-radius: 4px;
+#timepicker-dropdown:focus #timepicker-group,
+#timepicker-dropdown:focus-within #timepicker-group {
   display: block;
+}
+#timepicker-group {
+  display: none;
+  margin: 0.4rem 0 0 calc(4vw - 8rem);
+  position: absolute;
+  padding: 0.1rem;
+  background: #f7f7f7;
+  border: 1px solid #757575;
+  border-radius: 4px;
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5), inset 0 0 4px #666;
+  z-index: 1;
+}
+.timepicker-item {
+  width: 32rem;
+  height: 1.5rem;
+  overflow-y: hidden;
+  display: block;
+  transition: height 0.5s;
+}
+@media only screen and (max-width:480px), only screen and (max-device-width:480px) {
+  #timepicker-group {
+    left: 0.5rem;
+    margin: 0;
+  }
+  .timepicker-item {
+    width: calc(100vw - 1.25rem);
+  }
+}
+.timepicker-item button {
+  margin: 0.5rem;
+  float: right;
+}
+.timepicker-item h3 {
+  padding-left: 0.5rem;
+  margin: 0.1rem;
+  background: #d2d2d2;
+}
+.timepicker-item h3::before {
+  content: "\25B8";
+  margin-right: 0.2rem;
+}
+.timepicker-item ul {
+  padding: 0;
+  cursor: pointer;
+  list-style: none;
+}
+.timepicker-item:focus,
+.timepicker-item:focus-within {
+  height: 14rem;
+}
+.timepicker-item:focus h3,
+.timepicker-item:focus-within h3 {
+  background: #f7f7f7;
+  border-bottom: 1px solid #00c2c8;
+}
+.timepicker-item:focus h3::before {
+  content: "\25BE";
+}
+.timepicker-grid {
+  display: grid;
+  grid-column-gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.8rem;
+}
+.timepicker-grid input[type="date"],
+.timepicker-grid input[type="time"] {
+  width: 95%;
+}
+.timepicker-grid h4 {
+  margin: 0 0.3rem;
+  font-size: 1rem;
+  text-align: left;
+}
+.timepicker-grid-half {
+  grid-template-columns: 50% 50%;
+}
+.timepicker-grid-td {
+  grid-template-columns: 29% 19% 29% 19%;
+}
+.timepicker-grid.timepicker-grid-td > div:nth-child(1) {
+  grid-column: 1 / span 2;
+}
+.timepicker-grid.timepicker-grid-td > div:nth-child(2) {
+  grid-column: 3 / span 2;
+}
+.timepicker-grid.timepicker-grid-td > div:nth-child(7) {
+  padding-top: 0.5rem;
+  grid-column: 1 / span 4;
 }

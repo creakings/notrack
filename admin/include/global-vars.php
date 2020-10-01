@@ -6,7 +6,7 @@ define('STATUS_INCOGNITO', 8);
 define('STATUS_NOTRACKRUNNING', 64);
 define('STATUS_ERROR', 128);
 
-define('VERSION', '0.9.4');
+define('VERSION', '20.10');
 define('SERVERNAME', 'localhost');
 define('USERNAME', 'ntrk');
 define('PASSWORD', 'ntrkpass');
@@ -14,18 +14,25 @@ define('DBNAME', 'ntrkdb');
 
 define('ROWSPERPAGE', 200);
 
-$LogLightyAccess = '/var/log/lighttpd/access.log';
-
 define('DIR_TMP', '/tmp/');
 define('ACCESSLOG', '/var/log/ntrk-admin.log');
 define('CONFIGFILE', '/etc/notrack/notrack.conf');
 define('CONFIGTEMP', '/tmp/notrack.conf');
 define('DNS_LOG', '/var/log/notrack.log');
-define('TLD_CSV', '../include/tld.csv');
+define('TLD_CSV', '../include/tld.csv'); //DEPRECATED
 define('NTRK_EXEC', 'sudo /usr/local/sbin/ntrk-exec ');
 define('NOTRACK_LIST', '/etc/dnsmasq.d/notrack.list');
-define('BLACKLIST_FILE', '/etc/notrack/blacklist.txt');
-define('WHITELIST_FILE', '/etc/notrack/whitelist.txt');
+
+//Status values for Analytics ACK (acknowledged)
+define('STATUS_OPEN', 1);
+define('STATUS_RESOLVED', 2);
+
+//Severity values for Analytics, DNS Queries
+define('SEVERITY_LOW', 1);
+define('SEVERITY_MED', 2);
+define('SEVERITY_HIGH', 4);
+
+//Regular Expressions:
 define('REGEX_DATETIME', '/^2\d\d\d\-[0-1][0-9]\-(0[1-9]|[1-2][0-9]|3[01])\s([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/');
 
 //VALIDAPI is any length of hexadecimal lowercase from start to end
@@ -41,7 +48,6 @@ define('REGEX_IPCIDR', '/^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.)
 
 define('REGEX_URLSEARCH', '/[^\w\d\.\_\-\*]/');    //Valid leters for URL search
 
-
 if (!extension_loaded('memcache')) {
   die('NoTrack requires memcached and php-memcached to be installed');
 }
@@ -49,8 +55,4 @@ if (!extension_loaded('memcache')) {
 $mem = new Memcache;                             //Initiate Memcache
 $mem->connect('localhost', 11211);
 
-if (!extension_loaded('mysqli')) {
-  echo '<p>NoTrack requires mysql to be installed<br>Run: <code>bash /opt/notrack/install.sh -sql</code> or <code>bash ~/notrack/install.sh -sql</code> (depending where NoTrack folder is located)</p>';
-  die;
-}
 ?>

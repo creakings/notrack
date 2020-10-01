@@ -1,8 +1,14 @@
 <?php
 /********************************************************************
+tld.csv stores list of country / generic domains, as well as the table layout used here
+tldlist.txt stores the users settings
+If the users settings are missing, then fallback to enabling risk score 1 TLD's by default
 
+Flags taken from:
+https://github.com/lipis/flag-icon-css
+https://github.com/hjnilsson/country-flags
+https://www.iso.org/obp/ui/#search
 ********************************************************************/
-
 require('../include/global-vars.php');
 require('../include/global-functions.php');
 require('../include/config.php');
@@ -10,79 +16,164 @@ require('../include/menu.php');
 
 ensure_active_session();
 
-/************************************************
-*Constants                                      *
-************************************************/
-define('DOMAIN_BLACKLIST', '/etc/notrack/domain-blacklist.txt');
-define('DOMAIN_WHITELIST', '/etc/notrack/domain-whitelist.txt');
+/*************************************************
+*Constants                                       *
+*************************************************/
+//define('TLD_CSV', '../include/tld.csv');
+define('TLD_BL', '../settings/tldlist.txt');
+/*************************************************
+*Global Variables                                *
+*************************************************/
+$view = 0;
 
-/************************************************
-*Global Variables                               *
-************************************************/
-
-
-/************************************************
-*Arrays                                         *
-************************************************/
-$list = array();                                //Contents of tld.csv
-
+/*************************************************
+*Arrays                                          *
+*************************************************/
+$tldlist = array();                              //Contents of tld.csv
+$usersbl = array();
 
 /********************************************************************
- *  Load CSV List
- *    Load TLD List CSV file into $list
+ *  Get Digram
+ *    Two letters to use in flag-icon when picture is missing
+ *
  *  Params:
- *    listname - blacklist or whitelist, filename
+ *    Word (str):
  *  Return:
- *    true on completion
+ *    Digram
  */
-function load_csv($filename, $listname) {
-  global $list, $mem;
+function get_digram($word) {
+  $wordlen = 0;
 
-  $list = $mem->get($listname);
-  if (empty($list)) {
-    $fh = fopen($filename, 'r') or die('Error unable to open '.$filename);
-    while (!feof($fh)) {
-      $list[] = fgetcsv($fh);
-    }
+  $wordlen = strlen($word);
 
-    fclose($fh);
+  //Four or more crop to 1st two letters
+  if ($wordlen > 3) {
+    return substr(ucfirst($word), 0, 2);
+  }
+  //Two letters is passthru
+  elseif ($wordlen == 2) {
+    return ucfirst($word);
+  }
+  //1 or 3 use just the first letter
+  else {
+    return substr(strtoupper($word), 0, 1);
+  }
+}
+/********************************************************************
+ *  Load TLD CSV List
+ *    1. Attempt to load $tldlist from memcache
+ *    2. Load TLD List CSV file into $tldlist
+ *    3. Save $tldlist to memcache
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function load_tldcsv() {
+  global $mem, $tldlist, $usersbl;
 
-    $mem->set($listname, $list, 0, 600);                   //10 Minutes
+  $line = array();
+
+  if ($mem->get('tldlist') !== false) {
+    $tldlist = $mem->get('tldlist');
+    return;
   }
 
-  return true;
+  $fh = fopen(TLD_CSV, 'r') or die('Error unable to open '.TLD_CSV);
+  fgetcsv($fh);                                            //Ditch column headers
+
+  while(! feof($fh) && ($line = fgetcsv($fh)) !== false) {
+    if (sizeof($line) >= 6) {                              //Check array length is valid
+      $tldlist[] = $line;                                  //Add line of CSV to $tldlist
+    }
+  }
+  fclose($fh);                                             //Close tld.csv
+
+  $mem->add('tldlist', $tldlist, 0, 600);                  //Save to memcache for 10 mins
 }
 
 
 /********************************************************************
- *  Load List
- *    Loads a a List from File and returns it in Array form
- *    Saves $list into respective Memcache array
+ *  Load Users TLD Blocklist
+ *    Load tldlist.txt into $usersbl
+ *    Regex Groups:
+ *      1. Optional # (if # is present then line commented out, therefore TLD disabled
+ *      2. .tld (2 to 63 characters)
+ *      Ignore trailing comment, its not relevent for $usersbl
  *  Params:
- *    listname - blacklist or whitelist, filename
+ *    None
  *  Return:
- *    array of file
+ *    None
  */
-function load_list($filename, $listname) {
-  global $mem;
+function load_bl() {
+  global $usersbl;
 
-  $filearray = array();
+  $enabled = true;
+  $line = '';
+  $matches = array();
 
-  $filearray = $mem->get($listname);
-  if (empty($filearray)) {
-    if (file_exists($filename)) {
-      $fh = fopen($filename, 'r') or die('Error unable to open '.$filename);
-      while (!feof($fh)) {
-        $filearray[] = trim(fgets($fh));
-      }
+  //Not necessary for file to exist, NoTrack can use default values
+  if (! file_exists(TLD_BL)) {
+    return;
+  }
 
-      fclose($fh);
-      $mem->set($listname, $filearray, 0, 300);
+  $fh = fopen(TLD_BL, 'r') or die('Error unable to open '.TLD_BL);
+  while(! feof($fh) && ($line = fgets($fh)) !== false) {
+    if (preg_match('/^(#)?(\.\w{2,63})/', $line, $matches)) {
+      $enabled = ($matches[1] == '#') ? false : true;
+      $usersbl[$matches[2]] = $enabled;
     }
   }
 
-  return $filearray;
+  fclose($fh);
 }
+
+
+/********************************************************************
+ *  Update Users TLD Block List
+ *    1. Loop through $tldlist, which will have already been loaded from file / memcache
+ *    2a. Check if TLD name is POST requests
+ *    2b. Or if missing assume unticked and therefore false
+ *    3. Add fileline based on the above
+ *    4. Save filelines to tldlist.txt
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function save_bl() {
+  global $tldlist, $usersbl;
+
+  $enabled = false;
+  $risk = 0;
+  $title = '';
+  $tld = '';
+
+  $filelines = array();
+  $line = array();
+
+  foreach ($tldlist as $line) {
+    $tld = $line[0];
+    $name = $line[1];
+    $title = $line[2];
+    $risk = $line[4];
+
+    if (isset($_POST[$line[1]])) {                       //Does name feature in POST (tld domain without preceding .)
+      $usersbl[$tld] = true;
+      $filelines[] = "{$tld} #{$title}".PHP_EOL;
+    }
+    else {
+      $usersbl[$tld] = false;
+      $filelines[] = "#{$tld} #{$title}".PHP_EOL;
+    }
+  }
+
+  if (file_put_contents(TLD_BL, $filelines) === false) {
+    die('Unable to save settings to '.TLD_BL);
+  }
+}
+
 
 /********************************************************************
  *  Draw Help Page
@@ -93,37 +184,39 @@ function load_list($filename, $listname) {
  *    None
  */
 function tld_help() {
-  echo '<div>'.PHP_EOL;                                    //Start tab 4 div
+  echo '<div>'.PHP_EOL;                                    //Start tab 5 div
   echo '<h5>Domain Blocking</h5>'.PHP_EOL;
   echo '<p>NoTrack has the ability to block certain top-level domains, this comes in useful against certain domains which are abused by malicious actors. Sites can be created very quickly with the purpose of hosting malware and phishing sites, which can inflict a significant amount of damage before the security community can identify and block them.</p>'.PHP_EOL;
   echo '<p>Domains are categorised by a risk level: High, Medium, Low, and Negligible. The risk level has been taken from <u><a href="https://www.spamhaus.org/statistics/tlds/">Spamhaus</a></u>, <u><a href="https://krebsonsecurity.com/tag/top-20-shady-top-level-domains/">Krebs on Security</a></u>, <u><a href="https://www.symantec.com/blogs/feature-stories/top-20-shady-top-level-domains">Symantec</a></u>, and my own experience of dealing with Malware and Phishing campaigns in an Enterprise environment</p>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
-  echo '<span class="key key-red">High</span>'.PHP_EOL;
+  echo '<span class="key flag-icon-red">High</span>'.PHP_EOL;
   echo '<p>High risk domains are home to a high percentage of malicious sites compared to legitimate sites. Often websites within these domains are cheap or even free, and the domains are not well policed.<br>'.PHP_EOL;
   echo 'High risk domains are automatically blocked, unless you specifically untick them.</p>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
 
-  echo '<span class="key key-orange">Medium</span>'.PHP_EOL;
+  echo '<span class="key flag-icon-orange">Medium</span>'.PHP_EOL;
   echo '<p>Medium risk domains are home to a significant number of malicious sites, but are outnumbered by legitimate sites. You may want to consider blocking these, unless you live in, or utilise the websites of the affected country.</p>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
 
-  echo '<span class="key">Low</span>'.PHP_EOL;
+  echo '<span class="key flag-icon-yellow">Low</span>'.PHP_EOL;
   echo '<p>Low risk may still house some malicious sites, but they are vastly outnumbered by legitimate sites.</p>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
 
-  echo '<span class="key key-green">Negligible</span>'.PHP_EOL;
+  echo '<span class="key flag-icon-green">Negligible</span>'.PHP_EOL;
   echo '<p>These domains are not open to the public, and therefore extremely unlikely to contain malicious sites.</p>'.PHP_EOL;
   echo '<br>'.PHP_EOL;
 
-  echo '</div>'.PHP_EOL;                                   //End tab 4 div
+  echo '</div>'.PHP_EOL;                                   //End tab 5 div
 
 }
 
 /********************************************************************
  *  Show Domain List
- *    1. Load Users Domain Black list and convert into associative array
- *    2. Load Users Domain White list and convert into associative array
- *    3. Display list
+ *    1. Loop through $tldlist
+ *    2. Get enabled status from $usersbl
+ *    3. Format flag-icon-background based on risk number
+ *    4. Set checked value from $usersbl, fallback to risk number with 1 enabled by default
+ *    5. Draw table row
  *
  *  Params:
  *    None
@@ -131,31 +224,30 @@ function tld_help() {
  *    None
  */
 function show_domain_list() {
-  global $list;
+  global $tldlist, $usersbl;
 
-  $cell1 = '';                                             //Tickbox cell
-  $cell2 = '';                                             //TLD Name cell
-  $cell3 = '';                                             //Description cell
-  $checked = '';                                           //Tickbox status
-  $domain_name = '';
-  $flag_image = '';                                        //HTML Code for flag
-  $flag_filename = '';                                     //Filename of flag
-  $blackarray = array();                                   //TLD Blacklist
-  $whitearray = array();                                   //TLD Whitelist
-  $view = 1;                                               //Current Tab view
+  $cell1 = '';                                             //Flag icon
+  $cell2 = '';                                             //Checkbox input
+  $checked = '';                                           //Checkbox status
+  $countrycode = '';
+  $description = '';
+  $enabled = false;                                        //TLD enabled or disabled by user
+  $flag_background = '';                                   //Colour of flag-icon
+  $flag_image = '';                                        //Contents of flag-icon
+  $name = '';                                              //TLD Name without preceding .
+  $tld = '';
+  $title = '';
 
-  $blackarray = array_flip(load_list(DOMAIN_BLACKLIST, 'tldblacklist'));
-  $whitearray = array_flip(load_list(DOMAIN_WHITELIST, 'tldwhitelist'));
-  $listsize = count($list);
+  $risk = 0;
+  $tabview = 1;                                            //Current Tab view
 
-  if ($list[$listsize-1][0] == '') {                       //Last line is sometimes blank
-    array_splice($list, $listsize-1);                      //Cut last blank line out
-  }
+
+  $listsize = count($tldlist);
 
   echo '<div>'.PHP_EOL;                                    //Start Tab
 
   if ($listsize == 0) {                                    //Is List blank?
-    echo '<h4><img src=./svg/emoji_sad.svg>No sites found in Block List</h4>'.PHP_EOL;
+    echo '<h4><img src=../svg/emoji_sad.svg>No sites found in Block List</h4>'.PHP_EOL;
     echo '</div>';
     return;
   }
@@ -164,122 +256,64 @@ function show_domain_list() {
   echo '<input type="hidden" name="action" value="tld">'.PHP_EOL;
   echo '<table class="tld-table">'.PHP_EOL;                //Start tld-table
 
-  foreach ($list as $line) {
-    //1. Domain
-    //2. Domain Name
-    //3. Risk
-    //4. Comment
+  foreach ($tldlist as $line) {
+    $tld = $line[0];
+    $name = $line[1];
+    $title = $line[2];
+    $countrycode = $line[3];
+    $risk = $line[4];
+    $description = $line[5];
 
     //Risk score of zero means draw new table
-    if ($line[2] == 0) {
-      echo '<tr><td colspan="3"><button type="submit" name="v" value="'.$view.'">Save Changes</button></td></tr>'.PHP_EOL;
+    if ($risk == 0) {
+      echo '<tr><td colspan="5"><button type="submit" name="v" value="'.$tabview.'">Save Changes</button></td></tr>'.PHP_EOL;
       echo '</table>'.PHP_EOL;                             //End current tld-table
       echo '</div>'.PHP_EOL;                               //End Tab
 
-      $view++;
+      $tabview++;
       echo '<div>'.PHP_EOL;                                //Start new Tab
-      echo '<h5>'.$line[1].'</h5>'.PHP_EOL;                //Title
+      echo "<h5>{$title}</h5>".PHP_EOL;                    //Title
       echo '<table class="tld-table">'.PHP_EOL;            //Start new tld-table
       continue;                                            //Jump to end of loop
     }
 
-    $domain_name = substr($line[0], 1);
-
-    switch ($line[2]) {                                    //Cell colour based on risk
-      case 1: $cell2 = '<td class="red">'; break;
-      case 2: $cell2 = '<td class="orange">'; break;
-      case 3: $cell2 = '<td>'; break;                      //Default colour for low risk
-      case 5: $cell2 = '<td class="green">'; break;
+    //Get Enabled status
+    if (array_key_exists($tld, $usersbl)) {                //Check users settings
+      $enabled = $usersbl[$tld];
     }
-
-    //Flag names are seperated by underscore and converted to ASCII, dropping any UTF-8 Characters
-    $flag_filename = iconv('UTF-8', 'ASCII//IGNORE', str_replace(' ', '_', $line[1]));
-
-    //Does a Flag image exist?
-    if (file_exists('../images/flags/Flag_of_'.$flag_filename.'.png')) {
-      $flag_image = '<img src="../images/flags/Flag_of_'.$flag_filename.'.png" alt=""> ';
-    }
-    //TODO: Rename flags to this format
-    elseif (file_exists('../images/flags/flag_of_'.$domain_name.'.png')) {
-      $flag_image = '<img src="../images/flags/flag_of_'.$domain_name.'.png" alt=""> ';
+    elseif ($risk == 1) {                                  //Fallback if missing
+      $enabled = true;                                     //Risk 1 enabled by default
     }
     else {
-      $flag_image = '';
+      $enabled = false;                                    //Risk 2-3 disabled by default
     }
 
-    //Set tickbox checked: Condition (Risk 1 & NOT in White List) OR (in Black List)
-    if ((($line[2] == 1) && (! array_key_exists($line[0], $whitearray))) || (array_key_exists($line[0], $blackarray))) {
-      $checked = ' checked="checked"';
+    switch ($risk) {                                       //Cell colour based on risk
+      case 1: $flag_background = 'flag-icon-red'; break;
+      case 2: $flag_background = 'flag-icon-orange'; break;
+      case 3: $flag_background = 'flag-icon-yellow'; break;
+      case 5: $flag_background = 'flag-icon-green'; break;
+    }
+
+    if ($countrycode != '') {
+      $flag_image = "<img src=\"../flags/$countrycode.png\" alt=\"{$countrycode}\">";
     }
     else {
-      $checked = '';
+      $flag_image = get_digram($name);                     //Two-letter digram instead of picture
     }
 
-    $cell1 = '<input type="checkbox" name="'.$domain_name.'"'.$checked.'>';
-    $cell2 .= '<div class="centered">'.$line[0].'</div>';
-    $cell3 = $flag_image.$line[1].'<br>'.$line[3];
+    $checked = ($enabled) ? ' checked="checked"' : '';     //Set checkbox ticked value
 
-    echo "<tr><td>$cell1</td>$cell2</td><td>$cell3</td></tr>".PHP_EOL;
+    $cell1 = "<div class=\"flag-icon {$flag_background}\">{$flag_image}</div>";
+    $cell2 = "<input type=\"checkbox\" name=\"{$name}\"{$checked}>";
 
+    echo "<tr><td>{$cell1}</td><td>{$cell2}</td><td>{$tld}</td><td>{$title}</td><td>{$description}</td></tr>".PHP_EOL;
   }
 
-  echo '<tr><td colspan="3"><button type="submit" name="v" value="'.$view.'">Save Changes</button></td></tr>'.PHP_EOL;
+  //Closing save and table
+  echo '<tr><td colspan="5"><button type="submit" name="v" value="'.$tabview.'">Save Changes</button></td></tr>'.PHP_EOL;
   echo '</table>'.PHP_EOL;                                 //End final table
-
   echo '</div>'.PHP_EOL;                                   //End Tab
-}
-
-
-/********************************************************************
- *  Update Domian List
- *    1. Write domain-whitelist.txt to /tmp
- *    2. Write domain-blacklist.txt to /tmp
- *    3. Call NTRK_EXEC to copy domain lists over
- *    4. Delete Memcache items to force reload
- *
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function update_domain_list() {
-  global $list, $mem;
-
-  //Start with White List
-  $fh = fopen(DIR_TMP.'domain-whitelist.txt', 'w') or die('Unable to open '.DIR_TMP.'domain-whitelist.txt for writing');
-
-  fwrite($fh, '#Domain White list generated by tld.php'.PHP_EOL);
-  fwrite($fh, '#Do not make any changes to this file'.PHP_EOL);
-
-  foreach ($list as $site) {                               //Generate White list based on unticked Risk 1 items
-    if ($site[2] == 1) {
-      if (! isset($_POST[substr($site[0], 1)])) {          //Check POST for domain minus preceding .
-        fwrite($fh, $site[0].PHP_EOL);                     //Add domain to White list
-      }
-    }
-  }
-  fclose($fh);                                             //Close White List
-
-
-  //Write Black List
-  $fh = fopen(DIR_TMP.'domain-blacklist.txt', 'w') or die('Unable to open '.DIR_TMP.'domain-blacklist.txt for writing');
-
-  fwrite($fh, '#Domain Block list generated by tld.php'.PHP_EOL);
-  fwrite($fh, '#Do not make any changes to this file'.PHP_EOL);
-
-  foreach ($_POST as $key => $value) {                     //Generate Black list based on ticked items in $_POST
-    if ($key != 'tabs') {
-      if ($value == 'on') fwrite($fh, '.'.$key.PHP_EOL);   //Add each item of POST if value is 'on' (checked)
-    }
-  }
-  fclose($fh);                                             //Close Black List
-
-  exec(NTRK_EXEC.'--copy tld');
-
-  $mem->delete('tldblacklist');                            //Delete Black List from Memcache
-  $mem->delete('tldwhitelist');                            //Delete White List from Memcache
-
-  return null;
 }
 
 
@@ -296,8 +330,8 @@ function update_domain_list() {
  *    None
  */
 function draw_tabbedview($view) {
-  $tab = filter_integer($view, 1, 4, 2);
-  $checkedtabs = array('', '', '', '', '');
+  $tab = filter_integer($view, 1, 5, 2);
+  $checkedtabs = array('', '', '', '', '', '');
   $checkedtabs[$tab] = ' checked';
 
   echo '<form name="tld" action="?" method="post">'.PHP_EOL;
@@ -309,7 +343,8 @@ function draw_tabbedview($view) {
   echo '<input type="radio" name="tabs" id="tab-nav-1"'.$checkedtabs[1].'><label for="tab-nav-1">Old Generic</label>'.PHP_EOL;
   echo '<input type="radio" name="tabs" id="tab-nav-2"'.$checkedtabs[2].'><label for="tab-nav-2">New Generic</label>'.PHP_EOL;
   echo '<input type="radio" name="tabs" id="tab-nav-3"'.$checkedtabs[3].'><label for="tab-nav-3">Country</label>'.PHP_EOL;
-  echo '<input type="radio" name="tabs" id="tab-nav-4"'.$checkedtabs[4].'><label for="tab-nav-4">Help</label>'.PHP_EOL;
+  echo '<input type="radio" name="tabs" id="tab-nav-4"'.$checkedtabs[4].'><label for="tab-nav-4">New Country</label>'.PHP_EOL;
+  echo '<input type="radio" name="tabs" id="tab-nav-5"'.$checkedtabs[5].'><label for="tab-nav-5">Help</label>'.PHP_EOL;
 
   echo '<div id="tabs">'.PHP_EOL;
 
@@ -342,27 +377,24 @@ function draw_welcome() {
   echo '</div>'.PHP_EOL;
 }
 
-/************************************************
-*POST REQUESTS                                  *
-************************************************/
+//-------------------------------------------------------------------
+load_tldcsv();                                             //Load CSV file
+
 //Deal with POST actions first, that way we can reload the page and remove POST requests from browser history.
 if ((isset($_POST['action'])) && (isset($_POST['v']))) {
-  load_csv(TLD_CSV, 'csvtld');                             //Load tld.csv
-  update_domain_list();
+  save_bl();
   usleep(250000);                                          //Prevent race condition
   header('Location: ?v='.$_POST['v']);                     //Reload page
 }
 
 
-load_csv(TLD_CSV, 'csvtld');
-
-//-------------------------------------------------------------------
 ?>
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <link href="../css/master.css" rel="stylesheet" type="text/css">
+  <link href="../css/flags.css" rel="stylesheet" type="text/css">
   <link href="../css/tabbed.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="../favicon.png">
   <script src="../include/menu.js"></script>
@@ -376,6 +408,7 @@ draw_topmenu('Domains');
 draw_sidemenu();
 
 echo '<div id="main">'.PHP_EOL;
+load_bl();                                                 //Load users block list
 
 if (isset($_GET['v'])) {
   draw_tabbedview($_GET['v']);
@@ -383,6 +416,9 @@ if (isset($_GET['v'])) {
 else {
   draw_welcome();
 }
+
+
+
 
 ?>
 

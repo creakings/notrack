@@ -34,7 +34,6 @@ $dbwrapper = new MySqliDb;
 
 $day_allowed = 0;
 $day_blocked = 0;
-$day_local = 0;
 $allowed_queries = array();
 $blocked_queries = array();
 $chart_labels = array();
@@ -56,14 +55,8 @@ function home_blocklist() {
 
   $rows = 0;
 
-  exec('pgrep notrack', $pids);
-  if(empty($pids)) {
-    $rows = $dbwrapper->count_blocklists();
-    echo '<a class="home-nav-item" href="./config/blocklists.php"><span><h2>Block List</h2>'.number_format(floatval($rows)).'<br>Domains</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></a>'.PHP_EOL;
-  }
-  else {
-    echo '<a href="./config/blocklists.php"><span><h2>Block List</h2>Processing</span><div class="icon-box"><img src="./svg/home_trackers.svg" alt=""></div></a>'.PHP_EOL;
-  }
+  $rows = $dbwrapper->count_blocklists();
+  echo '<a href="./config/blocklists.php"><h2>Block List</h2><div>'.number_format(floatval($rows)).'<br>Domains</div><div><img src="./svg/home_trackers.svg" alt=""></div></a>'.PHP_EOL;
 }
 
 
@@ -80,17 +73,17 @@ function home_blocklist() {
  */
 function home_network() {
   if (file_exists('/var/lib/misc/dnsmasq.leases')) {       //DHCP Active
-    echo '<a href="./dhcp.php"><span><h2>Network</h2>'.number_format(floatval(exec('wc -l /var/lib/misc/dnsmasq.leases | cut -d\  -f 1'))).'<br>Systems</span><div class="icon-box"><img src="./svg/home_dhcp.svg" alt=""></div></a>'.PHP_EOL;
+    echo '<a href="./dhcp.php"><h2>Network</h2><div>'.number_format(floatval(exec('wc -l /var/lib/misc/dnsmasq.leases | cut -d\  -f 1'))).'<br>Systems</div><div><img src="./svg/home_dhcp.svg" alt=""></div></a>'.PHP_EOL;
   }
   else {                                                   //DHCP Disabled
-    echo '<a class="home-bgred" href="./dhcp.php"><span><h2>Network</h2>DHCP Disabled</span><div class="icon-box"><img class="full" src="./svg/home_dhcp.svg" alt=""></div></a>'.PHP_EOL;
+    echo '<a class="home-bgred" href="./dhcp.php"><h2>Network</h2><div>DHCP Disabled</div><div><img src="./svg/home_dhcp.svg" alt=""></div></a>'.PHP_EOL;
   }
 }
 
 
 /********************************************************************
  *  DNS Queries Box
- *    1. Query dnslog table for Total, Blocked, and Local results
+ *    1. Query dnslog table for Total, Blocked results
  *    2. Calculate allowed queries
  *    3. Show icon if no DNS queries have been made
  *    4. Otherwise draw a piechart of the results
@@ -100,32 +93,26 @@ function home_network() {
  *    None
  */
 function home_queries() {
-  global $CHARTCOLOURS, $day_allowed, $day_blocked, $day_local;
+  global $CHARTCOLOURS, $day_allowed, $day_blocked;
 
   $total = 0;
   $chartdata = array();
-  $lables = array('Allowed', 'Blocked', 'Local');
+  $lables = array('Allowed', 'Blocked');
   
-  $total = $day_allowed + $day_blocked + $day_local;
-
-  if ($day_local == 0) {                                   //Build array of chartdata, we may not need to include $local
-    $chartdata = array($day_allowed, $day_blocked);
-  }
-  else {                                                   //Local is necessary
-    $chartdata = array($day_allowed, $day_blocked, $day_local);
-  }
+  $total = $day_allowed + $day_blocked;
+  $chartdata = array($day_allowed, $day_blocked);
 
   //Start Drawing Queries Box
-  echo '<a href="./queries.php"><span><h2>DNS Queries</h2>' . number_format(floatval($total)) . '<br>Today</span>'.PHP_EOL;
+  echo '<a href="./queries.php"><h2>DNS Queries</h2><div>' . number_format(floatval($total)) . '<br>Today</div>'.PHP_EOL;
 
   if ($total == 0) {                                       //Alternative if no DNS queries have been made
-    echo '<div class="icon-box"><img src="./svg/home_queries.svg" alt=""></div>'.PHP_EOL;
+    echo '<div><img src="./svg/home_queries.svg" alt=""></div>'.PHP_EOL;
     echo '</a>'.PHP_EOL;
-    return null;
+    return;
   }
-  
+
   //1 or more queries made, draw a piechart
-  echo '<div class="chart-box">'.PHP_EOL;                  //Start Pie Chart
+  echo '<div>'.PHP_EOL;                                    //Start Pie Chart
   echo '<svg width="100%" height="90%" viewbox="0 0 200 200">'.PHP_EOL;
   piechart($lables, $chartdata, 100, 100, 98, $CHARTCOLOURS);
   echo '<circle cx="100" cy="100" r="26" stroke="#262626" stroke-width="2" fill="#f7f7f7" />'.PHP_EOL;  //Small overlay circle
@@ -133,8 +120,6 @@ function home_queries() {
   echo '</div>'.PHP_EOL;                                   //End Pie Chart
 
   echo '</a>'.PHP_EOL;                                     //End Queries Box
-  
-  return null;
 }
 
 
@@ -191,25 +176,14 @@ function home_status() {
     }
   }
 
-  if ((VERSION != $config->settings['LatestVersion']) && check_version($config->settings['LatestVersion'])) {
-    $date_msg = '<h3 class="darkgray">Upgrade</h3>';
-    $date_submsg = '<p>New version available: v'.$config->settings['LatestVersion'].'</p>';
-    
-    echo '<a class="home-bggreen" href="./upgrade.php"><span><h2>Status</h2>'.$date_msg.$date_submsg.'</span></a>'.PHP_EOL;
-    //TODO Image for upgrade
-  }
-  else {
-    echo '<div><h2>Last Updated</h2>'.$date_msg.$date_submsg.'</div>'.PHP_EOL;
-  }
-
-  return null;
+  echo '<div><h2>Last Updated</h2>'.$date_msg.$date_submsg.'</div>'.PHP_EOL;
 }
 
 
 /********************************************************************
  *  Count Queries
  *    1. Create chart labels
- *    2. Query time, system, dns_result for all results from passed 24 hours from dnslog
+ *    2. Query time, system, severity for all results from passed 24 hours from dnslog
  *    3. Use SQL rounding to round time to nearest 30 mins
  *    4. Count by 30 min time blocks into associative array
  *    5. Move values from associative array to daily count indexed array
@@ -222,7 +196,7 @@ function home_status() {
 function count_queries() {
   global $dbwrapper;
   global $allowed_queries, $blocked_queries, $chart_labels, $link_labels;
-  global $day_allowed, $day_blocked, $day_local;
+  global $day_allowed, $day_blocked;
   
   $allowed_arr = array();
   $blocked_arr = array();
@@ -237,7 +211,7 @@ function count_queries() {
     $allowed_arr[$datestr] = 0;
     $blocked_arr[$datestr] = 0;
     $chart_labels[] = date('H:i', $i);
-    $link_labels[] = date('Y-m-d H:i:00', $i);
+    $link_labels[] = date('Y-m-d\TH:i:00', $i);
   }
 
   $hourlyvalues = $dbwrapper->queries_count_hourly($currenttime);
@@ -246,19 +220,16 @@ function count_queries() {
     return false;
   }
 
-  //Read each row of results totalling up a count per 30 min period depending whether the query was allowed / blocked / local
+  //Read each row of results totalling up a count per 30 min period depending whether the query was allowed / blocked
   //Also include count per day for the piechart
   foreach ($hourlyvalues as $row) {
-    if ($row['dns_result'] == 'A') {
+    if ($row['severity'] == '1') {
       $allowed_arr[$row['round_time']]++;
       $day_allowed++;
     }
-    elseif ($row['dns_result'] == 'B') {
+    elseif ($row['severity'] == '2') {
       $blocked_arr[$row['round_time']]++;
       $day_blocked++;
-    }
-    elseif ($row['dns_result'] == 'L') {
-      $day_local++;
     }
   }
 
@@ -267,14 +238,35 @@ function count_queries() {
 }
 
 
+/********************************************************************
+ *  Show Latest version alert if a newer version of NoTrack is available
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function show_latestversion() {
+  global $config;
 
-//Main---------------------------------------------------------------
+  if (($config->get_latestversion() != VERSION) && (compare_version($config->get_latestversion()))) {
+    echo '<div class="alertupgrade">'.PHP_EOL;
+    echo 'There is a newer version available - <a href="./upgrade.php">Update Now</a>'.PHP_EOL;
+    echo '</div>';
+  }
+}
+
+/********************************************************************
+ */
 
 draw_topmenu();
 draw_sidemenu();
 echo '<div id="main">';
 
 count_queries();
+load_latestversion();
+show_latestversion();
+
 echo '<div class="home-nav-container">';
 home_status();
 home_blocklist();
@@ -285,7 +277,7 @@ home_network();
 
 echo '</div>'.PHP_EOL;                                     //End home-nav-container
 if ($day_allowed + $day_blocked > 0) {
-  linechart($allowed_queries, $blocked_queries, $chart_labels, $link_labels, 'dtrange=1:00:00', 'DNS Queries over past 24 hours');
+  linechart($allowed_queries, $blocked_queries, $chart_labels, $link_labels, '/PT1H', 'DNS Queries over past 24 hours');
 }
 
 ?>

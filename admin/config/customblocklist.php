@@ -9,6 +9,8 @@ ensure_active_session();
 /************************************************
 *Constants                                      *
 ************************************************/
+define('BLACKLIST_FILE', '../settings/blacklist.txt');
+define('WHITELIST_FILE', '../settings/whitelist.txt');
 
 /************************************************
 *Global Variables                               *
@@ -23,47 +25,108 @@ $list = array();                                //Global array for all the Block
 
 
 /********************************************************************
+ *  Export List
+ *    Output list file as an attachment
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function export_customlist() {
+  $filename = '';
+  $listname = '';
+  $view = '';
+
+  $view = $_GET['v'] ?? 'black';
+
+  if ($view == 'black') {
+    $filename = BLACKLIST_FILE;
+    $listname = 'blacklist.txt';
+  }
+  elseif ($view == 'white') {
+    $filename = WHITELIST_FILE;
+    $listname = 'whitelist.txt';
+  }
+  else {
+    echo 'Invalid export selected';
+    exit(1);
+  }
+
+  header("Content-Disposition: attachment; filename={$listname}");
+  echo file_get_contents($filename);
+  exit(0);
+}
+
+
+/********************************************************************
+ *  Generate List
+ *    Create a Black or White List and place into $list Array
+ *
+ *  Params:
+ *    listname (str): black or white
+ *  Return:
+ *    None
+ */
+function generate_customlist($listname) {
+  global $list;
+
+  if ($listname == 'black') {
+    $list = array(
+      array('polling.bbc.co.uk', 'BBC Breaking News Popup', false),
+      array('doubleclick.net', 'Google', false),
+    );
+  }
+  elseif ($listname == 'white') {
+    $list = array(
+      array('foresee.com', 'Foresee Surveys', false),
+      array('nic.icu', 'Allow from Top Level Domain block', false),
+    );
+  }
+}
+
+
+/********************************************************************
  *  Load Custom Block List
  *    Loads a Black or White List from File into $list Array
- *    1. Try and load list from Memcache
- *    2. Load blocklist and parse with regex saving into $list array
- *    3. Save $list array to Memcache
  *
  *  Regex:
- *    Group 1. # Optional Comment (showing current item is disabled
+ *    Group 1. # Optional Comment (showing current item is disabled)
  *    Group 2. site.com
  *    Group 3. # Optional Comment
  *    Group 4. Comment
  *
  *  Params:
- *    listname - blacklist or whitelist, filename
+ *    listname (str): black or white
+ *    filename (str): The list file to load
  *  Return:
  *    true on completion
  */
 function load_customlist($listname, $filename) {
-  global $list, $mem;
+  global $list;
 
   $line = '';
   $matches = array();
-  $list = $mem->get($listname);                            //Attempt to load list from Memcache
 
-  if (empty($list)) {                                      //If nothing, then read appropriate file
-    $fh = fopen($filename, 'r') or die('Error unable to open '.$filename);
-    while (!feof($fh)) {
-      $line = trim(fgets($fh));
-      if (preg_match('/(#)?\s?([\w\-_]+\.[\w\-_\.]+)\s?(#)?(.*)/', $line, $matches) > 0) {
-        if ($matches[1] == '#') {
-          $list[] = array($matches[2], $matches[4], false);
-        }
-        else {
-          $list[] = array($matches[2], $matches[4], true);
-        }
+  if (! file_exists($filename)) {
+    generate_customlist($listname);
+    return false;
+  }
+
+  $fh = fopen($filename, 'r') or die('Error unable to open '.$filename);
+  while (! feof($fh)) {
+    $line = fgets($fh);
+    if (preg_match('/^(#)?\s?([\w\-\.]{3,253})\s?(#)?(.{0,500})\n$/', $line, $matches)) {
+      if ($matches[1] == '#') {
+        $list[] = array($matches[2], $matches[4], false);
+      }
+      else {
+        $list[] = array($matches[2], $matches[4], true);
       }
     }
-
-    fclose($fh);                                           //Close file
-    $mem->set($listname, $list, 0, 120);                   //Save array to Memcache
   }
+
+  fclose($fh);                                           //Close file
 
   return true;
 }
@@ -87,7 +150,7 @@ function draw_table_toolbar($view) {
   echo '<div class="table-toolbar">'.PHP_EOL;
   echo '<button class="float-left" onclick="window.location.href=\'?v=bulk'.$view.'\'">Bulk Upload</button>'.PHP_EOL;
   echo '<div class="table-toolbar-options">'.PHP_EOL;      //Start Table Toolbar Export
-  echo '<button class="button-grey material-icon-centre icon-export" title="Export" onclick="window.location.href=\'../include/downloadlist.php?v='.$view.'\'">&nbsp;</button>';
+  echo '<button class="button-grey material-icon-centre icon-export" title="Export" onclick="window.location.href=\'?export&v='.$view.'\'">&nbsp;</button>';
   echo '</div>'.PHP_EOL;                                   //End Table Toolbar Export
 
   echo '<form method="get">';                              //Groupby box
@@ -113,7 +176,7 @@ function draw_table_toolbar($view) {
  *  Return:
  *    None
  */
-function show_custom_list($view) {
+function show_customlist($view) {
   global $list, $searchbox;
 
   $checkbox = '';
@@ -140,27 +203,26 @@ function show_custom_list($view) {
 
   echo '<table id="custombl-table">'.PHP_EOL;            //Start custom list table
 
-  if (is_array($list)) {
-    foreach ($list as $listitem) {
-      $delete = '<button class="button-grey material-icon-centre icon-delete" onclick="deleteSite(\''.$listitem[0].'\')" title="Delete">&nbsp;</button>';
-      if ($listitem[2] == true) {
-        $checkbox = '<input type="checkbox" name="'.$listitem[0].'" onclick="changeSite(this)" checked="checked">';
-        $rowclass = '<tr>';
-      }
-      else {
-        $checkbox = '<input type="checkbox" name="'.$listitem[0].'" onclick="changeSite(this)">';
-        $rowclass = '<tr class="dark">';
-      }
-      if ($searchbox != '') {
-        if (strpos($listitem[0], $searchbox) !== false) {
-          echo $rowclass.'<td>'.$i.'</td><td>'.$listitem[0].'</td><td>'.$listitem[1].'<td>'.$checkbox.$delete.'</td></tr>'.PHP_EOL;
-        }
-      }
-      else {
+  foreach ($list as $listitem) {
+    $delete = '<button class="button-grey material-icon-centre icon-delete" onclick="deleteSite(\''.$listitem[0].'\')" title="Delete">&nbsp;</button>';
+    if ($listitem[2] == true) {
+      $checkbox = '<input type="checkbox" name="'.$listitem[0].'" onclick="changeSite(this)" checked="checked">';
+      $rowclass = '<tr>';
+    }
+    else {
+      $checkbox = '<input type="checkbox" name="'.$listitem[0].'" onclick="changeSite(this)">';
+      $rowclass = '<tr class="dark">';
+    }
+
+    if ($searchbox != '') {
+      if (strpos($listitem[0], $searchbox) !== false) {
         echo $rowclass.'<td>'.$i.'</td><td>'.$listitem[0].'</td><td>'.$listitem[1].'<td>'.$checkbox.$delete.'</td></tr>'.PHP_EOL;
       }
-      $i++;
     }
+    else {
+      echo $rowclass.'<td>'.$i.'</td><td>'.$listitem[0].'</td><td>'.$listitem[1].'<td>'.$checkbox.$delete.'</td></tr>'.PHP_EOL;
+    }
+    $i++;
   }
 
   //New domain row
@@ -175,11 +237,11 @@ function show_custom_list($view) {
 
 /********************************************************************
  *  Process Bulk List
- *    Validate POST items and then run function write_temp_list to save $list
+ *    Validate POST items and then run function save_list to save $list
  *    1. Carry out input validation on POST items
  *    2. Create an array from $_POST[site], which are seperated by a comma
  *    3. Check if each item of array is valid, then add
- *    4. Run write_temp_list()
+ *    4. Run save_list()
  *
  *  Params:
  *    Actual Name, List name
@@ -212,7 +274,7 @@ function process_bulk_list($actualname, $listname) {
     }
   }
 
-  write_temp_list($actualname, $listname);
+  save_list($actualname, $listname);
 
   return true;
 }
@@ -220,19 +282,19 @@ function process_bulk_list($actualname, $listname) {
 
 /********************************************************************
  *  Update Custom List
- *    Validate POST items and then run function write_temp_list to save $list
+ *    Validate POST items and then run function save_list to save $list
  *    1. Carry out input validation on POST items
  *    2. Find site in $list[x][0]
  *    3. Carry out action specified in status
  *    4. Save $list to temporary file
- *    5. Run write_temp_list()
+ *    5. Run save_list()
  *
  *  Params:
  *    Actual Name, List name
  *  Return:
  *    True when action carried out
  */
-function update_custom_list($actualname, $listname) {
+function update_custom_list($listname, $filename) {
   global $list;
 
   $comment = '';
@@ -268,7 +330,7 @@ function update_custom_list($actualname, $listname) {
   //Find position of site in array, unless we are adding a site
   if ($status != 'add') {
     if (! is_array($list)) {                               //Prevent error finding item in empty array
-      return false;
+      generate_customlist($listname);
     }
     //Find position of $site in array
     $arraypos = array_search($site, array_column($list, 0));
@@ -292,7 +354,12 @@ function update_custom_list($actualname, $listname) {
     $list[$arraypos][2] = true;
   }
 
-  write_temp_list($actualname, $listname);
+  //die('listsize'.sizeof($list));
+  if (sizeof($list) == 0) {
+    generate_customlist($listname);
+  }
+
+  save_list($listname, $filename);
 }
 
 
@@ -306,30 +373,26 @@ function update_custom_list($actualname, $listname) {
  *  Return:
  *    True when action carried out
  */
-function write_temp_list($actualname, $listname) {
-  global $list, $mem;
+function save_list($listname, $filename) {
+  global $list;
 
-  //Open file /tmp/listname.txt for writing
-  $fh = fopen(DIR_TMP.strtolower($actualname).'.txt', 'w') or die('Unable to open '.DIR_TMP.$actualname.'.txt for writing');
+  $listcontents = array();
 
-  //Write Usage Instructions to top of File
-  fwrite($fh, '#Use this file to create your own custom '.$actualname.PHP_EOL);
-  fwrite($fh, '#Run sudo notrack after you make any changes to this file'.PHP_EOL);
+  //Add usage Instructions to top of File
+  //$listconents[] = '#Use this file to create your own custom '.$actualname.PHP_EOL;
 
-  foreach ($list as $listitem) {                           //Write list array to temp
-    if ($listitem[2] == true) {                            //Is site enabled?
-      fwrite($fh, $listitem[0].' #'.$listitem[1].PHP_EOL);
+  foreach ($list as $listitem) {
+    if ($listitem[2] == true) {                            //Is domain enabled?
+      $listconents[] = "{$listitem[0]} #{$listitem[1]}".PHP_EOL;
     }
-    else {                                                 //Site disabled, comment it out by preceding Line with #
-      fwrite($fh, '# '.$listitem[0].' #'.$listitem[1].PHP_EOL);
+    else {                                                 //disabled - comment it out
+      $listconents[] = "# {$listitem[0]} #{$listitem[1]}".PHP_EOL;
     }
   }
-  fclose($fh);                                             //Close file
 
-  exec(NTRK_EXEC.'--copy '.$listname);
-
-  $mem->delete($listname);
-  $mem->set($listname, $list, 0, 120);
+  if (file_put_contents($filename, $listconents) === false) {
+    die('Unable to save list to '.$filename);
+  }
 
   return true;
 }
@@ -364,28 +427,31 @@ if (isset($_POST['action'])) {
   switch($_POST['action']) {
     case 'black':
       load_customlist('black', BLACKLIST_FILE);
-      update_custom_list('BlackList', 'black');
+      update_custom_list('black', BLACKLIST_FILE);
       header('Location: ?v=black');
       break;
     case 'white':
       load_customlist('white', WHITELIST_FILE);
-      update_custom_list('WhiteList', 'white');
+      update_custom_list('white', WHITELIST_FILE);
       header('Location: ?v=white');
       break;
     case 'bulkblack':
       load_customlist('black', BLACKLIST_FILE);
-      process_bulk_list('BlackList', 'black');
+      process_bulk_list('black', BLACKLIST_FILE);
       header('Location: ?v=black');
       break;
     case 'bulkwhite':
       load_customlist('white', WHITELIST_FILE);
-      process_bulk_list('WhiteList', 'white');
+      process_bulk_list('white', WHITELIST_FILE);
       header('Location: ?v=white');
       break;
   }
   exit;
 }
 
+if (isset($_GET['export'])) {
+  export_customlist();
+}
 
 ?>
 <!DOCTYPE html>
@@ -405,8 +471,8 @@ if (isset($_POST['action'])) {
 <?php
 
 if (isset($_GET['s'])) {                                   //Search box
-  //Limit characters to alphanumeric, . - _
-  $searchbox = preg_replace('/[^\w\.\-_]/', '', $_GET['s']);
+  //Limit characters to alphanumeric, . -
+  $searchbox = preg_replace('/[^\w\.\-]/', '', strip_tags($_GET['s']));
   $searchbox = strtolower($searchbox);
 }
 
@@ -418,7 +484,7 @@ if (isset($_GET['v'])) {                                   //What view to show?
       echo '<div id="main">'.PHP_EOL;
 
       load_customlist('white', WHITELIST_FILE);
-      show_custom_list('white');
+      show_customlist('white');
       $listtype = 'white';
       break;
     case 'bulkblack':
@@ -445,7 +511,7 @@ if (isset($_GET['v'])) {                                   //What view to show?
       echo '<div id="main">'.PHP_EOL;
 
       load_customlist('black', BLACKLIST_FILE);
-      show_custom_list('black');
+      show_customlist('black');
       $listtype = 'black';
       break;
   }
@@ -456,7 +522,7 @@ else {
   echo '<div id="main">'.PHP_EOL;
 
   load_customlist('black', BLACKLIST_FILE);
-  show_custom_list('black');
+  show_customlist('black');
   $listtype = 'black';
 }
 

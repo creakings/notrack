@@ -1,18 +1,18 @@
 /********************************************************************
- *  Reset queries form
+ *  Reset queries form DEPRECATED
  *    Reset elements in queries form to their default values
  *  Params:
  *    None
  *  Return:
  *    None
  */
-function resetQueriesForm() {
+/*function resetQueriesForm() {
   document.getElementById('filtersearch').value = '';
   document.getElementById('filtersys').value = '';
   document.getElementById('filtertime').value = '1 DAY';
   document.getElementById('filtertype').value = 'all';
   document.getElementById('filtergroup').value = 'name';
-}
+}*/
 
 
 /********************************************************************
@@ -355,21 +355,159 @@ window.onscroll = function() {                             //OnScroll Event
     document.getElementById('scrollup').style.display = 'none';
     document.getElementById('scrolldown').style.display = 'none';
   }
-
-  //Lock Stats box and Fade in place if visible
-  /*if (document.getElementById('queries-box').style.display == 'block') {
-    //document.getElementById('fade').style.top=window.pageYOffset+'px'; DEPRECATED
-
-    document.getElementById('queries-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+'px';
-    document.getElementById('queries-box').style.left = (window.innerWidth / 2)+'px';
-  }
-
-  //Lock Options box in place if visible
-  if (document.getElementById('options-box').style.display == 'block') {
-    document.getElementById('fade').style.top=window.pageYOffset+'px';
-
-    document.getElementById('options-box').style.top = (window.pageYOffset + (window.innerHeight / 2))+'px';
-    document.getElementById('options-box').style.left = (window.innerWidth / 2)+'px';
-  }*/
 }
 
+
+/********************************************************************
+ *  Format Date
+ *    Return three character month name and day from a timedate string:
+ *     YYYY-MM-DDThh:mm
+ *    Although hh:mm is not necessarily required
+ *
+ *  Params:
+ *    timedate string
+ *  Return:
+ *    Formatted date string
+ */
+function formatDate(dateStr) {
+  let shortDay = '';
+  let shortMonth = '';
+
+  let options = {
+    month: 'short'
+  };
+
+  let tempDate= new Date(dateStr);
+
+  //Get 3 letter month from Intl DateTimeFormat
+  shortMonth = new Intl.DateTimeFormat('default', options).format(tempDate);
+
+  //Extract the first group match out of regex YYYY-MM-(DD)
+  shortDay = dateStr.match(/\d{4}\-\d{2}\-(\d{2})/)[1];
+
+  return shortDay + " " + shortMonth;
+}
+
+
+/********************************************************************
+ *  Select Time Preset from timepicker menu
+ *    Fills in timepicker-text from li text value
+ *    Fills in dateTime value from supplied timeValue
+ *
+ *  Params:
+ *    item - The li which called this function
+ *    timeValue - string to supply for dateTime value
+ *  Return:
+ *    None
+ */
+function selectTime(item, timeValue) {
+  document.getElementById('timepicker-text').value = item.innerText;
+  document.getElementById('dateTime').value = timeValue;
+
+  document.getElementById('timepicker-dropdown').blur();   //Move focus to the submit button
+  document.getElementById('timepicker-group').blur();
+  document.getElementById('submit-button').focus();
+}
+
+
+/********************************************************************
+ *  Select Date from timepicker menu
+ *    Fills in timepicker-text with formatDate value of start and end dates
+ *    Fills in dateTime value with selected dates and  with added time string 00:00:00 to 23:59:59
+ *    1. Check if startDate is greater than endDate - Swap around if necessary
+ *    2. Fill in timepicker-text with formatDate
+ *    3. Fill in dateTime with startDateT00:00:00/endDateT23:59:59
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function selectDate() {
+  let startDate = document.getElementById('timepicker-date-start').value;
+  let endDate = document.getElementById('timepicker-date-end').value;
+
+  if (startDate == '') return;
+  if (endDate == '') return;
+
+  //Check if startDate in Unix time is greater than endDate in Unix time
+  if (Date.parse(startDate) > Date.parse(endDate)) {
+     [startDate, endDate] = [endDate, startDate]           //Swap the values
+  }
+
+  document.getElementById('timepicker-text').value = formatDate(startDate) + ' to ' + formatDate(endDate);
+  document.getElementById('dateTime').value = startDate + 'T00:00:00/' + endDate + 'T23:59:59';
+
+  document.getElementById('timepicker-dropdown').blur();   //Move focus to the submit button
+  document.getElementById('timepicker-group').blur();
+  document.getElementById('submit-button').focus();
+}
+
+
+/********************************************************************
+ *  Select Time & Date from timepicker menu
+ *    Fills in timepicker-text with formatDate value of start and end dates & times
+ *    Fills in dateTime value with selected dates and  with added seconds 00 to 59
+ *    1. Check if startDate + startTime is greater than endDate + endTime - Swap around if necessary
+ *    2. Fill in timepicker-text with formatDate
+ *    3. Fill in dateTime with startDateTstartTime:00/endDateTendTime:59
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function selectTimeDate() {
+  let startDate = document.getElementById('timepicker-tddate-start').value;
+  let endDate = document.getElementById('timepicker-tddate-end').value;
+  let startTime = document.getElementById('timepicker-tdtime-start').value;
+  let endTime = document.getElementById('timepicker-tdtime-end').value;
+
+  if (startDate == '') return;
+  if (endDate == '') return;
+  if (startTime == '') return;
+  if (endTime == '') return;
+
+  startDate += "T" + startTime;
+  endDate += "T" + endTime;
+
+  //Check if startDate in Unix time is greater than endDate in Unix time
+  if (Date.parse(startDate) > Date.parse(endDate)) {
+     [startDate, endDate] = [endDate, startDate]           //Swap the values
+  }
+
+  document.getElementById('timepicker-text').value = formatDate(startDate) + ' ' + startTime + ' to ' + formatDate(endDate) + ' ' + endTime;
+
+  //Need to add the seconds
+  document.getElementById('dateTime').value = startDate + ':00/' + endDate + ':00';
+
+  document.getElementById('timepicker-dropdown').blur();   //Move focus to the submit button
+  document.getElementById('timepicker-group').blur();
+  document.getElementById('submit-button').focus();
+}
+
+
+/********************************************************************
+ *  Toggle Nav Button
+ *    Toggle active state of severity button
+ *
+ *  Params:
+ *    Button, Value to increase or decrease severity by
+ *  Return:
+ *    None
+ */
+function toggleNavButton(item, value) {
+  let severity = document.getElementById('severity');
+  let severityInt = Number(severity.value);
+
+  if (item.classList.contains('active')) {
+    severityInt -= Number(value);
+    item.classList.remove('active');
+  }
+  else {
+    severityInt += Number(value);
+    item.classList.add('active');
+  }
+
+  severity.value = severityInt.toString();
+}

@@ -45,9 +45,11 @@ if (isset($_POST['doupgrade'])) {
 
 //Just displaying status
 else {
+  load_latestversion();
+
   echo '<form method="post">'.PHP_EOL;
   echo '<input type="hidden" name="doupgrade">'.PHP_EOL;
-  if (VERSION == $config->settings['LatestVersion']) {     //See if upgrade Needed
+  if (VERSION == $config->get_latestversion()) {           //See if upgrade Needed
     draw_systable('NoTrack Upgrade');
     draw_sysrow('Status', 'Running the latest version v'.VERSION);
     draw_sysrow('Force Upgrade', '<input type="submit" class="button-danger" value="Upgrade"><br><i>Force upgrade to Development version of NoTrack</i>');
@@ -57,7 +59,7 @@ else {
   }
   else {
     draw_systable('NoTrack Upgrade');
-    draw_sysrow('Status', 'Running version v'.VERSION.'<br>Latest version available: v'.$config->settings['LatestVersion']);
+    draw_sysrow('Status', 'Running version v'.VERSION.'<br>Latest version available: v'.$config->get_latestversion());
     draw_sysrow('Commence Upgrade', '<input type="submit" value="Upgrade">');
     echo '</table>'.PHP_EOL;
     echo '</div>'.PHP_EOL;

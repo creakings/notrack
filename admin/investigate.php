@@ -79,7 +79,7 @@ function create_whoistable() {
 function draw_filter_toolbar() {
   global $subdomain;
 
-  echo '<div class="filter-toolbar analytics-filter-toolbar">'.PHP_EOL;
+  echo '<div class="filter-toolbar single-filter-toolbar">'.PHP_EOL;
   echo '<form method="GET">'.PHP_EOL;
   echo '<input type="text" name="site" class="input-conf" placeholder="Search domain" value="'.$subdomain.'">'.PHP_EOL;
   echo '<button type="submit">Investigate</button>'.PHP_EOL;
@@ -218,43 +218,48 @@ function format_row($domain, $dns_result) {
     $event = 'allowed1';
     $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
   }
-  elseif ($dns_result == 'B') {         //Blocked
+  elseif ($dns_result == 'B') {                            //Blocked
     $blocklist = search_blockreason($domain);
-    $severity = '2';
+    $rowseverity = '2';
 
-    if ($blocklist == 'bl_notrack') {        //Show Report icon on NoTrack list
+    if ($blocklist == 'bl_notrack') {                      //Show Report on NoTrack list
       $blockreason = '<p class="small grey">Blocked by NoTrack list</p>';
       $event = 'tracker2'; //TODO change image
       $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, true)">Allow</span>';
     }
-    elseif ($blocklist == 'custom') {        //Users blacklist
+    elseif ($blocklist == 'custom') {                      //Users blacklist
       $blockreason = '<p class="small grey">Blocked by Custom Black list</p>';
       $event = 'custom2';
       $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
     }
-    elseif ($blocklist != '') {
+    elseif ($blocklist != '') {                            //Other blocklist
       $blockreason = '<p class="small grey">Blocked by '.$config->get_blocklistname($blocklist).'</p>';
       $event = $config->get_blocklistevent($blocklist);
-
+      $event .= $rowseverity;
       $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
-
-      if ($event == 'malware') {
-        $severity = '3';
-      }
-      $event .= $severity;
-
     }
     else {  //No reason is probably IP or Search request
       $blockreason = '<p class="small">Invalid request</p>';
       $event = 'invalid2';
-      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
     }
+  }
+  elseif ($dns_result == 'M') {                            //Malware Accessed
+    $blockreason = '<p class="small grey">Malware Accessed</p>';
+    $event = 'malware3';
+    $rowseverity = '3';
+    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
+  }
+  elseif ($dns_result == 'T') {                            //Tracker Accessed
+    $blockreason = '<p class="small grey">Tracker Accessed</p>';
+    $event = 'tracker3';
+    $rowseverity = '3';
+    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
   }
   elseif ($dns_result == 'L') {
     $event = 'local1';
   }
 
-  $popupmenu .= '<a href="'.$config->settings['SearchUrl'].$domain.'" target="_blank">'.$config->settings['Search'].'</a>';
+  $popupmenu .= "<a href=\"{$config->search_url}{$domain}\" target=\"_blank\">{$config->search_engine}</a>";
   $popupmenu .= '<a href="https://www.virustotal.com/en/domain/'.$domain.'/information/" target="_blank">VirusTotal</a>';
   $popupmenu .= '</div></div>';                                  //End dropdown-container
 
@@ -438,7 +443,7 @@ function show_rawwhoisdata($whois_record) {
 
 
 /********************************************************************
- *  Show Who Is Error when no API is set
+ *  Show Who Is Error when no API has been set
  *
  *  Params:
  *    None
@@ -446,9 +451,9 @@ function show_rawwhoisdata($whois_record) {
  *    None
  */
 function show_whoiserror() {
-  //echo '<div class="sys-group">'.PHP_EOL;
+  echo '<div class="sys-group">'.PHP_EOL;
   echo '<h5>Domain Information</h5>'.PHP_EOL;
-  echo '<p>Error: No WhoIs API key set. In order to use this feature you will need to add a valid JsonWhois API key to NoTrack config</p>'.PHP_EOL;
+  echo '<p>In order to use this feature you will need to add a valid JsonWhois API key to NoTrack config</p>'.PHP_EOL;
   echo '<p>Instructions:</p>'.PHP_EOL;
   echo '<ol>'.PHP_EOL;
   echo '<li>Sign up to <a href="https://jsonwhois.com/">JsonWhois.com</a></li>'.PHP_EOL;
@@ -506,7 +511,7 @@ function count_queries() {
     $allowed_arr[$datestr] = 0;
     $blocked_arr[$datestr] = 0;
     $chart_labels[] = $datestr;
-    $link_labels[] = date('Y-m-d 00:00:00', $i);
+    $link_labels[] = date('Y-m-d\T00:00:00', $i);
   }
 
   if ($result->num_rows == 0) {                            //Leave if nothing found
@@ -529,7 +534,7 @@ function count_queries() {
 
   $result->free();
 
-  linechart(array_values($allowed_arr), array_values($blocked_arr), $chart_labels, $link_labels, 'dtrange=24:00:00&amp;searchbox=*'.$domain, 'Queries over past 30 days');   //Draw the line chart
+  linechart(array_values($allowed_arr), array_values($blocked_arr), $chart_labels, $link_labels, '/P1D&amp;searchbox=*'.$domain, 'Queries over past 30 days');   //Draw the line chart
   return null;
 }
 
@@ -572,7 +577,7 @@ if (!table_exists('whois')) {                              //Does whois sql tabl
   sleep(1);                                                //Delay to wait for MariaDB to create the table
 }
 
-if ($config->settings['whoisapi'] == '') {                 //Has user set an API key?
+if ($config->whois_api == '') {                            //Has user set an API key?
   show_whoiserror();                                       //No - Don't go any further
   $db->close();
   exit;
@@ -586,7 +591,7 @@ else {                                                     //Load whois data?
   echo '<div class="sys-group">'.PHP_EOL;
   draw_filter_toolbar();
 
-  $whois = new WhoisApi($config->settings['whoisapi'], $domain);
+  $whois = new WhoisApi($config->whois_api, $domain);
   if ($datetime != '') {                                   //Show time view if datetime in parameters
     show_time_view();
     echo '<div class="sys-group">'.PHP_EOL;
@@ -639,11 +644,11 @@ $db->close();
 <div class="close-button" onclick="hideQueriesBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
 </div>
 <script>
-const SEARCHNAME = <?php echo json_encode($config->settings['Search'])?>;
-const SEARCHURL = <?php echo json_encode($config->settings['SearchUrl'])?>;
-const WHOISNAME = <?php echo json_encode($config->settings['WhoIs'])?>;
-const WHOISURL = <?php echo json_encode($config->settings['WhoIsUrl'])?>;
-const WHOISAPI = <?php echo ($config->settings['whoisapi'] == '') ? 0 : 1;?>;
+const SEARCHNAME = <?php echo json_encode($config->search_engine)?>;
+const SEARCHURL = <?php echo json_encode($config->search_url)?>;
+const WHOISNAME = <?php echo json_encode($config->whois_provider)?>;
+const WHOISURL = <?php echo json_encode($config->whois_url)?>;
+const WHOISAPI = <?php echo ($config->whois_api == '') ? 0 : 1;?>;
 </script>
 </body>
 </html>

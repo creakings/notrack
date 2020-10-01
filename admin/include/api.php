@@ -12,12 +12,53 @@ header('content-Type: application/json; charset=UTF-8');
 $response = array();
 $readonly = true;
 
+
+/********************************************************************
+ *  Blocklist Status
+ *    Set new status of a blocklist
+ *    Save blocklist settings
+ *    Return a friendly message
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function api_blocklist_status() {
+  global $config, $response;
+
+  $newstatus = false;                                      //True / False status
+  $response_text = '';                                     //Friendly response
+
+  $blname = $_POST['blname'] ?? '';
+  $blstatus = $_POST['blstatus'] ?? '';
+
+  $config->load_blocklists();                              //Load the existing settings
+
+  if ($blstatus == 'true') {
+    $newstatus = true;
+    $response_text = 'Enabled';
+  }
+  else {
+    $response_text = 'Disabled';
+  }
+
+  if ($config->set_blocklist_status($blname, $newstatus)) {//Was status update successful?
+    $config->save_blocklists();                            //Save new blocklist settings
+    $response['message'] = $config->get_blocklistname($blname).' '.$response_text;
+  }
+  else {                                                   //Failed update
+    http_response_code(400);
+    $response['error_code'] = 'missing_required_parameter';
+    $response['error_message'] = 'Invalid blocklist name '.$blname;
+  }
+}
+
+
 /********************************************************************
  *  Enable NoTrack
  *    Enable or Disable NoTrack Blocking
- *    Calls NTRK_EXEC with Play or Stop based on current status
- *    Race condition isn't being prevented, however we are assuming the user can't get config to load quicker than ntrk-pause can change the file
- *     
+ *
  *  Params:
  *    None
  *  Return:
@@ -26,24 +67,26 @@ $readonly = true;
 function api_enable_notrack() {
   global $config, $mem, $response;
 
+  $newstatus = 0;
+
   if ($config->status & STATUS_ENABLED) {
-    exec(NTRK_EXEC.'-s');
-    $config->status -= STATUS_ENABLED;
-    $config->status += STATUS_DISABLED;
+    $newstatus = $config->status - STATUS_ENABLED;
+    $newstatus += STATUS_DISABLED;
   }
   elseif ($config->status & STATUS_PAUSED) {
-    exec(NTRK_EXEC.'-p');
-    $config->status -= STATUS_PAUSED;
-    $config->status += STATUS_ENABLED;
+    $newstatus = $config->status - STATUS_PAUSED;
+    $newstatus += STATUS_ENABLED;
   }
   elseif ($config->status & STATUS_DISABLED) {
-    exec(NTRK_EXEC.'-p');
-    $config->status -= STATUS_DISABLED;
-    $config->status += STATUS_ENABLED;
+    $newstatus = $config->status - STATUS_DISABLED;
+    $newstatus += STATUS_ENABLED;
+  }
+  else {                                                   //Fallback in case of error
+    $newstatus = STATUS_ENABLED;
   }
 
-  $mem->delete('conf-settings');                           //Force reload of config
-  $response['status'] = $config->status;
+  $config->save_status($newstatus, 0);
+  $response['status'] = $newstatus;
 }
 
 
@@ -60,30 +103,30 @@ function api_enable_notrack() {
  */
 function api_pause_notrack() {
   global $config, $mem, $response;
-  
+
   $mins = 0;
+  $newstatus = 0;
+  $unpausetime = 0;
 
   if (! isset($_POST['mins'])) {
     $response['error'] = 'api_pause_notrack: Mins not specified';
     return false;
   }
-  
+
   $mins = filter_integer($_POST['mins'], 1, 1440, 5);      //1440 = 24 hours in mins
-  
-  exec(NTRK_EXEC.'--pause '.$mins);
-  
+  $unpausetime = time() + ($mins * 60);
+
   if ($config->status & STATUS_INCOGNITO) {
-    $config->status = STATUS_INCOGNITO + STATUS_PAUSED;
+    $newstatus = STATUS_INCOGNITO + STATUS_PAUSED;
   }
   else {
-    $config->status = STATUS_PAUSED;
+    $newstatus = STATUS_PAUSED;
   }
-  //sleep(1);
-  $mem->delete('conf-settings');                           //Force reload of config
-  //$config->load();
-  $response['status'] = $config->status;
-  $response['unpausetime'] = date('H:i', (time() + ($mins * 60)));
-  
+
+  $config->save_status($newstatus, $unpausetime);
+  $response['status'] = $newstatus;
+  $response['unpausetime'] = date('H:i', $unpausetime);
+
   return true;
 }
 
@@ -98,45 +141,19 @@ function api_pause_notrack() {
  */
 function api_incognito() {
   global $config, $response;
-  
-  if ($config->status & STATUS_INCOGNITO) $config->status -= STATUS_INCOGNITO;
-  else $config->status += STATUS_INCOGNITO;
-  $response['status'] = $config->status;
-  
-  $config->save();
+  $newstatus = 0;
+
+  if ($config->status & STATUS_INCOGNITO) {
+    $newstatus = $config->status - STATUS_INCOGNITO;
+  }
+  else {
+    $newstatus = $config->status + STATUS_INCOGNITO;
+  }
+
+  $config->save_status($newstatus, $config->unpausetime);
+  $response['status'] = $newstatus;
 }
 
-
-/********************************************************************
- *  API Restart
- *    Restart the system
- *    Delay execution of the command for a couple of seconds to finish off any disk writes
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function api_restart() {
-  sleep(2);
-  exec(NTRK_EXEC.'--restart');
-  exit(0);
-}
-
-
-/********************************************************************
- *  API Shutdown
- *    Shutdown the system
- *    Delay execution of the command for a couple of seconds to finish off any disk writes
- *  Params:
- *    None
- *  Return:
- *    None
- */
-function api_shutdown() {
-  sleep(2);
-  exec(NTRK_EXEC.'--shutdown');
-  exit(0);
-}
 
 /********************************************************************
  *  API Load DNS
@@ -148,10 +165,10 @@ function api_shutdown() {
  */
 function api_load_dns() {
   global $response;
-  
+
   $line = '';
   $linenum = 1;
-  
+
 
   if (! file_exists(DNS_LOG)) {
     http_response_code(410);                               //File Gone
@@ -197,7 +214,7 @@ function api_recent_queries($dbwrapper) {
 
 /********************************************************************
  *  Is Key Valid
- *    
+ *
  *  Params:
  *    None
  *  Return:
@@ -208,16 +225,16 @@ function is_key_valid() {
 
   $key = '';
 
-  if ($config->settings['api_key'] == '') return false;
-  
+  if ($config->api_key == '') return false;
+
   $key = $_GET['api_key'] ?? '';
-  
+
   if (preg_match(REGEX_VALIDAPI, $key)) {
-    if ($key == $config->settings['api_key']) {
+    if ($key == $config->api_key) {
       $readonly = false;
       return true;
     }
-    elseif ($key == $config->settings['api_readonly']) {
+    elseif ($key == $config->api_readonly) {
       $readonly = true;
       return true;
     }
@@ -239,11 +256,11 @@ function is_key_valid() {
  */
 function do_action() {
   global $response;
-  
+
   $dbwrapper = new MySqliDb;
-  
+
   $action = $_GET['action'] ?? '';
-  
+
   switch ($action) {
     case 'count_blocklists':
       $response['blocklists'] = $dbwrapper->count_blocklists();
@@ -275,23 +292,16 @@ function do_action() {
 if (isset($_POST['operation'])) {
   ensure_active_session();
   switch ($_POST['operation']) {
-      case 'force-notrack':
-        exec(NTRK_EXEC.'--force');
-        sleep(3);                                //Prevent race condition
-        header("Location: ?");
-        break;
-      case 'disable': api_enable_notrack(); break;
-      case 'enable': api_enable_notrack(); break;
-      case 'pause': api_pause_notrack(); break;
-      case 'incognito': api_incognito(); break;
-      case 'restart': api_restart(); break;
-      case 'shutdown': api_shutdown(); break;
-      case 'updateblocklist': exec(NTRK_EXEC.'--run-notrack'); break;
-      default:
-        http_response_code(400);
-        $response['error_code'] = 'missing_required_parameter';
-        $response['error_message'] = 'Your request was missing an operation parameter';
-        break;
+    case 'blocklist_status': api_blocklist_status(); break;
+    case 'disable': api_enable_notrack(); break;
+    case 'enable': api_enable_notrack(); break;
+    case 'pause': api_pause_notrack(); break;
+    case 'incognito': api_incognito(); break;
+    default:
+      http_response_code(400);
+      $response['error_code'] = 'missing_required_parameter';
+      $response['error_message'] = 'Your request was missing an operation parameter';
+      break;
   }
 }
 
