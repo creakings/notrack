@@ -501,7 +501,6 @@ function disable_dnsmasq_stub() {
       sudo sed -i "s/#DNSStubListener=yes/DNSStubListener=no/" "$resolveconf" &> /dev/null
 
       service_restart "systemd-resolved.service"
-      service_restart "dnsmasq.service"
     fi
   fi
   echo
@@ -669,6 +668,8 @@ function setup_dnsmasq() {
   echo "interface=$NETWORK_DEVICE" | sudo tee -a "$serversconf" &> /dev/null
   echo "listen-address=$LISTENIP" | sudo tee -a "$serversconf" &> /dev/null
 
+  disable_dnsmasq_stub
+
   service_start "dnsmasq"
   service_restart "dnsmasq"
 
@@ -718,6 +719,8 @@ function setup_nginx() {
 
   service_start "php$phpver-fpm"
   service_start "nginx"
+  service_restart "php$phpver-fpm"
+  service_restart "nginx"
 
   echo "Setup of nginx complete"
   echo "========================================================="
@@ -903,7 +906,6 @@ while [ $seconds -gt 0 ]; do
    : $((seconds--))
 done
 
-disable_dnsmasq_stub
 install_deb
 
 git_clone
