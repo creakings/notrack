@@ -9,7 +9,7 @@
 # User Configerable Settings
 #######################################
 INSTALL_LOCATION=""                              #define custom installation path
-NOTRACK_REPO="https://gitlab.com/quidsup/notrack.git"
+NOTRACK_REPO="https://github.com/quidsup/notrack.git"
 HOSTNAME=""
 NETWORK_DEVICE=""
 WEB_USER=""
@@ -56,6 +56,28 @@ function copy_file() {
 
 
 #######################################
+# Copy Folder
+#   Checks if Source folder exists, then copies it to Destination
+#
+# Globals:
+#   None
+# Arguments:
+#   $1: Source
+#   $2: Destination
+# Returns:
+#   None
+#######################################
+function copy_folder() {
+  if [ -d "$1" ]; then                                     #Does folder exist?
+    echo "Copying $1 to $2"
+    sudo cp -r "$1" "$2"
+  else
+    echo "WARNING: Unable to find folder $1 :-("           #Display a warning if folder doesn't exist
+  fi
+}
+
+
+#######################################
 # Create File
 # Checks if a file exists and creates it
 #
@@ -71,6 +93,24 @@ function create_file() {
     echo "Creating file: $1"
     sudo touch "$1"                              #If not then create it
     sudo chmod 664 "$1"                          #RW RW R permissions
+  fi
+}
+
+
+#######################################
+# Create Folder
+#   Creates a folder if it doesn't exist
+# Globals:
+#   None
+# Arguments:
+#   $1 - Folder to create
+# Returns:
+#   None
+#######################################
+function create_folder() {
+  if [ ! -d "$1" ]; then                         #Does folder exist?
+    echo "Creating folder: $1"                   #Tell user folder being created
+    sudo mkdir "$1"                              #Create folder
   fi
 }
 
@@ -204,6 +244,29 @@ function service_restart() {
       sudo sv restart "$1"
     else
       error_exit "Unable to restart services. Unknown service supervisor" "21"
+    fi
+  fi
+}
+
+
+#######################################
+# Start service
+#   Start and Enable systemd based services
+#   TODO complete for sv and sysvinit
+#
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+function service_start() {
+  if [[ -n $1 ]]; then
+    echo "Starting $1"
+    if [ "$(command -v systemctl)" ]; then                 #systemd
+      sudo systemctl enable "$1"
+      sudo systemctl start "$1"
     fi
   fi
 }
@@ -353,8 +416,8 @@ function prompt_network_device() {
 
   if [ ! -d /sys/class/net ]; then               #Check net devices folder exists
     echo "Error. Unable to find list of Network Devices"
-    echo "Edit user customisable setting \$NetDev with the name of your Network Device"
-    echo "e.g. \$NetDev=\"eth0\""
+    echo "Edit user customisable setting \$NETWORK_DEVICE with the name of your Network Device"
+    echo "e.g. \$NETWORK_DEVICE=\"eth0\""
     exit 11
   fi
 
@@ -368,8 +431,8 @@ function prompt_network_device() {
 
   if [ "$count_net_dev" -eq 0 ]; then             #None found
     echo "Error. No Network Devices found"
-    echo "Edit user customisable setting \$NetDev with the name of your Network Device"
-    echo "e.g. \$NetDev=\"eth0\""
+    echo "Edit user customisable setting \$NETWORK_DEVICE with the name of your Network Device"
+    echo "e.g. \$NETWORK_DEVICE=\"eth0\""
     exit 11
 
   elif [ "$count_net_dev" -eq 1 ]; then           #1 Device
@@ -387,7 +450,7 @@ function prompt_network_device() {
     echo
   fi
 
-  if [[ -n $NETWORK_DEVICE ]]; then                        #Final confirmation
+  if [[ -z $NETWORK_DEVICE ]]; then                        #Final confirmation
     error_exit "Network Device not entered, unable to proceed" 11
   fi
 }
@@ -435,12 +498,13 @@ function disable_dnsmasq_stub() {
   if [ "$(command -v systemctl)" ]; then                   #Only relevant for systemd
     if [ -e "$resolveconf" ]; then                         #Does resolve.conf file exist?
       echo "Setting DNSStubListener=no in $resolveconf"
-      sudo sed -i "s/#DNSStubListener=yes/DNSStubListener=no" "$resolveconf" &> /dev/null
+      sudo sed -i "s/#DNSStubListener=yes/DNSStubListener=no/" "$resolveconf" &> /dev/null
 
       service_restart "systemd-resolved.service"
       service_restart "dnsmasq.service"
     fi
   fi
+  echo
 }
 
 #######################################
@@ -464,7 +528,7 @@ function install_deb() {
   sleep 2s
   sudo apt -y install git unzip
   echo
-  echo "Installing Dnsmasq"
+  echo "Installing DNS Server Dnsmasq"
   sleep 2s
   sudo apt -y install dnsmasq
   echo
@@ -472,9 +536,10 @@ function install_deb() {
   sleep 2s
   sudo apt -y install mariadb-server
   echo
-  echo "Installing Webserver"
+  echo "Installing Webserver Nginx"
   sleep 2s
   sudo apt -y install nginx
+  echo
   echo "Creating snakeoil SSL cert"
   sudo apt -y install ssl-cert
   sudo make-ssl-cert generate-default-snakeoil
@@ -610,7 +675,7 @@ function setup_dnsmasq() {
   echo "Setup of Dnsmasq complete"
   echo "========================================================="
   echo
-  sleep 3s
+  sleep 2s
 }
 
 
@@ -618,7 +683,7 @@ function setup_dnsmasq() {
 # Setup nginx config files
 #
 # Globals:
-#   INSTALL_LOCATION, WEB_FOLDER, WEB_USER, HOSTNAME
+#   INSTALL_LOCATION
 # Arguments:
 #   None
 # Returns:
@@ -651,7 +716,13 @@ function setup_nginx() {
     sleep 8s
   fi
 
+  service_start "php$phpver-fpm"
   service_start "nginx"
+
+  echo "Setup of nginx complete"
+  echo "========================================================="
+  echo
+  sleep 2s
 }
 
 
@@ -702,9 +773,33 @@ function setup_mariadb() {
   #echo "\$dbconfig->password = '$dbpassword';" >> "$dbconfig"
   #echo "?>" >> "$dbconfig"
 
+  echo "========================================================="
   echo
 }
 
+
+#######################################
+# Copy NoTrack web admin files
+#
+# Globals:
+#   INSTALL_LOCATION, WEB_FOLDER, WEB_USER, HOSTNAME
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+function setup_webadmin() {
+  local phpinfo=""
+  local phpver=""
+
+  echo
+  echo "Copying webadmin files to $WEB_FOLDER"
+
+  copy_folder "$INSTALL_LOCATION/admin" "$WEB_FOLDER/admin"
+  copy_folder "$INSTALL_LOCATION/sink" "$WEB_FOLDER/sink"
+  echo "$WEB_USER taking over $WEB_FOLDER"
+  sudo chown "$WEB_USER":"$WEB_USER" -hR "$WEB_FOLDER"
+}
 
 #######################################
 # Setup NoTrack
@@ -721,6 +816,10 @@ function setup_mariadb() {
 function setup_notrack() {
   copy_file "$INSTALL_LOCATION/init-scripts/notrack.service" "/etc/systemd/system"
   sudo systemctl enable --now notrack.service
+
+  echo "Downloading and parsing blocklists"
+  sudo python3 "$INSTALL_LOCATION/src/blockparser.py"
+  echo
 }
 
 
@@ -759,14 +858,14 @@ function show_finish() {
   echo "========================================================="
   echo
   echo -e "NoTrack Install Complete :-)"
-  echo "Access the admin console at: http://$(HOSTNAME)/admin"
+  echo "Access the admin console at: http://$HOSTNAME/admin"
   echo
   echo "Post Install Checklist:"
   echo -e "\t\u2022 Secure MariaDB Installation"
   echo -e "\t    Run: /usr/bin/mysql_secure_installation"
   echo
   echo -e "\t\u2022 Enable DHCP"
-  echo -e "\t    http://$(HOSTNAME)/dhcp"
+  echo -e "\t    http://$HOSTNAME/dhcp"
   echo
   echo
   echo "========================================================="
@@ -812,5 +911,6 @@ setup_localhosts
 setup_dnsmasq
 setup_nginx
 setup_mariadb
+setup_webadmin
 setup_notrack
 show_finish
