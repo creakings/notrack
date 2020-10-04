@@ -30,12 +30,12 @@ Type=simple
 User=root
 Group=root
 Environment=PYTHONUNBUFFERED=true
-ExecStart=/usr/bin/python3 /opt/notrack/src/notrackd.py
+ExecStart=/usr/bin/python3 %install_location%/src/notrackd.py
 KillMode=process
 Restart=on-failure
 TimeoutStartSec=10
 TimeoutStopSec=10
-WorkingDirectory=/opt/notrack
+WorkingDirectory=%install_location%
 
 [Install]
 WantedBy=multi-user.target
