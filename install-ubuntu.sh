@@ -34,8 +34,8 @@ SUDO_REQUIRED=false                              #true if installing to /opt
 
 
 #######################################
-# Copy File
-#   Checks if Source file exists, then copies it to Destination
+# Copy
+#   Copies either a file or directory
 #
 # Globals:
 #   None
@@ -45,34 +45,15 @@ SUDO_REQUIRED=false                              #true if installing to /opt
 # Returns:
 #   None
 #######################################
-function copy_file() {
-  if [ -e "$1" ]; then                                     #Does file exist?
+function copy() {
+  if [ -f "$1" ]; then                                     #Does file exist?
     echo "Copying $1 to $2"
     sudo cp "$1" "$2"
-  else
-    echo "WARNING: Unable to find file $1 :-("             #Display a warning if file doesn't exist
-  fi
-}
-
-
-#######################################
-# Copy Folder
-#   Checks if Source folder exists, then copies it to Destination
-#
-# Globals:
-#   None
-# Arguments:
-#   $1: Source
-#   $2: Destination
-# Returns:
-#   None
-#######################################
-function copy_folder() {
-  if [ -d "$1" ]; then                                     #Does folder exist?
-    echo "Copying $1 to $2"
+  elif [ -d "$1" ]; then                                   #Does directory exist?
+    echo "Copying folder $1 to $2"
     sudo cp -r "$1" "$2"
-  else
-    echo "WARNING: Unable to find folder $1 :-("           #Display a warning if folder doesn't exist
+  else                                                     #Or unable find source
+    echo "WARNING: Unable to find $1 :-("
   fi
 }
 
@@ -111,25 +92,6 @@ function create_folder() {
   if [ ! -d "$1" ]; then                         #Does folder exist?
     echo "Creating folder: $1"                   #Tell user folder being created
     sudo mkdir "$1"                              #Create folder
-  fi
-}
-
-
-#######################################
-# Delete File
-#   Checks if a file exists and then deletes it
-#
-# Globals:
-#   None
-# Arguments:
-#   #$1 File to delete
-# Returns:
-#   None
-#######################################
-function delete_file() {
-  if [ -e "$1" ]; then                           #Does file exist?
-    echo "Deleting file $1"
-    sudo rm "$1"                                 #If yes then delete it
   fi
 }
 
@@ -497,13 +459,15 @@ function disable_dnsmasq_stub() {
 
   if [ "$(command -v systemctl)" ]; then                   #Only relevant for systemd
     if [ -e "$resolveconf" ]; then                         #Does resolve.conf file exist?
+      echo "Disabling Systemd DNS stub resolver"
       echo "Setting DNSStubListener=no in $resolveconf"
       sudo sed -i "s/#DNSStubListener=yes/DNSStubListener=no/" "$resolveconf" &> /dev/null
 
       service_restart "systemd-resolved.service"
+      service_restart "dnsmasq.service"
     fi
   fi
-  echo
+  echo "========================================================="
 }
 
 #######################################
@@ -550,8 +514,10 @@ function install_deb() {
   echo "Installing Python3"
   sleep 2s
   sudo apt -y install python3 python3-mysql.connector
-  echo
+
   echo "Finished installing Deb packages"
+  echo "========================================================="
+  echo
 }
 
 
@@ -576,6 +542,7 @@ function git_clone() {
   echo
 }
 
+
 #######################################
 # Find the service name for the webserver
 #
@@ -588,25 +555,25 @@ function git_clone() {
 #######################################
 function find_web_user() {
   if [[ -n $WEB_USER ]]; then                              #Check if WEB_USER is not null
-    echo "Web user already set to: $WEB_USER"
+    echo "Web service user already set to: $WEB_USER"
     return
   fi
 
-  if getent passwd www-data; then                          #Ubuntu uses www-data
+  if getent passwd www-data &> /dev/null; then             #Ubuntu uses www-data
     WEB_USER="www-data"
-  elif getent passwd nginx; then                           #Redhat uses nginx
+  elif getent passwd nginx &> /dev/null; then              #Redhat uses nginx
     WEB_USER="nginx"
-  elif getent passwd _nginx; then                          #Void uses _nginx
+  elif getent passwd _nginx &> /dev/null; then             #Void uses _nginx
     WEB_USER="_nginx"
-  elif getent passwd http; then                            #Arch uses http
+  elif getent passwd http &> /dev/null; then               #Arch uses http
     WEB_USER="http"
   else
-    echo "Unable to find Group for web service :-("
-    echo "Check /etc/passwd for the web user and then ammend \$WEB_USER value in this installer"
+    echo "Unable to find account for web service :-("
+    echo "Check /etc/passwd for the web service account and then ammend \$WEB_USER value in this installer"
     exit 9
   fi
 
-  echo "Found Web user: $WEB_USER"
+  echo "Web service is using $WEB_USER account"
 }
 
 
@@ -649,7 +616,7 @@ function setup_dnsmasq() {
 
   echo "Configuring Dnsmasq"
 
-  copy_file "$dnsmasqconf" "$dnsmasqconf.old"              #Backup old config
+  copy "$dnsmasqconf" "$dnsmasqconf.old"              #Backup old config
   create_folder "/etc/dnsmasq.d"                           #Issue #94 folder not created
   create_file "/var/log/notrack.log"                       #DNS logs storage
   set_ownership "/var/log/notrack.log" "dnsmasq" "root"
@@ -657,7 +624,7 @@ function setup_dnsmasq() {
 
   #Copy config files modified for NoTrack
   echo "Copying Dnsmasq config files from $INSTALL_LOCATION to /etc/conf"
-  copy_file "$INSTALL_LOCATION/conf/dnsmasq.conf" "$dnsmasqconf"
+  copy "$INSTALL_LOCATION/conf/dnsmasq.conf" "$dnsmasqconf"
 
   #Create initial Server Config. Note settings can be changed later via web admin
   echo "Creating DNS Server Config $serversconf"
@@ -667,8 +634,6 @@ function setup_dnsmasq() {
   echo "server=$SERVERIP2" | sudo tee -a "$serversconf" &> /dev/null
   echo "interface=$NETWORK_DEVICE" | sudo tee -a "$serversconf" &> /dev/null
   echo "listen-address=$LISTENIP" | sudo tee -a "$serversconf" &> /dev/null
-
-  disable_dnsmasq_stub
 
   service_start "dnsmasq"
   service_restart "dnsmasq"
@@ -682,6 +647,10 @@ function setup_dnsmasq() {
 
 #######################################
 # Setup nginx config files
+#   Find web service account
+#   Copy NoTrack nginx config to /etc/nginx/sites-available/default
+#   Find the version of PHP
+#   Add PHP Version to the nginx config
 #
 # Globals:
 #   INSTALL_LOCATION
@@ -697,10 +666,12 @@ function setup_nginx() {
   echo
   echo "Setting up nginx"
 
+  find_web_user
+
   #Backup the old nginx default config
   rename_file "/etc/nginx/sites-available/default" "/etc/nginx/sites-available/default.old"
   #Replace the default nginx config
-  copy_file "$INSTALL_LOCATION/conf/nginx.conf" "/etc/nginx/sites-available/nginx.conf"
+  copy "$INSTALL_LOCATION/conf/nginx.conf" "/etc/nginx/sites-available/nginx.conf"
   rename_file "/etc/nginx/sites-available/nginx.conf" "/etc/nginx/sites-available/default"
 
   #FastCGI server needs to contain the current PHP version
@@ -719,8 +690,6 @@ function setup_nginx() {
 
   service_start "php$phpver-fpm"
   service_start "nginx"
-  service_restart "php$phpver-fpm"
-  service_restart "nginx"
 
   echo "Setup of nginx complete"
   echo "========================================================="
@@ -750,8 +719,7 @@ function setup_mariadb() {
 
   service_start "mariadb"
 
-  echo
-  echo "Creating User $DBUSER"
+  echo "Creating User $DBUSER:"
   sudo mysql --user=root --password="$rootpass" -e "CREATE USER '$DBUSER'@'localhost' IDENTIFIED BY '$DBPASSWORD';"
 
   #Check to see if ntrk user has been added
@@ -759,7 +727,7 @@ function setup_mariadb() {
     error_exit "MariaDB command failed, have you entered incorrect root password?" "35"
   fi
 
-  echo "Creating Database $DBNAME"
+  echo "Creating Database $DBNAME:"
   sudo mysql --user=root --password="$rootpass" -e "CREATE DATABASE $DBNAME;"
 
   echo "Setting privilages for ntrk user"
@@ -795,19 +763,19 @@ function setup_webadmin() {
   local phpinfo=""
   local phpver=""
 
-  echo
   echo "Copying webadmin files to $WEB_FOLDER"
 
-  copy_folder "$INSTALL_LOCATION/admin" "$WEB_FOLDER/admin"
-  copy_folder "$INSTALL_LOCATION/sink" "$WEB_FOLDER/sink"
+  copy "$INSTALL_LOCATION/admin" "$WEB_FOLDER/admin"
+  copy "$INSTALL_LOCATION/sink" "$WEB_FOLDER/sink"
   echo "$WEB_USER taking over $WEB_FOLDER"
   sudo chown "$WEB_USER":"$WEB_USER" -hR "$WEB_FOLDER"
+  echo
 }
 
 #######################################
 # Setup NoTrack
-#   1. Initial setup of notrack.conf
-#   2. Create cron jobs
+#   1. Create systemd service using template notrack.service
+#   2. Initial run of blockparser
 #
 # Globals:
 #   INSTALL_LOCATION, IP_VERSION, NETWORK_DEVICE
@@ -817,10 +785,12 @@ function setup_webadmin() {
 #   None
 #######################################
 function setup_notrack() {
-  copy_file "$INSTALL_LOCATION/init-scripts/notrack.service" "/etc/systemd/system"
+  copy "$INSTALL_LOCATION/init-scripts/notrack.service" "/etc/systemd/system"
+  sudo sed -i "s:%install_location%:$INSTALL_LOCATION:g" "/etc/systemd/system/notrack.service"
   sudo systemctl enable --now notrack.service
 
   echo "Downloading and parsing blocklists"
+  sleep 2s
   sudo python3 "$INSTALL_LOCATION/src/blockparser.py"
   echo
 }
@@ -911,6 +881,7 @@ install_deb
 git_clone
 setup_localhosts
 setup_dnsmasq
+disable_dnsmasq_stub
 setup_nginx
 setup_mariadb
 setup_webadmin
