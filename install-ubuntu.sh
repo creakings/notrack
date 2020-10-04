@@ -8,12 +8,15 @@
 #######################################
 # User Configerable Settings
 #######################################
-INSTALL_LOCATION=""                         #define custom installation path
-NOTRACK_REPO="https://gitlab.com/quidsup/notrack.git"
+INSTALL_LOCATION=""                              #define custom installation path
+NOTRACK_REPO="https://github.com/quidsup/notrack.git"
 HOSTNAME=""
 NETWORK_DEVICE=""
 WEB_USER=""
 WEB_FOLDER="/var/www/html"
+SERVERIP1="1.1.1.1"
+SERVERIP2="1.0.0.1"
+LISTENIP="127.0.0.1"
 
 #######################################
 # Constants
@@ -27,28 +30,30 @@ readonly VERSION="20.10"
 DBUSER="ntrk"
 DBPASSWORD="ntrkpass"
 DBNAME="ntrkdb"
-
 SUDO_REQUIRED=false                              #true if installing to /opt
 
 
 #######################################
-# Copy File
-#   Checks if Source file exists, then copies it to Destination
+# Copy
+#   Copies either a file or directory
 #
 # Globals:
-#   INSTALL_LOCATION
+#   None
 # Arguments:
 #   $1: Source
 #   $2: Destination
 # Returns:
 #   None
 #######################################
-function copy_file() {
-  if [ -e "$1" ]; then                                     #Does file exist?
+function copy() {
+  if [ -f "$1" ]; then                                     #Does file exist?
     echo "Copying $1 to $2"
     sudo cp "$1" "$2"
-  else
-    echo "WARNING: Unable to find file $1 :-("             #Display a warning if file doesn't exist
+  elif [ -d "$1" ]; then                                   #Does directory exist?
+    echo "Copying folder $1 to $2"
+    sudo cp -r "$1" "$2"
+  else                                                     #Or unable find source
+    echo "WARNING: Unable to find $1 :-("
   fi
 }
 
@@ -74,20 +79,19 @@ function create_file() {
 
 
 #######################################
-# Delete File
-#   Checks if a file exists and then deletes it
-#
+# Create Folder
+#   Creates a folder if it doesn't exist
 # Globals:
 #   None
 # Arguments:
-#   #$1 File to delete
+#   $1 - Folder to create
 # Returns:
 #   None
 #######################################
-function delete_file() {
-  if [ -e "$1" ]; then                           #Does file exist?
-    echo "Deleting file $1"
-    sudo rm "$1"                                 #If yes then delete it
+function create_folder() {
+  if [ ! -d "$1" ]; then                         #Does folder exist?
+    echo "Creating folder: $1"                   #Tell user folder being created
+    sudo mkdir "$1"                              #Create folder
   fi
 }
 
@@ -202,6 +206,29 @@ function service_restart() {
       sudo sv restart "$1"
     else
       error_exit "Unable to restart services. Unknown service supervisor" "21"
+    fi
+  fi
+}
+
+
+#######################################
+# Start service
+#   Start and Enable systemd based services
+#   TODO complete for sv and sysvinit
+#
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+function service_start() {
+  if [[ -n $1 ]]; then
+    echo "Starting $1"
+    if [ "$(command -v systemctl)" ]; then                 #systemd
+      sudo systemctl enable "$1"
+      sudo systemctl start "$1"
     fi
   fi
 }
@@ -351,8 +378,8 @@ function prompt_network_device() {
 
   if [ ! -d /sys/class/net ]; then               #Check net devices folder exists
     echo "Error. Unable to find list of Network Devices"
-    echo "Edit user customisable setting \$NetDev with the name of your Network Device"
-    echo "e.g. \$NetDev=\"eth0\""
+    echo "Edit user customisable setting \$NETWORK_DEVICE with the name of your Network Device"
+    echo "e.g. \$NETWORK_DEVICE=\"eth0\""
     exit 11
   fi
 
@@ -366,8 +393,8 @@ function prompt_network_device() {
 
   if [ "$count_net_dev" -eq 0 ]; then             #None found
     echo "Error. No Network Devices found"
-    echo "Edit user customisable setting \$NetDev with the name of your Network Device"
-    echo "e.g. \$NetDev=\"eth0\""
+    echo "Edit user customisable setting \$NETWORK_DEVICE with the name of your Network Device"
+    echo "e.g. \$NETWORK_DEVICE=\"eth0\""
     exit 11
 
   elif [ "$count_net_dev" -eq 1 ]; then           #1 Device
@@ -385,7 +412,7 @@ function prompt_network_device() {
     echo
   fi
 
-  if [[ -n $NETWORK_DEVICE ]]; then                        #Final confirmation
+  if [[ -z $NETWORK_DEVICE ]]; then                        #Final confirmation
     error_exit "Network Device not entered, unable to proceed" 11
   fi
 }
@@ -432,13 +459,15 @@ function disable_dnsmasq_stub() {
 
   if [ "$(command -v systemctl)" ]; then                   #Only relevant for systemd
     if [ -e "$resolveconf" ]; then                         #Does resolve.conf file exist?
+      echo "Disabling Systemd DNS stub resolver"
       echo "Setting DNSStubListener=no in $resolveconf"
-      sudo sed -i "s/#DNSStubListener=yes/DNSStubListener=no" "$resolveconf" &> /dev/null
+      sudo sed -i "s/#DNSStubListener=yes/DNSStubListener=no/" "$resolveconf" &> /dev/null
 
       service_restart "systemd-resolved.service"
       service_restart "dnsmasq.service"
     fi
   fi
+  echo "========================================================="
 }
 
 #######################################
@@ -462,7 +491,7 @@ function install_deb() {
   sleep 2s
   sudo apt -y install git unzip
   echo
-  echo "Installing Dnsmasq"
+  echo "Installing DNS Server Dnsmasq"
   sleep 2s
   sudo apt -y install dnsmasq
   echo
@@ -470,9 +499,10 @@ function install_deb() {
   sleep 2s
   sudo apt -y install mariadb-server
   echo
-  echo "Installing Webserver"
+  echo "Installing Webserver Nginx"
   sleep 2s
   sudo apt -y install nginx
+  echo
   echo "Creating snakeoil SSL cert"
   sudo apt -y install ssl-cert
   sudo make-ssl-cert generate-default-snakeoil
@@ -484,8 +514,10 @@ function install_deb() {
   echo "Installing Python3"
   sleep 2s
   sudo apt -y install python3 python3-mysql.connector
-  echo
+
   echo "Finished installing Deb packages"
+  echo "========================================================="
+  echo
 }
 
 
@@ -510,6 +542,7 @@ function git_clone() {
   echo
 }
 
+
 #######################################
 # Find the service name for the webserver
 #
@@ -522,31 +555,30 @@ function git_clone() {
 #######################################
 function find_web_user() {
   if [[ -n $WEB_USER ]]; then                              #Check if WEB_USER is not null
-    echo "Web user already set to: $WEB_USER"
+    echo "Web service user already set to: $WEB_USER"
     return
   fi
 
-  if getent passwd www-data; then                          #Ubuntu uses www-data
+  if getent passwd www-data &> /dev/null; then             #Ubuntu uses www-data
     WEB_USER="www-data"
-  elif getent passwd nginx; then                           #Redhat uses nginx
+  elif getent passwd nginx &> /dev/null; then              #Redhat uses nginx
     WEB_USER="nginx"
-  elif getent passwd _nginx; then                          #Void uses _nginx
+  elif getent passwd _nginx &> /dev/null; then             #Void uses _nginx
     WEB_USER="_nginx"
-  elif getent passwd http; then                            #Arch uses http
+  elif getent passwd http &> /dev/null; then               #Arch uses http
     WEB_USER="http"
   else
-    echo "Unable to find Group for web service :-("
-    echo "Check /etc/passwd for the web user and then ammend \$WEB_USER value in this installer"
+    echo "Unable to find account for web service :-("
+    echo "Check /etc/passwd for the web service account and then ammend \$WEB_USER value in this installer"
     exit 9
   fi
 
-  echo "Found Web user: $WEB_USER"
+  echo "Web service is using $WEB_USER account"
 }
 
 
 #######################################
-# Setup Dnsmasq
-#   Copy custom config settings into dnsmasq.conf and create log file
+# Setup LocalHosts
 #   Create initial entry in /etc/localhosts.list
 # Globals:
 #   INSTALL_LOCATION
@@ -555,53 +587,73 @@ function find_web_user() {
 # Returns:
 #   None
 #######################################
+function setup_localhosts() {
+  local localhostslist="/etc/localhosts.list"
+
+  create_file "$localhostslist"                            #Local host IPs
+
+  if [[ -n $HOSTNAME ]]; then                              #Has a hostname been found?
+    echo "Setting up your /etc/localhosts.list for Local Hosts"
+    echo -e "127.0.0.1\t$HOSTNAME" | sudo tee -a "$localhostslis" &> /dev/null
+  fi
+}
+
+
+#######################################
+# Setup Dnsmasq
+#   Copy custom config settings into dnsmasq.conf and create log file
+#   Create initial entry in /etc/localhosts.list
+# Globals:
+#   INSTALL_LOCATION, LISTENIP, SERVERIP1, SERVERIP2, NETWORK_DEVICE
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
 function setup_dnsmasq() {
   local dnsmasqconf="/etc/dnsmasq.conf"
+  local serversconf="/etc/dnsmasq.d/servers.conf"
 
   echo "Configuring Dnsmasq"
 
-  copy_file "$dnsmasqconf" "$dnsmasqconf.old"              #Backup old config
+  copy "$dnsmasqconf" "$dnsmasqconf.old"              #Backup old config
   create_folder "/etc/dnsmasq.d"                           #Issue #94 folder not created
   create_file "/var/log/notrack.log"                       #DNS logs storage
   set_ownership "/var/log/notrack.log" "dnsmasq" "root"
   set_permissions "/var/log/notrack.log" "664"
 
-  create_file "/etc/localhosts.list"                       #Local host IPs
-  create_file "/etc/dnsmasq.d/servers.conf"                #DHCP Config
-
   #Copy config files modified for NoTrack
   echo "Copying Dnsmasq config files from $INSTALL_LOCATION to /etc/conf"
-  copy_file "$INSTALL_LOCATION/conf/dnsmasq.conf" "$dnsmasqconf"
+  copy "$INSTALL_LOCATION/conf/dnsmasq.conf" "$dnsmasqconf"
 
-  #Finish configuration of dnsmasq config
-  sudo sed -i "s/interface=eth0/interface=$NETWORK_DEVICE/" "$dnsmasqconf"
+  #Create initial Server Config. Note settings can be changed later via web admin
+  echo "Creating DNS Server Config $serversconf"
+  create_file "$serversconf"                               #DNS Server Config
 
-  echo "Setting DNS Servers"
-  echo "server=$DNS_SERVER_1" | sudo tee -a /etc/dnsmasq.d/servers.conf &> /dev/null
-  echo "server=$DNS_SERVER_2" | sudo tee -a /etc/dnsmasq.d/servers.conf &> /dev/null
-
-  if [[ -n $hostname ]]; then
-    echo "Setting up your /etc/localhosts.list for Local Hosts"
-    echo "Writing first entry for this system: $IP_ADDRESS - $hostname"
-    echo -e "$IP_ADDRESS\t$hostname" | sudo tee -a /etc/localhosts.list &> /dev/null
-  fi
+  echo "server=$SERVERIP1" | sudo tee -a "$serversconf" &> /dev/null
+  echo "server=$SERVERIP2" | sudo tee -a "$serversconf" &> /dev/null
+  echo "interface=$NETWORK_DEVICE" | sudo tee -a "$serversconf" &> /dev/null
+  echo "listen-address=$LISTENIP" | sudo tee -a "$serversconf" &> /dev/null
 
   service_start "dnsmasq"
   service_restart "dnsmasq"
-  check_systemd_dnsmasq
 
   echo "Setup of Dnsmasq complete"
   echo "========================================================="
   echo
-  sleep 3s
+  sleep 2s
 }
 
 
 #######################################
 # Setup nginx config files
+#   Find web service account
+#   Copy NoTrack nginx config to /etc/nginx/sites-available/default
+#   Find the version of PHP
+#   Add PHP Version to the nginx config
 #
 # Globals:
-#   INSTALL_LOCATION, WEB_FOLDER, WEB_USER, HOSTNAME
+#   INSTALL_LOCATION
 # Arguments:
 #   None
 # Returns:
@@ -614,10 +666,12 @@ function setup_nginx() {
   echo
   echo "Setting up nginx"
 
+  find_web_user
+
   #Backup the old nginx default config
   rename_file "/etc/nginx/sites-available/default" "/etc/nginx/sites-available/default.old"
   #Replace the default nginx config
-  copy_file "$INSTALL_LOCATION/conf/nginx.conf" "/etc/nginx/sites-available/nginx.conf"
+  copy "$INSTALL_LOCATION/conf/nginx.conf" "/etc/nginx/sites-available/nginx.conf"
   rename_file "/etc/nginx/sites-available/nginx.conf" "/etc/nginx/sites-available/default"
 
   #FastCGI server needs to contain the current PHP version
@@ -634,7 +688,13 @@ function setup_nginx() {
     sleep 8s
   fi
 
+  service_start "php$phpver-fpm"
   service_start "nginx"
+
+  echo "Setup of nginx complete"
+  echo "========================================================="
+  echo
+  sleep 2s
 }
 
 
@@ -659,8 +719,7 @@ function setup_mariadb() {
 
   service_start "mariadb"
 
-  echo
-  echo "Creating User $DBUSER"
+  echo "Creating User $DBUSER:"
   sudo mysql --user=root --password="$rootpass" -e "CREATE USER '$DBUSER'@'localhost' IDENTIFIED BY '$DBPASSWORD';"
 
   #Check to see if ntrk user has been added
@@ -668,7 +727,7 @@ function setup_mariadb() {
     error_exit "MariaDB command failed, have you entered incorrect root password?" "35"
   fi
 
-  echo "Creating Database $DBNAME"
+  echo "Creating Database $DBNAME:"
   sudo mysql --user=root --password="$rootpass" -e "CREATE DATABASE $DBNAME;"
 
   echo "Setting privilages for ntrk user"
@@ -685,14 +744,38 @@ function setup_mariadb() {
   #echo "\$dbconfig->password = '$dbpassword';" >> "$dbconfig"
   #echo "?>" >> "$dbconfig"
 
+  echo "========================================================="
   echo
 }
 
 
 #######################################
+# Copy NoTrack web admin files
+#
+# Globals:
+#   INSTALL_LOCATION, WEB_FOLDER, WEB_USER, HOSTNAME
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+function setup_webadmin() {
+  local phpinfo=""
+  local phpver=""
+
+  echo
+  echo "Copying webadmin files to $WEB_FOLDER"
+
+  copy "$INSTALL_LOCATION/admin" "$WEB_FOLDER/admin"
+  copy "$INSTALL_LOCATION/sink" "$WEB_FOLDER/sink"
+  echo "$WEB_USER taking over $WEB_FOLDER"
+  sudo chown "$WEB_USER":"$WEB_USER" -hR "$WEB_FOLDER"
+}
+
+#######################################
 # Setup NoTrack
-#   1. Initial setup of notrack.conf
-#   2. Create cron jobs
+#   1. Create systemd service using template notrack.service
+#   2. Initial run of blockparser
 #
 # Globals:
 #   INSTALL_LOCATION, IP_VERSION, NETWORK_DEVICE
@@ -702,8 +785,14 @@ function setup_mariadb() {
 #   None
 #######################################
 function setup_notrack() {
-  copy_file "$INSTALL_LOCATION/init-scripts/notrack.service" "/etc/systemd/system"
+  copy "$INSTALL_LOCATION/init-scripts/notrack.service" "/etc/systemd/system"
+  sudo sed -i "s:%install_location%:$INSTALL_LOCATION:g" "/etc/systemd/system/notrack.service"
   sudo systemctl enable --now notrack.service
+
+  echo "Downloading and parsing blocklists"
+  sleep 2s
+  sudo python3 "$INSTALL_LOCATION/src/blockparser.py"
+  echo
 }
 
 
@@ -742,14 +831,14 @@ function show_finish() {
   echo "========================================================="
   echo
   echo -e "NoTrack Install Complete :-)"
-  echo "Access the admin console at: http://$(HOSTNAME)/admin"
+  echo "Access the admin console at: http://$HOSTNAME/admin"
   echo
   echo "Post Install Checklist:"
   echo -e "\t\u2022 Secure MariaDB Installation"
   echo -e "\t    Run: /usr/bin/mysql_secure_installation"
   echo
   echo -e "\t\u2022 Enable DHCP"
-  echo -e "\t    http://$(HOSTNAME)/dhcp"
+  echo -e "\t    http://$HOSTNAME/dhcp"
   echo
   echo
   echo "========================================================="
@@ -770,9 +859,14 @@ prompt_installloc
 prompt_network_device
 
 clear
-echo "Installing to: $INSTALL_LOCATION"          #Final report before Installing
-echo "Network Device set to: $NETWORK_DEVICE"
-echo "Hostname: $HOSTNAME"
+echo "Installing to : $INSTALL_LOCATION"          #Final report before Installing
+echo "Hostname      : $HOSTNAME"
+echo "Network Device: $NETWORK_DEVICE"
+echo "Primary DNS   : $SERVERIP1"
+echo "Secondary DNS : $SERVERIP2"
+echo "Listening IP  : $LISTENIP"
+echo
+echo "Note: Primary and Secondary DNS can be changed later with the admin config"
 echo
 
 seconds=$((6))
@@ -782,7 +876,14 @@ while [ $seconds -gt 0 ]; do
    : $((seconds--))
 done
 
-disable_dnsmasq_stub
 install_deb
 
 git_clone
+setup_localhosts
+setup_dnsmasq
+disable_dnsmasq_stub
+setup_nginx
+setup_mariadb
+setup_webadmin
+setup_notrack
+show_finish
