@@ -28,119 +28,34 @@ class NoTrackUpgrade():
     Copies either modern Python3 or legacy Bash script to /usr/local/sbin
 
     Parameters:
-        tempdir (str): folders.tempdir
-        sbindir (str): folders.sbindir
-        wwwconfdir (str): folders.wwwconfdir
+        tempdir (str): folders.tempdir        
+        webconfigdir (str): folders.webconfigdir
     """
 
-    def __init__(self, tempdir, sbindir, wwwconfdir):
+    def __init__(self, ntrkfolders):
 
         #Set folder locations
-        self.__REPO = 'https://gitlab.com/quidsup/notrack.git'
-        self.__GITLAB_DOWNLOAD = 'https://gitlab.com/quidsup/notrack/-/archive/master/notrack-master.zip'
-        self.__SBINDIR = sbindir
+        #self.__REPO = 'https://gitlab.com/quidsup/notrack.git'
+        self.__REPO = 'https://github.com/quidsup/NoTrack'
+        #self.__GITLAB_DOWNLOAD = 'https://gitlab.com/quidsup/notrack/-/archive/master/notrack-master.zip'
         self.__TEMPDIR = tempdir
-        self.__WWWCONFDIR = wwwconfdir
+        self.__WEBCONFDIR = webconfigdir
         self.__TEMP_DOWNLOAD = tempdir + 'notrack-master.zip'
 
         self.__latestversion = ''
-        self.install_location = ''
+        self.location = ''
         self.username = ''
 
         self.__find_notrack()                    #Where has NoTrack been installed?
-        self.__find_username()                   #Get username for the install_location
-
-
-    def __is_symlink(self, item):
-        """
-        Check if item is either a directory or file
-
-        Parameters:
-            item (str): Symlink location
-        Returns:
-            True valid symlink
-            False not a symlink or target missing
-        """
-        if Path(item).is_dir() and Path(item).is_symlink():
-            return True
-        elif Path(item).is_file() and Path(item).is_symlink():
-            return True
-
-        return False
-
-
-    def __read_symlink(self, item):
-        """
-        Returns parent directory of a symlink location
-
-        Parameters:
-            item (str): Symlink location
-        Returns:
-            Target parent e.g. (/home/user/notrack or /opt/notrack)
-        """
-        target = Path(item).resolve()                      #Get symlink target
-        p = PurePath(target)                               #Path of target
-
-        if Path(target).is_dir():                          #Directory returns parent
-            return str(p.parent)
-        else:
-            return str(p.parent.parent)                    #File returns grandparent
-
-
-    def __check_homefolders(self):
-        """
-        Check sub directories under /home for presense of /home/user/notrack directory
-        """
-        if not Path('/home').is_dir():
-            return False
-
-        p = Path('/home')
-        for subdir in p.iterdir():
-            if Path('%s/notrack' % subdir).is_dir():
-                self.install_location = '%s/notrack' % subdir
-                return True
+        self.__find_username()                   #Get username for the install location
 
 
     def __find_notrack(self):
         """
-        Find where NoTrack has been installed
-        There are a few methods to try and locate the NoTrack install folder
-        Check symlink locations, check in /opt, finally check home folders
+        Based on current working directory
         """
-        if self.__is_symlink('/var/www/html/admin'):       #1. Try admin symlink
-            self.install_location = self.__read_symlink('/var/www/html/admin')
-        elif self.__is_symlink('/usr/local/sbin/notrack'): #2. Try sbin/admin symlink
-            self.install_location = self.__read_symlink('/usr/local/sbin/notrack')
-        elif Path('/opt/notrack').is_dir():                #3. Check in /opt
-            self.install_location = '/opt/notrack'
-        elif not self.__check_homefolders():               #4. Check home folders
-            print('Find_NoTrack: Error - Unable to find location of NoTrack', file=sys.stderr)
-            sys.exit(20)
-
-
-    def __find_unix_username(self, ntrkdir):
-        """
-        Match the home folder against username with data from /etc/passwd
-
-        Parameters:
-            ntrkdir (str): NoTrack install directory
-        Returns:
-            username or root
-        """
-        import pwd
-        passwd = pwd.getpwall()                            #Everything from /etc/passwd
-
-        if not ntrkdir.startswith('/home'):                #Return root for any non-home directory
-            return 'root'
-
-        for obj in passwd:
-            if obj.pw_dir == '/':                          #Disregard anything for root folder
-                continue
-            #Check if there is any match with this users home folder location
-            if ntrkdir.startswith(obj.pw_dir):
-                return obj.pw_name                         #Yes, return username
-
-        return 'root'                                      #No match found, return root
+        cwd = os.getcwd()                                  #Get current working directory
+        self.location = os.path.dirname(cwd)               #Get parent folder
 
 
     def __find_username(self):
@@ -149,7 +64,32 @@ class NoTrackUpgrade():
         TODO Complete for other OS's
         """
         if os.name == 'posix':
-            self.username = self.__find_unix_username(self.install_location)
+            self.username = self.__find_unix_username()
+
+
+    def __find_unix_username(self):
+        """
+        Match the home folder against username with data from /etc/passwd
+
+        Parameters:
+            None
+        Returns:
+            username or root
+        """
+        import pwd
+        passwd = pwd.getpwall()                            #Everything from /etc/passwd
+
+        if not self.location.startswith('/home'):  #Return root for any non-home directory
+            return 'root'
+
+        for obj in passwd:
+            if obj.pw_dir == '/':                          #Disregard anything for root folder
+                continue
+            #Check if there is any match with this users home folder location
+            if self.location.startswith(obj.pw_dir):
+                return obj.pw_name                         #Yes, return username
+
+        return 'root'                                      #No match found, return root
 
 
     def __check_git(self):
@@ -170,8 +110,8 @@ class NoTrackUpgrade():
         """
         cmd = []                                           #Command to execute
 
-        cmd = ['sudo', '-u', self.username, 'git', 'clone', self.__REPO, self.install_location]
-        print('Cloning NoTrack into %s with Git' % self.install_location)
+        cmd = ['sudo', '-u', self.username, 'git', 'clone', self.__REPO, self.location]
+        print('Cloning NoTrack into %s with Git' % self.location)
 
         p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
@@ -201,7 +141,7 @@ class NoTrackUpgrade():
         cmd = ['sudo', '-u', self.username, 'git', 'pull']
         print('Pulling latest changes')
 
-        p = subprocess.run(cmd, cwd=self.install_location, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        p = subprocess.run(cmd, cwd=self.location, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         if p.returncode == 0:                              #Success
             print(p.stdout)
@@ -221,7 +161,7 @@ class NoTrackUpgrade():
         1. Download notrack-master.zip file from Gitlab
         2. Backup install location to x-old
         3. Unzip notrack-master.zip to /tmp/notrack-master
-        4. Move /tmp/notrack-master to install_location
+        4. Move /tmp/notrack-master to location
         """
 
         temp_dldir = self.__TEMPDIR + 'notrack-master'
@@ -235,138 +175,32 @@ class NoTrackUpgrade():
         unzip_multiple_files(self.__TEMP_DOWNLOAD, self.__TEMPDIR)
 
         #Delete old backup of NoTrack and then move current folder to backup
-        #delete_folder(self.install_location + '-old')      #Delete backup copy
-        #copy_file(self.install_location, self.install_location + '-old')
+        #delete_folder(self.location + '-old')      #Delete backup copy
+        #copy_file(self.location, self.location + '-old')
 
         #Delete old contents of NoTrack folder
-        delete_folder(self.install_location + '/admin')
-        delete_folder(self.install_location + '/conf')
-        delete_folder(self.install_location + '/scripts')
-        delete_folder(self.install_location + '/sink')
-        delete_file(self.install_location + '/changelog.txt')
-        delete_file(self.install_location + '/install.sh')
-        delete_file(self.install_location + '/LICENSE')
-        delete_file(self.install_location + '/README.md')
-        delete_file(self.install_location + '/TODO')
+        delete_folder(self.location + '/admin')
+        delete_folder(self.location + '/conf')
+        delete_folder(self.location + '/scripts')
+        delete_folder(self.location + '/sink')
+        delete_file(self.location + '/changelog.txt')
+        delete_file(self.location + '/install.sh')
+        delete_file(self.location + '/LICENSE')
+        delete_file(self.location + '/README.md')
+        delete_file(self.location + '/TODO')
 
         #Move new files to NoTrack folder
-        move_file(temp_dldir + '/admin', self.install_location)
-        move_file(temp_dldir + '/conf', self.install_location)
-        move_file(temp_dldir + '/scripts', self.install_location)
-        move_file(temp_dldir + '/sink', self.install_location)
-        move_file(temp_dldir + '/changelog.txt', self.install_location)
-        move_file(temp_dldir + '/install.sh', self.install_location)
-        move_file(temp_dldir + '/LICENSE', self.install_location)
-        move_file(temp_dldir + '/README.md', self.install_location)
-        move_file(temp_dldir + '/TODO', self.install_location)
+        move_file(temp_dldir + '/admin', self.location)
+        move_file(temp_dldir + '/conf', self.location)
+        move_file(temp_dldir + '/scripts', self.location)
+        move_file(temp_dldir + '/sink', self.location)
+        move_file(temp_dldir + '/changelog.txt', self.location)
+        move_file(temp_dldir + '/install.sh', self.location)
+        move_file(temp_dldir + '/LICENSE', self.location)
+        move_file(temp_dldir + '/README.md', self.location)
+        move_file(temp_dldir + '/TODO', self.location)
 
         delete_file(temp_dldir)
-
-
-    def __legacy_copyto_localsbin(self):
-        """
-        Legacy copy scripts to /usr/local/sbin
-        NOTE remove sometime in 2021 as this method is DEPRECATED
-        """
-        scriptfolder = self.install_location + '/scripts/'
-
-        print()
-        print('WARNING: Missing Python3 dependancy mysql.connector')
-        print('Falling back to using legacy Bash scripts')
-        print()
-
-        #NoTrack
-        delete_file(self.__SBINDIR + 'notrack')
-        print('Copying notrack.sh to %snotrack' % self.__SBINDIR)
-        copy_file(scriptfolder + 'notrack.sh', self.__SBINDIR + 'notrack.sh')
-        move_file(self.__SBINDIR + 'notrack.sh', self.__SBINDIR + 'notrack', 0o775)
-        print()
-
-        #NoTrack Analytics
-        delete_file(self.__SBINDIR + 'ntrk-analytics')
-        print('Copying ntrk-analytics.sh to %sntrk-analytics' % self.__SBINDIR)
-        copy_file(scriptfolder + 'ntrk-analytics.sh', self.__SBINDIR + 'ntrk-analytics.sh')
-        move_file(self.__SBINDIR + 'ntrk-analytics.sh', self.__SBINDIR + 'ntrk-analytics', 0o775)
-        print()
-
-        #NoTrack Exec
-        delete_file(self.__SBINDIR + 'ntrk-exec')
-        print('Copying ntrk-exec.sh to %sntrk-exec' % self.__SBINDIR)
-        copy_file(scriptfolder + 'ntrk-exec.sh', self.__SBINDIR + 'ntrk-exec.sh')
-        move_file(self.__SBINDIR + 'ntrk-exec.sh', self.__SBINDIR + 'ntrk-exec', 0o775)
-        print()
-
-        #NoTrack Parse
-        delete_file(self.__SBINDIR + 'ntrk-parse')
-        print('Copying ntrk-parse.sh to %sntrk-parse' % self.__SBINDIR)
-        copy_file(scriptfolder + 'ntrk-parse.sh', self.__SBINDIR + 'ntrk-parse.sh')
-        move_file(self.__SBINDIR + 'ntrk-parse.sh', self.__SBINDIR + 'ntrk-parse', 0o775)
-        print()
-
-        #NoTrack Pause
-        delete_file(self.__SBINDIR + 'ntrk-pause')
-        print('Copying ntrk-pause.sh to %sntrk-pause' % self.__SBINDIR)
-        copy_file(scriptfolder + 'ntrk-pause.sh', self.__SBINDIR + 'ntrk-pause.sh')
-        move_file(self.__SBINDIR + 'ntrk-pause.sh', self.__SBINDIR + 'ntrk-pause', 0o775)
-        print()
-
-        #NoTrack Upgrade
-        delete_file(self.__SBINDIR + 'ntrk-upgrade')
-        print('Copying ntrkupgrade.py to %sntrk-upgrade' % self.__SBINDIR)
-        copy_file(scriptfolder + 'ntrkupgrade.py', self.__SBINDIR + 'ntrkupgrade.py')
-        move_file(self.__SBINDIR + 'ntrkupgrade.py', self.__SBINDIR + 'ntrk-upgrade', 0o775)
-        print()
-
-
-    def __modern_check_localsbin(self):
-        """
-        Modern utilise symlinks to Python scripts, appeared in v0.9.5
-        1. Delete old NoTrack files from /usr/local/sbin
-        2. Change permissions of scripts to 775
-        3. Create symlink in /usr/local/sbin pointing to scripts folder
-        """
-        scriptfolder = self.install_location + '/scripts/'
-
-        print('Using modern NoTrack Python3 scripts')
-        print()
-
-        #NoTrack
-        delete_file(self.__SBINDIR + 'notrack')
-        print('Creating notrack symlink in %s' % self.__SBINDIR)
-        os.chmod(scriptfolder + 'notrack.py', 0o775)
-        os.symlink(scriptfolder + 'notrack.py', self.__SBINDIR + 'notrack')
-        print()
-
-        #NoTrack Analytics
-        delete_file(self.__SBINDIR + 'ntrk-analytics')
-        print('Creating ntrk-analytics symlink in %s' % self.__SBINDIR)
-        os.chmod(scriptfolder + 'ntrk-analytics.py', 0o775)
-        os.symlink(scriptfolder + 'ntrk-analytics.py', self.__SBINDIR + 'ntrk-analytics')
-        print()
-
-        #NoTrack Exec
-        delete_file(self.__SBINDIR + 'ntrk-exec')
-        print('Creating ntrk-exec symlink in %s' % self.__SBINDIR)
-        os.chmod(scriptfolder + 'ntrk-exec.py', 0o775)
-        os.symlink(scriptfolder + 'ntrk-exec.py', self.__SBINDIR + 'ntrk-exec')
-        print()
-
-        #NoTrack Parse NOTE This is still a bash script
-        delete_file(self.__SBINDIR + 'ntrk-parse')
-        print('Copying ntrk-parse.sh to %sntrk-parse' % self.__SBINDIR)
-        copy_file(scriptfolder + 'ntrk-parse.sh', self.__SBINDIR + 'ntrk-parse.sh')
-        move_file(self.__SBINDIR + 'ntrk-parse.sh', self.__SBINDIR + 'ntrk-parse', 0o775)
-        print()
-
-        #NoTrack Upgrade
-        delete_file(self.__SBINDIR + 'ntrk-upgrade')
-        print('Creating ntrk-upgrade symlink in %s' % self.__SBINDIR)
-        os.chmod(scriptfolder + 'ntrkupgrade.py', 0o775)
-        os.symlink(scriptfolder + 'ntrkupgrade.py', self.__SBINDIR + 'ntrk-upgrade')
-        print()
-
-        #NOTE NoTrack Pause is no longer required
-        delete_file(self.__SBINDIR + 'ntrk-pause')
 
 
     def __check_for_upgrade(self):
@@ -400,13 +234,13 @@ class NoTrackUpgrade():
         Reset PHP latest version setting file
         """
         print('Resetting latestversion.php')
-        with open (self.__WWWCONFDIR + 'latestversion.php', 'w') as f:
+        with open (self.__WEBCONFDIR + 'latestversion.php', 'w') as f:
             f.write('<?php\n')
-            f.write("$config->set_latestversion('0.0.0');\n")
+            f.write("$config->set_latestversion('0.0');\n")
             f.write('?>\n')
             f.close()                                      #Close file
 
-        os.chmod(self.__WWWCONFDIR + 'latestversion.php', 0o666) #-rw-rw-rw
+        os.chmod(self.__WEBCONFDIR + 'latestversion.php', 0o666) #-rw-rw-rw
 
         return True                                        #New version updated at this point
 
@@ -428,13 +262,13 @@ class NoTrackUpgrade():
 
         print('New version available:', self.__latestversion)
         print('Updating latestversion.php')
-        with open (self.__WWWCONFDIR + 'latestversion.php', 'w') as f:
+        with open (self.__WEBCONFDIR + 'latestversion.php', 'w') as f:
             f.write('<?php\n')
             f.write("$config->set_latestversion('%s');\n" % self.__latestversion)
             f.write('?>\n')
             f.close()                                      #Close file
 
-        os.chmod(self.__WWWCONFDIR + 'latestversion.php', 0o666) #-rw-rw-rw
+        os.chmod(self.__WEBCONFDIR + 'latestversion.php', 0o666) #-rw-rw-rw
 
         return True                                        #New version updated at this point
 
@@ -483,29 +317,22 @@ class NoTrackUpgrade():
 
 def main():
     folders = FolderList()
-    ntrkupgrade = NoTrackUpgrade(folders.tempdir, folders.sbindir, folders.wwwconfdir)
+    ntrkupgrade = NoTrackUpgrade(folders.tempdir, folders.webconfigdir)
+
 
     print('NoTrack Upgrader')
-    check_root()
+    #check_root()
 
-    print('Found Install Location:', ntrkupgrade.install_location)
+    print('Found Install Location:', ntrkupgrade.location)
     print('Found Username:', ntrkupgrade.username)
     print()
 
-    ntrkupgrade.get_latestversion()
-    ntrkupgrade.do_upgrade()
+    #ntrkupgrade.get_latestversion()
+    #ntrkupgrade.do_upgrade()
 
     print('NoTrack upgrade complete :-)')
 
 if __name__ == "__main__":
     main()
 
-"""
 
-
-#sudocheck=$(grep www-data /etc/sudoers)                              #Check sudo permissions for lighty possibly DEPRECATED
-#if [[ $sudocheck == "" ]]; then
-  #echo "Adding NoPassword permissions for www-data to execute script /usr/local/sbin/ntrk-exec as root"
-  #echo -e "www-data\tALL=(ALL:ALL) NOPASSWD: /usr/local/sbin/ntrk-exec" | tee -a /etc/sudoers
-#fi
-"""
