@@ -21,6 +21,10 @@ body {
   background: url("../svg/background_circles.svg") no-repeat center center fixed;
   background-size: cover;
 }
+*:active,                                        /*Prevent black border in Chrome*/
+*:focus {
+  outline: none;
+}
 a:link,
 a:visited,
 a:hover {
