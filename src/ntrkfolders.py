@@ -25,15 +25,14 @@ class FolderList:
 
             self.__find_unix_webdir()                      #Get webserver location
 
-            #FolderList.accesslog = '/var/log/ntrk-admin.log' DEPRECATED
             FolderList.main_blocklist = '/etc/dnsmasq.d/notrack.list'
             FolderList.temp_blocklist = f'{FolderList.tempdir}/notracktemp.list'
             FolderList.dnslists = '/etc/dnsmasq.d/'
             FolderList.blacklist = f'{FolderList.webconfigdir}/blacklist.txt'
             FolderList.whitelist = f'{FolderList.webconfigdir}/whitelist.txt'
             FolderList.tldist = f'{FolderList.webconfigdir}/tldlist.txt'
-            FolderList.tld_blacklist = '/etc/notrack/domain-blacklist.txt'
-            FolderList.tld_whitelist = '/etc/notrack/domain-whitelist.txt'
+            #FolderList.tld_blacklist = '/etc/notrack/domain-blacklist.txt'
+            #FolderList.tld_whitelist = '/etc/notrack/domain-whitelist.txt'
             FolderList.tld_csv = f'{FolderList.webdir}/include/tld.csv'
 
             #Output Config Files
@@ -46,9 +45,11 @@ class FolderList:
         """
         Find UNIX webdir
         """
-        if os.path.isdir('/var/www/html/notrack/admin'):   #Optional location for notrack
+        #1. Optional location for NoTrack
+        if os.path.isdir('/var/www/html/notrack/admin'):
             FolderList.webconfigdir = '/var/www/html/notrack/admin/settings'
             FolderList.webdir = '/var/www/html/notrack/admin'
+        #2. Default location for NoTrack
         elif os.path.isdir('/var/www/html/admin'):
             FolderList.webconfigdir = '/var/www/html/admin/settings'
             FolderList.webdir = '/var/www/html/admin'
