@@ -13,10 +13,10 @@ import sys
 import time
 
 #Local imports
+import folders
 from blocklists import *
 from config import NoTrackConfig
 from host import Host
-from ntrkfolders import FolderList
 from ntrkshared import *
 from ntrkmariadb import DBWrapper
 from ntrkpause import *
@@ -45,13 +45,12 @@ class BlockParser:
         self.__blocktldset = set()                         #TLDs blocked
         self.__whiteset = set()                            #Domains in whitelist
 
-        self.__folders = FolderList()
         self.__services = Services()                       #Declare service class
         self.__dbwrapper = DBWrapper()                     #Declare MariaDB Wrapper
 
         #Fill in users blacklist and tld list locations
-        blocklistconf['bl_blacklist'][1] = self.__folders.blacklist
-        blocklistconf['bl_tld'][1] = self.__folders.tldist
+        blocklistconf['bl_blacklist'][1] = folders.blacklist
+        blocklistconf['bl_tld'][1] = folders.tldist
 
         #Fill in __dnsserver_blacklist and __dnsserver_whitelist based on host IP
         self.__get_hostdetails(dns_blockip)
@@ -95,9 +94,9 @@ class BlockParser:
         with ZipFile(sourcezip) as zipobj:
             for compressedfile in zipobj.namelist():
                 if compressedfile.endswith('.txt'):
-                    zipobj.extract(compressedfile, f'{self.__folders.tempdir}/')
+                    zipobj.extract(compressedfile, f'{folders.tempdir}/')
                     print(f'Extracting {compressedfile}')
-                    move_file(f'{self.__folders.tempdir}/{compressedfile}', destination)
+                    move_file(f'{folders.tempdir}/{compressedfile}', destination)
 
 
     def __add_domain(self, subdomain, comment, source):
@@ -399,11 +398,11 @@ class BlockParser:
 
         print('Processing whitelist:')
 
-        filelines = load_file(self.__folders.whitelist)    #Load White list
+        filelines = load_file(folders.whitelist)    #Load White list
 
         if filelines == None:
             print('Nothing in whitelist')
-            delete_file(self.__folders.dnslists + 'whitelist.list')
+            delete(folders.dnslists + 'whitelist.list')
             return
 
         for line in filelines:                             #Process each line
@@ -427,7 +426,7 @@ class BlockParser:
             self.__dbwrapper.blocklist_insertdata(sqldata)
         else:
             print('Nothing in whitelist')
-            delete_file(self.__folders.dnslists + 'whitelist.list')
+            delete(folders.dnslists + 'whitelist.list')
         print()
 
 
@@ -447,11 +446,11 @@ class BlockParser:
 
         if len(filelines) > 0:                         #Any domains in whitelist?
             print(f'{len(filelines)} domains added to whitelist in order avoid block from TLD')
-            save_file(filelines, self.__folders.dnslists + 'whitelist.list')
+            save_file(filelines, folders.dnslists + 'whitelist.list')
 
         else:
             print('No domains require whitelisting')
-            delete_file(self.__folders.dnslists + 'whitelist.list')
+            delete(folders.dnslists + 'whitelist.list')
 
         self.__whiteset.clear()                            #self.__whiteset no longer required
         print()
@@ -501,7 +500,7 @@ class BlockParser:
         #Prepare for writing downloaded file to temp folder
         if url.endswith('zip'):                            #Check file extension
             extension = 'zip'
-            outputfile = f'{self.__folders.tempdir}/{listname}.zip'
+            outputfile = f'{folders.tempdir}/{listname}.zip'
 
         else:                                              #Other - Assume txt for output
             extension = 'txt'
@@ -546,7 +545,7 @@ class BlockParser:
 
             #Is this a downloadable file or locally stored?
             if blurl.startswith('http') or blurl.startswith('ftp'):
-                blfilename = f'{self.__folders.tempdir}/{blname}.txt' #Download to temp folder
+                blfilename = f'{folders.tempdir}/{blname}.txt' #Download to temp folder
                 if self.__check_file_age(blfilename):                 #Does file need freshening?
                     self.__download_list(blurl, blname, blfilename)
 
@@ -606,7 +605,7 @@ class BlockParser:
             #Is this a downloadable file or locally stored?
             if blurl.startswith('http') or blurl.startswith('ftp'):
                 #Download to temp folder with loop position in file name
-                blfilename = f'{self.__folders.tempdir}/{blname}.txt'
+                blfilename = f'{folders.tempdir}/{blname}.txt'
                 if self.__check_file_age(blfilename):      #Does file need freshening?
                     self.__download_list(blurl, blname, blfilename)
 
@@ -658,7 +657,7 @@ class BlockParser:
         print(f'Further deduplicated {self.__dedupcount} domains')
         print(f'Final number of domains in blocklist: {len(dns_blacklist)}')
 
-        save_file(dns_blacklist, self.__folders.dnslists + 'notrack.list')
+        save_file(dns_blacklist, folders.dnslists + 'notrack.list')
         self.__dbwrapper.blocklist_insertdata(sqldata)
 
 
@@ -687,7 +686,7 @@ class BlockParser:
         """
         Move blocklist to temp folder
         """
-        if move_file(self.__folders.main_blocklist, self.__folders.temp_blocklist):
+        if move_file(folders.main_blocklist, folders.temp_blocklist):
             print('Moving blocklist to temp folder')
         else:
             print('Blocklist missing')
@@ -699,7 +698,7 @@ class BlockParser:
         """
         Move temp blocklist back to DNS config folder
         """
-        if move_file(self.__folders.temp_blocklist, self.__folders.main_blocklist):
+        if move_file(folders.temp_blocklist, folders.main_blocklist):
             print('Moving temp blocklist back')
             self.__services.restart_dnsserver()
 
@@ -714,7 +713,7 @@ class BlockParser:
         blconfig = ''                                      #Blocklist Config File
         filelines = list()
 
-        blconfig = f'{self.__folders.webconfigdir}/bl.php'
+        blconfig = f'{folders.webconfigdir}/bl.php'
 
         print()
         print('Loading blocklist config:')

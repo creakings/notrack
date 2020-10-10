@@ -14,11 +14,11 @@ import signal
 import sys
 
 #Local imports
+import folders
 from analytics import NoTrackAnalytics
 from blockparser import BlockParser
 from config import NoTrackConfig
 from logparser import NoTrackParser
-from ntrkfolders import FolderList
 from ntrkservices import Services
 from statusconsts import *
 
@@ -31,7 +31,6 @@ endloop = False
 
 ntrkparser = NoTrackParser()
 ntrkanalytics = NoTrackAnalytics()
-folders = FolderList()
 config = NoTrackConfig()
 
 def blocklist_update():

@@ -13,8 +13,8 @@ import sys
 import time
 
 #Local imports
+import folders
 from inputvalidation import *
-from ntrkfolders import FolderList
 from ntrkshared import *
 from statusconsts import *
 
@@ -33,7 +33,6 @@ class NoTrackConfig:
         """
         Assign default values for all NoTrack config values required for Python scripts
         """
-        self.__folders = FolderList()
 
         #DHCP Settings
         self.__config = {
@@ -74,12 +73,12 @@ class NoTrackConfig:
         }
 
         self.__config_files = {                            #Actual config filenames
-            'bl.php' : f'{self.__folders.webconfigdir}/bl.php',
-            'server.php' : f'{self.__folders.webconfigdir}/server.php',
-            'status.php' : f'{self.__folders.webconfigdir}/status.php',
-            'blacklist.txt' : f'{self.__folders.webconfigdir}/blacklist.txt',
-            'whitelist.txt' : f'{self.__folders.webconfigdir}/whitelist.txt',
-            'tldlist.txt' : f'{self.__folders.webconfigdir}/tldlist.txt',
+            'bl.php' : f'{folders.webconfigdir}/bl.php',
+            'server.php' : f'{folders.webconfigdir}/server.php',
+            'status.php' : f'{folders.webconfigdir}/status.php',
+            'blacklist.txt' : f'{folders.webconfigdir}/blacklist.txt',
+            'whitelist.txt' : f'{folders.webconfigdir}/whitelist.txt',
+            'tldlist.txt' : f'{folders.webconfigdir}/tldlist.txt',
         }
 
         self.__config_mtimes = {                           #Config Last modified times
@@ -233,7 +232,7 @@ class NoTrackConfig:
 
         #If dhcp is disabled, then delete dhcp.conf file
         if self.__config['dhcp_enabled'] == '0':
-            delete_file(self.__folders.dhcpconf)
+            delete_file(folders.dhcpconf)
             return
 
         print('Saving dhcp.conf')
@@ -251,7 +250,7 @@ class NoTrackConfig:
             filelines.append(f"#{self.__dhcp_hosts[sysip][1]},{self.__dhcp_hosts[sysip][2]}\n")
             filelines.append(f"dhcp-host={self.__dhcp_hosts[sysip][0]},{sysip}\n")
 
-        save_file(filelines, self.__folders.dhcpconf)
+        save_file(filelines, folders.dhcpconf)
 
 
     def save_localhosts(self):
@@ -266,7 +265,7 @@ class NoTrackConfig:
         for sysip in self.__dhcp_hosts:                    #Add all localhosts
             filelines.append(f"{sysip}\t{self.__dhcp_hosts[sysip][1]}\n")
 
-        save_file(filelines, self.__folders.localhosts)
+        save_file(filelines, folders.localhosts)
 
 
     def save_serverconf(self):
@@ -285,7 +284,7 @@ class NoTrackConfig:
         if self.__config['dns_listenport'] != '53':        #Only add a non-standard port
             filelines.append(f"port={self.__config['dns_listenport']}\n")
 
-        save_file(filelines, self.__folders.serverconf)
+        save_file(filelines, folders.serverconf)
 
 
 def main():
