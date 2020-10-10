@@ -763,13 +763,13 @@ function setup_webadmin() {
   local phpinfo=""
   local phpver=""
 
-  echo
   echo "Copying webadmin files to $WEB_FOLDER"
 
   copy "$INSTALL_LOCATION/admin" "$WEB_FOLDER/admin"
   copy "$INSTALL_LOCATION/sink" "$WEB_FOLDER/sink"
   echo "$WEB_USER taking over $WEB_FOLDER"
   sudo chown "$WEB_USER":"$WEB_USER" -hR "$WEB_FOLDER"
+  echo
 }
 
 #######################################
