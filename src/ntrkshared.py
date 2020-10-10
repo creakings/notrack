@@ -1,89 +1,59 @@
 #NoTrack Shared Functions
 
+#Standard imports
+import logging
 import os
 import shutil
 import sys
 import time
 
+#Create logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 #Constants
-VERSION = '0.9.5'
-
-
-def check_module(mod):
-    """ Check Module Exists
-    Checks specified module exists
-
-    Parameters:
-        mod (str): Module to check
-    Returns:
-        True - Module exists
-        False - Module not installed
-    """
-    import importlib.util
-
-    spec = importlib.util.find_spec(mod)
-
-    if spec is None:
-        print('Check_module: Error - %s not found' % mod)
-        return False
-    else:
-        #print('Check_module: %s can be imported' % mod)
-        return True
-
+VERSION = '0.9.4'
 
 def check_root():
     """
     Check script is being run as root
     """
     if os.geteuid() != 0:
-        print('This script must be run as root :-(', file=sys.stderr)
+        logger.error('This script must be run as root :-(')
         sys.exit(2)
 
 
-def delete_file(source):
+def delete(source):
     """
-    Delete a File
+    Delete a File or Folder
 
     Parameters:
-        source (str): File to delete
+        source (str): File or Folder to delete
     Returns:
         True on success, False on failure or not needed
     """
-    if not os.path.isfile(source):                         #Check file exists
+    if os.path.isdir(source):                              #Check if source is a folder
+        print(f'Deleting folder: {source}')
+        try:                                               #Attempt to delete folder
+            shutil.rmtree(source, ignore_errors=True)
+        except:
+            logger.error(f'Error unable to delete {source}')
+            logger.error(e)
+            return False
+
+    elif os.path.isfile(source):                           #Check if source is a file
+        print(f'Deleting file: {source}')
+        try:                                               #Attempt to delete file
+            os.remove(source)
+        except OSError as e:
+            logger.error(f'Error unable to delete {source}')
+            logger.error(e)
+            return False
+
+    else:                                                  #Nothing found
         return False
 
-    print('Deleting old file', source)
-    try:                                                   #Attempt to delete file
-        os.remove(source)
-    except OSError as e:
-        print('Delete_file: Error unable to delete', source)
-        print(e)
-        return False
-
-    return True
-
-
-def delete_folder(source):
-    """
-    Delete a Folder
-
-    Parameters:
-        source (str): Folder to delete
-    Returns:
-        True on success, False on failure or not needed
-    """
-    if not os.path.isdir(source):                          #Check folder exists
-        return False
-
-    print('Deleting old folder', source)
-    try:                                                   #Attempt to delete file
-        shutil.rmtree(source, ignore_errors=True)
-    except:
-        print('Delete_folder: Error unable to delete', source)
-        #print(e)
-        return False
-
-    return True
+    return True                                            #Success
 
 
 def copy_file(source, destination):
@@ -140,6 +110,46 @@ def move_file(source, destination, permissions=0):
     else:
         if permissions != 0:
             os.chmod(destination, permissions)
+
+    return True
+
+
+def get_owner(src):
+    """
+    Get file / folder ownership details
+
+    Parameters:
+        src (str): Source File or Folder
+    Returns:
+        statinfo class, use st_uid and st_gid for user / group ownership
+    """
+    if not os.path.isfile(src) and not os.path.isdir(src):
+        logger.error(f'Get_Owner: Error {src} is missing')
+        return None
+
+    return os.stat(src)
+
+
+def set_owner(src, uid, gid):
+    """
+    Set file / folder ownership details
+
+    Parameters:
+        src (str): Source File or Folder
+        uid (int): User ID
+        gid (int): Group ID
+    Returns:
+        True on success, False on failure
+    """
+    if not os.path.isfile(src) and not os.path.isdir(src):
+        logger.error(f'Set_Owner: Error {src} is missing')
+        return None
+
+    try:                                               #Attempt to delete file
+        os.chown(src, uid, gid)
+    except:
+        logger.error(f'Error unable to change ownership of {src}')
+        return False
 
     return True
 
