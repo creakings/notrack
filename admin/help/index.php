@@ -1,8 +1,8 @@
 <?php
-require('./include/global-vars.php');
-require('./include/global-functions.php');
-require('./include/config.php');
-require('./include/menu.php');
+require('../include/global-vars.php');
+require('../include/global-functions.php');
+require('../include/config.php');
+require('../include/menu.php');
 
 ensure_active_session();
 ?>
@@ -10,18 +10,18 @@ ensure_active_session();
 <html>
 <head>
   <meta charset="UTF-8">
-  <link href="./css/master.css" rel="stylesheet" type="text/css">  
-  <link rel="icon" type="image/png" href="./favicon.png">
-  <script src="./include/menu.js"></script>
+  <link href="../css/master.css" rel="stylesheet" type="text/css">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <script src="../include/menu.js"></script>
   <title>NoTrack Help</title>
 </head>
 
 <body>
 <?php
 //-------------------------------------------------------------------
-function LoadHelpPage($Page) {  
-  if (file_exists('./help/'.$Page.'.html')) {
-    echo file_get_contents('./help/'.$Page.'.html');
+function LoadHelpPage($Page) {
+  if (file_exists($Page.'.html')) {
+    echo file_get_contents($Page.'.html');
   }
   else {
     echo 'Error: File not found'.PHP_EOL;

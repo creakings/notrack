@@ -1,8 +1,8 @@
 <?php
-require('./include/global-vars.php');
-require('./include/global-functions.php');
-require('./include/config.php');
-require('./include/menu.php');
+require('../include/global-vars.php');
+require('../include/global-functions.php');
+require('../include/config.php');
+require('../include/menu.php');
 
 ensure_active_session();
 
@@ -12,12 +12,12 @@ ensure_active_session();
 <html>
 <head>
   <meta charset="UTF-8">
-  <link href="./css/master.css" rel="stylesheet" type="text/css">
+  <link href="../css/master.css" rel="stylesheet" type="text/css">
   <link rel="icon" type="image/png" href="./favicon.png">
-  <script src="./include/config.js"></script>
-  <script src="./include/menu.js"></script>
+  <script src="../include/config.js"></script>
+  <script src="../include/menu.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=0.8">
-  <title>NoTrack - Security</title>  
+  <title>NoTrack - Security</title>
 </head>
 
 <body>
