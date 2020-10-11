@@ -56,7 +56,7 @@ def delete(source):
     return True                                            #Success
 
 
-def copy_file(source, destination):
+def copy(src, dest):
     """
     Copy a File or Folder from source to destination
 
@@ -67,16 +67,25 @@ def copy_file(source, destination):
         True on success, False on failure
     """
 
-    #Check source file/folder exists
-    if not os.path.isfile(source) and not os.path.isdir(source):
-        print('Copy_file: Error %s is missing' % source)
-        return False
+    if os.path.isdir(src):                                 #Check if source is a folder
+        print(f'Copying folder: {src} to {dest}')
+        try:                                               #Attempt to copy folder
+            shutil.copytree(src, dest, dirs_exist_ok=True)
+        except:
+            logger.error(f'Error unable to copy folder {src} to {dest}')
+            return False
 
-    try:
-        shutil.copy(source, destination)                   #Attempt to copy the file
-    except IOError as e:
-        print('Copy_file: Unable to move %s to %s' % (source, destination))
-        print(e)
+    elif os.path.isfile(src):                              #Check if source is a file
+        print(f'Copying file: {src} to {dest}')
+        try:                                               #Attempt to copy the file
+            shutil.copy(src, dest)
+        except OSError as e:
+            logger.error(f'Error unable to copy file {src} to {dest}')
+            logger.error(e)
+            return False
+
+    else:                                                  #Nothing found
+        logger.error(f'Error unable to copy {src}, source is missing')
         return False
 
     return True
@@ -141,14 +150,23 @@ def set_owner(src, uid, gid):
     Returns:
         True on success, False on failure
     """
-    if not os.path.isfile(src) and not os.path.isdir(src):
-        logger.error(f'Set_Owner: Error {src} is missing')
-        return None
+    if os.path.isfile(src):                                #Single file
+        try:                                               #Attempt to change ownership
+            os.chown(src, uid, gid)
+        except OSError as e:
+            logger.error(f'Error unable to change ownership of {src}')
+            logger.error(e)
+            return False
 
-    try:                                               #Attempt to delete file
-        os.chown(src, uid, gid)
-    except:
-        logger.error(f'Error unable to change ownership of {src}')
+    elif os.path.isdir(src):                               #Multiple files / folders
+        for root, dirs, files in os.walk(src):             #Use os.walk to navigate struct
+            os.chown(root, uid, gid)
+            for item in dirs:
+                os.chown(os.path.join(root, item), uid, gid)
+            for item in files:
+                os.chown(os.path.join(root, item), uid, gid)
+    else:
+        logger.error(f'Set_Owner: Error {src} is missing')
         return False
 
     return True
