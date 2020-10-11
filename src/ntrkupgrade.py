@@ -297,7 +297,6 @@ class NoTrackUpgrade():
         copy(f'{self.location}/admin/svg', f'{folders.webdir}/svg')
 
         copy(f'{self.location}/admin/analytics.php', f'{folders.webdir}/analytics.php')
-        copy(f'{self.location}/admin/blocked.php', f'{folders.webdir}/blocked.php')
         copy(f'{self.location}/admin/dhcp.php', f'{folders.webdir}/dhcp.php')
         copy(f'{self.location}/admin/favicon.png', f'{folders.webdir}/favicon.png')
         copy(f'{self.location}/admin/index.php', f'{folders.webdir}/index.php')
