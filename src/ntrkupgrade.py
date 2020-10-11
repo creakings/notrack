@@ -7,7 +7,6 @@
 #Usage       : sudo python3 ntrkupgrade.py
 
 #Standard imports
-from pathlib import Path, PurePath
 import logging
 import os
 import shutil
@@ -17,6 +16,7 @@ import sys
 #Local imports
 import folders
 from ntrkregex import Regex_Version
+from ntrkservices import Services
 from ntrkshared import *
 
 #Create logger
@@ -24,29 +24,21 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-
 class NoTrackUpgrade():
     """
     Class to carry out upgrade of NoTrack
-    Finds where NoTrack is installed
+    Finds where NoTrack is installed based on current working directory
     Finds the username for NoTrack install location
     Downloads latest version of NoTrack either via Git or HTTPS download from Gitlab
-    Checks if Python3 mysql.connector is installed
-    Copies either modern Python3 or legacy Bash script to /usr/local/sbin
-
-
+    Copies new webadmin files to /var/www/html/admin
+    Copies new sink files to /var/www/html/sink
     """
 
     def __init__(self):
 
         #Set folder locations
         self.__REPO = 'https://gitlab.com/quidsup/notrack.git'
-        #self.__REPO = 'https://github.com/quidsup/NoTrack'
         self.__GIT_DOWNLOAD = 'https://gitlab.com/quidsup/notrack/-/archive/master/notrack-master.zip'
-
-        #self.__TEMPDIR = folders.tempdir
-        #self.__WEBCONFDIR = webconfigdir
-
 
         self.__latestversion = ''
         self.location = ''
@@ -56,9 +48,7 @@ class NoTrackUpgrade():
 
         self.__find_notrack()                    #Where has NoTrack been installed?
         self.__find_username()                   #Get username for the install location
-
         self.__find_latest_version()
-        self.__compare_version()
 
 
 
@@ -110,7 +100,7 @@ class NoTrackUpgrade():
         """
 
         #Is bl_notrack.txt available?
-        if not Path(f'{folders.tempdir}/bl_notrack.txt').is_file():
+        if not os.path.isfile(f'{folders.tempdir}/bl_notrack.txt'):
             logger.warning('Temporary copy of NoTrack block list is not available, I don\'t know what the latest version of NoTrack is :-(')
             logger.warning('Either the file is missing due to a system reboot, or NoTrack block list is not enabled')
             return
@@ -126,38 +116,15 @@ class NoTrackUpgrade():
             f.close()                                      #Close bl_notrack.txt
 
 
-    def __compare_version(self):
-        """
-        Compare the current version against the latest version
-        Use integer comparison and remove the dots from the string version
-        """
-        intcurrent = 0
-        intlatest = 0
-
-        intcurrent = int(VERSION.replace('.', ''))
-        intlatest = int(self.__latestversion.replace('.', ''))
-
-        if intcurrent == intlatest:
-            print('Already running latest version of NoTrack')
-            self.__notification_delete()
-        elif intcurrent < intlatest:
-            print(f'New version of NoTrack available {self.__latestversion}')
-            self.__notification_create()
-        else:
-            print('Latest version of NoTrack is earlier than your version, ignoring')
-            self.__notification_delete()
-
-
     def __notification_create(self):
         """
-        Create latestversion.php with the necessary code
+        Create latestversion.php with the necessary php code
         """
         latestversionphp = f'{folders.webconfigdir}/latestversion.php'
 
         with open (latestversionphp, 'w') as f:
             f.write('<?php\n')
-            f.write(f"$latestversion = '{self.__latestversion}';\n")
-            f.write(f"echo $latestversion;\n")
+            f.write(f"$upgradenotifier->latestversion = '{self.__latestversion}';\n")
             f.write('?>\n')
             f.close()                                      #Close latestversion.php
 
@@ -169,6 +136,7 @@ class NoTrackUpgrade():
         """
         Delete latestversion.php
         """
+        print('Deleting upgrade notification')
         delete(f'{folders.webconfigdir}/latestversion.php')
 
 
@@ -250,7 +218,7 @@ class NoTrackUpgrade():
 
         #Download notrack-master.zip
         if not download_file(self.__GIT_DOWNLOAD, temp_dlzip):
-            print('Unable to download from Gitlab', file=sys.stderr)
+            logger.error('Unable to download from Gitlab')
             sys.exit(22)
 
         #Unzip notrack-master to /tmp
@@ -258,7 +226,7 @@ class NoTrackUpgrade():
 
         #Delete old backup of NoTrack and then move current folder to backup
         delete(f'{self.location}-old')      #Delete backup copy
-        copy_file(self.location, f'{self.location}-old')
+        copy(self.location, f'{self.location}-old')
 
         #Delete old contents of NoTrack folder
         delete(f'{self.location}/admin')
@@ -312,18 +280,71 @@ class NoTrackUpgrade():
 
         return True                                        #New version updated at this point
 
+    def __copy_webfiles(self):
+        """
+        Copy new files to admin and sink folders
+        """
+        sinkdir = ''
+        sinkdir = folders.webdir.replace('admin', 'sink', 1)
 
-    #def
+        print('Copying new files to webadmin')
+        copy(f'{self.location}/admin/config', f'{folders.webdir}/config')
+        copy(f'{self.location}/admin/css', f'{folders.webdir}/css')
+        copy(f'{self.location}/admin/flags', f'{folders.webdir}/flags')
+        copy(f'{self.location}/admin/help', f'{folders.webdir}/help')
+        copy(f'{self.location}/admin/images', f'{folders.webdir}/images')
+        copy(f'{self.location}/admin/include', f'{folders.webdir}/include')
+        copy(f'{self.location}/admin/svg', f'{folders.webdir}/svg')
+
+        copy(f'{self.location}/admin/analytics.php', f'{folders.webdir}/analytics.php')
+        copy(f'{self.location}/admin/blocked.php', f'{folders.webdir}/blocked.php')
+        copy(f'{self.location}/admin/dhcp.php', f'{folders.webdir}/dhcp.php')
+        copy(f'{self.location}/admin/favicon.png', f'{folders.webdir}/favicon.png')
+        copy(f'{self.location}/admin/index.php', f'{folders.webdir}/index.php')
+        copy(f'{self.location}/admin/investigate.php', f'{folders.webdir}/investigate.php')
+        copy(f'{self.location}/admin/live.php', f'{folders.webdir}/live.php')
+        copy(f'{self.location}/admin/login.php', f'{folders.webdir}/login.php')
+        copy(f'{self.location}/admin/logout.php', f'{folders.webdir}/logout.php')
+        copy(f'{self.location}/admin/queries.php', f'{folders.webdir}/queries.php')
+        copy(f'{self.location}/admin/upgrade.php', f'{folders.webdir}/upgrade.php')
+        set_owner(folders.webdir, self.__webstat.st_uid, self.__webstat.st_gid)
+
+        print('Copying sink files')
+        copy(f'{self.location}/sink', sinkdir)
+        set_owner(sinkdir, self.__webstat.st_uid, self.__webstat.st_gid)
+
+
+    def is_upgrade_available(self):
+        """
+        Compare the current version against the latest version
+        Use integer comparison and remove the dots from the string version
+        """
+        intcurrent = 0
+        intlatest = 0
+
+        intcurrent = int(VERSION.replace('.', ''))
+        intlatest = int(self.__latestversion.replace('.', ''))
+
+        if intlatest == intcurrent:                        #Equal to Gitlab version1
+            print('Already running latest version of NoTrack')
+            self.__notification_delete()
+            return False
+        elif intlatest > intcurrent:                       #Behind Gitlab version
+            print(f'New version of NoTrack available {self.__latestversion}')
+            self.__notification_create()
+            return True
+        else:                                              #Ahead of Gitlab version
+            print('Latest version of NoTrack is earlier than your version, ignoring')
+            self.__notification_delete()
+            return False
 
 
     def do_upgrade(self):
         """
         Do Upgrade
         1. Download latest updates
-        2. Check if mysql module is available
-        3a. If it is install Python3 version of NoTrack
-        3b. Otherwise fallback to using the legacy Bash version
-        4. Reset latest version
+        2. Copy admin and sink files
+        3. Delete notification of new version
         """
 
         print('Upgrading NoTrack')
@@ -334,37 +355,24 @@ class NoTrackUpgrade():
                 return
 
         #else:
-        #    self.__download_from_git()
+        #    self.__download_from_git() TODO
 
         self.__copy_webfiles()
-
         self.__notification_delete()
 
-
-    def get_latestversion(self):
-        """
-        Returns the latest version
-        Will also update PHP settings
-
-        Returns:
-            True - New version available
-            False - Running current version
-        """
-        if self.__latestversion == '':                     #Is latest version known?
-            self.__check_for_upgrade()                     #Read bl_notrack.txt
-
-        return self.__update_latest_version()              #Update PHP settings
 
 
 def main():
     print('NoTrack Upgrader')
+    services = Services()                                  #Declare service class
     ntrkupgrade = NoTrackUpgrade()
 
+    check_root()
+    ntrkupgrade.is_upgrade_available()
+    ntrkupgrade.do_upgrade()
 
-    #check_root()
-
-    #ntrkupgrade.get_latestversion()
-    #ntrkupgrade.do_upgrade()
+    print('Restarting NoTrack...')
+    services.restart_notrack()
 
     print('NoTrack upgrade complete :-)')
 
