@@ -3,6 +3,7 @@ require('./include/global-vars.php');
 require('./include/global-functions.php');
 require('./include/mysqlidb.php');
 require('./include/config.php');
+require('./include/upgradenotifier.php');
 require('./include/menu.php');
 
 ensure_active_session();
@@ -247,9 +248,9 @@ function count_queries() {
  *    None
  */
 function show_latestversion() {
-  global $config;
+  global $upgradenotifier;
 
-  if (($config->get_latestversion() != VERSION) && (compare_version($config->get_latestversion()))) {
+  if ($upgradenotifier->is_upgrade_available()) {
     echo '<div class="alertupgrade">'.PHP_EOL;
     echo 'There is a newer version available - <a href="./upgrade.php">Update Now</a>'.PHP_EOL;
     echo '</div>';
@@ -264,7 +265,6 @@ draw_sidemenu();
 echo '<div id="main">';
 
 count_queries();
-load_latestversion();
 show_latestversion();
 
 echo '<div class="home-nav-container">';
