@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 #Constants
-VERSION = '0.9.4'
+VERSION = '20.10'
 
 def check_root():
     """
