@@ -88,40 +88,6 @@ function is_active_session() {
 
 
 /********************************************************************
- *  Compare Version possibly DEPRECATED
- *    1. Split strings by '.'
- *    2. Combine back together and multiply with Units array
- *    e.g 1.0 - 1x10000 + 0x100 = 10,000
- *    e.g 0.8.0 - 0x10000 + 8x100 + 0x1 = 800
- *    e.g 0.7.10 - 0x10000 + 7x100 + 10x1 = 710
- *  Params:
- *    Version
- *  Return:
- *    true if latestversion >= currentversion, or false if latestversion < currentversion
- */
-function compare_version($latestversion) {
-  //If LatestVersion is less than Current Version then function returns false
-  
-  $numversion = 0;
-  $numlatest = 0;
-  $units = array(10000,100,1);
-  
-  $splitversion = explode('.', VERSION);
-  $splitlatest = explode('.', $latestversion);
-  
-  for ($i = 0; $i < count($splitversion); $i++) {
-    $numversion += ($units[$i] * intval($splitversion[$i]));
-  }
-  for ($i = 0; $i < count($splitlatest); $i++) {
-    $numlatest += ($units[$i] * intval($splitlatest[$i]));
-  }
-  
-  if ($numlatest < $numversion) return false;
-  
-  return true;
-}
-
-/********************************************************************
  *  Count rows in table
  *
  *  Params:
@@ -690,28 +656,6 @@ function piechart($labels, $data, $cx, $cy, $radius, $colours) {
   }
 
   return true;
-}
-
-
-/********************************************************************
- *  Load latest version from settings folder
- *  Fallback to config->settings if the php file is missing
- *
- *  Params:
- *    None
- *  Return:
- *    true - latestversion.php loaded successfully
- *    false - latestversion.php missing
- */
-function load_latestversion() {
-  global $config;
-  if (file_exists('./settings/latestversion.php')) {       //Attempt to load latestversion
-    include_once './settings/latestversion.php';
-    return true;
-  }
-  else {
-    return false;
-  }
 }
 
 
