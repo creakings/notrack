@@ -595,7 +595,7 @@ function setup_localhosts() {
 
   if [[ -n $HOSTNAME ]]; then                              #Has a hostname been found?
     echo "Setting up your /etc/localhosts.list for Local Hosts"
-    echo -e "127.0.0.1\t$HOSTNAME" | sudo tee -a "$localhostslis" &> /dev/null
+    echo -e "127.0.0.1\t$HOSTNAME" | sudo tee -a "$localhostslist" &> /dev/null
   fi
 }
 
@@ -637,7 +637,6 @@ function setup_dnsmasq() {
   echo "listen-address=$LISTENIP" | sudo tee -a "$serversconf" &> /dev/null
 
   service_start "dnsmasq"
-  service_restart "dnsmasq"
 
   echo "Setup of Dnsmasq complete"
   echo "========================================================="
@@ -837,6 +836,9 @@ function show_finish() {
   echo "Post Install Checklist:"
   echo -e "\t\u2022 Secure MariaDB Installation"
   echo -e "\t    Run: /usr/bin/mysql_secure_installation"
+  echo
+  echo -e "\t\u2022 Reboot System"
+  echo -e "\t    PHP and Nginx services don't always restart cleanly"
   echo
   echo -e "\t\u2022 Enable DHCP"
   echo -e "\t    http://$HOSTNAME/dhcp"
