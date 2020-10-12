@@ -9,7 +9,8 @@
 # User Configerable Settings
 #######################################
 INSTALL_LOCATION=""                              #define custom installation path
-NOTRACK_REPO="https://github.com/quidsup/notrack.git"
+#NOTRACK_REPO="https://github.com/quidsup/notrack.git"
+NOTRACK_REPO="https://gitlab.com/quidsup/notrack.git"
 HOSTNAME=""
 NETWORK_DEVICE=""
 WEB_USER=""
