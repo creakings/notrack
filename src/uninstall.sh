@@ -8,8 +8,6 @@
 #######################################
 # User Configerable Settings
 #######################################
-readonly FOLDER_SBIN="/usr/local/sbin"                     #User configurable
-readonly FOLDER_ETC="/etc"                                 #User configurable
 
 
 #######################################
@@ -152,7 +150,7 @@ delete_folder() {
 function find_notrack() {
   local homefolders=""
 
-  if [ -e "$(pwd)/notrack.sh" ]; then                      #Check current folder
+  if [ -e "$(pwd)/notrackd.py" ]; then                     #Check current folder
     INSTALL_LOCATION="$(pwd)"
     return 1
   fi
@@ -202,17 +200,14 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
   exit 1
 fi
 
-
-service_stop dnsmasq
-service_stop lighttpd
+#service_stop dnsmasq
+service_stop nginx
+service_stop notrack
 echo
 
-echo "Deleting Symlinks for Web Folders"
-echo "Deleting Sink page"
-delete_file "/var/www/html/sink/index.html"
+echo "Deleting Web Folders"
+delete_folder "/var/www/html/admin"
 delete_folder "/var/www/html/sink"
-echo "Deleting Admin symlink"
-delete_file "/var/www/html/admin"
 echo
 
 echo "Restoring Configuration files"
@@ -224,28 +219,7 @@ echo "Removing Local Hosts file"
 delete_file "/etc/localhosts.list"
 echo
 
-echo "Removing Cron jobs"
-delete_file "/etc/cron.d/ntrk-parse"                       #Remove old symlinks
-delete_file "/etc/cron.daily/notrack"
-delete_file "/etc/cron.hourly/ntrk-analytics"
-echo
-
-echo "Deleting NoTrack scripts"
-delete_file "$FOLDER_SBIN/notrack"
-delete_file "$FOLDER_SBIN/ntrk-analytics"
-delete_file "$FOLDER_SBIN/ntrk-exec"
-delete_file "$FOLDER_SBIN/ntrk-pause"
-delete_file "$FOLDER_SBIN/ntrk-parser"
-echo
-
-echo "Removing root permissions for www-data to launch ntrk-exec"
-sed -i '/www-data/d' /etc/sudoers
-
-echo "Deleting /etc/notrack Folder"
-delete_folder "$FOLDER_ETC/notrack"
-echo 
-
-echo "Deleting Install Folder"
+echo "Deleting NoTrack Folder"
 delete_folder "$INSTALL_LOCATION"
 echo
 
@@ -256,7 +230,7 @@ delete_tables
 
 echo "The following packages will also need removing:"
 echo -e "\tdnsmasq"
-echo -e "\tlighttpd"
+echo -e "\tnginx"
 echo -e "\tmariadb-server"
 echo -e "\tphp"
 echo -e "\tphp-cgi"

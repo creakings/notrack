@@ -1,18 +1,22 @@
-Development future v20.09 - Currently on dev fork:
+v20.10 Released 12 Oct 2020
+IMPORTANT NOTE: THERE IS NO UPGRADE PATH FROM NOTRACK 0.9.x
+NoTrack 20.10 is currently only compatible with Ubuntu
+In order carry out the upgrade, please uninstall your old version of NoTrack using the uninstall.sh script.
+Install new release of NoTrack:
+wget https://gitlab.com/quidsup/notrack/raw/master/install-ubuntu.sh
+bash install-ubuntu.sh
 
-NoTrackD replaces notrack.py ntrk-exec.py
-Admin webserver moved to /var/www/html
-Performance improvements in queries.php as logparser.py now stores the blocklist information in dnslog table (incompatible with NoTrack v0.9.5)
-
-Retired use of ntrk-exec.py and removed sudo dependency
-Removed options menu
-
-Default webserver is now Nginx
-python3-mysql.connector must be installed to use the new Python3 scripts
-sudo apt install python3 python3-mysql.connector
-sudo dnf install python3 mysql-connector-python3
-
-
+Changes:
+*Backend scripts now using Python3
+*SQL Tables restructured
+*Upgrading can only be done manually via terminal
+*Default webserver is now Nginx
+*Issue #185 Dnsmasq config can be modified via web admin
+*Issue #293 Blocklist saving fixed
+*Login screen now auto-throttles attempts based on Username or IP
+*Some styling improvements
+*Performance improvements due to SQL table restructure
+*Removed options menu
 
 *************************************************
 
