@@ -81,7 +81,7 @@ function draw_filter_toolbar() {
 
   echo '<div class="filter-toolbar single-filter-toolbar">'.PHP_EOL;
   echo '<form method="GET">'.PHP_EOL;
-  echo '<input type="text" name="site" class="input-conf" placeholder="Search domain" value="'.$subdomain.'">'.PHP_EOL;
+  echo '<input type="text" name="subdomain" class="input-conf" placeholder="Search domain" value="'.$subdomain.'">'.PHP_EOL;
   echo '<button type="submit">Investigate</button>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
@@ -101,7 +101,7 @@ function draw_searchbox() {
 
   echo '<div id="search-box"><div>'.PHP_EOL;
   echo '<form method="GET">'.PHP_EOL;
-  echo '<input type="text" name="site" placeholder="Search domain" value="'.$subdomain.'">&nbsp;'.PHP_EOL;
+  echo '<input type="text" name="subdomain" placeholder="Search domain" value="'.$subdomain.'">&nbsp;'.PHP_EOL;
   echo '<input type="submit" value="Investigate">'.PHP_EOL;
   echo '</form>'.PHP_EOL;
   echo '</div></div>'.PHP_EOL;
@@ -264,7 +264,7 @@ function show_time_view() {
   }
 
   echo '<table id="query-time-table">'.PHP_EOL;
-  echo '<tr><th>&nbsp</th><th>Time</th><th>System</th><th>Site</th><th></th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp;</th><th>Time</th><th>System</th><th>Domain</th><th></th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
     $dns_request = $row['dns_request'];
@@ -277,13 +277,13 @@ function show_time_view() {
     $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
 
     //Contents of domain cell with more specific url for investigate
-    $domain_cell = "<a href=\"./investigate.php?datetime={$row['log_time']}&amp;site={$dns_request}&amp;sys={$row['sys']}\" target=\"_blank\">{$dns_request}</a>{$clipboard}{$bl_name}";
+    $domain_cell = "<a href=\"./investigate.php?datetime={$row['log_time']}&amp;subdomain={$dns_request}&amp;sys={$row['sys']}\" target=\"_blank\">{$dns_request}</a>{$clipboard}{$bl_name}";
 
     //Highlight row if it matches the subdomain requested
     $row_class = ($subdomain == $row['dns_request']) ? ' class="cyan"' : '';
 
     //Output table row
-    echo "<tr><td><img src=\"./svg/events/{$event}.svg\" alt=\"\"><td>{$row['formatted_time']}</td><td>{$row['sys']}</td><td>{$domain_cell}</td><td>{$popupmenu}</td></tr>".PHP_EOL;
+    echo "<tr{$row_class}><td><img src=\"./svg/events/{$event}.svg\" alt=\"\"><td>{$row['formatted_time']}</td><td>{$row['sys']}</td><td>{$domain_cell}</td><td>{$popupmenu}</td></tr>".PHP_EOL;
   }
 
   echo '</table>'.PHP_EOL;
@@ -331,7 +331,7 @@ function show_whoisdata($whois_date, $whois_record) {
   //draw_systable('Domain Information');
   echo '<h5>Domain Information</h5>'.PHP_EOL;
   echo '<table class="sys-table">'.PHP_EOL;
-  draw_sysrow('Domain Name', $whois_record['domain'].'<span class="investigatelink"><a href="?site='.$subdomain.'&amp;v=raw">View Raw</a></span>');
+  draw_sysrow('Domain Name', $whois_record['domain'].'<span class="investigatelink"><a href="?subdomain='.$subdomain.'&amp;v=raw">View Raw</a></span>');
   //draw_sysrow('Status on NoTrack', $notrack_row);
   draw_sysrow('Created On', substr($whois_record['created_on'], 0, 10));
   draw_sysrow('Updated On', substr($whois_record['updated_on'], 0, 10));
@@ -349,7 +349,7 @@ function show_whoisdata($whois_date, $whois_record) {
   if (isset($whois_record['nameservers'][1])) draw_sysrow('', $whois_record['nameservers']['1']['name']);
   if (isset($whois_record['nameservers'][2])) draw_sysrow('', $whois_record['nameservers']['2']['name']);
   if (isset($whois_record['nameservers'][3])) draw_sysrow('', $whois_record['nameservers']['3']['name']);
-  draw_sysrow('Last Retrieved', $whois_date.'<span class="investigatelink"><a href="?site='.$subdomain.'&amp;update">Get Latest</a></span>');
+  draw_sysrow('Last Retrieved', $whois_date.'<span class="investigatelink"><a href="?subdomain='.$subdomain.'&amp;update">Get Latest</a></span>');
   echo '</table></div>'.PHP_EOL;
 
   /*if (isset($whois_record['registrant_contacts'][0])) {
@@ -509,9 +509,9 @@ if (isset($_GET['datetime'])) {                            //Filter for hh:mm:ss
   }
 }
 
-if (isset($_GET['site'])) {
-  if (filter_domain(trim($_GET['site']))) {
-    $subdomain = trim($_GET['site']);
+if (isset($_GET['subdomain'])) {
+  if (filter_domain(trim($_GET['subdomain']))) {
+    $subdomain = trim($_GET['subdomain']);
     $domain = extract_domain($subdomain);
   }
 }
