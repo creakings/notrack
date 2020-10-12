@@ -39,8 +39,9 @@ else {
 echo '</table>'.PHP_EOL;
 echo '<h3>Note:</h3>';
 echo '<p>Due to security reasons, the ability to upgrade here has been removed. To manually upgrade, please run:<br>'.PHP_EOL;
-echo '<code>sudo python3 ~/notrack/src/ntrkupgrade.py</code> or <br>'.PHP_EOL;
-echo '<code>sudo python3 /opt/notrack/ntrkupgrade.py</code></p>'.PHP_EOL;
+echo '<code>cd ~/notrack/src</code> or <br>'.PHP_EOL;
+echo '<code>cd /opt/notrack/src</code><br>'.PHP_EOL;
+echo '<code>sudo python3 ntrkupgrade.py</code></p>'.PHP_EOL;
 echo '</div>'.PHP_EOL;
 
 
