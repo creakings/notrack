@@ -78,7 +78,7 @@ class WhoisApi {
     }
 
     //Save whois record into whois table
-    $cmd = "INSERT INTO whois (id, save_time, site, record) VALUES ('NULL', '{$this->download_date}', '{$this->domain}', '".$db->real_escape_string($rawdata)."')";
+    $cmd = "INSERT INTO whois (id, save_time, domain, record) VALUES (NULL, '{$this->download_date}', '{$this->domain}', '".$db->real_escape_string($rawdata)."')";
     if ($db->query($cmd) === false) {                      //Any errors running the query?
       echo 'get_whoisdata() Error adding data to whois table: '.$db->error;
     }
@@ -104,7 +104,7 @@ class WhoisApi {
   public function delete_whoisrecord() {
     global $db;
 
-    $query = "SELECT * FROM whois WHERE site = '{$this->domain}'";
+    $query = "SELECT * FROM whois WHERE domain = '{$this->domain}'";
 
     if (!$result = $db->query($query)){
       die('delete_whoisrecord() There was an error running the query: '.$db->error);
@@ -144,7 +144,7 @@ class WhoisApi {
   public function search_whoisrecord() {
     global $db;
 
-    $query = "SELECT * FROM whois WHERE site = '{$this->domain}'";
+    $query = "SELECT * FROM whois WHERE domain = '{$this->domain}'";
 
     if (!$result = $db->query($query)){
       die('search_whoisrecord() There was an error running the query: '.$db->error);
