@@ -292,7 +292,6 @@ class NoTrackUpgrade():
         copy(f'{self.location}/admin/css', f'{folders.webdir}/css')
         copy(f'{self.location}/admin/flags', f'{folders.webdir}/flags')
         copy(f'{self.location}/admin/help', f'{folders.webdir}/help')
-        copy(f'{self.location}/admin/images', f'{folders.webdir}/images')
         copy(f'{self.location}/admin/include', f'{folders.webdir}/include')
         copy(f'{self.location}/admin/svg', f'{folders.webdir}/svg')
 
