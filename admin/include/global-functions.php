@@ -120,7 +120,7 @@ function count_rows($query) {
  *    Filtered domain
  */
 function extract_domain($url) {
-  $regex_domain = '/[\w\-]{1,63}\.(org\.|co\.|com\.|gov\.)?[\w\-]{1,63}$/';
+  $regex_domain = '/[\w\-]{1,63}\.(org\.|co\.|com\.|net\.|gov\.)?[\w\-]{1,63}$/';
 
   if (preg_match($regex_domain, $url, $matches)) {
     return $matches[0];
