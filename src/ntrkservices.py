@@ -106,41 +106,6 @@ class Services:
             return True
 
 
-    def get_webuser(self):
-        """
-        Find the group for webserver
-        Arch uses http, other distros use www-data
-        """
-        import grp
-
-        groupname = ''
-        print (f'Finding service account for {Services.__webserver}')
-
-        try:
-            grp.getgrnam('www-data')
-        except KeyError:
-            pass
-        else:
-            groupname = 'www-data'
-
-        try:
-            grp.getgrnam('lighttpd')
-        except KeyError:
-            pass
-        else:
-            groupname = 'lighttpd'
-
-        try:
-            grp.getgrnam('http')
-        except KeyError:
-            pass
-        else:
-            groupname = 'http'
-
-        print(f'Found account {groupname}')
-        return groupname
-
-
     def get_dnstemplatestr(self, hostname, hostip):
         """
         Gets the necessary string for creating DNS Block list files based on DNS server
