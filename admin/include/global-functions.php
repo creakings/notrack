@@ -130,24 +130,6 @@ function extract_domain($url) {
 
 
 /********************************************************************
- *  Filter Boolean Value possibly DEPRECATED
- *    Checks if value given is 'true' or 'false'
- *  Params:
- *    Value to Check
- *  Return:
- *    true or false
- */
-function filter_bool($value) {
-  if (($value == 'true') || ($value == '1')) {
-    return true;
-  }
-  else {
-    return false;
-  }
-}
-
-
-/********************************************************************
  *  Filter Domain
  *    1. Check Domain length (must be less than 253 chars)
  *    2. Perform regex match to see if domain is in the form of:
@@ -319,20 +301,6 @@ function simplified_time($timestr) {
 
 
 /********************************************************************
- *  Is Active Class
- *    Used to allocate class="active" against li
- *
- *  Params:
- *    Current View, Item
- *  Return:
- *    class="active" or nothing when inactive
- */
-function is_active_class($currentview, $item) {
-  return ($currentview == $item) ? ' class="active"' : '';
-}
-
-
-/********************************************************************
  *  Is Checked
  *    Used to in forms to determine if tickbox should be checked
  *  Params:
@@ -348,22 +316,6 @@ function is_active_class($currentview, $item) {
   return '';
 }
 
-
-/********************************************************************
- *  Is Commented
- *    Used in config files to check if Regex group 1 (start of line) is a # comment
- *  Params:
- *    value
- *  Return:
- *    false if value is #, or true for nothing
- */
- function is_commented($value) {
-  if ($value == '#') {
-    return false;
-  }
-  
-  return true;
-}
 
 /********************************************************************
  *  Pagination
@@ -444,7 +396,7 @@ function pagination($totalrows, $linktext) {
 
 
 /********************************************************************
- *  Check SQL Table Exists
+ *  Check SQL Table Exists DEPRECATED once removed from investigate.php
  *    Uses LIKE to check for table name in order to avoid error message.
  *  Params:
  *    SQL Table
@@ -656,26 +608,5 @@ function piechart($labels, $data, $cx, $cy, $radius, $colours) {
   }
 
   return true;
-}
-
-
-/********************************************************************
- *  Run NoTrack Exec
- *    Checks for a non-zero return and displays output if necessary
- *
- *  Params:
- *    Command
- *  Return:
- *    None
- */
-function notrack_exec($cmd) {
-  exec(NTRK_EXEC.'--'.$cmd, $output, $exitcode);
-
-  if ($exitcode != 0) {
-    echo 'notrack-exec returned exit code '.$exitcode;
-    echo implode('<br>', $output);
-    //var_dump($output);
-    die;
-  }
 }
 ?>
