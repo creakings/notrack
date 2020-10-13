@@ -5,12 +5,18 @@ The back-end SQL databases have been restructured, which offers significant perf
 Unfortunately, these changes mean there is **no direct upgrade** path from the older NoTrack v0.9.x series.  
 
 ## Automated Install
-NoTrack is best used on a Raspberry Pi with [Ubuntu Server](https://ubuntu.com/download/raspberry-pi). Compatibility with other Linux distros will be made available in future versions
+NoTrack is best used on a Raspberry Pi with [Ubuntu Server](https://ubuntu.com/download/raspberry-pi). Compatibility with other Linux distros will be made available in future versions.   
+
+#### Ubuntu / Linux Mint
 ```bash
 wget https://gitlab.com/quidsup/notrack/raw/master/install-ubuntu.sh
 bash install-ubuntu.sh
 ```
-   
+#### Debian / Raspberry Pi OS (formally Raspbian) 
+```bash
+wget https://gitlab.com/quidsup/notrack/raw/master/install-debian.sh
+bash install-debian.sh
+```   
 ## Tracking  
 Tracking is absolutely rife on the Internet, on average 17 cookies are dropped by each website. Although you can block third party cookies, there are also more complex methods of tracking, such as:
 * Tracking Pixels
