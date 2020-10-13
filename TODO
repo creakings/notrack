@@ -1,37 +1,55 @@
-notrackd
-Need a way of making it run as a daemon
+20.11:
+Add DNSSEC
+Add DNS over HTTPS
 
-Select Block Lists
-Make it updateable without having to save changes
-Port options file to /var/www
-blockparser.py needs to be able to read the new config file
+blockparser.py
+*Add annoyance domains blocklist
 
-Custom Block List
-Port options file to /var/www
-config.php requires new functions to save and load the config file
-Might be easier to keep the file as plain list so no drastic changes will be needed to blockparser.py
+config/index.php
+*Add icons for DNS and DHCP menu items
 
-analytics.php
-Add Resolve and delete to popup menu
 
-Config
-*Convert users Block/Allow form to POST
-*Remove PNG icons from Block/Allow page and use SVG-icons instead
-
-investigate.php
-*Add Cisco Umbrella (existing code needs importing into NoTrack)
-
+20.12:
+chart.php
+*Move chart code from globalfunctions.php into chart.php as a new class
+*Fix 0/100% count on pie chart
 
 blockparser.py
 *Add more blocklists
-https://isc.sans.edu/suspicious_domains.html - dshild low, medium, high
-https://firebog.net/ - nice list and layout
+https://firebog.net/
+
+tld.php
+*Add more country specific and punycode top level domains
+*Remove save button (same as blocklists.php)
+
+upgrade.php / notrackd.py
+*Add auto-update option
 
 
-*Create new script to get statistics of number of malicious sites queried.
- Maybe look for unusual patterns in high / low number of sites queried.
+21.01:
+tld.php
+*Add severity searcher
 
-*Login page
-Keep track of IP's attempting to log in, and throttle exponentially
+investigate.php
+*Add status check for domain (i.e. is it in a certain blocklist)
+*Add Cisco Umbrella API (existing Python class needs porting to PHP)
 
-Add difficult to block trackers as a selection list for user to choose and explain downsides.
+notrack.py
+*Add admin functionality back in, same as notrack.sh used to have
+ (Many of the features are already written, just need to call the functions)
+
+
+21.02:
+analytics.php
+*Add Resolve and delete to popup menu
+
+queries.php
+*Add download button
+
+
+Future:
+analytics.py
+*Look for unusual patterns in high / low number of domains queried.
+
+Config
+*Add difficult to block trackers as a selection list for user to choose and explain downsides.
