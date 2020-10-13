@@ -1,10 +1,7 @@
 v20.10 Released 12 Oct 2020
 IMPORTANT NOTE: THERE IS NO UPGRADE PATH FROM NOTRACK 0.9.x
-NoTrack 20.10 is currently only compatible with Ubuntu
 In order carry out the upgrade, please uninstall your old version of NoTrack using the uninstall.sh script.
-Install new release of NoTrack:
-wget https://gitlab.com/quidsup/notrack/raw/master/install-ubuntu.sh
-bash install-ubuntu.sh
+Install instructions for NoTrack 20.10: https://gitlab.com/quidsup/notrack/-/blob/master/README.md
 
 Changes:
 *Backend scripts now using Python3
