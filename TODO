@@ -1,1 +1,55 @@
-nginx
+20.11:
+Add DNSSEC
+Add DNS over HTTPS
+
+blockparser.py
+*Add annoyance domains blocklist
+
+config/index.php
+*Add icons for DNS and DHCP menu items
+
+
+20.12:
+chart.php
+*Move chart code from globalfunctions.php into chart.php as a new class
+*Fix 0/100% count on pie chart
+
+blockparser.py
+*Add more blocklists
+https://firebog.net/
+
+tld.php
+*Add more country specific and punycode top level domains
+*Remove save button (same as blocklists.php)
+
+upgrade.php / notrackd.py
+*Add auto-update option
+
+
+21.01:
+tld.php
+*Add severity searcher
+
+investigate.php
+*Add status check for domain (i.e. is it in a certain blocklist)
+*Add Cisco Umbrella API (existing Python class needs porting to PHP)
+
+notrack.py
+*Add admin functionality back in, same as notrack.sh used to have
+ (Many of the features are already written, just need to call the functions)
+
+
+21.02:
+analytics.php
+*Add Resolve and delete to popup menu
+
+queries.php
+*Add download button
+
+
+Future:
+analytics.py
+*Look for unusual patterns in high / low number of domains queried.
+
+Config
+*Add difficult to block trackers as a selection list for user to choose and explain downsides.

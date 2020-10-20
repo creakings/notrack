@@ -1,0 +1,74 @@
+@charset "utf-8";
+/* ==========================================================================
+   Tabbed Items
+   ========================================================================== */
+
+#tabbed {
+  padding: 0.5rem 0.8rem;
+  background-color: #d2d2d2;
+  border: 1px solid #bdbdbd;
+  border-radius: 2px;
+}
+#tabbed > input {
+  display: none;
+}
+#tabbed > label {
+  display: inline-block;
+  margin-left: -4px;
+  padding: 0.4rem 1rem;
+  border: 2px solid #757575;
+  background-color: #fafafa;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.4);
+}
+#tabbed > label:active,
+#tabbed > label:hover {
+  filter: brightness(90%);
+}
+#tabbed > label:active {
+  border: 2px solid #00c2c8;
+}
+#tabbed > label:first-of-type {
+  border-radius: 4px 0 0 4px;
+}
+#tabbed > label:last-of-type {
+  border-radius: 0 4px 4px 0;
+}
+#tabbed > label:not(:last-of-type):not(:active) {
+  border-right: none;
+}
+#tabbed > input:checked + label {
+  background-color: #00c2c8;
+}
+#tabs {
+  margin: 0.5rem -0.8rem -1rem;
+  border-top: 1px solid #bdbdbd;
+  clear: both;
+}
+#tabs > div {
+  display: none;
+  margin: 0 -0.1rem;
+  padding: 0.5rem 0.5rem 0.7rem;
+  background-color: #f7f7f7;
+  opacity: 0;
+  overflow-y: auto;
+  transition: opacity 0.4s;
+  z-index: 0;
+}
+#tabbed input[type="submit"] {
+  display:block;
+  margin: 1.2rem auto 0.5rem;
+}
+
+#tab-nav-1:checked ~ #tabs > div:nth-of-type(1),
+#tab-nav-2:checked ~ #tabs > div:nth-of-type(2),
+#tab-nav-3:checked ~ #tabs > div:nth-of-type(3),
+#tab-nav-4:checked ~ #tabs > div:nth-of-type(4),
+#tab-nav-5:checked ~ #tabs > div:nth-of-type(5),
+#tab-nav-6:checked ~ #tabs > div:nth-of-type(6),
+#tab-nav-7:checked ~ #tabs > div:nth-of-type(7),
+#tab-nav-8:checked ~ #tabs > div:nth-of-type(8) {
+  display: inline-block;
+  opacity: 1;
+  z-index: 1;
+}
+

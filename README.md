@@ -1,32 +1,43 @@
-# Moving to GitLab
-NoTrack blocklists have now been split from this project and moved to GitLab.  
-New URLs are:  
-NoTrack-Blocklist: https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-blocklist.txt  
-NoTrack-Malware: https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-malware.txt  
-   
-   
-# NoTrack
-Tracking is absolutely rife on the Internet, on average 17 cookies are dropped by each website. Although you can block third party cookies, there are also more complex methods of tracking, such as:
- * Tracking Pixels 
- * HTML5 Canvas Fingerprinting 
- * AudioContext Fingerprinting 
- * WebRTC Local IP Discovery  
-  
-99 of the top 100 websites employ one or more of these forms of tracking.
-  
-NoTrack is a network-wide DNS server which blocks Tracking websites from creating cookies or sending tracking pixels. It works sinkholing known tracking and advertising sites to a web server running on the NoTrack device inside your network.
-  
-NoTrack currently works in Debian, Ubuntu, Redhat, and Fedora based Linux Distros.
-You can use it on a Raspberry Pi with a fresh install of [Raspbian Lite](https://www.raspberrypi.org/downloads/raspbian/) to create a low power DNS server, which is more than capable of being used in a home or small office sized network.
-  
-# To Install:  
-Tutorial Guide: https://youtu.be/MHsrdGT5DzE  
-```bash
-wget https://raw.githubusercontent.com/quidsup/notrack/master/install.sh  
-bash install.sh
-```
+# NoTrack 20.10 has been released  
+NoTrack is a [DNS-Sinkhole](https://en.wikipedia.org/wiki/DNS_sinkhole) which protects all devices on your home network from visiting Tracking, Advertising, and Malicious websites.   
+This latest release of NoTrack now uses a Python3 daemon script, which is a security improvement over its predecessor.  
+The back-end SQL databases have been restructured, which offers significant performance improvements to the web admin front-end.  
+Unfortunately, these changes mean there is **no direct upgrade** path from the older NoTrack v0.9.x series.  
 
-Point the DNS IP of all your systems to your NoTrack device.
-Or setup DHCP on your NoTrack device using the instructional YouTube video provided.
+## Automated Install
+NoTrack is best used on a Raspberry Pi with [Ubuntu Server](https://ubuntu.com/download/raspberry-pi). Compatibility with other Linux distros will be made available in future versions.   
+
+#### Ubuntu / Linux Mint
+```bash
+wget https://gitlab.com/quidsup/notrack/raw/master/install-ubuntu.sh
+bash install-ubuntu.sh
+```
+#### Debian / Raspberry Pi OS (formally Raspbian) 
+```bash
+wget https://gitlab.com/quidsup/notrack/raw/master/install-debian.sh
+bash install-debian.sh
+```   
+## Tracking  
+Tracking is absolutely rife on the Internet, on average 17 cookies are dropped by each website. Although you can block third party cookies, there are also more complex methods of tracking, such as:
+* Tracking Pixels
+* HTML5 Canvas Fingerprinting
+* AudioContext Fingerprinting
+* WebRTC Local IP Discovery
+
+99 of the top 100 websites employ one or more of these forms of tracking.   
+[NoTrack-Blocklist](https://gitlab.com/quidsup/notrack-blocklists) is one of the largest DNS blocklists dedicated to blocking access to Tracking sites.
   
-Don't want to use the automated installer, no problem here is a manual [installer guide](https://github.com/quidsup/notrack/wiki/Custom-Install)
+## Features    
+### Web Interface Dashboard   
+At a glance see how many sites are in your blocklist, number of DNS Queries, number of Systems on your Netowork, and volume of traffic over the past 24 hours.  
+As well as links to all the other admin features in the custom built interface.
+![notrackmain](https://gitlab.com/quidsup/notrack/wikis/uploads/57be0de25f7bd55dd4a59d1cc3106885/notrackmain.png)
+   
+### Analytics
+NoTrack analytics will monitor your traffic and provide an Alert when any of your devices attempt to access known malware sites, as well as for sites suspected of being related to tracking, but have not yet been blocked.   
+You have the option of Investigating the traffic further, Whitelisting, or Blacklisting the site. Once completed you can Resolve or Delete the alert.   
+  
+Analytics runs on your system locally. None of your data is ever transmitted.   
+![notrackanalytics](https://gitlab.com/quidsup/notrack/wikis/uploads/c1b4372a5619e8dca800176482ee9276/notrackanalytics.png)
+
+More features in the [NoTrack Wiki](https://gitlab.com/quidsup/notrack/wikis/Features)

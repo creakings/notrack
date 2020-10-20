@@ -10,11 +10,10 @@
  *    None
  */ 
 function draw_systable($title) {
-  echo '<div class="sys-group"><div class="sys-title">'.PHP_EOL;
-  echo '<h5>'.$title.'</h5></div>'.PHP_EOL;
-  echo '<div class="sys-items"><table class="sys-table">'.PHP_EOL;
-  
-  return null;
+  echo '<div class="sys-group">'.PHP_EOL;
+  echo "<h5>{$title}</h5>".PHP_EOL;
+  echo '<table class="sys-table">'.PHP_EOL;
+
 }
 
 
@@ -27,11 +26,22 @@ function draw_systable($title) {
  *    None
  */
 function draw_sysrow($description, $value) {
-  echo '<tr><td>'.$description.': </td><td>'.$value.'</td></tr>'.PHP_EOL;
-  
-  return null;
+  echo "<tr><td>{$description}: </td><td>{$value}</td></tr>".PHP_EOL;
 }
 
+/********************************************************************
+ *  Draw Copy Message
+ *    Div for Domain Copied Message
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function draw_copymsg() {
+  echo '<div id="copymsg">'.PHP_EOL;
+  echo 'Domain copied to clipboard'.PHP_EOL;
+  echo '</div>'.PHP_EOL;
+}
 
 /********************************************************************
  *  Activate Session
@@ -47,17 +57,19 @@ function activate_session() {
 }
 
 function ensure_active_session() {
-  if (is_password_protection_enabled()) {
+  global $config;
+
+  if ($config->is_password_protection_enabled()) {
     session_start();
     if (isset($_SESSION['session_start'])) {
       if (!is_active_session()) {
         $_SESSION['session_expired'] = true;
-        header('Location: ./login.php');
+        header('Location: /admin/login.php');
         exit;
       }
     }
     else {
-      header('Location: ./login.php');
+      header('Location: /admin/login.php');
       exit;
     }
   }
@@ -65,8 +77,8 @@ function ensure_active_session() {
 
 
 function is_active_session() {
-  $session_duration = 1800;    
-  if (isset($_SESSION['session_start'])) {    
+  $session_duration = 1800;
+  if (isset($_SESSION['session_start'])) {
     if ((time() - $_SESSION['session_start']) < $session_duration) {
       return true;
     }
@@ -74,47 +86,6 @@ function is_active_session() {
   return false;
 }
 
-function is_password_protection_enabled() {
-  global $Config;
-  
-  if ($Config['Password'] != '') return true;
-  return false;
-}
-
-
-/********************************************************************
- *  Check Version
- *    1. Split strings by '.'
- *    2. Combine back together and multiply with Units array
- *    e.g 1.0 - 1x10000 + 0x100 = 10,000
- *    e.g 0.8.0 - 0x10000 + 8x100 + 0x1 = 800
- *    e.g 0.7.10 - 0x10000 + 7x100 + 10x1 = 710
- *  Params:
- *    Version
- *  Return:
- *    true if latestversion >= currentversion, or false if latestversion < currentversion
- */
-function check_version($latestversion) {
-  //If LatestVersion is less than Current Version then function returns false
-  
-  $numversion = 0;
-  $numlatest = 0;
-  $units = array(10000,100,1);
-  
-  $splitversion = explode('.', VERSION);
-  $splitlatest = explode('.', $latestversion);
-  
-  for ($i = 0; $i < count($splitversion); $i++) {
-    $numversion += ($units[$i] * intval($splitversion[$i]));
-  }
-  for ($i = 0; $i < count($splitlatest); $i++) {
-    $numlatest += ($units[$i] * intval($splitlatest[$i]));
-  }
-  
-  if ($numlatest < $numversion) return false;
-  
-  return true;
-}
 
 /********************************************************************
  *  Count rows in table
@@ -139,6 +110,7 @@ function count_rows($query) {
   return $rows;
 }
 
+
 /********************************************************************
  *  Extract Domain
  *    Extract domain with optional double-barrelled tld
@@ -148,29 +120,42 @@ function count_rows($query) {
  *    Filtered domain
  */
 function extract_domain($url) {
-  preg_match(REGEX_DOMAIN, $url, $matches);
-  
-  return $matches[0];
+  $regex_domain = '/[\w\-]{1,63}\.(org\.|co\.|com\.|net\.|gov\.)?[\w\-]{1,63}$/';
+
+  if (preg_match($regex_domain, $url, $matches)) {
+    return $matches[0];
+  }
+  return $url;
 }
 
 
-
 /********************************************************************
- *  Filter Boolean Value
- *    Checks if value given is 'true' or 'false'
+ *  Filter Domain
+ *    1. Check Domain length (must be less than 253 chars)
+ *    2. Perform regex match to see if domain is in the form of:
+ *       some-site.com, or some_site.co.uk or .country
+ *
+ *  Regex:
+ *    Match either 1 label and maximum of 251 chars (i.e. a.verylongdomain) or .country
+ *    Maximum length of DNS is 255, but includes two bytes for length
  *  Params:
- *    Value to Check
+ *    Domain to check
  *  Return:
- *    true or false
+ *    True on successful validation
+ *    False on failure
  */
-function filter_bool($value) {
-  if ($value == 'true') {
+function filter_domain($domain) {
+  if (strlen($domain) > 253) {
+    return false;
+  }
+  if (preg_match('/^([\w\-]{1,63}\.[\w\-\.]{1,251}|\.[\w\-]{1,63})$/', $domain)) {
     return true;
   }
   else {
     return false;
   }
 }
+
 
 /********************************************************************
  *  Filter Integer Value
@@ -186,20 +171,68 @@ function filter_integer($value, $min, $max, $defaultvalue=0) {
       return intval($value);
     }
   }
-  
+
   return $defaultvalue;
 }
+
+
+/********************************************************************
+ *  Filter MAC Address
+ *    Checks value is a valid colon-seperated MAC address
+ *  Params:
+ *    String to check
+ *  Return:
+ *    True on success, False on failure
+ */
+function filter_macaddress($str) {
+  if (preg_match('/^([\dA-Fa-f]{2}:){5}[\dA-Fa-f]{2}$/', $str)) {
+    return true;
+  }
+
+  return false;
+}
+
+
+
+/********************************************************************
+ *  Filter String
+ *    Validates a string
+ *
+ *  Params:
+ *    str (str): String to check
+ *    maxlen (int): Maximum length of string
+ *  Return:
+ *    true on acceptable value
+ *    false for unacceptable value
+ */
+function filter_string($str, $maxlen=255) {
+  if (strlen($str) > $maxlen) {                            //Check length of string
+    return false;
+  }
+
+  if (preg_match('/[<>]/', $str)) {                        //Check there are no HTML Tags
+    return false;
+  }
+
+  return true;
+}
+
 
 /********************************************************************
  *  Filter URL
  *    perform regex match to see if url is in the form of some-site.com, or some_site.co.uk
+ *
+ *  Regex:
+ *    Group 1: FTP or HTTP
+ *    Group 2: Domain
+ *    Group 3: URI
  *  Params:
  *    URL to check
  *  Return:
  *    True on success, False on failure
  */
-function filter_url($url) {  
-  if (preg_match('/[\d\w\-\_]\.[\d\w\-\_\.]/', $url) > 0) {
+function filter_url($url) {
+  if (preg_match('/^(ftp|https?):\/\/([\w\-\.]{0,254})(\/[\w\-\.\/]*)?([\w#!:.?+=&%@!\-\/]+)?$/', $url)) {
     return true;
   }
   else {
@@ -231,20 +264,39 @@ function formatnumber($number) {
 
 
 /********************************************************************
- *  Is Active Class
- *    Used to allocate class="active" against li
+ *  Pluralise
+ *
  *  Params:
- *    Current View, Item
+ *    count, text
  *  Return:
- *    class='active' or '' when inactive
+ *    pluralised string
  */
-function is_active_class($currentview, $item) {
-  if ($currentview == $item) {
-    return ' class="active"';
-  }
-  else {
-    return '';
-  }
+function pluralise($count, $text)
+{
+  return $count.(($count == 1) ? (" {$text}") : (" {$text}s"));
+}
+
+/********************************************************************
+ *  Simplified Time
+ *    Returns a simplified time from now - $timestr
+ *
+ *  Params:
+ *    date-time string
+ *  Return:
+ *    A simplified time string
+ */
+function simplified_time($timestr) {
+  $datetime = new DateTime($timestr);
+  $interval = date_create('now')->diff($datetime);
+
+  $suffix = ($interval->invert ? ' ago' : '');
+  if ($interval->y >= 1 ) return pluralise($interval->y, 'year').$suffix;
+  if ($interval->m >= 1 ) return pluralise($interval->m, 'month').$suffix;
+  if ($interval->d > 7) return pluralise(floor($interval->d / 7), 'week').$suffix;
+  if ($interval->d >= 1) return pluralise($interval->d, 'day').$suffix;
+  if ($interval->h >= 1 ) return pluralise($interval->h, 'hour').$suffix;
+  if ($interval->i >= 1 ) return pluralise($interval->i, 'minute').$suffix;
+  return pluralise($interval->s, 'second').$suffix;
 }
 
 
@@ -257,13 +309,13 @@ function is_active_class($currentview, $item) {
  *    checked="checked" or nothing
  */
  function is_checked($value) {
-  if ($value == 1 || $value == true) {
+  if ($value == 1 || $value === true) {
     return ' checked="checked"';
   }
   
   return '';
 }
- 
+
 
 /********************************************************************
  *  Pagination
@@ -289,8 +341,7 @@ function pagination($totalrows, $linktext) {
   if ($totalrows > ROWSPERPAGE) {                     //Is Pagination needed?
     $numpages = ceil($totalrows / ROWSPERPAGE);       //Calculate List Size
     
-    //<div class="sys-group">
-    echo '<div class="float-left pag-nav"><ul>'.PHP_EOL;
+    echo '<div class="pag-nav"><ul>'.PHP_EOL;
   
     if ($page == 1) {                            // [ ] [1]
       echo '<li><span>&nbsp;&nbsp;</span></li>'.PHP_EOL;
@@ -318,8 +369,8 @@ function pagination($totalrows, $linktext) {
       }
       else {
         $endloop = $numpages;                    // [1] [x-2] [x-1] [y] [L]
-      }      
-    }    
+      }
+    }
     
     for ($i = $startloop; $i < $endloop; $i++) { //Loop to draw 3 buttons
       if ($i == $page) {
@@ -337,61 +388,15 @@ function pagination($totalrows, $linktext) {
     else {                                       // [Final] [>]
       echo '<li><a href="?page='.$numpages.'&amp;'.$linktext.'">'.$numpages.'</a></li>'.PHP_EOL;
       echo '<li><a href="?page='.($page+1).'&amp;'.$linktext.'">&#x00BB;</a></li>'.PHP_EOL;
-    }	
+    }
     
-  echo '</ul></div>'.PHP_EOL;
-  //</div>
+  echo '</ul></div>'.PHP_EOL;  
   }
 }
 
 
 /********************************************************************
- *  Save Config
- *    1. Check if Latest Version is less than Current Version
- *    2. Open Temp Config file for writing
- *    3. Loop through Config Array
- *    4. Write all values, except for "Status = Enabled"
- *    5. Close Config File
- *    6. Delete Config Array out of Memcache, in order to force reload
- *    7. Onward process is to Display appropriate config view
- *  Params:
- *    None
- *  Return:
- *    SQL Query string
- */
-function save_config() {
-  global $Config, $mem;
-  
-  $key = '';
-  $value = '';
-  
-  //Prevent wrong version being written to config file if user has just upgraded and old LatestVersion is still stored in Memcache
-  if (check_version($Config['LatestVersion'])) {
-    $Config['LatestVersion'] = VERSION;
-  }
-  
-  $fh = fopen(CONFIGTEMP, 'w');                  //Open temp config for writing
-  
-  foreach ($Config as $key => $value) {          //Loop through Config array
-    if ($key == 'Status') {
-      if ($value != 'Enabled') {
-        fwrite($fh, $key.' = '.$value.PHP_EOL);  //Write Key & Value
-      }
-    }
-    else {
-      fwrite($fh, $key.' = '.$value.PHP_EOL);    //Write Key & Value
-    }
-  }
-  fclose($fh);                                   //Close file
-  
-  $mem->delete('Config');                        //Delete config from Memcache
-  
-  exec(NTRK_EXEC.'--save-conf');
-}
-
-
-/********************************************************************
- *  Check SQL Table Exists
+ *  Check SQL Table Exists DEPRECATED once removed from investigate.php
  *    Uses LIKE to check for table name in order to avoid error message.
  *  Params:
  *    SQL Table
@@ -415,86 +420,6 @@ function table_exists($table) {
 
 
 /********************************************************************
- *  Load Config File
- *    1. Attempt to load Config from Memcache
- *    2. Write DefaultConfig to Config, incase any variables are missing
- *    3. Read Config File
- *    4. Split Line between: (Var = Value)
- *    5. Certain values need filtering to prevent XSS
- *    6. For other values, check if key exists, then replace with new value
- *    7. Setup SearchUrl
- *    8. Write Config to Memcache
- *  Params:
- *    Description, Value
- *  Return:
- *    None
- */
-function load_config() {
-  global $Config, $mem, $DEFAULTCONFIG, $SEARCHENGINELIST, $WHOISLIST;
-  $line = '';
-  $splitline = array();
-  
-  $Config=$mem->get('Config');                   //Load Config array from Memcache
-  if (! empty($Config)) {
-    return null;                                 //Did it load from memory?
-  }
-  
-  $Config = $DEFAULTCONFIG;                      //Firstly Set Default Config
-  
-  if (file_exists(CONFIGFILE)) {                 //Check file exists
-    $fh= fopen(CONFIGFILE, 'r');
-    while (!feof($fh)) {
-      $line = trim(fgets($fh));                  //Read Line of LogFile
-      $splitline = explode('=', $line);
-      if (count($splitline) == 2) {
-        $splitline[0] = trim($splitline[0]);
-        $splitline[1] = trim($splitline[1]);
-        switch (trim($splitline[0])) {
-          case 'Delay':
-            $Config['Delay'] = filter_integer($splitline[1], 0, 3600, 30);
-            break;
-          case 'ParsingTime':
-            $Config['ParsingTime'] = filter_integer($splitline[1], 1, 60, 7);
-            break;            
-          default:
-            if (array_key_exists($splitline[0], $Config)) {
-              $Config[$splitline[0]] = strip_tags($splitline[1]);
-            }
-            break;
-        }
-      }
-    }
-    
-    fclose($fh);
-  }
-  
-  //Set SearchUrl if User hasn't configured a custom string via notrack.conf
-  if ($Config['SearchUrl'] == '') {      
-    if (array_key_exists($Config['Search'], $SEARCHENGINELIST)) {
-      $Config['SearchUrl'] = $SEARCHENGINELIST[$Config['Search']];
-    } 
-    else {
-      $Config['SearchUrl'] = $SEARCHENGINELIST['DuckDuckGo'];       
-    }
-  }
-   
-  //Set WhoIsUrl if User hasn't configured a custom string via notrack.conf
-  if ($Config['WhoIsUrl'] == '') {      
-    if (array_key_exists($Config['WhoIs'], $WHOISLIST)) {
-      $Config['WhoIsUrl'] = $WHOISLIST[$Config['WhoIs']];
-    } 
-    else {
-      $Config['WhoIsUrl'] = $WHOISLIST['Who.is'];       
-    }
-  }
-  
-  $mem->set('Config', $Config, 0, 1200);
-  
-  return null;
-}
-
-
-/********************************************************************
  *  Draw Line Chart
  *    Draws background line chart using SVG
  *    1. Calulate maximum values of input data for $ymax
@@ -508,7 +433,8 @@ function load_config() {
  *  Return:
  *    None
  */
-function linechart($values1, $values2, $xlabels) {  
+function linechart($values1, $values2, $xlabels, $link_labels, $extraparams, $title) {
+  $jump = 0;
   $max_value = 0;
   $ymax = 0;
   $xstep = 0;
@@ -522,9 +448,9 @@ function linechart($values1, $values2, $xlabels) {
   $numvalues = count($values1);
   $values1[] = 0;                                          //Ensure line returns to 0
   $values2[] = 0;                                          //Ensure line returns to 0
-  $xlabels[] = $xlabels[$numvalues-1] + 1;                 //Increment xlables
-  
-  $xstep = 1900 / 24;                                      //Calculate x axis increment
+  $xlabels[] = $xlabels[$numvalues-1];                     //Increment xlables
+
+  $xstep = 1900 / $numvalues;                              //Calculate x axis increment
   if ($max_value < 200) {                                  //Calculate y axis maximum
     $ymax = (ceil($max_value / 10) * 10) + 10;             //Change offset for low values
   }
@@ -534,33 +460,55 @@ function linechart($values1, $values2, $xlabels) {
   else {
     $ymax = ceil($max_value / 1000) * 1000;
   }
-  
+
+  $jump = floor($numvalues / 12);                          //X Axis label and line gap
+
   echo '<div class="linechart-container">'.PHP_EOL;        //Start Chart container
-  echo '<svg width="100%" height="90%" viewbox="0 0 2000 910" class="shadow">'.PHP_EOL;
-  echo '<rect x="1" y="1" width="1998" height="908" rx="5" ry="5" fill-opacity="0.95" fill="#F7F7F7" stroke="#B3B3B3" stroke-width="2px" opacity="1" />'.PHP_EOL;
-    
-  for ($i = 0.25; $i < 1; $i += 0.25) {                    //Draw Y Axis lables and horizontal lines
-    echo '<path class="gridline" d="M100,'.($i*850).' H2000" />'.PHP_EOL;
-    echo '<text class="axistext" x="8" y="'.(18+($i*850)).'">'.formatnumber((1-$i)*$ymax).'</text>'.PHP_EOL;
+  echo '<h2>'.$title.'</h2>';
+  echo '<svg width="100%" height="100%" viewbox="0 0 2000 760">'.PHP_EOL;
+
+  //Axis line rectangle with rounded corners
+  echo '<rect class="axisline" width="1900" height="701" x="100" y="0" rx="5" ry="5" />'.PHP_EOL;
+
+  for ($i = 0.25; $i < 1; $i += 0.25) {                    //Draw Y Axis lables and (horizontal lines)
+    echo '<path class="gridline" d="M100,'.($i*700).' H2000" />'.PHP_EOL;
+    echo '<text class="axistext" x="8" y="'.(18+($i*700)).'">'.formatnumber((1-$i)*$ymax).'</text>'.PHP_EOL;
   }
-  echo '<text x="8" y="855" class="axistext">0</text>';
+  echo '<text x="8" y="705" class="axistext">0</text>';
   echo '<text x="8" y="38" class="axistext">'.formatnumber($ymax).'</text>';
   
   
-  for ($i = 0; $i < $numvalues; $i += 2) {                 //Draw X Axis labels skipping every other value
-    echo '<text x="'.(55+($i * $xstep)).'" y="898" class="axistext">'.$xlabels[$i].':00</text>'.PHP_EOL;
-  }  
-  
-  for ($i = 2; $i < 24; $i += 2) {                         //Verticle Grid lines
-    echo '<path class="gridline" d="M'.(100+($i*$xstep)).',2 V850" />'.PHP_EOL;
+  for ($i = 0; $i < $numvalues; $i += $jump) {             //Draw X Axis and labels (vertical lines)
+    echo '<text x="'.(60+($i * $xstep)).'" y="746" class="axistext">'.$xlabels[$i].'</text>'.PHP_EOL;
+    echo '<path class="gridline" d="M'.(100+($i*$xstep)).',2 V700" />'.PHP_EOL;
   }
   
-  draw_graphline($values1, $xstep, $ymax, '#008CD1');
-  draw_circles($values1, $xstep, $ymax, '#008CD1');
-  draw_graphline($values2, $xstep, $ymax, '#B1244A');
-  draw_circles($values2, $xstep, $ymax, '#B1244A');
+  draw_graphline($values1, $xstep, $ymax, '#00b7ba');
+  draw_graphline($values2, $xstep, $ymax, '#b1244a');
 
-  echo '<path class="axisline" d="M100,0 V850 H2000 " />'; //X and Y Axis line
+  //Draw circles over line points in order to smooth the apperance
+  for ($i = 1; $i < $numvalues; $i++) {
+    $x = 100 + (($i) * $xstep);                            //Calculate X position
+
+    if ($values1[$i] > 0) {                                //$values1[] (Allowed)
+      $y = 700 - (($values1[$i] / $ymax) * 700);           //Calculate Y position of $values1
+      echo '<a href="./queries.php?datetime='.$link_labels[$i].$extraparams.'&amp;groupby=time&amp;sort=ASC&amp;severity=1" target="_blank">'.PHP_EOL;
+      echo '  <circle cx="'.$x.'" cy="'.(700-($values1[$i]/$ymax)*700).'" r="10px" fill="#00b7ba" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px">'.PHP_EOL;
+      echo '    <title>'.$xlabels[$i].' '.$values1[$i].' Allowed</title>'.PHP_EOL;
+      echo '  </circle>'.PHP_EOL;
+      echo '</a>'.PHP_EOL;
+    }
+
+    if ($values2[$i] > 0) {                                //$values2[] (Blocked)
+      $y = 700 - (($values2[$i] / $ymax) * 700);           //Calculate Y position of $values2
+      echo '<a href="./queries.php?datetime='.$link_labels[$i].$extraparams.'&amp;groupby=time&amp;sort=ASC&amp;severity=2" target="_blank">'.PHP_EOL;
+      echo '  <circle cx="'.$x.'" cy="'.(700-($values2[$i]/$ymax)*700).'" r="10px" fill="#b1244a" fill-opacity="1" stroke="#EAEEEE" stroke-width="4px">'.PHP_EOL;
+      echo '    <title>'.$xlabels[$i].' '.$values2[$i].' Blocked</title>'.PHP_EOL;
+      echo '  </circle>'.PHP_EOL;
+      echo '</a>'.PHP_EOL;
+    }
+  }
+  
   echo '</svg>'.PHP_EOL;                                   //End SVG
   echo '</div>'.PHP_EOL;                                   //End Chart container
 
@@ -574,7 +522,7 @@ function linechart($values1, $values2, $xlabels) {
  *  Params:
  *    $values array, x step, y maximum value, line colour
  *  Return:
- *    svg path nodes with bezier curve points
+ *    None
  */
 
 function draw_graphline($values, $xstep, $ymax, $colour) {
@@ -583,99 +531,82 @@ function draw_graphline($values, $xstep, $ymax, $colour) {
   $y = 0;                                                  //Node Y
   $numvalues = count($values);
   
-  $path = "<path d=\"M 100,850 ";                          //Path start point
+  $path = "<path d=\"M 100,700 ";                          //Path start point
   for ($i = 1; $i < $numvalues; $i++) {
     $x = 100 + (($i) * $xstep);
-    $y = 850 - (($values[$i] / $ymax) * 850);
+    $y = 700 - (($values[$i] / $ymax) * 700);
     $path .= "L $x $y";
   }
-  $path .= 'V850 " stroke="'.$colour.'" stroke-width="5px" fill="'.$colour.'" fill-opacity="0.15" />'.PHP_EOL;
-  echo $path;  
+  $path .= 'V700 " stroke="'.$colour.'" stroke-width="5px" fill="'.$colour.'" fill-opacity="0.15" />'.PHP_EOL;
+  echo $path;
 }
 
-
-/********************************************************************
- *  Draw Circle Points
- *    Draws circle shapes where line node points are, in order to reduce sharpness of graph line
- *
- *  Params:
- *    $values array, x step, y maximum value, line colour
- *  Return:
- *    svg path nodes with bezier curve points
- */
-function draw_circles($values, $xstep, $ymax, $colour) {
-  $path = '';
-  $x = 0;                                        //Node X
-  $y = 0;                                        //Node Y
-  $numvalues = count($values);
-    
-  for ($i = 1; $i < $numvalues; $i++) {
-    if ($values[$i] > 0) {
-      $x = 100 + (($i) * $xstep);
-      $y = 850 - (($values[$i] / $ymax) * 850);    
-    
-      echo '<circle cx="'.$x.'" cy="'.(850-($values[$i]/$ymax)*850).'" r="10px" fill="'.$colour.'" fill-opacity="1" stroke="#EAEEEE" stroke-width="5px" />'.PHP_EOL;
-    }    
-  }  
-}
 
 /********************************************************************
  *  Draw Pie Chart
  *    Credit to Branko: http://www.tekstadventure.nl/branko/blog/2008/04/php-generator-for-svg-pie-charts
+ *    Modified by quidsup to write label values and percentages
  *  Params:
- *    aray of values, the centre coordinates x and y, radius of the piechart, colours
+ *    array of labels, array of values, the centre coordinates x and y, radius of the piechart, colours
  *  Return:
- *    svg data for path nodes
+ *    true on success, false on failure
  */
-function piechart($data, $cx, $cy, $radius, $colours) {
-  $chartelem = "";
-  $sum = 0;
+function piechart($labels, $data, $cx, $cy, $radius, $colours) {
+  $chartelem = '';
+  $total = 0;
 
   $max = count($data);
   
-  if (max($data) == 0) return;                             //Prevent divide by zero warning
+  if (max($data) == 0) return false;                       //Prevent divide by zero warning
 
   foreach ($data as $key=>$val) {
-    $sum += $val;
+    $total += $val;
   }
-  $deg = $sum/360;                               // one degree
-  $jung = $sum/2;                                // necessary to test for arc type
+  $deg = $total/360;                                       //one degree
+  $jung = $total/2;                                        //necessary to test for arc type
 
   //Data for grid, circle, and slices
-  $dx = $radius;                                 // Starting point:  
-  $dy = 0;                                       // first slice starts in the East
+  $dx = $radius;                                           //Starting point:
+  $dy = 0;                                                 //first slice starts in the East
   $oldangle = 0;
 
-  for ($i = 0; $i<$max; $i++) {                  // Loop through the slices
-    $angle = $oldangle + $data[$i]/$deg;         // cumulative angle
-    $x = cos(deg2rad($angle)) * $radius;         // x of arc's end point
-    $y = sin(deg2rad($angle)) * $radius;         // y of arc's end point
+  for ($i = 0; $i<$max; $i++) {                            //Loop through the slices
+    $chartelem = '';
+    $angle = $oldangle + $data[$i]/$deg;                   //cumulative angle
+    $x = cos(deg2rad($angle)) * $radius;                   //x of arc's end point
+    $y = sin(deg2rad($angle)) * $radius;                   //y of arc's end point
 
     $colour = $colours[$i];
 
-    if ($data[$i] > $jung) {                     // arc spans more than 180 degrees
+    if ($data[$i] > $jung) {                               //Does arc spans more than 180 degrees
       $laf = 1;
     }
     else {
       $laf = 0;
     }
 
-    $ax = $cx + $x;                              // absolute $x
-    $ay = $cy + $y;                              // absolute $y
-    $adx = $cx + $dx;                            // absolute $dx
-    $ady = $cy + $dy;                            // absolute $dy
-    $chartelem .= "<path d=\"M$cx,$cy ";         // move cursor to center
-    $chartelem .= " L$adx,$ady ";                // draw line away away from cursor
-    $chartelem .= " A$radius,$radius 0 $laf,1 $ax,$ay "; // draw arc
-    $chartelem .= " z\" ";                       // z = close path
-    $chartelem .= " fill=\"$colour\" stroke=\"#202020\" stroke-width=\"2\" ";
+    $ax = $cx + $x;                                        //absolute $x
+    $ay = $cy + $y;                                        //absolute $y
+    $adx = $cx + $dx;                                      //absolute $dx
+    $ady = $cy + $dy;                                      //absolute $dy
+    $chartelem .= "  <path d=\"M$cx,$cy ";                 //move cursor to center
+    $chartelem .= " L$adx,$ady ";                          //draw line away away from cursor
+    $chartelem .= " A$radius,$radius 0 $laf,1 $ax,$ay ";   //draw arc
+    $chartelem .= " z\" ";                                 //z = close path
+    $chartelem .= " fill=\"$colour\" stroke=\"#262626\" stroke-width=\"2\" ";
     $chartelem .= " fill-opacity=\"0.95\" stroke-linejoin=\"round\" />";
     $chartelem .= PHP_EOL;
-    $dx = $x;      // old end points become new starting point
-    $dy = $y;      // id.
+
+    echo '<g>'.PHP_EOL;                                    //Start svg group
+    echo $chartelem;                                       //Write chart element
+    echo '  <title>'.$labels[$i].': '.number_format(($data[$i] / $total) * 100, 1).'%</title>'.PHP_EOL;
+    echo '</g>'.PHP_EOL;                                   //End svg group
+
+    $dx = $x;                                              //old end points become new starting point
+    $dy = $y;                                              //id.
     $oldangle = $angle;
   }
-  
-  return $chartelem; 
+
+  return true;
 }
 ?>

@@ -1,28 +1,35 @@
-v0.8.10 Released 03 Jun 2018
-Handle errors from wget such as connectivity or file missing when updating blocklists
-Updated location of CoinBlockerLists
-Removed No Coin Block list (most sites are in CoinBlockerLists)
-Split NoTrack block lists out of this project and moved them to GitLab
+v20.10 Released 12 Oct 2020
+IMPORTANT NOTE: THERE IS NO UPGRADE PATH FROM NOTRACK 0.9.x
+In order carry out the upgrade, please uninstall your old version of NoTrack using the uninstall.sh script.
+Install instructions for NoTrack 20.10: https://gitlab.com/quidsup/notrack/-/blob/master/README.md
 
-*************************************************
-v0.8.9 Released 03 Mar 2018
-
-New Styling
-Added Incognito mode
-Pause/Unpause no longer requires page refresh
-Added API
-Fixed bug of notrack not updating blocklist after pausing
-
-*************************************************
-v0.8.8 Released 22 Jan 2018
-
-Added Coin Blocker Lists
-Improved access into Investigate from DNS Queries
-Reduced list download check from 4 days to 3 days
-Downgraded .ws from priority 1 to priority 2 on TLD blocklist
-New style login screen
-
-#200 - Enabled changing password without turning off security
+Changes:
+*Backend scripts now using Python3
+*SQL Tables restructured
+*Upgrading can only be done manually via terminal
+*Default webserver is now Nginx
+*Issue #185 Dnsmasq config can be modified via web admin
+*Issue #293 Blocklist saving fixed
+*Login screen now auto-throttles attempts based on Username or IP
+*Some styling improvements
+*Performance improvements due to SQL table restructure
+*Removed options menu
 
 *************************************************
 
+v0.9.5 Released 7 Mar 2020
+Begin work on replacing Bash scripts with Python3 scripts.
+ntrk-exec moved to Python although not yet enabled due to dependency on non-installed package python3-mysql.connector
+New timepicker menu on queries.php
+New Status and Severity selector on analytics.php
+Added export button to analytics.php
+#290 fix confusing form layout on general.php
+*************************************************
+
+v0.9.4 Released 15 Jan 2020
+Complete overhaul to DHCP page.
+Adding a static host will also add it to DNS localhosts list
+Side menu now shows number of alerts
+Improve Alerts feature to find more elusive tracking domains
+Styling improvements
+Added clipboard buttons
