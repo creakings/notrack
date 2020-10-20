@@ -3,7 +3,7 @@
 #Description :
 #Author : QuidsUp
 #Date : 2020-04-04
-#Version : 0.9.5
+#Version : 20.10
 
 import shutil
 import subprocess
@@ -15,11 +15,10 @@ class Services:
     Restarting the Service will use the appropriate Service Supervisor
     """
     def __init__(self):
-        self.__supervisor = ''                             #Supervisor command
-        self.__supervisor_name = ''                        #Friendly name
-        self.__webserver = ''
-        self.__dnsserver = ''
-        self.dhcp_config = ''
+        Services.__supervisor = ''                             #Supervisor command
+        Services.__supervisor_name = ''                        #Friendly name
+        Services.__webserver = ''
+        Services.__dnsserver = ''
 
         self.__find_supervisor()
         self.__find_dnsserver()
@@ -31,18 +30,18 @@ class Services:
         Find service supervisor by checking if each application exists
         """
         if shutil.which('systemctl') != None:
-            self.__supervisor = 'systemctl'
-            self.__supervisor_name = 'systemd'
+            Services.__supervisor = 'systemctl'
+            Services.__supervisor_name = 'systemd'
         elif shutil.which('service') != None:
-            self.__supervisor = 'service'
-            self.__supervisor_name = 'systemctl'
+            Services.__supervisor = 'service'
+            Services.__supervisor_name = 'systemctl'
         elif shutil.which('sv') != None:
-            self.__supervisor = 'sv'
-            self.__supervisor_name = 'ruinit'
+            Services.__supervisor = 'sv'
+            Services.__supervisor_name = 'ruinit'
         else:
             print('Find_Supervisor: Fatal Error - Unable to identify service supervisor', file=sys.stderr)
             sys.exit(7)
-        print('Services Init: Identified Service manager', self.__supervisor_name)
+        print(f'Identified Service manager: {Services.__supervisor_name}')
 
 
     def __find_dnsserver(self):
@@ -50,14 +49,13 @@ class Services:
         Find DNS server by checking if each application exists
         """
         if shutil.which('dnsmasq') != None:
-            self.__dnsserver = 'dnsmasq'
-            self.dhcp_config = '/etc/dnsmasq.d/dhcp.conf'
+            Services.__dnsserver = 'dnsmasq'
         elif shutil.which('bind') != None:
-            self.__dnsserver = 'bind'
+            Services.__dnsserver = 'bind'
         else:
-            print('Find_DNSServer: Fatal Error - Unable to identify DNS server', file=sys.stderr)
+            print('Fatal Error - Unable to identify DNS server', file=sys.stderr)
             sys.exit(8)
-        print('Services Init: Identified DNS server', self.__dnsserver)
+        print(f'Identified DNS server: {Services.__dnsserver}')
 
 
     def __find_webserver(self):
@@ -65,15 +63,15 @@ class Services:
         Find Web server by checking if each application exists
         """
         if shutil.which('nginx') != None:
-            self.__webserver = 'nginx'
+            Services.__webserver = 'nginx'
         elif shutil.which('lighttpd') != None:
-            self.__webserver = 'lighttpd'
+            Services.__webserver = 'lighttpd'
         elif shutil.which('apache') != None:
-            self.__webserver = 'apache'
+            Services.__webserver = 'apache'
         else:
-            print('Find_WebServer: Fatal Error - Unable to identify Web server', file=sys.stderr)
+            print('Fatal Error - Unable to identify Web server', file=sys.stderr)
             sys.exit(9)
-        print('Services Init: Identified Web server', self.__webserver)
+        print(f'Identified Web server: {Services.__webserver}')
         print()
 
 
@@ -87,55 +85,25 @@ class Services:
             True on Success (return code zero)
             False on Failure (return code non-zero)
         """
-        p = subprocess.run(['sudo', self.__supervisor, 'restart', service], stderr=subprocess.PIPE, universal_newlines=True)
+        cmd = list()
+
+        if Services.__supervisor == 'systemctl':
+            cmd = ['sudo', 'systemctl', 'restart', f'{service}.service']
+
+        else:
+            cmd = ['sudo', Services.__supervisor, 'restart', service]
+
+        p = subprocess.run(cmd, stderr=subprocess.PIPE, universal_newlines=True)
 
         if p.returncode != 0:
-            print('Services restart_service: Failed to restart %s' % service)
+            print(f'Failed to restart {service}')
             print(p.stderr)
             print()
             return False
         else:
-            print('Successfully restarted %s' % service)
+            print(f'Successfully restarted {service}')
             print()
             return True
-
-
-    def get_webuser(self):
-        """
-        Find the group for webserver
-        Arch uses http, other distros use www-data
-        """
-        import grp
-
-        groupname = ''
-        print ('Finding service group for', self.__webserver)
-
-        try:
-            grp.getgrnam('www-data')
-        except KeyError:
-            pass
-        else:
-            groupname = 'www-data'
-            print('Found group www-data')
-
-        try:
-            grp.getgrnam('lighttpd')
-        except KeyError:
-            pass
-        else:
-            groupname = 'lighttpd'
-            print('Found group lighttpd')
-
-        try:
-            grp.getgrnam('http')
-        except KeyError:
-            pass
-        else:
-            groupname = 'http'
-            print('Found group http')
-
-        print()
-        return groupname
 
 
     def get_dnstemplatestr(self, hostname, hostip):
@@ -151,7 +119,7 @@ class Services:
         blacklist = ''
         whitelist = ''
 
-        if self.__dnsserver == 'dnsmasq':
+        if Services.__dnsserver == 'dnsmasq':
             blacklist = 'address=/%s/' + hostip + '\n'
             whitelist = 'server=/%s/#\n'
 
@@ -162,12 +130,19 @@ class Services:
         """
         Restart DNS Server - returns the result of restart_service
         """
-        return self.__restart_service(self.__dnsserver)
+        return self.__restart_service(Services.__dnsserver)
 
 
     def restart_webserver(self):
         """
         Restart Web Server - returns the result of restart_service
         """
-        return self.__restart_service(self.__webserver)
+        return self.__restart_service(Services.__webserver)
+
+
+    def restart_notrack(self):
+        """
+        Restart NoTrackD - returns the result of restart_service
+        """
+        return self.__restart_service('notrack')
 

@@ -88,40 +88,6 @@ function is_active_session() {
 
 
 /********************************************************************
- *  Compare Version possibly DEPRECATED
- *    1. Split strings by '.'
- *    2. Combine back together and multiply with Units array
- *    e.g 1.0 - 1x10000 + 0x100 = 10,000
- *    e.g 0.8.0 - 0x10000 + 8x100 + 0x1 = 800
- *    e.g 0.7.10 - 0x10000 + 7x100 + 10x1 = 710
- *  Params:
- *    Version
- *  Return:
- *    true if latestversion >= currentversion, or false if latestversion < currentversion
- */
-function compare_version($latestversion) {
-  //If LatestVersion is less than Current Version then function returns false
-  
-  $numversion = 0;
-  $numlatest = 0;
-  $units = array(10000,100,1);
-  
-  $splitversion = explode('.', VERSION);
-  $splitlatest = explode('.', $latestversion);
-  
-  for ($i = 0; $i < count($splitversion); $i++) {
-    $numversion += ($units[$i] * intval($splitversion[$i]));
-  }
-  for ($i = 0; $i < count($splitlatest); $i++) {
-    $numlatest += ($units[$i] * intval($splitlatest[$i]));
-  }
-  
-  if ($numlatest < $numversion) return false;
-  
-  return true;
-}
-
-/********************************************************************
  *  Count rows in table
  *
  *  Params:
@@ -154,30 +120,12 @@ function count_rows($query) {
  *    Filtered domain
  */
 function extract_domain($url) {
-  $regex_domain = '/[\w\-]{1,63}\.(org\.|co\.|com\.|gov\.)?[\w\-]{1,63}$/';
+  $regex_domain = '/[\w\-]{1,63}\.(org\.|co\.|com\.|net\.|gov\.)?[\w\-]{1,63}$/';
 
   if (preg_match($regex_domain, $url, $matches)) {
     return $matches[0];
   }
   return $url;
-}
-
-
-/********************************************************************
- *  Filter Boolean Value possibly DEPRECATED
- *    Checks if value given is 'true' or 'false'
- *  Params:
- *    Value to Check
- *  Return:
- *    true or false
- */
-function filter_bool($value) {
-  if (($value == 'true') || ($value == '1')) {
-    return true;
-  }
-  else {
-    return false;
-  }
 }
 
 
@@ -353,20 +301,6 @@ function simplified_time($timestr) {
 
 
 /********************************************************************
- *  Is Active Class
- *    Used to allocate class="active" against li
- *
- *  Params:
- *    Current View, Item
- *  Return:
- *    class="active" or nothing when inactive
- */
-function is_active_class($currentview, $item) {
-  return ($currentview == $item) ? ' class="active"' : '';
-}
-
-
-/********************************************************************
  *  Is Checked
  *    Used to in forms to determine if tickbox should be checked
  *  Params:
@@ -382,22 +316,6 @@ function is_active_class($currentview, $item) {
   return '';
 }
 
-
-/********************************************************************
- *  Is Commented
- *    Used in config files to check if Regex group 1 (start of line) is a # comment
- *  Params:
- *    value
- *  Return:
- *    false if value is #, or true for nothing
- */
- function is_commented($value) {
-  if ($value == '#') {
-    return false;
-  }
-  
-  return true;
-}
 
 /********************************************************************
  *  Pagination
@@ -478,7 +396,7 @@ function pagination($totalrows, $linktext) {
 
 
 /********************************************************************
- *  Check SQL Table Exists
+ *  Check SQL Table Exists DEPRECATED once removed from investigate.php
  *    Uses LIKE to check for table name in order to avoid error message.
  *  Params:
  *    SQL Table
@@ -690,48 +608,5 @@ function piechart($labels, $data, $cx, $cy, $radius, $colours) {
   }
 
   return true;
-}
-
-
-/********************************************************************
- *  Load latest version from settings folder
- *  Fallback to config->settings if the php file is missing
- *
- *  Params:
- *    None
- *  Return:
- *    true - latestversion.php loaded successfully
- *    false - latestversion.php missing
- */
-function load_latestversion() {
-  global $config;
-  if (file_exists('./settings/latestversion.php')) {       //Attempt to load latestversion
-    include_once './settings/latestversion.php';
-    return true;
-  }
-  else {
-    return false;
-  }
-}
-
-
-/********************************************************************
- *  Run NoTrack Exec
- *    Checks for a non-zero return and displays output if necessary
- *
- *  Params:
- *    Command
- *  Return:
- *    None
- */
-function notrack_exec($cmd) {
-  exec(NTRK_EXEC.'--'.$cmd, $output, $exitcode);
-
-  if ($exitcode != 0) {
-    echo 'notrack-exec returned exit code '.$exitcode;
-    echo implode('<br>', $output);
-    //var_dump($output);
-    die;
-  }
 }
 ?>

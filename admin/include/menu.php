@@ -25,10 +25,9 @@ function draw_sidemenu() {
     echo '<a href="/admin/analytics.php"><img src="/admin/svg/smenu_analytics.svg" alt="" title="Alerts"><div class="alert-count">'.formatnumber($alert_count).'</div>Alerts</a>'.PHP_EOL;
   }
 
-  echo '<a href="/admin/blocked.php"><img src="/admin/svg/smenu_blocked.svg" alt="" title="Sites Blocked">Sites Blocked</a>'.PHP_EOL;
   echo '<a href="/admin/investigate.php"><img src="/admin/svg/smenu_investigate.svg" alt="" title="Investigate">Investigate</a>'.PHP_EOL;
   echo '<a href="/admin/config"><img src="/admin/svg/smenu_config.svg" alt="" title="Config">Config</a>'.PHP_EOL;
-  echo '<a href="/admin/help.php"><img src="/admin/svg/smenu_help.svg" alt="" title="Help">Help</a>'.PHP_EOL;
+  echo '<a href="/admin/help"><img src="/admin/svg/smenu_help.svg" alt="" title="Help">Help</a>'.PHP_EOL;
 
   sidemenu_sysstatus();
 
@@ -47,9 +46,9 @@ function draw_sidemenu() {
 function draw_helpmenu() {
   echo '<nav id="menu-side">'.PHP_EOL;
   echo '<a href="/admin/"><img src="/admin/svg/smenu_dashboard.svg" alt="" title="Dashboard">Dashboard</a>'.PHP_EOL;
-  echo '<a href="/admin/help.php"><img src="/admin/svg/smenu_help.svg" alt="">Help</a>'.PHP_EOL;
-  echo '<a href="/admin/help.php?p=security">Security</a>'.PHP_EOL;
-  echo '<a href="/admin/help.php?p=position" title="Where To Position NoTrack Device">Positioning Device</a>'.PHP_EOL;
+  echo '<a href="/admin/help/"><img src="/admin/svg/smenu_help.svg" alt="">Help</a>'.PHP_EOL;
+  echo '<a href="/admin/help/?p=security">Security</a>'.PHP_EOL;
+  echo '<a href="/admin/help/?p=position" title="Where To Position NoTrack Device">Positioning Device</a>'.PHP_EOL;
   echo '<a href="https://quidsup.net/donate" target="_blank"><img src="/admin/svg/smenu_don.svg" alt="Donate" title="Donate">Donate</a>'.PHP_EOL;
 
   echo '</nav>'.PHP_EOL;

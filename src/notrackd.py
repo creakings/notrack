@@ -3,8 +3,8 @@
 #Description : NoTrack Daemon
 #Author : QuidsUp
 #Date : 2020-07-24
-#Version : 2020.07
-#Usage :
+#Version : 2020.10
+#Usage : sudo python3 notrackd
 
 #Standard imports
 from datetime import datetime
@@ -14,12 +14,13 @@ import signal
 import sys
 
 #Local imports
+import folders
 from analytics import NoTrackAnalytics
 from blockparser import BlockParser
 from config import NoTrackConfig
 from logparser import NoTrackParser
-from ntrkfolders import FolderList
 from ntrkservices import Services
+from ntrkupgrade import NoTrackUpgrade
 from statusconsts import *
 
 runtime_analytics = 0.0
@@ -31,7 +32,6 @@ endloop = False
 
 ntrkparser = NoTrackParser()
 ntrkanalytics = NoTrackAnalytics()
-folders = FolderList()
 config = NoTrackConfig()
 
 def blocklist_update():
@@ -47,6 +47,15 @@ def blocklist_update():
     time.sleep(6)                                          #Prevent race condition
     ntrkparser.readblocklist()                             #Reload the blocklist on the log parser
     set_lastrun_times()
+
+
+def check_upgrade():
+    """
+    Once a day check for updates
+    """
+    ntrkupgrade = NoTrackUpgrade()
+    ntrkupgrade.is_upgrade_available()
+    #TODO auto upgrade feature
 
 
 def change_status():
@@ -239,6 +248,7 @@ def main():
 
         if (runtime_blocklist + 86400) <= current_time:
             blocklist_update()
+            check_upgrade()
 
         if (runtime_trim + 86400) <= current_time:
             runtime_trim = current_time                    #Reset runtime_trim

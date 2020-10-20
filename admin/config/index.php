@@ -50,10 +50,11 @@ echo '<h5>System</h5>'.PHP_EOL;
 echo '<div class="conf-nav">'.PHP_EOL;
 echo '<a href="./general.php"><img src="../svg/menu_config.svg"><span><h6>General</h6></span></a>'.PHP_EOL;
 //echo '<a href="./status.php"><img src="../svg/menu_status.svg"><span><h6>Back-end Status</h6></span></a>'.PHP_EOL;
-echo '<a href="../../admin/security.php"><img src="../svg/menu_security.svg"><span><h6>Security</h6></span></a>'.PHP_EOL;
+echo '<a href="./security.php"><img src="../svg/menu_security.svg"><span><h6>Security</h6></span></a>'.PHP_EOL;
 echo '<a href="./apisetup.php"><img src="../svg/menu_security.svg"><span><h6>API Setup</h6></span></a>'.PHP_EOL;
-echo '<a href="../../admin/upgrade.php"><img src="../svg/menu_upgrade.svg"><span><h6>Upgrade</h6></span></a>'.PHP_EOL;
-echo '<a href="../config/dns.php"><img src="../svg/menu_config.svg"><span><h6>DNS</h6></span></a>'.PHP_EOL;
+echo '<a href="../upgrade.php"><img src="../svg/menu_upgrade.svg"><span><h6>Upgrade</h6></span></a>'.PHP_EOL;
+echo '<a href="./dns.php"><img src="../svg/menu_config.svg"><span><h6>DNS</h6></span></a>'.PHP_EOL;
+echo '<a href="../dhcp.php"><img src="../svg/menu_config.svg"><span><h6>DHCP</h6></span></a>'.PHP_EOL;
 echo '</div></div>'.PHP_EOL;
 echo '</section>'.PHP_EOL;                                 //End System
 

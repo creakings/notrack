@@ -773,7 +773,7 @@ function show_group_view() {
     $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
 
     //Contents of domain cell
-    $domain_cell = '<a href="./investigate.php?site='.$dns_request.'" target="_blank">'.$dns_request.'</a>'.$clipboard.$bl_name;
+    $domain_cell = '<a href="./investigate.php?subdomain='.$dns_request.'" target="_blank">'.$dns_request.'</a>'.$clipboard.$bl_name;
 
     //Output table row
     echo "<tr><td><img src=\"./svg/events/{$event}.svg\" alt=\"\"></td><td>{$i}</td><td>{$domain_cell}</td><td>{$row['count']}</td><td>{$popupmenu}</td></tr>".PHP_EOL;
@@ -866,7 +866,7 @@ function show_time_view() {
     $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
 
     //Contents of domain cell with more specific url for investigate
-    $domain_cell = "<a href=\"./investigate.php?datetime={$row['log_time']}&amp;site={$dns_request}&amp;sys={$row['sys']}\" target=\"_blank\">{$dns_request}</a>{$clipboard}{$bl_name}";
+    $domain_cell = "<a href=\"./investigate.php?datetime={$row['log_time']}&amp;subdomain={$dns_request}&amp;sys={$row['sys']}\" target=\"_blank\">{$dns_request}</a>{$clipboard}{$bl_name}";
 
     //Output table row
     echo "<tr><td><img src=\"./svg/events/{$event}.svg\" alt=\"\"><td>{$row['formatted_time']}</td><td>{$row['sys']}</td><td>{$domain_cell}</td><td>{$popupmenu}</td></tr>".PHP_EOL;
@@ -929,7 +929,7 @@ if ($config->whois_api == '') {                            //Setup Investigate /
 }
 else {
   $INVESTIGATE = 'Investigate';
-  $INVESTIGATEURL = './investigate.php?site=';
+  $INVESTIGATEURL = './investigate.php?subdomain=';
 }
 
 echo '<div class="sys-group">'.PHP_EOL;                    //Start Div Group

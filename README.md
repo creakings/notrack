@@ -1,14 +1,22 @@
-# NoTrack  
-
+# NoTrack 20.10 has been released  
 NoTrack is a [DNS-Sinkhole](https://en.wikipedia.org/wiki/DNS_sinkhole) which protects all devices on your home network from visiting Tracking, Advertising, and Malicious websites.   
+This latest release of NoTrack now uses a Python3 daemon script, which is a security improvement over its predecessor.  
+The back-end SQL databases have been restructured, which offers significant performance improvements to the web admin front-end.  
+Unfortunately, these changes mean there is **no direct upgrade** path from the older NoTrack v0.9.x series.  
 
 ## Automated Install
-NoTrack is best used on a Linux server, such as a lightweight Raspberry Pi with [Raspbian Lite](https://www.raspberrypi.org/downloads/raspbian/)
+NoTrack is best used on a Raspberry Pi with [Ubuntu Server](https://ubuntu.com/download/raspberry-pi). Compatibility with other Linux distros will be made available in future versions.   
+
+#### Ubuntu / Linux Mint
 ```bash
-wget https://gitlab.com/quidsup/notrack/raw/master/install.sh
-bash install.sh
+wget https://gitlab.com/quidsup/notrack/raw/master/install-ubuntu.sh
+bash install-ubuntu.sh
 ```
-   
+#### Debian / Raspberry Pi OS (formally Raspbian) 
+```bash
+wget https://gitlab.com/quidsup/notrack/raw/master/install-debian.sh
+bash install-debian.sh
+```   
 ## Tracking  
 Tracking is absolutely rife on the Internet, on average 17 cookies are dropped by each website. Although you can block third party cookies, there are also more complex methods of tracking, such as:
 * Tracking Pixels

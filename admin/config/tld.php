@@ -372,7 +372,7 @@ function draw_welcome() {
   echo '<a href="?v=1"><img src="../svg/wordclouds/classic_wordcloud.svg" alt=""><h6>Old Generic</h6></a>'.PHP_EOL;
   echo '<a href="?v=2"><img src="../svg/wordclouds/gtld_wordcloud.svg" alt=""><h6>New Generic</h6></a>'.PHP_EOL;
   echo '<a href="?v=3"><img src="../svg/wordclouds/country_wordcloud.svg" alt=""><h6>Country</h6></a>'.PHP_EOL;
-  echo '<a href="?v=4"><img src="../svg/wordclouds/help_wordcloud.svg" alt=""><h6>Help</h6></a>'.PHP_EOL;
+  echo '<a href="?v=5"><img src="../svg/wordclouds/help_wordcloud.svg" alt=""><h6>Help</h6></a>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
 }

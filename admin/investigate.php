@@ -62,7 +62,7 @@ $sys = '';
 function create_whoistable() {
   global $db;
 
-  $query = "CREATE TABLE whois (id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, save_time DATETIME, site TINYTEXT, record MEDIUMTEXT)";
+  $query = "CREATE TABLE whois (id SERIAL, save_time DATETIME, domain TINYTEXT, record MEDIUMTEXT)";
 
   $db->query($query);
 }
@@ -81,7 +81,7 @@ function draw_filter_toolbar() {
 
   echo '<div class="filter-toolbar single-filter-toolbar">'.PHP_EOL;
   echo '<form method="GET">'.PHP_EOL;
-  echo '<input type="text" name="site" class="input-conf" placeholder="Search domain" value="'.$subdomain.'">'.PHP_EOL;
+  echo '<input type="text" name="subdomain" class="input-conf" placeholder="Search domain" value="'.$subdomain.'">'.PHP_EOL;
   echo '<button type="submit">Investigate</button>'.PHP_EOL;
   echo '</form>'.PHP_EOL;
   echo '</div>'.PHP_EOL;
@@ -101,7 +101,7 @@ function draw_searchbox() {
 
   echo '<div id="search-box"><div>'.PHP_EOL;
   echo '<form method="GET">'.PHP_EOL;
-  echo '<input type="text" name="site" placeholder="Search domain" value="'.$subdomain.'">&nbsp;'.PHP_EOL;
+  echo '<input type="text" name="subdomain" placeholder="Search domain" value="'.$subdomain.'">&nbsp;'.PHP_EOL;
   echo '<input type="submit" value="Investigate">'.PHP_EOL;
   echo '</form>'.PHP_EOL;
   echo '</div></div>'.PHP_EOL;
@@ -148,123 +148,66 @@ function extract_emails($raw) {
 
 
 /********************************************************************
- *  Search Block Reason
- *    1. Search site.com in blocklist table
- *    2. Search .tld in blocklist table
- *    3. Search for like site.com in blocklist table
- *    4. On fail return ''
- *
- *  Params:
- *    $domain - Domain to search
- *  Return:
- *    blocklist name
- */
-function search_blockreason($domain) {
-  global $db;
-  $res = '';
-
-  preg_match('/[\w\-_]+(\.co|\.com|\.org|\.gov)?\.([\w\-]+)$/', $domain, $matches);
-
-  //Search for site.com
-  //Negate whitelist to prevent stupid results
-  $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '".$matches[0]."' AND bl_source != 'whitelist'");
-  if ($result->num_rows > 0) {
-    $res = $result->fetch_row()[0];
-  }
-  else {
-    $result->free();
-    //Search for .tld
-    $result = $db->query("SELECT bl_source FROM blocklist WHERE site = '.".$matches[2]."' AND bl_source = 'bl_tld'");
-    if ($result->num_rows > 0) {
-      $res = $result->fetch_row()[0];
-    }
-    else {
-      $result->free();
-      //Search for like site.com (possibly prone to misidentifying bl_source)
-      $result = $db->query("SELECT bl_source FROM blocklist WHERE site LIKE '%.".$matches[0]."' AND bl_source != 'whitelist'");
-      if ($result->num_rows > 0) {
-        $res = $result->fetch_row()[0];
-      }
-    }
-  }
-
-  $result->free();
-  return $res;
-}
-
-/********************************************************************
  *  Format Row
  *    Returns the action, blockreason, event, and severity in an array
  *
  *  Params:
- *    domain, dns_result(allowed, blocked, local)
+ *    domain, severity, blocklist source
  *
  *  Return:
  *    Array of variables to be taken using list()
+ *   ($bl_name, $event, $popupmenu)
  */
-function format_row($domain, $dns_result) {
-  global $config;
+function format_row($dns_request, $severity, $bl_source) {
+  global $config, $INVESTIGATE, $INVESTIGATEURL;
 
-  $blocklist = '';
-  $blockreason = '';
+  $bl_name = '';
   $event = '';
-  $severity = '1';
   $popupmenu = '';
-
 
   $popupmenu = '<div class="dropdown-container"><span class="dropbtn"></span><div class="dropdown">';
 
-  if ($dns_result == 'A') {
-    $event = 'allowed1';
-    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
+  if ($severity == 1) {
+    $event = "{$bl_source}1";
+    if ($bl_source != 'local') {
+      $popupmenu .= "<span onclick=\"reportSite('{$dns_request}', false, true)\">Block</span>";
+    }
   }
-  elseif ($dns_result == 'B') {                            //Blocked
-    $blocklist = search_blockreason($domain);
-    $rowseverity = '2';
+  elseif ($severity == 2) {                                //Blocked
+    $event = $config->get_blocklisttype($bl_source).'2';
 
-    if ($blocklist == 'bl_notrack') {                      //Show Report on NoTrack list
-      $blockreason = '<p class="small grey">Blocked by NoTrack list</p>';
-      $event = 'tracker2'; //TODO change image
-      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, true)">Allow</span>';
+    if ($bl_source == 'bl_notrack') {                      //Show Report on NoTrack list
+      $bl_name = '<p class="small grey">Blocked by NoTrack list</p>';
+      $popupmenu .= "<span onclick=\"reportSite('{$dns_request}', true, true)\">Allow</span>";
     }
-    elseif ($blocklist == 'custom') {                      //Users blacklist
-      $blockreason = '<p class="small grey">Blocked by Custom Black list</p>';
-      $event = 'custom2';
-      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
-    }
-    elseif ($blocklist != '') {                            //Other blocklist
-      $blockreason = '<p class="small grey">Blocked by '.$config->get_blocklistname($blocklist).'</p>';
-      $event = $config->get_blocklistevent($blocklist);
-      $event .= $rowseverity;
-      $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', true, false)">Allow</span>';
-    }
-    else {  //No reason is probably IP or Search request
-      $blockreason = '<p class="small">Invalid request</p>';
+    elseif ($bl_source == 'invalid') {                     //Other blocklist
+      $bl_name = '<p class="small">Invalid request</p>';
       $event = 'invalid2';
     }
+    else {
+      $bl_name = '<p class="small grey">Blocked by '.$config->get_blocklistname($bl_source).'</p>';
+      $popupmenu .= "<span onclick=\"reportSite('{$dns_request}', true, false)\">Allow</span>";
+    }
   }
-  elseif ($dns_result == 'M') {                            //Malware Accessed
-    $blockreason = '<p class="small grey">Malware Accessed</p>';
-    $event = 'malware3';
-    $rowseverity = '3';
-    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
-  }
-  elseif ($dns_result == 'T') {                            //Tracker Accessed
-    $blockreason = '<p class="small grey">Tracker Accessed</p>';
-    $event = 'tracker3';
-    $rowseverity = '3';
-    $popupmenu .= '<span onclick="reportSite(\''.$domain.'\', false, true)">Block</span>';
-  }
-  elseif ($dns_result == 'L') {
-    $event = 'local1';
+  elseif ($severity == 3) {
+    if (($bl_source == 'advert') or ($bl_source == 'tracker')) {
+      $event = "{$bl_source}3";
+    }
+    else {
+      $event = $config->get_blocklisttype($bl_source).'3';
+    }
+    $blockreason = '<p class="small grey">'.ucfirst($bl_source).'Accessed</p>';
+    $popupmenu .= "<span onclick=\"reportSite('{$dns_request}', false, true)\">Block</span>";
   }
 
-  $popupmenu .= "<a href=\"{$config->search_url}{$domain}\" target=\"_blank\">{$config->search_engine}</a>";
-  $popupmenu .= '<a href="https://www.virustotal.com/en/domain/'.$domain.'/information/" target="_blank">VirusTotal</a>';
+  $popupmenu .= '<a href="'.$INVESTIGATEURL.$dns_request.'">'.$INVESTIGATE.'</a>';
+  $popupmenu .= "<a href=\"{$config->search_url}{$dns_request}\" target=\"_blank\">{$config->search_engine}</a>";
+  $popupmenu .= '<a href="https://www.virustotal.com/en/domain/'.$dns_request.'/information/" target="_blank">VirusTotal</a>';
   $popupmenu .= '</div></div>';                                  //End dropdown-container
 
-  return array($blockreason, $event, $severity, $popupmenu);
+  return array($bl_name, $event, $popupmenu);
 }
+
 
 /********************************************************************
  *  Show Time View
@@ -278,7 +221,7 @@ function format_row($domain, $dns_result) {
 function show_time_view() {
   global $config, $db, $datetime, $subdomain, $sys;
 
-  $action = '';
+  /*$action = '';
   $blockreason = '';
   $clipboard = '';                                         //Div for Clipboard
   $dns_request = '';
@@ -287,7 +230,21 @@ function show_time_view() {
   $row_class = '';                                         //Optional row highlighting
   $severity = 1;
   $query = '';
+  $domain_cell = '';*/
+
+  /*$i = 0;
+  $k = 1;   */                                               //Count within ROWSPERPAGE
+  $bl_name = '';
+  $bl_source = '';
+  $clipboard = '';                                         //Div for Clipboard
+  $event = '';                                             //Image event
+  $popupmenu = '';                                         //Div for popup menu
+  $severity = 0;
+  $query = '';
+  $dns_request = '';
   $domain_cell = '';
+
+
 
   $query = "SELECT *, DATE_FORMAT(log_time, '%H:%i:%s') AS formatted_time FROM dnslog WHERE sys = '$sys' AND log_time > SUBTIME('$datetime', '00:00:04') AND log_time < ADDTIME('$datetime', '00:00:03') ORDER BY UNIX_TIMESTAMP(log_time)";
 
@@ -307,28 +264,26 @@ function show_time_view() {
   }
 
   echo '<table id="query-time-table">'.PHP_EOL;
-  echo '<tr><th>&nbsp</th><th>Time</th><th>System</th><th>Site</th><th></th></tr>'.PHP_EOL;
+  echo '<tr><th>&nbsp;</th><th>Time</th><th>System</th><th>Domain</th><th></th></tr>'.PHP_EOL;
 
   while($row = $result->fetch_assoc()) {         //Read each row of results
     $dns_request = $row['dns_request'];
-    list($blockreason, $event, $severity, $popupmenu) = format_row($dns_request, $row['dns_result']);
+    $bl_source = $row['bl_source'];
+    $severity = $row['severity'];
+
+    list($bl_name, $event, $popupmenu) = format_row($dns_request, $severity, $bl_source);
 
     //Create clipboard image and text
     $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
 
     //Contents of domain cell with more specific url for investigate
-    $domain_cell = "<a href=\"./investigate.php?datetime={$row['log_time']}&amp;site={$dns_request}&amp;sys={$row['sys']}\" target=\"_blank\">{$dns_request}</a>{$clipboard}{$blockreason}";
+    $domain_cell = "<a href=\"./investigate.php?datetime={$row['log_time']}&amp;subdomain={$dns_request}&amp;sys={$row['sys']}\" target=\"_blank\">{$dns_request}</a>{$clipboard}{$bl_name}";
 
-    if ($subdomain == $row['dns_request']) {               //Highlight row if it matches the subdomain requested
-      $row_class = ' class="cyan"';
-    }
-    else {
-      $row_class = '';
-    }
+    //Highlight row if it matches the subdomain requested
+    $row_class = ($subdomain == $row['dns_request']) ? ' class="cyan"' : '';
 
     //Output table row
     echo "<tr{$row_class}><td><img src=\"./svg/events/{$event}.svg\" alt=\"\"><td>{$row['formatted_time']}</td><td>{$row['sys']}</td><td>{$domain_cell}</td><td>{$popupmenu}</td></tr>".PHP_EOL;
-    $blockreason = '';
   }
 
   echo '</table>'.PHP_EOL;
@@ -365,19 +320,19 @@ function show_whoisdata($whois_date, $whois_record) {
   }
 
   $emails = extract_emails($whois_record['raw']);
-  $blockreason = search_blockreason($subdomain);
+  /*$blockreason = search_blockreason($subdomain);
   if ($blockreason != '') {
     $notrack_row = 'Blocked by '.$config->get_blocklistname($blockreason);
   }
   else {
     $notrack_row = 'Allowed';
-  }
+  }*/
 
   //draw_systable('Domain Information');
   echo '<h5>Domain Information</h5>'.PHP_EOL;
   echo '<table class="sys-table">'.PHP_EOL;
-  draw_sysrow('Domain Name', $whois_record['domain'].'<span class="investigatelink"><a href="?site='.$subdomain.'&amp;v=raw">View Raw</a></span>');
-  draw_sysrow('Status on NoTrack', $notrack_row);
+  draw_sysrow('Domain Name', $whois_record['domain'].'<span class="investigatelink"><a href="?subdomain='.$subdomain.'&amp;v=raw">View Raw</a></span>');
+  //draw_sysrow('Status on NoTrack', $notrack_row);
   draw_sysrow('Created On', substr($whois_record['created_on'], 0, 10));
   draw_sysrow('Updated On', substr($whois_record['updated_on'], 0, 10));
   draw_sysrow('Expires On', substr($whois_record['expires_on'], 0, 10));
@@ -394,7 +349,7 @@ function show_whoisdata($whois_date, $whois_record) {
   if (isset($whois_record['nameservers'][1])) draw_sysrow('', $whois_record['nameservers']['1']['name']);
   if (isset($whois_record['nameservers'][2])) draw_sysrow('', $whois_record['nameservers']['2']['name']);
   if (isset($whois_record['nameservers'][3])) draw_sysrow('', $whois_record['nameservers']['3']['name']);
-  draw_sysrow('Last Retrieved', $whois_date.'<span class="investigatelink"><a href="?site='.$subdomain.'&amp;update">Get Latest</a></span>');
+  draw_sysrow('Last Retrieved', $whois_date.'<span class="investigatelink"><a href="?subdomain='.$subdomain.'&amp;update">Get Latest</a></span>');
   echo '</table></div>'.PHP_EOL;
 
   /*if (isset($whois_record['registrant_contacts'][0])) {
@@ -465,7 +420,7 @@ function show_whoiserror() {
 
 /********************************************************************
  *  Count Queries
- *    1. log_date by day, dns_result for site for past 30 days count and grouped by day
+ *    1. log_date by day, severity for site for past 30 days count and grouped by day
  *    2. Create associative array for each day (to account for days when no queries are made
  *    3. Copy known count values into associative array
  *    4. Move associative values into index array
@@ -493,10 +448,10 @@ function count_queries() {
   $endtime = strtotime('+1 days');
 
   if ($domain != $subdomain) {
-    $query = "SELECT date_format(log_time, '%m-%d') as log_date, dns_result, COUNT(1) as count FROM dnslog WHERE dns_request LIKE '%$domain' GROUP BY dns_result, log_date";
+    $query = "SELECT date_format(log_time, '%m-%d') as log_date, severity, COUNT(1) as count FROM dnslog WHERE dns_request LIKE '%$domain' GROUP BY severity, log_date";
   }
   else {
-    $query = "SELECT date_format(log_time, '%m-%d') as log_date, dns_result, COUNT(1) as count FROM dnslog WHERE dns_request LIKE '%$subdomain' GROUP BY dns_result, log_date";
+    $query = "SELECT date_format(log_time, '%m-%d') as log_date, severity, COUNT(1) as count FROM dnslog WHERE dns_request LIKE '%$subdomain' GROUP BY severity, log_date";
   }
 
   if(!$result = $db->query($query)){
@@ -524,10 +479,10 @@ function count_queries() {
 
     if (! array_key_exists($row['log_date'], $allowed_arr)) continue;
 
-    if ($row['dns_result'] == 'A') {
+    if ($row['severity'] == 1) {
       $allowed_arr[$row['log_date']] = $row['count'];
     }
-    elseif ($row['dns_result'] == 'B') {
+    else {
       $blocked_arr[$row['log_date']] = $row['count'];
     }
   }
@@ -535,7 +490,6 @@ function count_queries() {
   $result->free();
 
   linechart(array_values($allowed_arr), array_values($blocked_arr), $chart_labels, $link_labels, '/P1D&amp;searchbox=*'.$domain, 'Queries over past 30 days');   //Draw the line chart
-  return null;
 }
 
 /********************************************************************
@@ -555,9 +509,9 @@ if (isset($_GET['datetime'])) {                            //Filter for hh:mm:ss
   }
 }
 
-if (isset($_GET['site'])) {
-  if (filter_domain(trim($_GET['site']))) {
-    $subdomain = trim($_GET['site']);
+if (isset($_GET['subdomain'])) {
+  if (filter_domain(trim($_GET['subdomain']))) {
+    $subdomain = trim($_GET['subdomain']);
     $domain = extract_domain($subdomain);
   }
 }

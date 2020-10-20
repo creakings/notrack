@@ -238,7 +238,7 @@ function show_analytics() {
 
     $checkboxid = $row['id'].'_'.str_replace(' ', '_', $log_time);
 
-    $investigateurl = "./investigate.php?datetime=".rawurlencode($log_time)."&amp;site={$dns_request}&amp;sys={$sys}";
+    $investigateurl = "./investigate.php?datetime=".rawurlencode($log_time)."&amp;subdomain={$dns_request}&amp;sys={$sys}";
 
     //Create clipboard image and text
     $clipboard = '<div class="icon-clipboard" onclick="setClipboard(\''.$dns_request.'\')" title="Copy domain">&nbsp;</div>';
@@ -375,7 +375,7 @@ if ($config->whois_api == '') {                            //Setup Investigate /
 }
 else {
   $INVESTIGATE = 'Investigate';
-  $INVESTIGATEURL = './investigate.php?site=';
+  $INVESTIGATEURL = './investigate.php?subdomain=';
 }
 
 show_analytics();

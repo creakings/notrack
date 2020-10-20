@@ -1,92 +1,62 @@
 #NoTrack Shared Functions
 
+#Standard imports
+import logging
 import os
 import shutil
 import sys
 import time
 
+#Create logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 #Constants
-VERSION = '0.9.5'
-
-
-def check_module(mod):
-    """ Check Module Exists
-    Checks specified module exists
-
-    Parameters:
-        mod (str): Module to check
-    Returns:
-        True - Module exists
-        False - Module not installed
-    """
-    import importlib.util
-
-    spec = importlib.util.find_spec(mod)
-
-    if spec is None:
-        print('Check_module: Error - %s not found' % mod)
-        return False
-    else:
-        #print('Check_module: %s can be imported' % mod)
-        return True
-
+VERSION = '20.10'
 
 def check_root():
     """
     Check script is being run as root
     """
     if os.geteuid() != 0:
-        print('This script must be run as root :-(', file=sys.stderr)
+        logger.error('This script must be run as root :-(')
         sys.exit(2)
 
 
-def delete_file(source):
+def delete(source):
     """
-    Delete a File
+    Delete a File or Folder
 
     Parameters:
-        source (str): File to delete
+        source (str): File or Folder to delete
     Returns:
         True on success, False on failure or not needed
     """
-    if not os.path.isfile(source):                         #Check file exists
+    if os.path.isdir(source):                              #Check if source is a folder
+        print(f'Deleting folder: {source}')
+        try:                                               #Attempt to delete folder
+            shutil.rmtree(source, ignore_errors=True)
+        except:
+            logger.error(f'Error unable to delete {source}')
+            logger.error(e)
+            return False
+
+    elif os.path.isfile(source):                           #Check if source is a file
+        print(f'Deleting file: {source}')
+        try:                                               #Attempt to delete file
+            os.remove(source)
+        except OSError as e:
+            logger.error(f'Error unable to delete {source}')
+            logger.error(e)
+            return False
+
+    else:                                                  #Nothing found
         return False
 
-    print('Deleting old file', source)
-    try:                                                   #Attempt to delete file
-        os.remove(source)
-    except OSError as e:
-        print('Delete_file: Error unable to delete', source)
-        print(e)
-        return False
-
-    return True
+    return True                                            #Success
 
 
-def delete_folder(source):
-    """
-    Delete a Folder
-
-    Parameters:
-        source (str): Folder to delete
-    Returns:
-        True on success, False on failure or not needed
-    """
-    if not os.path.isdir(source):                          #Check folder exists
-        return False
-
-    print('Deleting old folder', source)
-    try:                                                   #Attempt to delete file
-        shutil.rmtree(source, ignore_errors=True)
-    except:
-        print('Delete_folder: Error unable to delete', source)
-        #print(e)
-        return False
-
-    return True
-
-
-def copy_file(source, destination):
+def copy(src, dest):
     """
     Copy a File or Folder from source to destination
 
@@ -97,16 +67,25 @@ def copy_file(source, destination):
         True on success, False on failure
     """
 
-    #Check source file/folder exists
-    if not os.path.isfile(source) and not os.path.isdir(source):
-        print('Copy_file: Error %s is missing' % source)
-        return False
+    if os.path.isdir(src):                                 #Check if source is a folder
+        print(f'Copying folder: {src} to {dest}')
+        try:                                               #Attempt to copy folder
+            shutil.copytree(src, dest, dirs_exist_ok=True)
+        except:
+            logger.error(f'Error unable to copy folder {src} to {dest}')
+            return False
 
-    try:
-        shutil.copy(source, destination)                   #Attempt to copy the file
-    except IOError as e:
-        print('Copy_file: Unable to move %s to %s' % (source, destination))
-        print(e)
+    elif os.path.isfile(src):                              #Check if source is a file
+        print(f'Copying file: {src} to {dest}')
+        try:                                               #Attempt to copy the file
+            shutil.copy(src, dest)
+        except OSError as e:
+            logger.error(f'Error unable to copy file {src} to {dest}')
+            logger.error(e)
+            return False
+
+    else:                                                  #Nothing found
+        logger.error(f'Error unable to copy {src}, source is missing')
         return False
 
     return True
@@ -140,6 +119,55 @@ def move_file(source, destination, permissions=0):
     else:
         if permissions != 0:
             os.chmod(destination, permissions)
+
+    return True
+
+
+def get_owner(src):
+    """
+    Get file / folder ownership details
+
+    Parameters:
+        src (str): Source File or Folder
+    Returns:
+        statinfo class, use st_uid and st_gid for user / group ownership
+    """
+    if not os.path.isfile(src) and not os.path.isdir(src):
+        logger.error(f'Get_Owner: Error {src} is missing')
+        return None
+
+    return os.stat(src)
+
+
+def set_owner(src, uid, gid):
+    """
+    Set file / folder ownership details
+
+    Parameters:
+        src (str): Source File or Folder
+        uid (int): User ID
+        gid (int): Group ID
+    Returns:
+        True on success, False on failure
+    """
+    if os.path.isfile(src):                                #Single file
+        try:                                               #Attempt to change ownership
+            os.chown(src, uid, gid)
+        except OSError as e:
+            logger.error(f'Error unable to change ownership of {src}')
+            logger.error(e)
+            return False
+
+    elif os.path.isdir(src):                               #Multiple files / folders
+        for root, dirs, files in os.walk(src):             #Use os.walk to navigate struct
+            os.chown(root, uid, gid)
+            for item in dirs:
+                os.chown(os.path.join(root, item), uid, gid)
+            for item in files:
+                os.chown(os.path.join(root, item), uid, gid)
+    else:
+        logger.error(f'Set_Owner: Error {src} is missing')
+        return False
 
     return True
 

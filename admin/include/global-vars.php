@@ -15,12 +15,9 @@ define('DBNAME', 'ntrkdb');
 define('ROWSPERPAGE', 200);
 
 define('DIR_TMP', '/tmp/');
-define('ACCESSLOG', '/var/log/ntrk-admin.log');
 define('CONFIGFILE', '/etc/notrack/notrack.conf');
-define('CONFIGTEMP', '/tmp/notrack.conf');
 define('DNS_LOG', '/var/log/notrack.log');
-define('TLD_CSV', '../include/tld.csv'); //DEPRECATED
-define('NTRK_EXEC', 'sudo /usr/local/sbin/ntrk-exec ');
+define('TLD_CSV', '../include/tld.csv'); //To be DEPRECATED
 define('NOTRACK_LIST', '/etc/dnsmasq.d/notrack.list');
 
 //Status values for Analytics ACK (acknowledged)
@@ -46,7 +43,7 @@ define('REGEX_VALIDAPI', '/^[a-f0-9]*$/');
 //Group 3 - CIDR notation 30-32, 10/20-19/29, 0-9
 define('REGEX_IPCIDR', '/^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/(3[0-2]|[1-2][0-9]|[0-9])$/');
 
-define('REGEX_URLSEARCH', '/[^\w\d\.\_\-\*]/');    //Valid leters for URL search
+define('REGEX_URLSEARCH', '/[^\w\.\-]/');        //Valid leters for URL search
 
 if (!extension_loaded('memcache')) {
   die('NoTrack requires memcached and php-memcached to be installed');

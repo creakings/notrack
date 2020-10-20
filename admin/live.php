@@ -83,7 +83,7 @@ if ($config->whois_api == '') {                            //Setup Investigate /
 }
 else {
   echo 'const INVESTIGATE = "Investigate";'.PHP_EOL;
-  echo 'const INVESTIGATEURL = "./investigate.php?site=";'.PHP_EOL;
+  echo 'const INVESTIGATEURL = "./investigate.php?subdomain=";'.PHP_EOL;
 }
 ?>
 const MAX_LINES = 27;
