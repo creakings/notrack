@@ -29,7 +29,7 @@ Tracking is absolutely rife on the Internet, on average 17 cookies are dropped b
   
 ## Features    
 ### Web Interface Dashboard   
-At a glance see how many sites are in your blocklist, number of DNS Queries, number of Systems on your Netowork, and volume of traffic over the past 24 hours.  
+At a glance see how many sites are in your blocklist, number of DNS Queries, number of Systems on your Network, and volume of traffic over the past 24 hours.  
 As well as links to all the other admin features in the custom built interface.
 ![notrackmain](https://gitlab.com/quidsup/notrack/wikis/uploads/57be0de25f7bd55dd4a59d1cc3106885/notrackmain.png)
    
