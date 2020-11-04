@@ -5,9 +5,6 @@ Add DNS over HTTPS
 blockparser.py
 *Add annoyance domains blocklist
 
-config/index.php
-*Add icons for DNS and DHCP menu items
-
 
 20.12:
 chart.php
