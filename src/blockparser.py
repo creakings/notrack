@@ -261,7 +261,7 @@ class BlockParser:
         for line in lines:                                 #Read through list
             if self.__match_plainline(line, 'custom'):     #Try against Plain line
                 continue
-            if self.__match_easyline(line, 'custom'):      #Try agaisnt Easy List
+            if self.__match_easyline(line, 'custom'):      #Try against Easy List
                 continue
             if self.__match_unixline(line, 'custom'):      #Try against Unix List
                 continue

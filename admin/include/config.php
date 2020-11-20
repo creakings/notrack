@@ -136,6 +136,9 @@ class Config {
     'bl_viefb' => array(false, 'advert', 'VIE Fanboy'),
     'bl_fblatin' => array(false, 'advert', 'Latin Easy List'),
     'bl_yhosts' => array(false, 'advert', 'CHN Yhosts'),
+    'bl_ublock_annoyance' => array(false, 'misc', 'uBlockOrigin Annoyance'),
+    'bl_ublock_badware' => array(false, 'malware', 'uBlockOrigin Badware'),
+
     'custom' => array(true, 'custom', 'Custom'), //DEPRECATED
     'invalid' => array(false, 'invalid', 'Invalid'),
     'whitelist' => array(false, 'custom', 'Whitelist'),
