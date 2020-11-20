@@ -7,6 +7,9 @@ v20.11 Development
 
 Changes:
 *Added new icons for DNS and DHCP menu items on Config page
+*Added uBlockOrigin Annoyance blocklist
+*Added uBlockOrigin Badware blocklist
+*Improved EasyList / uBlockOrigin domain extraction
 
 *************************************************
 
