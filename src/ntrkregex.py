@@ -29,8 +29,8 @@ Regex_CSV = re.compile('^\s*([\w\.\-]{1,253})[\t,]([\w]{1,255})')
 #|| Marks active domain entry
 #Group 1: domain.com (Need to eliminate IP addresses, so assume TLD begins with [a-z]
 #Non-capturing group: Domain ending
-#Non-capturing group: Against document type: Acceptable - third-party, doc, popup
-Regex_EasyLine = re.compile('^\|\|([\w\.\-]{1,250}\.[a-zA-Z][\w\-]{1,62})(?:\^|\.)(?:\$third\-party|\$doc|\$popup|\$popup\,third\-party)?\n$')
+#Non-capturing group: Against document type: Acceptable - ^, $3p, $third-party, $all, $doc, $document, $popup, $popup,third-party
+Regex_EasyLine = re.compile('^\|\|([\w\.\-]{1,250}\.[a-zA-Z][\w\-]{1,62})(?:\^|\.)(?:\^|\$3p|\$third\-party|\^\$?all|\$doc|\$document|\$popup|\$popup,third\-party)?\n$')
 
 #Regex Plain Line
 #Group 1: domain.com
