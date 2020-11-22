@@ -139,6 +139,8 @@ function advertising_blocklists() {
 
   draw_blocklist_row('bl_pglyoyo', 'Peter Lowe&rsquo;s Ad server list‎', 'Some of this list is already in NoTrack', 'https://pgl.yoyo.org/adservers/');
 
+  //draw_blocklist_row('bl_quantum_ad', 'Quantum Ad list‎', 'Made an AI to track and analyse every websites, a bit like a web crawler, to find and identify ads.<br>The list contains over 1.3 Million domains used by ads, trackers, miners, malwares, and much more', 'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list');
+
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
 }

@@ -105,6 +105,7 @@ class Config {
     'bl_malwaredomainlist' => array(false, 'malware', 'Malware Domains List'),
     'bl_malwaredomains' => array(false, 'malware', 'Malware Domain'),
     'bl_pglyoyo' => array(false, 'advert', 'Peter Lowe&rsquo;s Ad List'),
+    'bl_quantum_ad' => array(false, 'advert', 'Quantum Ad List'),
     'bl_someonewhocares' => array(false, 'misc', 'Dan Pollocks&rsquo;s hosts'),
     'bl_spam404' => array(false, 'misc', 'Spam 404'),
     'bl_swissransom' => array(false, 'malware', 'Swiss Security Ransomware'),
