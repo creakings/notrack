@@ -2,7 +2,7 @@
 #Title       : NoTrack MariaDB Wrapper
 #Description : MariaDB Wrapper provides a functions for interacting with the SQL tables that NoTrack uses.
 #Author      : QuidsUp
-#Version     : 20.10
+#Version     : 20.11
 #TODO use the __execute function more
 #TODO use f strings
 #TODO load unique password out of php file
@@ -275,19 +275,38 @@ class DBWrapper:
     def blocklist_insertdata(self, sqldata):
         """
         Bulk insert a list into MariaDB
-        NOTE Single quotes aren't needed around %s as they're added by executemany function
+        Large data blocks are sliced up to avoid exceeding memory limitations of
+         data uploading into MariaDB
 
         Parameters:
             sqldata (list): List of data
         """
-        cmd = ''
-        cursor = DBWrapper.__db.cursor()
+        cmd = ''                                           #Bulk Insert command
+        i = 0
+        sqldatalen = 0                                     #Size of sqldata parameter
+        totalrowcount = 0                                  #Total of rows added
+        cursor = DBWrapper.__db.cursor()                   #Create a cursor
+        dataslice = list()                                 #Temporary slice of sqldata
 
         cmd = 'INSERT INTO blocklist (id, bl_source, site, site_status, comment) VALUES (NULL, %s, %s, %s, %s)'
 
-        cursor.executemany(cmd, sqldata)
-        DBWrapper.__db.commit()
-        cursor.close()
+        sqldatalen = len(sqldata)
+        print(f'Adding {sqldatalen} domains into blocklist table')
+
+        if sqldatalen < 100000:                            #Small data blocks can be added
+            cursor.executemany(cmd, sqldata)               #Insert small block as is
+            DBWrapper.__db.commit()                        #Commit insert
+            totalrowcount = cursor.rowcount                #Row count is literal
+
+        else:                                              #Larger blocks must be split
+            for i in range(0, sqldatalen, 100000):         #Split into 100K blocks
+                dataslice = sqldata[i:i+99999]             #Slice list
+                cursor.executemany(cmd, dataslice)         #Insert slice into MariaDB
+                DBWrapper.__db.commit()                    #Commit insert
+                totalrowcount += cursor.rowcount           #Tally count
+
+        cursor.close()                                     #Done with cursor
+        print(f'Completed adding {totalrowcount} rows to blocklist table')
 
 
     def blocklist_search(self, s):
