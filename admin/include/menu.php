@@ -181,7 +181,7 @@ function sidemenu_sysstatus() {
     echo '<div id="menu-side-blocking"><img src="/admin/svg/status_red.svg" alt="">Blocking: Disabled</div>'.PHP_EOL;
   }
 
-  if ($mempercentage > 85) echo '<div><img src="/admin/svg/status_red.svg" alt="">Memory Used: '.$mempercentage.'%</div>'.PHP_EOL;
+  if ($mempercentage > 75) echo '<div><img src="/admin/svg/status_red.svg" alt="">Memory Used: '.$mempercentage.'%</div>'.PHP_EOL;
   elseif ($mempercentage > 60) echo '<div><img src="/admin/svg/status_yellow.svg" alt="">Memory Used: '.$mempercentage.'%</div>'.PHP_EOL;
   else echo '<div><img src="/admin/svg/status_green.svg" alt="">Memory Used: '.$mempercentage.'%</div>'.PHP_EOL;
 
