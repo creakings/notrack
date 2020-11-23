@@ -9,6 +9,8 @@ Changes:
 *Added new icons for DNS and DHCP menu items on Config page
 *Added uBlockOrigin Annoyance blocklist
 *Added uBlockOrigin Badware blocklist
+*Added Quantum Ad list
+*Fixed bug with import limits from blockparser into MariaDB
 *Improved EasyList / uBlockOrigin domain extraction
 
 *************************************************
