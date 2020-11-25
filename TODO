@@ -1,27 +1,15 @@
-20.11:
+20.12:
 Add DNSSEC
 Add DNS over HTTPS
+Standardise blocklist icons
 
-blockparser.py
-*Add annoyance domains blocklist
-
-
-20.12:
 chart.php
 *Move chart code from globalfunctions.php into chart.php as a new class
 *Fix 0/100% count on pie chart
 
-blockparser.py
-*Add more blocklists
-https://firebog.net/
-
 tld.php
 *Add more country specific and punycode top level domains
 *Remove save button (same as blocklists.php)
-
-upgrade.php / notrackd.py
-*Add auto-update option
-
 
 21.01:
 tld.php
@@ -34,6 +22,13 @@ investigate.php
 notrack.py
 *Add admin functionality back in, same as notrack.sh used to have
  (Many of the features are already written, just need to call the functions)
+
+upgrade.php / notrackd.py
+*Add auto-update option
+
+blockparser.py
+*Add more blocklists
+https://firebog.net/
 
 
 21.02:

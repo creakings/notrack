@@ -1,17 +1,22 @@
 IMPORTANT NOTE: THERE IS NO UPGRADE PATH FROM NOTRACK 0.9.x
 In order carry out the upgrade, please uninstall your old version of NoTrack using the uninstall.sh script.
-Install instructions for NoTrack 20.10: https://gitlab.com/quidsup/notrack/-/blob/master/README.md
+Install instructions for NoTrack 20.11: https://gitlab.com/quidsup/notrack/-/blob/master/README.md
 
 *************************************************
-v20.11 Development
+v20.11 Released 25 Nov 2020
 
 Changes:
 *Added new icons for DNS and DHCP menu items on Config page
-*Added uBlockOrigin Annoyance blocklist
-*Added uBlockOrigin Badware blocklist
-*Added Quantum Ad list
+*New Blocklists
+  -NoTrack Annoyance blocklist
+  -uBlockOrigin Annoyance blocklist
+  -uBlockOrigin Badware blocklist
+  -Quantum Ad list
 *Fixed bug with import limits from blockparser into MariaDB
 *Improved EasyList / uBlockOrigin domain extraction
+
+Known Issues:
+#297 Select Blocklists page slow to load when Quantum Full lists is selected
 
 *************************************************
 
