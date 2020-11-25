@@ -97,7 +97,7 @@ function tracking_blocklists() {
   echo '<h5>Tracker Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
-  draw_blocklist_row('bl_notrack', 'NoTrack List', 'NoTrack Block List contains mixture of Tracking and Advertising sites', 'https://gitlab.com/quidsup/notrack-blocklists');
+  draw_blocklist_row('bl_notrack', 'NoTrack List', 'NoTrack Block List contains mixture of Tracking and Advertising domains', 'https://gitlab.com/quidsup/notrack-blocklists');
 
   draw_blocklist_row('bl_tld', 'Top Level Domains', 'Whole country and generic top level domains', './tld.php');
 
@@ -116,6 +116,8 @@ function tracking_blocklists() {
   draw_blocklist_row('bl_ddg_low', 'DuckDuckGo Low Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are using some browser APIs, but not obvoiusly for tracking purposes. This will contain some legitimate websites that are not associated with tracking.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
 
   draw_blocklist_row('bl_ddg_unknown', 'DuckDuckGo Unknown', 'Domains identified by DuckDuckGo Tracker Radar which have little to no usage of browser APIs associate with tracking. This list contains a mixture of legitimate and suspect websites.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+
+  draw_blocklist_row('bl_quantum_privacy', 'Quantum Privacy only list‎', 'Uses AI to track and analyse every website to find and identify ads.<br>This list contains over 265,000 domains for tracking domains', 'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list');
 
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
@@ -139,7 +141,11 @@ function advertising_blocklists() {
 
   draw_blocklist_row('bl_pglyoyo', 'Peter Lowe&rsquo;s Ad server list‎', 'Some of this list is already in NoTrack', 'https://pgl.yoyo.org/adservers/');
 
-  draw_blocklist_row('bl_quantum_ad', 'Quantum Ad list‎', 'Uses AI to track and analyse every website to find and identify ads.<br>The list contains over 1.3 Million domains used by ads, trackers, miners, malwares, and much more', 'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list');
+  draw_blocklist_row('bl_quantum_full', 'Quantum Full list‎', 'Uses AI to track and analyse every website to find and identify ads.<br>This list contains over 1.3 Million domains used by ads, trackers, miners, malwares, and much more', 'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list');
+
+  draw_blocklist_row('bl_quantum_ads', 'Quantum Adverts only list‎', 'Uses AI to track and analyse every website to find and identify ads.<br>This list contains over 360,000 domains used by advertising companies', 'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list');
+
+  draw_blocklist_row('bl_quantum_youtube', 'Quantum YouTube Adverts only list‎', 'Uses AI to track and analyse every website to find and identify ads.<br>The list contains over 32,000 domains used by Google to place adverts on YouTube videos', 'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list');
 
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
@@ -159,7 +165,7 @@ function malware_blocklists() {
   echo '<h5>Malware Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
-  draw_blocklist_row('bl_notrack_malware', 'NoTrack Malware', 'NoTrack Malware List contains malicious and dodgy sites that aren&rsquo;t really considered tracking or advertising', 'https://gitlab.com/quidsup/notrack-blocklists');
+  draw_blocklist_row('bl_notrack_malware', 'NoTrack Malware', 'NoTrack Malware List contains long-lived domains associated with malware, adware and phishing', 'https://gitlab.com/quidsup/notrack-blocklists');
 
   draw_blocklist_row('bl_hexxium', 'Hexxium Creations Threat List', 'Hexxium Creations are a small independent team running a community based malware and scam domain database', 'https://www.hexxiumcreations.com/projects/malicious-domain-blocking');
 
@@ -172,6 +178,8 @@ function malware_blocklists() {
   draw_blocklist_row('bl_malwaredomainlist', 'Malware Domain List', '', 'http://www.malwaredomainlist.com/');
 
   draw_blocklist_row('bl_malwaredomains', 'Malware Domains', 'A good list to add', 'http://www.malwaredomains.com/');
+
+  draw_blocklist_row('bl_quantum_abuse', 'Quantum Abuse only list‎', 'Uses AI to track and analyse every website to find and identify ads.<br>This list contains over 67,000 domains for malware and other dodgy sites', 'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list');
 
   draw_blocklist_row('bl_spam404', 'Spam404', '', 'http://www.spam404.com/');
 
