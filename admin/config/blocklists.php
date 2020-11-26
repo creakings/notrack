@@ -229,6 +229,7 @@ function social_blocklists() {
 
   echo '<table class="bl-table">'.PHP_EOL;
 
+  draw_blocklist_row('bl_notrack_annoyance', 'NoTrack Annoyance List', 'Domains which fall outside of tracking and advertising, but are annoying if you inadvertently visit them', 'https://gitlab.com/quidsup/notrack-annoyance-blocklist');
   draw_blocklist_row('bl_fbannoyance', 'Fanboy&rsquo;s Annoyance List', 'Block Pop-Ups and other annoyances.', 'https://www.fanboy.co.nz/');
   draw_blocklist_row('bl_fbsocial', 'Fanboy&rsquo;s Social Blocking List', 'Block social content, widgets, scripts and icons.', 'https://www.fanboy.co.nz/');
   draw_blocklist_row('bl_ublock_annoyance', 'uBlockOrigin Annoyance List', 'Mostly for element blocking with uBlockOrigin, but contains a few domains NoTrack can use for blocking', 'https://github.com/uBlockOrigin/uAssets/blob/master/filters/annoyances.txt');
