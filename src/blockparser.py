@@ -242,7 +242,7 @@ class BlockParser:
         return False                                           #Nothing found, return False
 
 
-    def __process_customlist(self, lines, listname):
+    def __process_customlist(self, lines, linecount, listname):
         """
         We don't know what type of list this is, so try regex match against different types
         1. Reset dedup and domain counters
@@ -256,8 +256,6 @@ class BlockParser:
         self.__dedupcount = 0                              #Reset per list dedup count
         self.__domaincount = 0                             #Reset per list domain count
 
-        print(f'{len(lines)} lines to process')
-
         for line in lines:                                 #Read through list
             if self.__match_plainline(line, 'custom'):     #Try against Plain line
                 continue
@@ -269,9 +267,10 @@ class BlockParser:
 
         print(f'Added {self.__domaincount} domains')       #Show stats for the list
         print(f'Deduplicated {self.__dedupcount} domains')
+        self.__dbwrapper.blockliststats_insert(listname, linecount, self.__domaincount)
 
 
-    def __process_csv(self, filelines, listname):
+    def __process_csv(self, filelines, linecount, listname):
         """
         List of domains in a CSV file, assuming cell 1 = domain, cell 2 = comment
         1. Reset dedup and domain counters
@@ -286,8 +285,6 @@ class BlockParser:
         self.__dedupcount = 0                              #Reset per list dedup count
         self.__domaincount = 0                             #Reset per list domain count
 
-        print(f'{len(filelines)} lines to process')
-
         for line in filelines:                                 #Read through list
             matches = Regex_CSV.match(line)
 
@@ -297,9 +294,10 @@ class BlockParser:
 
         print(f'Added {self.__domaincount} domains')       #Show stats for the list
         print(f'Deduplicated {self.__dedupcount} domains')
+        self.__dbwrapper.blockliststats_insert(listname, linecount, self.__domaincount)
 
 
-    def __process_easylist(self, lines, listname):
+    def __process_easylist(self, lines, linecount, listname):
         """
         List of domains in Adblock+ filter format [https://adblockplus.org/filter-cheatsheet]
         1. Reset dedup and domain counters
@@ -314,8 +312,6 @@ class BlockParser:
         self.__dedupcount = 0                              #Reset per list dedup count
         self.__domaincount = 0                             #Reset per list domain count
 
-        print(f'{len(lines)} lines to process')
-
         for line in lines:                                 #Read through list
             matches = Regex_EasyLine.search(line)          #Search for first match
 
@@ -324,9 +320,10 @@ class BlockParser:
 
         print(f'Added {self.__domaincount} domains')       #Show stats for the list
         print(f'Deduplicated {self.__dedupcount} domains')
+        self.__dbwrapper.blockliststats_insert(listname, linecount, self.__domaincount)
 
 
-    def __process_plainlist(self, lines, listname):
+    def __process_plainlist(self, lines, linecount, listname):
         """
         List of domains with optional # separated comments
         1. Reset dedup and domain counters
@@ -343,8 +340,6 @@ class BlockParser:
         self.__dedupcount = 0                              #Reset per list dedup count
         self.__domaincount = 0                             #Reset per list domain count
 
-        print(f'{len(lines)} lines to process')
-
         for line in lines:                                 #Read through list
             splitline = line.split('#', 1)                 #Split by hash delimiter
 
@@ -359,9 +354,10 @@ class BlockParser:
 
         print(f'Added {self.__domaincount} domains')       #Show stats for the list
         print(f'Deduplicated {self.__dedupcount} domains')
+        self.__dbwrapper.blockliststats_insert(listname, linecount, self.__domaincount)
 
 
-    def __process_unixlist(self, lines, listname):
+    def __process_unixlist(self, lines, linecount, listname):
         """
         List of domains starting with either 0.0.0.0 or 127.0.0.1 domain.com
         1. Reset dedup and domain counters
@@ -376,8 +372,6 @@ class BlockParser:
         self.__dedupcount = 0                              #Reset per list dedup count
         self.__domaincount = 0                             #Reset per list domain count
 
-        print(f'{len(lines)} lines to process')
-
         for line in lines:                                 #Read through list
             matches = Regex_UnixLine.search(line)          #Search for first match
             if matches is not None:                        #Has a match been found?
@@ -385,6 +379,7 @@ class BlockParser:
 
         print(f'Added {self.__domaincount} domains')       #Show stats for the list
         print(f'Deduplicated {self.__dedupcount} domains')
+        self.__dbwrapper.blockliststats_insert(listname, linecount, self.__domaincount)
 
 
     def __process_whitelist(self):
@@ -531,6 +526,7 @@ class BlockParser:
         blurl = ''                                         #Block list URL
         bltype = ''                                        #Block list type
         blfilename = ''                                    #Block list file name
+        linecount = 0
 
         for bl in blocklistconf.items():
             blname = bl[0]
@@ -553,6 +549,7 @@ class BlockParser:
                 blfilename = blurl;                        #URL is actually the filename
 
             filelines = load_file(blfilename)              #Read temp file
+            linecount = len(filelines)
 
             if not filelines:                              #Anything read from file?
                 print(f'Data missing unable to process {blname}')
@@ -560,13 +557,13 @@ class BlockParser:
                 continue
 
             if bltype == TYPE_PLAIN:
-                self.__process_plainlist(filelines, blname)
+                self.__process_plainlist(filelines, linecount, blname)
             elif bltype == TYPE_EASYLIST:
-                self.__process_easylist(filelines, blname)
+                self.__process_easylist(filelines, linecount, blname)
             elif bltype == TYPE_UNIXLIST:
-                self.__process_unixlist(filelines, blname)
+                self.__process_unixlist(filelines, linecount, blname)
             elif bltype == TYPE_CSV:
-                self.__process_csv(filelines, blname)
+                self.__process_csv(filelines, linecount, blname)
 
             print(f'Finished processing {blname}')
             print()
@@ -667,6 +664,7 @@ class BlockParser:
         """
         print()
         self.__dbwrapper.blocklist_createtable()                      #Create SQL Tables
+        self.__dbwrapper.blockliststats_createtable()
         self.__dbwrapper.blocklist_cleartable()                       #Clear SQL Tables
 
         self.__process_whitelist()                                    #Need whitelist first

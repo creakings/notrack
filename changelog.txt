@@ -3,6 +3,12 @@ In order carry out the upgrade, please uninstall your old version of NoTrack usi
 Install instructions for NoTrack 20.11: https://gitlab.com/quidsup/notrack/-/blob/master/README.md
 
 *************************************************
+v20.12 Development
+
+Fixed:
+#297 Select Blocklists page slow to load when Quantum Full lists is selected
+
+*************************************************
 v20.11 Released 25 Nov 2020
 
 Changes:

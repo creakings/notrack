@@ -28,6 +28,7 @@ $dbwrapper = new MySqliDb;
 /************************************************
 *Arrays                                         *
 ************************************************/
+$blstats = array();
 $list = array();                                 //Global array for all the Block Lists
 
 
@@ -40,45 +41,69 @@ $list = array();                                 //Global array for all the Bloc
  *    None
  */
 function draw_blocklist_row($bl, $bl_name, $msg, $url) {
-  global $config, $dbwrapper;
+  global $config;
 
   $filelines = 0;
-  $filename = '';
-  $stats = '';
+  $stats_line = '';
 
   if ($config->is_blocklist_active($bl)) {
-    if ($bl == 'bl_tld') {                                 //Set the filename
-      $filename = TLD_CSV;
+    $stats = get_blocklist_stats($bl);
+    if ($stats === false) {
+      $stats_line = '';
     }
     else {
-      $filename = DIR_TMP.$bl.'.txt';                      //Temp + Abbreviated blocklist name + .txt
+      $stats_line = "<p class=\"light\">{$stats[1]} used of {$stats[0]}</p>";
     }
 
-    $rows = $dbwrapper->count_specific_blocklist($bl);     //Count number of entries for this blocklist in blocklist MariaDB table
-
-    if (($rows > 0) && (file_exists($filename))) {
-      try {                                                //Try and count the number of lines in the file
-        $filelines = count(file($filename));
-      }
-      catch(Exception $e) {                                //Something wrong, default count to zero
-        $filelines = 0;
-      }
-
-      //Prevent stupid result of lines being higher than the site count
-      if ($rows > $filelines) {
-        $rows = $filelines;
-      }
-
-      $stats = '<p class="light">'.$rows.' used of '.$filelines.'</p>';
-    }
-    else {                                                 //Temp file missing, default to unknown count value
-      $stats = '<p class="light">'.$rows.' used of ?</p>';
-    }
-
-    echo '<tr><td><input type="checkbox" name="'.$bl.'" checked="checked" onChange="setBlocklist(this)"></td><td>'.$bl_name.':</td><td>'.$msg.' <a href="'.$url.'" target="_blank"><img alt="Link" src="../svg/icon_home.svg"></a>'.$stats.'</td></tr>'.PHP_EOL;
+    echo '<tr><td><input type="checkbox" name="'.$bl.'" checked="checked" onChange="setBlocklist(this)"></td><td>'.$bl_name.':</td><td>'.$msg.' <a href="'.$url.'" target="_blank"><img alt="Link" src="../svg/icon_home.svg"></a>'.$stats_line.'</td></tr>'.PHP_EOL;
   }
   else {
     echo '<tr><td><input type="checkbox" name="'.$bl.'" onChange="setBlocklist(this)"></td><td>'.$bl_name.':</td><td>'.$msg.' <a href="'.$url.'" target="_blank"><img alt="Link" src="../svg/icon_home.svg"></a></td></tr>'.PHP_EOL;
+  }
+}
+
+
+/********************************************************************
+ *  Get Blocklist Stats
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function get_blocklist_stats($bl) {
+  global $blstats;
+
+  if (array_key_exists($bl, $blstats)) {
+    return ($blstats[$bl]);
+  }
+  else {
+    return false;
+  }
+}
+
+
+/********************************************************************
+ *  Build Block List Totals Array
+ *    Query all results from blockliststats table
+ *    Rebuild multidimensional array into an associative array
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function build_blocklist_totals() {
+  global $blstats, $dbwrapper;
+
+  $result = $dbwrapper->blockliststats_read();
+
+  if ($result === false) {                                 //Any data returned?
+    return;
+  }
+
+  foreach ($result as $line) {                             //Rebuild array
+    $blstats[$line['bl_source']] = array($line['filelines'], $line['linesused']);
   }
 }
 
@@ -492,6 +517,7 @@ draw_topmenu('Block Lists');
 draw_sidemenu();
 
 $config->load_blocklists();
+build_blocklist_totals();                                  //Build blstats array
 
 echo '<div id="main">'.PHP_EOL;
 

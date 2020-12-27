@@ -362,6 +362,39 @@ class DBWrapper:
         print()
 
 
+    def blockliststats_createtable(self):
+        """
+        Create SQL table for blockliststats, in case it has been deleted
+        bl_source (KEY), filelines, linesused
+        """
+        cursor = DBWrapper.__db.cursor()
+
+        cmd = 'CREATE TABLE IF NOT EXISTS blockliststats (bl_source VARCHAR(50), filelines BIGINT UNSIGNED, linesused BIGINT UNSIGNED, PRIMARY KEY (bl_source))';
+
+        print('Checking SQL Table for blockliststats exists')
+        cursor.execute(cmd);
+        cursor.close()
+
+
+    def blockliststats_insert(self, listname, filelines, linesused):
+        """
+        Insert / Replace data in blockliststats
+
+        Parameters:
+            listname(str)
+            filelines(int)
+            linesused(int)
+        Returns:
+            None
+        """
+        cmd = '';
+
+        #Force line to be updated on a duplicate entry of the blocklist name
+        cmd = f"INSERT INTO blockliststats (bl_source, filelines, linesused) VALUES ('{listname}','{filelines}','{linesused}') ON DUPLICATE KEY UPDATE bl_source='{listname}'"
+
+        self.__execute(cmd)
+
+
     #DNS Log Table
     def dnslog_createtable(self):
         """
