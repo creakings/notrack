@@ -8,6 +8,7 @@
 
 #Standard imports
 from datetime import date
+import logging
 import os
 import re
 import sys
@@ -15,6 +16,9 @@ import sys
 #Local imports
 from ntrkmariadb import DBWrapper
 from ntrkregex import Regex_Domain, Regex_TLD
+
+#Create logger
+logger = logging.getLogger(__name__)
 
 class NoTrackParser():
     def __init__(self):
@@ -32,16 +36,17 @@ class NoTrackParser():
         """
         Overwrite the dnslog file with nothing
         """
-        print('Blanking dnslog file')
+        logger.debug('Blanking dnslog file')
+
         try:
             f = open(self.__DNSLOGFILE, 'w')               #Open log file for ascii writing
         except IOError as e:
-            print(f'Unable to write to {self.__DNSLOGFILE}', file=sys.stder)
-            print(e, file=sys.stder)
+            logger.error(f'Unable to write to {self.__DNSLOGFILE}')
+            logger.error(e)
             return False
         except OSError as e:
-            print(f'Unable to write to {self.__DNSLOGFILE}', file=sys.stder)
-            print(e, file=sys.stder)
+            logger.error(f'Unable to write to {self.__DNSLOGFILE}')
+            logger.error(e)
             return False
         else:
             f.write('')                                    #Write blank
@@ -60,20 +65,21 @@ class NoTrackParser():
             List of all lines in file
             Empty list if file doesn't exist or error occured
         """
-        print('Loading dnslog file')
+        logger.debug('Loading dnslog file')
+
         if not os.path.isfile(self.__DNSLOGFILE):
-            print(f'Unable to load {self.__DNSLOGFILE}, file is missing', file=sys.stderr)
+            logger.error(f'Unable to load {self.__DNSLOGFILE}, file is missing')
             return []
 
         try:
             f = open(self.__DNSLOGFILE, 'r')               #Open log file for reading
         except IOError as e:
-            print(f'Unable to read to {self.__DNSLOGFILE}', file=sys.stder)
-            print(e, file=sys.stder)
+            logger.error(f'Unable to read {self.__DNSLOGFILE}')
+            logger.error(e)
             return []
         except OSError as e:
-            print(f'Unable to read to {self.__DNSLOGFILE}', file=sys.stder)
-            print(e, file=sys.stder)
+            logger.error(f'Unable to read {self.__DNSLOGFILE}')
+            logger.error(e)
             return []
         else:
             filelines = f.readlines()
@@ -149,7 +155,6 @@ class NoTrackParser():
                     tempqueries.pop(serial)
 
         if len(queries) == 0:                              #Anything processed?
-            print('Nothing in dnslog')
             return
 
         self.__dbwrapper.dnslog_insertdata(queries)        #Upload to dnslog table on MariaDB
@@ -269,7 +274,7 @@ class NoTrackParser():
         filelines = self.__load_dnslog()                   #Load dnslog file
 
         if len(filelines) < 4:                             #Minimum for processing
-            print('Nothing in dnslog, skipping')
+            logger.debug('Nothing in dnslog, skipping')
             return
 
         self.blank_dnslog()                                #Empty log file to avoid repeat entries
@@ -282,7 +287,7 @@ class NoTrackParser():
         """
         tabledata = []
 
-        print('Loading blocklist data from MariaDB into Log Parser')
+        logger.debug('Loading blocklist data from MariaDB into Log Parser')
         tabledata = self.__dbwrapper.blocklist_getdomains_listsource()
 
         self.__blocklist_sources.clear()                   #Clear old data
@@ -291,8 +296,7 @@ class NoTrackParser():
         for domain, bl_source in tabledata:
             self.__blocklist_sources[domain] = bl_source
 
-        print(f'Number of domains in blocklist: {len(self.__blocklist_sources)}')
-        print()
+        logger.debug(f'Number of domains in blocklist: {len(self.__blocklist_sources)}')
 
 
     def trimlogs(self, days):
