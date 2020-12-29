@@ -1,12 +1,16 @@
 IMPORTANT NOTE: THERE IS NO UPGRADE PATH FROM NOTRACK 0.9.x
 In order carry out the upgrade, please uninstall your old version of NoTrack using the uninstall.sh script.
-Install instructions for NoTrack 20.11: https://gitlab.com/quidsup/notrack/-/blob/master/README.md
+Install instructions for NoTrack 20.12: https://gitlab.com/quidsup/notrack/-/blob/master/README.md
 
 *************************************************
-v20.12 Development
+v20.12 Released 29 Dec 2020
+
+Changes:
+*Some styling improvements
 
 Fixed:
 #297 Select Blocklists page slow to load when Quantum Full lists is selected
+#299 Reduce number of systemd logs from notrackd
 
 *************************************************
 v20.11 Released 25 Nov 2020

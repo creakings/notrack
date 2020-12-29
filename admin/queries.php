@@ -970,7 +970,7 @@ $db->close();
 </form>
 <form name="reportform" action="https://quidsup.net/notrack/report.php" method="post" target="_blank">
 <input type="hidden" name="site" id="siterep" value="none">
-<span id="reportitem3"><input type="submit" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
+<span id="reportitem3"><input type="submit" class="button-danger" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
 </form>
 
 <br>

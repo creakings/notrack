@@ -187,7 +187,7 @@ function reportSite(site, blocked, showreport) {
   let search = '';                                         //Search Button
 
   //Set investigate link now and replace with whois link later
-  investigate = '<button name="site" value='+site+' type="submit">View Details</button><span>View domain details in NoTrack Investigate</span>';
+  investigate = '<button type="submit" name="site" class="button-grey" value='+site+'>View Details</button><span>View domain details in NoTrack Investigate</span>';
 
   if (isCommonDomain(site)) {                              //Is it a *common site?
     msg = '<p>Domains starting with * are known to utilise a large number of subdomains</p>';

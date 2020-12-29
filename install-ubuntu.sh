@@ -3,7 +3,7 @@
 #Description : This script will install NoTrack and then configure dnsmasq and lighttpd
 #Authors : QuidsUp, floturcocantsee, rchard2scout, fernfrost
 #Usage   : bash install.sh
-#Version : 20.10
+#Version : 20.12
 
 #######################################
 # User Configerable Settings
@@ -22,7 +22,7 @@ LISTENIP="127.0.0.1"
 #######################################
 # Constants
 #######################################
-readonly VERSION="20.10"
+readonly VERSION="20.12"
 
 
 #######################################
