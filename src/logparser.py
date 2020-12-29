@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
-#Title : NoTrack Log Parser
+#Title       : NoTrack Log Parser
 #Description : NoTrack Daemon
-#Author : QuidsUp
-#Date : 2020-07-24
-#Version : 2020.07
-#Usage : sudo python3 logparser.py
+#Author      : QuidsUp
+#Date        : 2020-07-24
+#Version     : 20.12
+#Usage       : sudo python3 logparser.py
 
 #Standard imports
 from datetime import date
-import logging
 import os
 import re
-import sys
 
 #Local imports
+import errorlogger
 from ntrkmariadb import DBWrapper
 from ntrkregex import Regex_Domain, Regex_TLD
 
 #Create logger
-logger = logging.getLogger(__name__)
+logger = errorlogger.logging.getLogger(__name__)
 
 class NoTrackParser():
     def __init__(self):
@@ -36,7 +35,7 @@ class NoTrackParser():
         """
         Overwrite the dnslog file with nothing
         """
-        logger.debug('Blanking dnslog file')
+        logger.info('Blanking dnslog file')
 
         try:
             f = open(self.__DNSLOGFILE, 'w')               #Open log file for ascii writing
@@ -65,7 +64,7 @@ class NoTrackParser():
             List of all lines in file
             Empty list if file doesn't exist or error occured
         """
-        logger.debug('Loading dnslog file')
+        logger.info('Loading dnslog file')
 
         if not os.path.isfile(self.__DNSLOGFILE):
             logger.error(f'Unable to load {self.__DNSLOGFILE}, file is missing')
@@ -274,7 +273,7 @@ class NoTrackParser():
         filelines = self.__load_dnslog()                   #Load dnslog file
 
         if len(filelines) < 4:                             #Minimum for processing
-            logger.debug('Nothing in dnslog, skipping')
+            logger.info('Nothing in dnslog, skipping')
             return
 
         self.blank_dnslog()                                #Empty log file to avoid repeat entries
@@ -287,7 +286,7 @@ class NoTrackParser():
         """
         tabledata = []
 
-        logger.debug('Loading blocklist data from MariaDB into Log Parser')
+        logger.info('Loading blocklist data from MariaDB into Log Parser')
         tabledata = self.__dbwrapper.blocklist_getdomains_listsource()
 
         self.__blocklist_sources.clear()                   #Clear old data
@@ -296,7 +295,7 @@ class NoTrackParser():
         for domain, bl_source in tabledata:
             self.__blocklist_sources[domain] = bl_source
 
-        logger.debug(f'Number of domains in blocklist: {len(self.__blocklist_sources)}')
+        logger.info(f'Number of domains in blocklist: {len(self.__blocklist_sources)}')
 
 
     def trimlogs(self, days):
@@ -316,6 +315,9 @@ def main():
     ntrkparser = NoTrackParser()
     ntrkparser.readblocklist()
     ntrkparser.parsedns()
+
+    print('NoTrack log parser complete :-)')
+    print()
 
 
 if __name__ == "__main__":

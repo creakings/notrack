@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-#Title : NoTrack Services
-#Description :
-#Author : QuidsUp
-#Date : 2020-04-04
-#Version : 20.10
+#Title       : NoTrack Services
+#Description : Finds service supervisor and can restart DNS / Web servers
+#Author      : QuidsUp
+#Date        : 2020-04-04
+#Version     : 20.12
 
+#Standard Imports
 import shutil
 import subprocess
-import sys
+
+#Local imports
+import errorlogger
+
+#Create logger
+logger = errorlogger.logging.getLogger(__name__)
 
 class Services:
     """
@@ -34,14 +40,14 @@ class Services:
             Services.__supervisor_name = 'systemd'
         elif shutil.which('service') != None:
             Services.__supervisor = 'service'
-            Services.__supervisor_name = 'systemctl'
+            Services.__supervisor_name = 'sysvinit'
         elif shutil.which('sv') != None:
             Services.__supervisor = 'sv'
             Services.__supervisor_name = 'ruinit'
         else:
-            print('Find_Supervisor: Fatal Error - Unable to identify service supervisor', file=sys.stderr)
-            sys.exit(7)
-        print(f'Identified Service manager: {Services.__supervisor_name}')
+            logger.error('Unknown service supervisor')
+            raise Exception('Unable to proceed without service supervisor')
+        logger.debug(f'Identified Service manager: {Services.__supervisor_name}')
 
 
     def __find_dnsserver(self):
@@ -53,9 +59,9 @@ class Services:
         elif shutil.which('bind') != None:
             Services.__dnsserver = 'bind'
         else:
-            print('Fatal Error - Unable to identify DNS server', file=sys.stderr)
-            sys.exit(8)
-        print(f'Identified DNS server: {Services.__dnsserver}')
+            logger.error('Unknown DNS server')
+            raise Exception('Unable to proceed')
+        logger.debug(f'Identified DNS server: {Services.__dnsserver}')
 
 
     def __find_webserver(self):
@@ -69,10 +75,9 @@ class Services:
         elif shutil.which('apache') != None:
             Services.__webserver = 'apache'
         else:
-            print('Fatal Error - Unable to identify Web server', file=sys.stderr)
-            sys.exit(9)
-        print(f'Identified Web server: {Services.__webserver}')
-        print()
+            logger.error('Unknown Web server')
+            raise Exception('Unable to proceed')
+        logger.debug(f'Identified Web server: {Services.__webserver}')
 
 
     def __restart_service(self, service):
@@ -96,13 +101,11 @@ class Services:
         p = subprocess.run(cmd, stderr=subprocess.PIPE, universal_newlines=True)
 
         if p.returncode != 0:
-            print(f'Failed to restart {service}')
-            print(p.stderr)
-            print()
+            logger.error(f'Failed to restart {service}')
+            logger.error(p.stderr)
             return False
         else:
-            print(f'Successfully restarted {service}')
-            print()
+            logger.info(f'Successfully restarted {service}')
             return True
 
 

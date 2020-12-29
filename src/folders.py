@@ -3,7 +3,8 @@
 #Description: FoldersList Class for Multiple NoTrack components
 #Author     : QuidsUp
 #Date       : 2020-04-04
-#Version    : 20.10
+#Version    : 20.12
+#Usage      : N/A this module is loaded as part of other NoTrack modules
 
 #Standard imports
 import os
@@ -39,8 +40,8 @@ def find_unix_webdir():
         webconfigdir = '/var/www/html/admin/settings'
         webdir = '/var/www/html/admin'
     else:
-        print('Find_Unix_WebDir: Fatal Error - Unable to find web folder', file=sys.stderr)
-        sys.exit(10)
+        raise Exception('Unable to find web folder')
+
 
 
 if os.name == 'posix':

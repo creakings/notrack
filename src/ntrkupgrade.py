@@ -3,7 +3,7 @@
 #Description : This script carries out upgrade for NoTrack
 #Author      : QuidsUp
 #Date        : 2020-03-28
-#Version     : 0.9.6
+#Version     : 20.12
 #Usage       : sudo python3 ntrkupgrade.py
 
 #Standard imports

@@ -2,23 +2,20 @@
 #Title       : NoTrack MariaDB Wrapper
 #Description : MariaDB Wrapper provides a functions for interacting with the SQL tables that NoTrack uses.
 #Author      : QuidsUp
-#Version     : 20.11
-#TODO use the __execute function more
-#TODO use f strings
+#Version     : 20.12
 #TODO load unique password out of php file
 
 #Standard Imports
-import logging
 
 #Additional standard import
 import mysql.connector as mariadb
 
 #Local imports
+import errorlogger
 from ntrkregex import *
 
 #Create logger
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.INFO)
+logger = errorlogger.logging.getLogger(__name__)
 
 class DBWrapper:
     """
@@ -56,9 +53,10 @@ class DBWrapper:
         rowcount = 0                                       #Variable to hold rowcount
 
         try:
+            logger.debug(f'Executing SQL command: {cmd}')
             cursor.execute(cmd)
         except mariadb.Error as e:                         #Catch any errors
-            logger.warning(f'Unable to execute command :-( {cmd}')
+            logger.warning(f'Unable to execute {cmd}')
             logger.warning(e)                              #Log the error message
             return False
         else:                                              #Successful execution
@@ -120,12 +118,10 @@ class DBWrapper:
         """
         Create SQL table for analytics, in case it has been deleted
         """
-        cursor = DBWrapper.__db.cursor()
         cmd = 'CREATE TABLE IF NOT EXISTS analytics (id SERIAL, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, severity CHAR(1), issue VARCHAR(50), ack BOOLEAN)';
 
-        print('Checking SQL Table analytics exists')
-        cursor.execute(cmd);
-        cursor.close()
+        logger.info('Checking SQL Table analytics exists')
+        return self.__execute(cmd)
 
 
     def analytics_insertrecord(self, log_time, system, dns_request, severity, issue):
@@ -150,18 +146,9 @@ class DBWrapper:
             logger.warning(f'Invalid severity {severity}')
             return False
 
-        cmd = "INSERT INTO analytics (id,log_time,sys,dns_request,severity,issue,ack) VALUES (NULL,'%s','%s','%s','%s','%s',FALSE)" % (log_time, system, dns_request, severity, issue)
+        cmd = f"INSERT INTO analytics (id,log_time,sys,dns_request,severity,issue,ack) VALUES (NULL,'{log_time}','{system}','{dns_request}','{severity}','{issue}',FALSE)"
 
-        try:
-            cursor.execute(cmd);
-        except mariadb.Error as e:
-            logger.warning('Unable to insert analytics record', exc_info=True)
-            return False
-        finally:
-            DBWrapper.__db.commit()
-            cursor.close()
-
-        return True
+        return self.__execute(cmd)
 
 
     def analytics_trim(self, days):
@@ -185,7 +172,7 @@ class DBWrapper:
         res = self.__execute(f"DELETE FROM analytics WHERE log_time < NOW() - INTERVAL '{days}' DAY")
 
         if res != False:
-            print(f'Trimmed {res} rows from analytics table')
+            logger.info(f'Trimmed {res} rows from analytics table')
 
         return res
 
@@ -194,24 +181,19 @@ class DBWrapper:
         """
         Create SQL table for blocklist, in case it has been deleted
         """
-        cursor = DBWrapper.__db.cursor()
-
         cmd = 'CREATE TABLE IF NOT EXISTS blocklist (id SERIAL, bl_source TINYTEXT, site TINYTEXT, site_status BOOLEAN, comment TEXT)';
 
-        print('Checking SQL Table for blocklist exists')
-        cursor.execute(cmd);
-        cursor.close()
+        logger.info('Checking SQL Table for blocklist exists')
+        return self.__execute(cmd)
 
 
     def blocklist_cleartable(self):
         """
         Clear blocklist table and reset serial increment
         """
-        cursor = DBWrapper.__db.cursor()
 
-        cursor.execute('DELETE FROM blocklist')
-        cursor.execute('ALTER TABLE blocklist AUTO_INCREMENT = 1')
-        cursor.close()
+        self.__execute('DELETE FROM blocklist')
+        self.__execute('ALTER TABLE blocklist AUTO_INCREMENT = 1')
 
 
     def blocklist_getactive(self):
@@ -228,10 +210,10 @@ class DBWrapper:
         tabledatalen = len(tabledata)
 
         if tabledatalen == 0:
-            print('No blocklists active')
+            logger.info('No blocklists active')
             return []
 
-        print(f'{tabledatalen} blocklists active')
+        logger.info(f'{tabledatalen} blocklists active')
 
         return self.__single_column(tabledata, 0)
 
@@ -263,10 +245,10 @@ class DBWrapper:
         tabledatalen = len(tabledata)
 
         if tabledatalen == 0:
-            print('No whitelisted domains')
+            logger.info('No whitelisted domains')
             return []
 
-        print(f'{tabledatalen} domains whitelisted')
+        logger.info(f'{tabledatalen} domains whitelisted')
 
         return self.__single_column(tabledata, 0)
 
@@ -291,7 +273,7 @@ class DBWrapper:
         cmd = 'INSERT INTO blocklist (id, bl_source, site, site_status, comment) VALUES (NULL, %s, %s, %s, %s)'
 
         sqldatalen = len(sqldata)
-        print(f'Adding {sqldatalen} domains into blocklist table')
+        logger.info(f'Adding {sqldatalen} domains into blocklist table')
 
         if sqldatalen < 100000:                            #Small data blocks can be added
             cursor.executemany(cmd, sqldata)               #Insert small block as is
@@ -306,7 +288,7 @@ class DBWrapper:
                 totalrowcount += cursor.rowcount           #Tally count
 
         cursor.close()                                     #Done with cursor
-        print(f'Completed adding {totalrowcount} rows to blocklist table')
+        logger.info(f'Completed adding {totalrowcount} rows to blocklist table')
 
 
     def blocklist_search(self, s):
@@ -325,8 +307,6 @@ class DBWrapper:
         cmd = ''                                           #SQL Search string
         results = []                                       #Table data
         resultslen = 0
-
-        print('Blocklist searcher')
 
         if not Regex_ValidInput.findall(s):                #Valid input specified?
             print('Invalid search input')
@@ -367,13 +347,11 @@ class DBWrapper:
         Create SQL table for blockliststats, in case it has been deleted
         bl_source (KEY), filelines, linesused
         """
-        cursor = DBWrapper.__db.cursor()
-
         cmd = 'CREATE TABLE IF NOT EXISTS blockliststats (bl_source VARCHAR(50), filelines BIGINT UNSIGNED, linesused BIGINT UNSIGNED, PRIMARY KEY (bl_source))';
 
-        print('Checking SQL Table for blockliststats exists')
-        cursor.execute(cmd);
-        cursor.close()
+        logger.info('Checking SQL Table for blockliststats exists')
+        return self.__execute(cmd);
+
 
 
     def blockliststats_insert(self, listname, filelines, linesused):
@@ -400,13 +378,11 @@ class DBWrapper:
         """
         Create SQL table for dnslog, in case it has been deleted
         """
-        cursor = DBWrapper.__db.cursor()
-
+        cmd = ''
         cmd = 'CREATE TABLE IF NOT EXISTS dnslog (id SERIAL, log_time DATETIME, sys TINYTEXT, dns_request TINYTEXT, severity CHAR(1), bl_source VARCHAR(50))';
 
-        print('Checking SQL Table dnslog exists')
-        cursor.execute(cmd);
-        cursor.close()
+        logger.info('Checking SQL Table dnslog exists')
+        return self.__execute(cmd)
 
 
     def dnslog_insertdata(self, sqldata):
@@ -424,7 +400,7 @@ class DBWrapper:
 
         cursor.executemany(cmd, sqldata)
         DBWrapper.__db.commit()
-        print(f'Added {cursor.rowcount} rows to dnslog table')
+        logger.info(f'Added {cursor.rowcount} rows to dnslog table')
         cursor.close()
 
 
@@ -483,7 +459,7 @@ class DBWrapper:
         res = self.__execute(f"DELETE FROM dnslog WHERE log_time < NOW() - INTERVAL '{days}' DAY")
 
         if res != False:
-            print(f'Trimmed {res} rows from dnslog table')
+            logger.info(f'Trimmed {res} rows from dnslog table')
 
         return res
 
@@ -503,41 +479,14 @@ class DBWrapper:
         cursor = DBWrapper.__db.cursor()
 
         if not isinstance(recordnum, int):                #Check record is an integer value
-            print('Invalid record number')
+            logger.warning(f'Invalid record number {recordnum}')
             return False
 
         if severity not in ('1', '2', '3'):
-            print(f'Invalid Severity {severity}')
+            logger.warning(f'Invalid Severity {severity}')
             return False
 
         cmd = f"UPDATE dnslog SET severity='{severity}', bl_source = '{bl_source}' WHERE id={recordnum}"
 
-        try:
-            cursor.execute(cmd);
-        except mariadb.Error as e:
-            print('Unable to update dnslog record :-( {}'.format(e))
-            return False
-        finally:
-            DBWrapper.__db.commit()
-            cursor.close()
+        return self.__execute(cmd)
 
-        return True
-
-
-    def delete_history(self):
-        """
-        Delete all rows from dnslog and weblog
-        NOTE weblog will be deprecated soon
-        """
-        cursor = DBWrapper.__db.cursor()
-
-        print('Deleting contents of dnslog and weblog tables')
-
-        cursor.execute('DELETE LOW_PRIORITY FROM dnslog');
-        print('Deleting %d rows from dnslog ' % cursor.rowcount)
-        cursor.execute('ALTER TABLE dnslog AUTO_INCREMENT = 1');
-
-        cursor.execute('DELETE LOW_PRIORITY FROM weblog');
-        print('Deleting %d rows from weblog ' % cursor.rowcount)
-        cursor.execute('ALTER TABLE weblog AUTO_INCREMENT = 1');
-        DBWrapper.__db.commit()
