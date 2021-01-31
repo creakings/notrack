@@ -3,6 +3,12 @@ In order carry out the upgrade, please uninstall your old version of NoTrack usi
 Install instructions for NoTrack 20.12: https://gitlab.com/quidsup/notrack/-/blob/master/README.md
 
 *************************************************
+Development
+
+Changes:
+*Added Russian tracking domain pattern to analytics.py
+
+*************************************************
 v20.12 Released 29 Dec 2020
 
 Changes:
