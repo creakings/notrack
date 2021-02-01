@@ -740,7 +740,7 @@ def main():
     blockparser = BlockParser(config.dns_blockip)
     blockparser.load_blconfig()
     blockparser.create_blocklist()
-    print('Finished created block list for NoTrack :-)')
+    print('Finished creating block list for NoTrack :-)')
     print()
 
 if __name__ == "__main__":
