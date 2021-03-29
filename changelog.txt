@@ -1,12 +1,12 @@
-IMPORTANT NOTE: THERE IS NO UPGRADE PATH FROM NOTRACK 0.9.x
-In order carry out the upgrade, please uninstall your old version of NoTrack using the uninstall.sh script.
-Install instructions for NoTrack 20.12: https://gitlab.com/quidsup/notrack/-/blob/master/README.md
-
-*************************************************
-Development
+v21.03 Released 29 Mar 2021
 
 Changes:
 *Added Russian tracking domain pattern to analytics.py
+*Added Report Domain to popup menu in Alerts / Queries
+*Overhaul Block Domain dialog box
+
+Fixed:
+Ignore reply query is duplicate from DNS logs
 
 *************************************************
 v20.12 Released 29 Dec 2020
@@ -51,20 +51,3 @@ Changes:
 *Removed options menu
 
 *************************************************
-
-v0.9.5 Released 7 Mar 2020
-Begin work on replacing Bash scripts with Python3 scripts.
-ntrk-exec moved to Python although not yet enabled due to dependency on non-installed package python3-mysql.connector
-New timepicker menu on queries.php
-New Status and Severity selector on analytics.php
-Added export button to analytics.php
-#290 fix confusing form layout on general.php
-*************************************************
-
-v0.9.4 Released 15 Jan 2020
-Complete overhaul to DHCP page.
-Adding a static host will also add it to DNS localhosts list
-Side menu now shows number of alerts
-Improve Alerts feature to find more elusive tracking domains
-Styling improvements
-Added clipboard buttons
