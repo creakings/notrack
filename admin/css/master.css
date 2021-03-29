@@ -40,6 +40,10 @@ img {
 img.full {
   width: 100%;
 }
+menu {
+  margin-top: 1.2rem;
+  padding: 0;
+}
 p {
   margin: 0 0 0.5rem 0;
 }
@@ -1215,7 +1219,7 @@ tr.gray {
 }
 
 /* ==========================================================================
-   Popups for Top Menu
+   Queries / Analtics popups from dropdown menus
    ========================================================================== */
 #fade {
   position: fixed;
@@ -1228,56 +1232,59 @@ tr.gray {
   z-index: 500;
   display: none;
 }
-#queries-box {
+#queries-dialog,
+#report-dialog {
   display: none;
   position: fixed;
   top: 30%;
   left: 50%;
-  width: 36rem;
   height: auto;
-  padding-bottom: 2rem;
+  padding-bottom: 0.5rem;
   background-color: #f7f7f7;
   border: 3px solid #00b7ba;
   border-radius: 5px;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
   transform: translate(-50%, 0);
+  white-space: nowrap;
+}
+#queries-dialog {
+  width: 27rem;
   z-index: 501;
 }
-#queries-box button,
-#queries-box input[type="submit"] {
-  width: 11rem;
+
+#report-dialog {
+  width: 25rem;
+  z-index: 502;
+}
+#queries-dialog button {
+  width: 10rem;
   margin: 0 0.5rem;
   padding: 0.4rem 0;
 }
-#queries-box span {
-  margin: 0.9rem 0.5rem;
-  display: block;
+#queries-dialog p {
+  margin: 0.9rem 0 0.2rem 0;
+  font-size: 1rem;
 }
-#queries-box span > span {
-  display: inline;
+#queries-dialog p > b {
+  color: #202020;
 }
-#queries-box span > a > img {
-  height: 4.6rem;
-  margin-left: 0.9rem;
-  display: inline;
+#report-dialog div {
+  margin: 0.9rem auto;
 }
-#queries-box h2 {
+#queries-dialog h2,
+#report-dialog h2 {
   line-height: 1.9rem;
   margin: 0;
   color: #f7f7f7;
   background-color: #262626;
   text-align: center;
 }
-.close-button {
-  position: absolute;
-  right: 0.3rem;
-  top: 0.25rem;
-  cursor: pointer;
-  z-index: 503;
+#report-dialog h3 {
+  color: #202020;
+  font-weight: normal;
 }
-.close-button img {
-  width: 1.4rem;
-}
-
 
 /* ==========================================================================
    Dropdown menu

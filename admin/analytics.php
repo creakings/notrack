@@ -170,10 +170,12 @@ function popupmenu($domain, $severity) {
   $str .= '<div class="dropdown-container"><span class="dropbtn"></span><div class="dropdown">';
   
   if ($severity == 1) {
-    $str .= "<span onclick=\"reportSite('{$domain}', false, true)\">Block</span>";
+    $str .= "<span onclick=\"reportDomain('{$domain}', false)\">Report Domain</span>";
+    $str .= "<span onclick=\"blockDomain('{$domain}', false)\">Block Domain</span>";
   }
   else {
-    $str .= "<span onclick=\"reportSite('{$domain}', true, false)\">Allow</span>";
+    $str .= "<span onclick=\"reportDomain('{$domain}', true)\">Report Domain</span>";
+    $str .= "<span onclick=\"blockDomain('{$domain}', true)\">Allow Domain</span>";
   }
   $str .= '<a href="'.$INVESTIGATEURL.$domain.'">'.$INVESTIGATE.'</a>';
   $str .= "<a href=\"{$config->search_url}{$domain}\" target=\"_blank\">{$config->search_engine}</a>";
@@ -385,44 +387,37 @@ draw_copymsg();
 ?>
 </div>
 
-<div id="scrollup" class="button-scroll" onclick="scrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
-<div id="scrolldown" class="button-scroll" onclick="scrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
-
-<div id="queries-box">
-<h2 id="sitename">site</h2>
-<span id="reportmsg">something</span>
-<form action="./investigate.php" method="get" target="_blank">
-<span id="searchitem"></span>
-<span id="invitem"></span>
+<div id="report-dialog">
+<h2>Report Domain</h2>
+<h3 id="reportTitle">domain</h3>
+<form action="https://quidsup.net/notrack/report.php" method="post" target="_blank">
+<input type="hidden" name="site" id="reportInput" value="none">
+<div><input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></div>
+<menu>
+<button type="submit">Confirm</button>
+<button type="button" class="button-grey" onclick="hideDialogs()">Cancel</button>
+</menu>
 </form>
-<form action="./config/customblocklist.php" method="POST" target="_blank">
-<input type="hidden" name="v" id="reportv" value="none">
-<input type="hidden" name="action" id="reportaction" value="none">
-<input type="hidden" name="status" value="add">
-<input type="hidden" name="comment" value="">
-<span id="reportitem1"></span>
-<span id="reportitem2"></span>
-</form>
-<form name="reportform" action="https://quidsup.net/notrack/report.php" method="post" target="_blank">
-<input type="hidden" name="site" id="siterep" value="none">
-<span id="reportitem3"><input type="submit" class="button-danger" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
-</form>
-
-<br>
-<div class="centered"><button class="button-grey" onclick="hideQueriesBox()">Cancel</button></div>
-<div class="close-button" onclick="hideQueriesBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
 </div>
 
-<div id="fade" onclick="hideQueriesBox()"></div>
+<div id="queries-dialog">
+<h2>Block Domain</h2>
+<form action="./config/customblocklist.php" method="POST" target="_blank">
+<input type="hidden" name="v" id="reportv" value="none">
+<input type="hidden" name="action" id="blockAction" value="none">
+<input type="hidden" name="status" value="add">
+<input type="hidden" name="comment" value="">
+<div id="blockitem1"></div>
+<div id="blockitem2"></div>
+</form>
+<menu>
+<button type="button" class="button-grey" onclick="hideDialogs()">Cancel</button>
+</menu>
+</div>
+
+<div id="fade" onclick="hideDialogs()"></div>
 
 <script>
-const SEARCHNAME = <?php echo json_encode($config->search_engine)?>;
-const SEARCHURL = <?php echo json_encode($config->search_url)?>;
-const WHOISNAME = <?php echo json_encode($config->whois_provider)?>;
-const WHOISURL = <?php echo json_encode($config->whois_url)?>;
-const WHOISAPI = <?php echo ($config->whois_api == '') ? 0 : 1;?>;
-
-
 /********************************************************************
  *  Check All
  *    Set checked value of all checkboxes in resolve group to topCheckbox
