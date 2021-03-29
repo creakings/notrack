@@ -129,7 +129,7 @@ class NoTrackParser():
                 if serial in tempqueries:
                     if lineitem['res'] == '<CNAME>':       #CNAME results in another query against the serial number
                         queries.append(tuple([tempqueries[serial], sys, domain, '1', 'cname']))
-                    else:                                  #Answer found, drop the serial number
+                    elif lineitem['res'] != 'duplicate':   #Answer found, drop the serial number
                         queries.append(tuple([tempqueries[serial], sys, domain, '1', 'allowed']))
                         tempqueries.pop(serial)
 
@@ -137,7 +137,7 @@ class NoTrackParser():
                 if serial in tempqueries:
                     if lineitem['res'] == '<CNAME>':       #CNAME might not happen here
                         queries.append(tuple([tempqueries[serial], sys, domain, '1', 'cname']))
-                    else:                                  #Answer found, drop the serial number
+                    elif lineitem['res'] != 'duplicate':   #Answer found, drop the serial number
                         queries.append(tuple([tempqueries[serial], sys, domain, '1', 'cached']))
                         tempqueries.pop(serial)
 
