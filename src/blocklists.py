@@ -14,6 +14,7 @@ blocklistconf = {
     'bl_blacklist' : [True, '', TYPE_PLAIN],
     'bl_tld' : [True, '', TYPE_PLAIN],
     'bl_notrack' : [True, 'https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-blocklist.txt', TYPE_PLAIN],
+    'bl_notrack_annoyance' : [False, 'https://gitlab.com/quidsup/notrack-annoyance-blocklist/-/raw/master/notrack-annoyance.txt', TYPE_PLAIN],
     'bl_notrack_malware' : [True, 'https://gitlab.com/quidsup/notrack-blocklists/raw/master/notrack-malware.txt', TYPE_PLAIN],
     'bl_cbl_all' : [False, 'https://zerodot1.gitlab.io/CoinBlockerLists/list.txt', TYPE_PLAIN],
     'bl_cbl_browser' : [False, 'https://zerodot1.gitlab.io/CoinBlockerLists/list_browser.txt', TYPE_PLAIN],
@@ -36,6 +37,11 @@ blocklistconf = {
     'bl_malwaredomainlist' : [False, 'http://www.malwaredomainlist.com/hostslist/hosts.txt', TYPE_UNIXLIST],
     'bl_malwaredomains' : [False, 'http://mirror1.malwaredomains.com/files/justdomains', TYPE_PLAIN],
     'bl_pglyoyo' : [False, 'http://pgl.yoyo.org/adservers/serverlist.php?hostformat=;mimetype=plaintext', TYPE_PLAIN],
+    'bl_quantum_abuse' : [False, f'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list/-/raw/master/Individual%20lists/The_Quantum_Abuse-List.txt', TYPE_UNIXLIST],
+    'bl_quantum_ads' : [False, f'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list/-/raw/master/Individual%20lists/The_Quantum_Simply-ads-list.txt', TYPE_UNIXLIST],
+    'bl_quantum_full' : [False, f'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list/-/raw/master/For%20hosts%20file/The_Quantum_Ad-List.txt', TYPE_UNIXLIST],
+    'bl_quantum_privacy' : [False, f'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list/-/raw/master/Individual%20lists/The_Quantum_Privacy-list.txt', TYPE_UNIXLIST],
+    'bl_quantum_youtube' : [False, f'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list/-/raw/master/Individual%20lists/The_Quantum_Youtube-Ads-List.txt', TYPE_UNIXLIST],
     'bl_someonewhocares' : [False, 'http://someonewhocares.org/hosts/hosts', TYPE_UNIXLIST],
     'bl_spam404' : [False, 'https://raw.githubusercontent.com/Dawsey21/Lists/master/adblock-list.txt', TYPE_EASYLIST],
     'bl_swissransom' : [False, 'https://ransomwaretracker.abuse.ch/downloads/RW_DOMBL.txt', TYPE_PLAIN],
@@ -46,7 +52,7 @@ blocklistconf = {
     'bl_deueasy' : [False, 'https://easylist-downloads.adblockplus.org/easylistgermany.txt', TYPE_EASYLIST],              #Germany
     'bl_dnkeasy' : [False, 'https://adblock.dk/block.csv', TYPE_EASYLIST],                                                #Denmark
     'bl_fblatin' : [False, 'https://www.fanboy.co.nz/fanboy-espanol.txt', TYPE_EASYLIST],                                 #Portugal/Spain (Latin Countries)
-    'bl_fineasy' : [False, 'https://raw.githubusercontent.com/finnish-easylist-addition/finnish-easylist-addition/master/Finland_adb_uBO_extras.txt', TYPE_EASYLIST],                                     #Finland
+    'bl_fineasy' : [False, 'https://raw.githubusercontent.com/finnish-easylist-addition/finnish-easylist-addition/master/Finland_adb_uBO_extras.txt', TYPE_EASYLIST], #Finland
     'bl_fraeasy' : [False, 'https://easylist-downloads.adblockplus.org/liste_fr.txt', TYPE_EASYLIST],                     #France
     'bl_grceasy' : [False, 'https://www.void.gr/kargig/void-gr-filters.txt', TYPE_EASYLIST],                              #Greece
     'bl_huneasy' : [False, 'https://raw.githubusercontent.com/szpeter80/hufilter/master/hufilter.txt', TYPE_EASYLIST],    #Hungary
@@ -68,4 +74,7 @@ blocklistconf = {
     'bl_sweeasy' : [False, 'https://www.fanboy.co.nz/fanboy-swedish.txt', TYPE_EASYLIST],                                 #Sweden
     'bl_viefb' : [False, 'https://www.fanboy.co.nz/fanboy-vietnam.txt', TYPE_EASYLIST],                                   #Vietnam Fanboy
     'bl_yhosts' : [False, 'https://raw.githubusercontent.com/vokins/yhosts/master/hosts', TYPE_UNIXLIST],                 #China yhosts
+    'bl_ublock_annoyance' : [False, 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/annoyances.txt', TYPE_EASYLIST],
+    'bl_ublock_badware' : [False, 'https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/badware.txt', TYPE_EASYLIST],
+
 }

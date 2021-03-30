@@ -3,20 +3,19 @@
 #Description : Analyse dns_logs table for suspect lookups to malicious or unknown tracking domains
 #Author      : QuidsUp
 #Date        : 2020-06-20
-#Version     : 20.08
+#Version     : 21.02
 #Usage       : python3 ntrk-analytics.py
 
 
 #Standard Imports
-import logging
 import re
 
 #Local imports
+import errorlogger
 from ntrkmariadb import DBWrapper
 
 #Create logger
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.INFO)
+logger = errorlogger.logging.getLogger(__name__)
 
 class NoTrackAnalytics():
     def __init__(self):
@@ -136,7 +135,7 @@ class NoTrackAnalytics():
             False: Domain has not been added
         """
         if domain in self.__domainsfound:
-            logger.info(f'{domain} has already been added')
+            logger.debug(f'{domain} has already been added')
             return True
 
         return False
@@ -192,14 +191,14 @@ class NoTrackAnalytics():
                 #log_time, system, dns_request, analytics_severity, issue
                 self.__dbwrapper.analytics_insertrecord(row[1], row[2], row[3], analytics_severity, issue)
 
-            print(f'{row[0]}, {row[1].isoformat(sep=" ")}, {row[3]}')
+            logger.debug(f'{issue} - {row[0]}, {row[1].isoformat(sep=" ")}, {row[3]}')
 
 
     def checkmalware(self):
         """
         Check if any domains from all the enabled malware blocklists have been accessed
         """
-        print('Checking to see if any known malware domains have been accessed')
+        logger.info('Checking to see if any known malware domains have been accessed')
 
         if 'bl_notrack_malware' in self.__blocklists:
             self.__searchmalware('bl_notrack_malware')
@@ -223,13 +222,16 @@ class NoTrackAnalytics():
         """
 
         #Checks for Pixels, Telemetry, and Trackers
-        print('Checking to see if any trackers or advertising domains have been accessed')
+        logger.info('Checking to see if any trackers or advertising domains have been accessed')
         self.__searchregex('^analytics\\\.', 'tracker')                  #analytics as a subdomain
+        self.__searchregex('^beacons?\\\.', 'tracker')                   #beacon(s) as a subdomain
         self.__searchregex('^cl(c|ck|icks?|kstat)\\\.', 'tracker')       #clc, clck, clicks?, clkstat as a subdomain
+        self.__searchregex('^counter\\\.', 'tracker')                    #counter as a subdomain
+        self.__searchregex('^eloq(ua)?(\-trackings?)?\\\.', 'tracker')   #Oracle eloq, eloqua, eloqua-tracking
         self.__searchregex('^log(s|ger)?\\\.', 'tracker')                #log, logs, logger as a subdomain (exclude login.)
         self.__searchregex('^pxl?\\\.', 'tracker')                       #px, pxl, as a subdomain
         self.__searchregex('pixel[^\\\.]{0,8}\\\.', 'tracker')           #pixel, followed by 0 to 8 non-dot chars anywhere
-        self.__searchregex('^s?metrics\\\.', 'tracker')                  #smetrics, metrics as a subdomain
+        self.__searchregex('^(aa\-|app|s)?metri[ck][as]\\\.', 'tracker') #aa-metrics, appmetrics, smetrics, metrics, metrika as a subdomain
         self.__searchregex('telemetry', 'tracker')                       #telemetry anywhere
         self.__searchregex('trk[^\\\.]{0,3}\\\.', 'tracker')             #trk, followed by 0 to 3 non-dot chars anywhere
         #Have to exclude tracker. (bittorent), security-tracker (Debian), and tracking-protection (Mozilla)
@@ -239,7 +241,7 @@ class NoTrackAnalytics():
         self.__searchregex('^v?stats?\\\.', 'tracker')                   #vstat, stat, stats as a subdomain
 
         #Checks for Advertising
-        self.__searchregex('^ads\\\.', 'advert')
+        self.__searchregex('^ad[sv]\\\.', 'advert')                      #ads or adv
         self.__searchregex('^adserver', 'advert')
         self.__searchregex('^advert', 'advert')
 

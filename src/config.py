@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #Title       : NoTrack Config
-#Description :
+#Description : Loads config settings from front-end PHP and can create config for back-end components
 #Author      : QuidsUp
 #Date        : 2020-07-30
 #Version     : 20.08
@@ -9,7 +9,6 @@
 #Standard Imports
 import os
 import re
-import sys
 import time
 
 #Local imports
@@ -292,8 +291,6 @@ def main():
     ntrkconfig.save_localhosts()
     ntrkconfig.save_dhcpconf()
     ntrkconfig.save_serverconf()
-
-
 
 
 if __name__ == "__main__":

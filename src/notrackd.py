@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-#Title : NoTrackD
+#Title       : NoTrackD
 #Description : NoTrack Daemon
-#Author : QuidsUp
-#Date : 2020-07-24
-#Version : 2020.10
-#Usage : sudo python3 notrackd
+#Author      : QuidsUp
+#Date        : 2020-07-24
+#Version     : 20.12
+#Usage       : sudo python3 notrackd
 
 #Standard imports
 from datetime import datetime
 import os
 import time
 import signal
-import sys
 
 #Local imports
 import folders
@@ -38,7 +37,6 @@ def blocklist_update():
     """
     Once a day update of the NoTrack blocklists
     """
-    print()
     print('Updating Blocklist')
 
     blockparser = BlockParser(config.dns_blockip)
@@ -62,7 +60,6 @@ def change_status():
     """
 
     """
-    print()
     print('Changing status of NoTrack')
 
     blockparser = BlockParser(config.dns_blockip)
@@ -83,7 +80,6 @@ def check_pause(current_time):
 
     """
     if config.unpausetime < current_time:
-        print()
         print('Unpause time reached')
         blockparser = BlockParser(config.dns_blockip)
         blockparser.enable_blockling()
@@ -133,9 +129,8 @@ def exit_gracefully(signum, frame):
         frame (int): Frame
     """
     global endloop
-    #if signum == signal.SIGABRT:                          #Abort moves state to Disabled
-    #self.__enable_blocking = False
     endloop = True                                         #Trigger breakout of main loop
+    print('Closing NoTrack Daemon')
 
 def set_lastrun_times():
     """
@@ -220,7 +215,7 @@ def main():
     current_time = 0.0
     current_time = time.time()
 
-    print('NoTrack Daemon')
+    print('Starting NoTrack Daemon')
 
     if get_status(config.status) != config.status:
         change_status()

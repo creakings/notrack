@@ -28,6 +28,7 @@ $dbwrapper = new MySqliDb;
 /************************************************
 *Arrays                                         *
 ************************************************/
+$blstats = array();
 $list = array();                                 //Global array for all the Block Lists
 
 
@@ -40,45 +41,69 @@ $list = array();                                 //Global array for all the Bloc
  *    None
  */
 function draw_blocklist_row($bl, $bl_name, $msg, $url) {
-  global $config, $dbwrapper;
+  global $config;
 
   $filelines = 0;
-  $filename = '';
-  $stats = '';
+  $stats_line = '';
 
   if ($config->is_blocklist_active($bl)) {
-    if ($bl == 'bl_tld') {                                 //Set the filename
-      $filename = TLD_CSV;
+    $stats = get_blocklist_stats($bl);
+    if ($stats === false) {
+      $stats_line = '';
     }
     else {
-      $filename = DIR_TMP.$bl.'.txt';                      //Temp + Abbreviated blocklist name + .txt
+      $stats_line = "<p class=\"light\">{$stats[1]} used of {$stats[0]}</p>";
     }
 
-    $rows = $dbwrapper->count_specific_blocklist($bl);     //Count number of entries for this blocklist in blocklist MariaDB table
-
-    if (($rows > 0) && (file_exists($filename))) {
-      try {                                                //Try and count the number of lines in the file
-        $filelines = count(file($filename));
-      }
-      catch(Exception $e) {                                //Something wrong, default count to zero
-        $filelines = 0;
-      }
-
-      //Prevent stupid result of lines being higher than the site count
-      if ($rows > $filelines) {
-        $rows = $filelines;
-      }
-
-      $stats = '<p class="light">'.$rows.' used of '.$filelines.'</p>';
-    }
-    else {                                                 //Temp file missing, default to unknown count value
-      $stats = '<p class="light">'.$rows.' used of ?</p>';
-    }
-
-    echo '<tr><td><input type="checkbox" name="'.$bl.'" checked="checked" onChange="setBlocklist(this)"></td><td>'.$bl_name.':</td><td>'.$msg.' <a href="'.$url.'" target="_blank"><img alt="Link" src="../svg/icon_home.svg"></a>'.$stats.'</td></tr>'.PHP_EOL;
+    echo '<tr><td><input type="checkbox" name="'.$bl.'" checked="checked" onChange="setBlocklist(this)"></td><td>'.$bl_name.':</td><td>'.$msg.' <a href="'.$url.'" target="_blank"><img alt="Link" src="../svg/icon_home.svg"></a>'.$stats_line.'</td></tr>'.PHP_EOL;
   }
   else {
     echo '<tr><td><input type="checkbox" name="'.$bl.'" onChange="setBlocklist(this)"></td><td>'.$bl_name.':</td><td>'.$msg.' <a href="'.$url.'" target="_blank"><img alt="Link" src="../svg/icon_home.svg"></a></td></tr>'.PHP_EOL;
+  }
+}
+
+
+/********************************************************************
+ *  Get Blocklist Stats
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function get_blocklist_stats($bl) {
+  global $blstats;
+
+  if (array_key_exists($bl, $blstats)) {
+    return ($blstats[$bl]);
+  }
+  else {
+    return false;
+  }
+}
+
+
+/********************************************************************
+ *  Build Block List Totals Array
+ *    Query all results from blockliststats table
+ *    Rebuild multidimensional array into an associative array
+ *
+ *  Params:
+ *    None
+ *  Return:
+ *    None
+ */
+function build_blocklist_totals() {
+  global $blstats, $dbwrapper;
+
+  $result = $dbwrapper->blockliststats_read();
+
+  if ($result === false) {                                 //Any data returned?
+    return;
+  }
+
+  foreach ($result as $line) {                             //Rebuild array
+    $blstats[$line['bl_source']] = array($line['filelines'], $line['linesused']);
   }
 }
 
@@ -97,7 +122,7 @@ function tracking_blocklists() {
   echo '<h5>Tracker Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
-  draw_blocklist_row('bl_notrack', 'NoTrack List', 'NoTrack Block List contains mixture of Tracking and Advertising sites', 'https://gitlab.com/quidsup/notrack-blocklists');
+  draw_blocklist_row('bl_notrack', 'NoTrack List', 'NoTrack Block List contains mixture of Tracking and Advertising domains', 'https://gitlab.com/quidsup/notrack-blocklists');
 
   draw_blocklist_row('bl_tld', 'Top Level Domains', 'Whole country and generic top level domains', './tld.php');
 
@@ -116,6 +141,8 @@ function tracking_blocklists() {
   draw_blocklist_row('bl_ddg_low', 'DuckDuckGo Low Certainty', 'DuckDuckGo Tracker Radar blocklist domains which are using some browser APIs, but not obvoiusly for tracking purposes. This will contain some legitimate websites that are not associated with tracking.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
 
   draw_blocklist_row('bl_ddg_unknown', 'DuckDuckGo Unknown', 'Domains identified by DuckDuckGo Tracker Radar which have little to no usage of browser APIs associate with tracking. This list contains a mixture of legitimate and suspect websites.', 'https://gitlab.com/quidsup/ntrk-tracker-radar');
+
+  draw_blocklist_row('bl_quantum_privacy', 'Quantum Privacy only list‎', 'Uses AI to track and analyse every website to find and identify ads.<br>This list contains over 265,000 domains for tracking domains', 'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list');
 
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
@@ -139,6 +166,12 @@ function advertising_blocklists() {
 
   draw_blocklist_row('bl_pglyoyo', 'Peter Lowe&rsquo;s Ad server list‎', 'Some of this list is already in NoTrack', 'https://pgl.yoyo.org/adservers/');
 
+  draw_blocklist_row('bl_quantum_full', 'Quantum Full list‎', 'Uses AI to track and analyse every website to find and identify ads.<br>This list contains over 1.3 Million domains used by ads, trackers, miners, malwares, and much more', 'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list');
+
+  draw_blocklist_row('bl_quantum_ads', 'Quantum Adverts only list‎', 'Uses AI to track and analyse every website to find and identify ads.<br>This list contains over 360,000 domains used by advertising companies', 'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list');
+
+  draw_blocklist_row('bl_quantum_youtube', 'Quantum YouTube Adverts only list‎', 'Uses AI to track and analyse every website to find and identify ads.<br>The list contains over 32,000 domains used by Google to place adverts on YouTube videos', 'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list');
+
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
 }
@@ -157,7 +190,7 @@ function malware_blocklists() {
   echo '<h5>Malware Block Lists</h5>'.PHP_EOL;
 
   echo '<table class="bl-table">'.PHP_EOL;
-  draw_blocklist_row('bl_notrack_malware', 'NoTrack Malware', 'NoTrack Malware List contains malicious and dodgy sites that aren&rsquo;t really considered tracking or advertising', 'https://gitlab.com/quidsup/notrack-blocklists');
+  draw_blocklist_row('bl_notrack_malware', 'NoTrack Malware', 'NoTrack Malware List contains long-lived domains associated with malware, adware and phishing', 'https://gitlab.com/quidsup/notrack-blocklists');
 
   draw_blocklist_row('bl_hexxium', 'Hexxium Creations Threat List', 'Hexxium Creations are a small independent team running a community based malware and scam domain database', 'https://www.hexxiumcreations.com/projects/malicious-domain-blocking');
 
@@ -171,9 +204,13 @@ function malware_blocklists() {
 
   draw_blocklist_row('bl_malwaredomains', 'Malware Domains', 'A good list to add', 'http://www.malwaredomains.com/');
 
+  draw_blocklist_row('bl_quantum_abuse', 'Quantum Abuse only list‎', 'Uses AI to track and analyse every website to find and identify ads.<br>This list contains over 67,000 domains for malware and other dodgy sites', 'https://gitlab.com/The_Quantum_Alpha/the-quantum-ad-list');
+
   draw_blocklist_row('bl_spam404', 'Spam404', '', 'http://www.spam404.com/');
 
   draw_blocklist_row('bl_swissransom', 'Swiss Security - Ransomware Tracker', 'Protects against downloads of several variants of Ransomware, including Cryptowall and TeslaCrypt', 'https://ransomwaretracker.abuse.ch/');
+
+  draw_blocklist_row('bl_ublock_badware', 'uBlockOrigin Badware List', 'Block sites documented to put users at risk of installing adware/crapware etc', 'https://github.com/uBlockOrigin/uAssets/blob/master/filters/badware.txt');
 
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
@@ -217,8 +254,10 @@ function social_blocklists() {
 
   echo '<table class="bl-table">'.PHP_EOL;
 
+  draw_blocklist_row('bl_notrack_annoyance', 'NoTrack Annoyance List', 'Domains which fall outside of tracking and advertising, but are annoying if you inadvertently visit them', 'https://gitlab.com/quidsup/notrack-annoyance-blocklist');
   draw_blocklist_row('bl_fbannoyance', 'Fanboy&rsquo;s Annoyance List', 'Block Pop-Ups and other annoyances.', 'https://www.fanboy.co.nz/');
   draw_blocklist_row('bl_fbsocial', 'Fanboy&rsquo;s Social Blocking List', 'Block social content, widgets, scripts and icons.', 'https://www.fanboy.co.nz/');
+  draw_blocklist_row('bl_ublock_annoyance', 'uBlockOrigin Annoyance List', 'Mostly for element blocking with uBlockOrigin, but contains a few domains NoTrack can use for blocking', 'https://github.com/uBlockOrigin/uAssets/blob/master/filters/annoyances.txt');
 
   echo '</table>'.PHP_EOL;                                 //End bl table
   echo '</div>'.PHP_EOL;                                   //End Tab
@@ -478,6 +517,7 @@ draw_topmenu('Block Lists');
 draw_sidemenu();
 
 $config->load_blocklists();
+build_blocklist_totals();                                  //Build blstats array
 
 echo '<div id="main">'.PHP_EOL;
 

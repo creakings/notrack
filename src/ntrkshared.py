@@ -1,18 +1,19 @@
 #NoTrack Shared Functions
 
 #Standard imports
-import logging
 import os
 import shutil
 import sys
 import time
 
+#Local imports
+import errorlogger
+
 #Create logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger = errorlogger.logging.getLogger(__name__)
 
 #Constants
-VERSION = '20.10'
+VERSION = '21.03'
 
 def check_root():
     """
@@ -33,20 +34,20 @@ def delete(source):
         True on success, False on failure or not needed
     """
     if os.path.isdir(source):                              #Check if source is a folder
-        print(f'Deleting folder: {source}')
+        logger.info(f'Deleting folder: {source}')
         try:                                               #Attempt to delete folder
             shutil.rmtree(source, ignore_errors=True)
         except:
-            logger.error(f'Error unable to delete {source}')
+            logger.error(f'Error unable to delete folder {source}')
             logger.error(e)
             return False
 
     elif os.path.isfile(source):                           #Check if source is a file
-        print(f'Deleting file: {source}')
+        logger.info(f'Deleting file: {source}')
         try:                                               #Attempt to delete file
             os.remove(source)
         except OSError as e:
-            logger.error(f'Error unable to delete {source}')
+            logger.error(f'Error unable to delete file {source}')
             logger.error(e)
             return False
 
@@ -107,14 +108,14 @@ def move_file(source, destination, permissions=0):
 
     #Check source file/folder exists
     if not os.path.isfile(source) and not os.path.isdir(source):
-        print('Move_file: Error %s is missing' % source)
+        logger.error(f'Unable to move {source}, file is missing')
         return False
 
     try:
         shutil.move(source, destination)                   #Attempt to move the file
     except IOError as e:
-        print('Move_file: Unable to move %s to %s' % (source, destination))
-        print(e)
+        logger.error(f'Unable to move {source} to {destination}')
+        logger.error(e)
         return False
     else:
         if permissions != 0:
@@ -182,20 +183,20 @@ def load_file(filename):
         List of all lines in file
         Empty list if file doesn't exist or error occured
     """
-    print(f'Loading {filename}')
+    logger.info(f'Loading {filename}')
     if not os.path.isfile(filename):
-        print(f'Unable to load {filename}, file is missing', file=sys.stderr)
+        logger.error(f'Unable to load {filename}, file is missing')
         return []
 
     try:
         f = open(filename, 'r')                            #Open file for reading
     except IOError as e:
-        print(f'Unable to read to {filename}', file=sys.stder)
-        print(e, file=sys.stder)
+        logger.error(f'Unable to read to {filename}')
+        logger.error(e)
         return []
     except OSError as e:
-        print(f'Unable to read to {filename}', file=sys.stder)
-        print(e, file=sys.stder)
+        logger.error(f'Unable to read to {filename}')
+        logger.error(e)
         return []
     else:
         filelines = f.readlines()
@@ -219,10 +220,12 @@ def save_file(lines, filename):
     try:
         f = open(filename, 'w')                            #Open file for ascii writing
     except IOError as e:
-        print(f'Unable to write to file {e}', file=sys.stderr)
+        logger.error(f'Unable to write to {filename}')
+        logger.error(e)
         return False
     except OSError as e:
-        print(f'Unable to write to file {e}', file=sys.stderr)
+        logger.error(f'Unable to write to {filename}')
+        logger.error(e)
         return False
     else:
         f.writelines(lines)
@@ -251,55 +254,51 @@ def download_file(url, destination):
     user_agents = [                                        #Selection of user-agents to try
         '',                                                #Padding
         'wget/1.20.3',                                     #Start with wget
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36',
-        'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0',
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/80.0.3987.149 Chrome/80.0.3987.149 Safari/537.36'
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36',
+        'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/87.0.4280.88 Chrome/87.0.4280.88 Safari/537.36'
     ]
 
-
-
-    print('Downloading %s' % url)
+    logger.info(f'Downloading {url}')
 
     for i in range(1, 4):
         req = Request(url, headers={'User-Agent': user_agents[i]})
         try:
             response = urlopen(req)
         except HTTPError as e:
+            logger.error(f'Unable to download {url}')
             if e.code >= 500 and e.code < 600:
                 #Take another attempt up to max of for loop
-                print('HTTP Error %d: Server side error' % e.code)
+                logger.error(f'HTTP Error {e.code}: Server side error')
             elif e.code == 400:
-                print('HTTP Error 400: Bad request')
+                logger.error('HTTP Error 400: Bad request')
                 return False
             elif e.code == 403:
-                print('HTTP Error 403: Unauthorised Access')
+                logger.error('HTTP Error 403: Unauthorised Access')
                 #return False
             elif e.code == 404:
-                print('HTTP Error 404: Not Found')
+                logger.error('HTTP Error 404: Not Found')
                 return False
             elif e.code == 429:
-                print('HTTP Error 429: Too many requests')
-            print('%s' % url)
+                logger.error('HTTP Error 429: Too many requests')
         except URLError as e:
+            logger.error(f'Unable to download {url}')
             if hasattr(e, 'reason'):
-                print('Error downloading %s' % url)
-                print('Reason: %s' % e.reason)
+                logger.error(f'Reason: {e.reason}')
                 return False
             elif hasattr(e, 'code'):
-                print('%s' % url)
-                print('Server was unable to fulfill the request')
-                print('HTTP Error: %d' % e.code)
+                logger.error('Server was unable to fulfill the request')
+                logger.error(f'HTTP Error: {e.code}')
                 return False
         else:
             res_code = response.getcode()
             if res_code == 200:                            #200 - Success
                 break
             elif res_code == 204:                          #204 - Success but nothing
-                print('HTTP Response 204: No data found')
+                logger.warning(f'HTTP Response 204: No data found from {url}')
                 return False
             else:
-                print('%s' % url)
-                print('HTTP Response %d' % res_code)
+                logger.warning(f'HTTP Response {res_code} unable to download {url}')
 
         time.sleep(i * 2)                                  #Throttle repeat attemps
 
@@ -331,12 +330,12 @@ def save_blob(data, filename):
     try:
         f = open(filename, 'wb')                           #Open file for binary writing
     except IOError as e:
-        print('Error writing to %s' % filename)
-        print(e)
+        logger.error(f'Error writing to {filename}')
+        logger.error(e)
         return False
     except OSError as e:
-        print('Error writing to %s' % filename)
-        print(e)
+        logger.error(f'Error writing to {filename}')
+        logger.error(e)
         return False
     else:
         f.write(data)

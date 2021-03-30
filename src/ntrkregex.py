@@ -29,8 +29,8 @@ Regex_CSV = re.compile('^\s*([\w\.\-]{1,253})[\t,]([\w]{1,255})')
 #|| Marks active domain entry
 #Group 1: domain.com (Need to eliminate IP addresses, so assume TLD begins with [a-z]
 #Non-capturing group: Domain ending
-#Non-capturing group: Against document type: Acceptable - third-party, doc, popup
-Regex_EasyLine = re.compile('^\|\|([\w\.\-]{1,250}\.[a-zA-Z][\w\-]{1,62})(?:\^|\.)(?:\$third\-party|\$doc|\$popup|\$popup\,third\-party)?\n$')
+#Non-capturing group: Against document type: Acceptable - ^, $3p, $third-party, $all, $doc, $document, $popup, $popup,third-party
+Regex_EasyLine = re.compile('^\|\|([\w\.\-]{1,250}\.[a-zA-Z][\w\-]{1,62})(?:\^|\.)(?:\^|\$3p|\$third\-party|\^\$?all|\$doc|\$document|\$popup|\$popup,third\-party)?\n$')
 
 #Regex Plain Line
 #Group 1: domain.com
@@ -46,7 +46,7 @@ Regex_TLDLine = re.compile('^(\.\w{1,63})(?:\s#.*)?\n$')
 Regex_UnixLine = re.compile('^(?:0|127)\.0\.0\.[01]\s+([\w\.\-]{1,250}\.[\w\-]{2,63})\s*#?(.*)\n$')
 
 #Version from bl_notrack DEPRECATED
-Regex_Version = re.compile('^#LatestVersion (\d{1,2}\.\d{1,2}\.?\d?\d?)\n$')
+Regex_Version = re.compile('^# ?LatestVersion (\d{1,2}\.\d{1,2}\.?\d?\d?)\n$')
 
 Regex_BlockListStatus = re.compile('^\$this\->set_blocklist_status\(\'(bl_\w{2,25})\', (true|false)\);\n$')
 

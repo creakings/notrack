@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-#Title : NoTrack
+#Title       : NoTrack
 #Description : This script will download latest block lists from various sources, then parse them into Dnsmasq
-#Author : QuidsUp
-#Date : 2015-01-14
-#Version : 20.10
-#Usage : sudo python notrack.py
+#Author      : QuidsUp
+#Date        : 2015-01-14
+#Version     : 20.12
+#Usage       : sudo python notrack.py
 
 #Standard imports
 import os
@@ -13,16 +13,19 @@ import sys
 import time
 
 #Local imports
+import errorlogger
 import folders
 from blocklists import *
 from config import NoTrackConfig
 from host import Host
 from ntrkshared import *
 from ntrkmariadb import DBWrapper
-from ntrkpause import *
 from ntrkregex import *
 from ntrkservices import Services
 from statusconsts import *
+
+#Create logger
+logger = errorlogger.logging.getLogger(__name__)
 
 #######################################
 # Constants
@@ -31,8 +34,6 @@ MAX_AGE = 172800 #2 days in seconds
 
 class BlockParser:
     def __init__(self, dns_blockip):
-        print('Initialising Block List Parser')
-
         self.bl_custom = ''
         self.__dedupcount = 0                              #Per list deduplication count
         self.__domaincount = 0                             #Per list of added domains
@@ -41,7 +42,7 @@ class BlockParser:
         self.__dnsserver_whitelist = ''                    #String for DNS Server Whitelist file
 
         self.__blocklist = list()                          #List of tupples for the blocklist
-        self.__blockdomianset = set()                      #Domains in blocklist
+        self.__blockdomainset = set()                      #Domains in blocklist
         self.__blocktldset = set()                         #TLDs blocked
         self.__whiteset = set()                            #Domains in whitelist
 
@@ -75,7 +76,7 @@ class BlockParser:
         Get Host Name and IP address for __dnsserver_blacklist and __dnsserver_whitelist
         """
         host = Host(dns_blockip)                   #Declare host class
-        print(f'Hostname: {host.name}, IP Address: {host.ip}')
+        logger.info(f'Hostname: {host.name}, IP Address: {host.ip}')
 
         #Setup the template strings for writing out to black/white list files
         [self.__dnsserver_blacklist, self.__dnsserver_whitelist] = self.__services.get_dnstemplatestr(host.name, host.ip)
@@ -95,7 +96,7 @@ class BlockParser:
             for compressedfile in zipobj.namelist():
                 if compressedfile.endswith('.txt'):
                     zipobj.extract(compressedfile, f'{folders.tempdir}/')
-                    print(f'Extracting {compressedfile}')
+                    logger.debug(f'Extracting {compressedfile}')
                     move_file(f'{folders.tempdir}/{compressedfile}', destination)
 
 
@@ -103,8 +104,8 @@ class BlockParser:
         """
         Process supplied domain and add it to self.__blocklist
         1. Extract domain.co.uk from say subdomain.domain.co.uk
-        2. Check if domain.co.uk is in self.__blockdomianset
-        3. If subdomain is actually a domain then record domain in self.__blockdomianset
+        2. Check if domain.co.uk is in self.__blockdomainset
+        3. If subdomain is actually a domain then record domain in self.__blockdomainset
         4. Reverse subdomain
         5. Append to self.__blocklist as [reverse, subdomain, comment, source]
 
@@ -121,19 +122,19 @@ class BlockParser:
             self.__add_tld(subdomain, comment, source)
             return
 
-        if matches.group(0) in self.__blockdomianset:      #Blocked by domain or whitelisted?
-            #print('\t%s is already in self.__blockdomianset as %s' % (subdomain, matches.group(0)))
+        if matches.group(0) in self.__blockdomainset:      #Blocked by domain or whitelisted?
+            #logger.debug(f'{subdomain} is already in blockdomainset as {matches.group(0)}')
             self.__dedupcount += 1
             self.__totaldedupcount += 1
             return
 
         if matches.group(2) in self.__blocktldset:         #Blocked by TLD?
-            #print('\t%s is blocked by TLD as %s' % (subdomain, matches.group(2)))
+            #logger.debug(f'{subdomain} is blocked by TLD {matches.group(2)}')
             return
 
-        if matches.group(0) == subdomain:                  #Add domain.co.uk to self.__blockdomianset
-            #print('Adding domain %s' % subdomain)
-            self.__blockdomianset.add(subdomain)
+        if matches.group(0) == subdomain:                  #Add domain.co.uk to blockdomainset
+            #logger.debug(f'Adding domain {subdomain}')
+            self.__blockdomainset.add(subdomain)
 
         #Reverse the domain for later sorting and deduplication
         #An Extra dot is required to match other subdomains and avoid similar spellings
@@ -242,7 +243,7 @@ class BlockParser:
         return False                                           #Nothing found, return False
 
 
-    def __process_customlist(self, lines, listname):
+    def __process_customlist(self, lines, linecount, listname):
         """
         We don't know what type of list this is, so try regex match against different types
         1. Reset dedup and domain counters
@@ -256,22 +257,20 @@ class BlockParser:
         self.__dedupcount = 0                              #Reset per list dedup count
         self.__domaincount = 0                             #Reset per list domain count
 
-        print(f'{len(lines)} lines to process')
-
         for line in lines:                                 #Read through list
             if self.__match_plainline(line, 'custom'):     #Try against Plain line
                 continue
-            if self.__match_easyline(line, 'custom'):      #Try agaisnt Easy List
+            if self.__match_easyline(line, 'custom'):      #Try against Easy List
                 continue
             if self.__match_unixline(line, 'custom'):      #Try against Unix List
                 continue
             self.__match_defanged(line, 'custom')          #Finally try against Defanged
 
-        print(f'Added {self.__domaincount} domains')       #Show stats for the list
-        print(f'Deduplicated {self.__dedupcount} domains')
+        logger.info(f'Added {self.__domaincount}, Deduplicated {self.__dedupcount}')
+        self.__dbwrapper.blockliststats_insert(listname, linecount, self.__domaincount)
 
 
-    def __process_csv(self, filelines, listname):
+    def __process_csv(self, filelines, linecount, listname):
         """
         List of domains in a CSV file, assuming cell 1 = domain, cell 2 = comment
         1. Reset dedup and domain counters
@@ -286,8 +285,6 @@ class BlockParser:
         self.__dedupcount = 0                              #Reset per list dedup count
         self.__domaincount = 0                             #Reset per list domain count
 
-        print(f'{len(filelines)} lines to process')
-
         for line in filelines:                                 #Read through list
             matches = Regex_CSV.match(line)
 
@@ -295,11 +292,11 @@ class BlockParser:
                 #Add Group 1 - Domain, Group 2 - Comment
                 self.__add_domain(matches.group(1), matches.group(2), listname)
 
-        print(f'Added {self.__domaincount} domains')       #Show stats for the list
-        print(f'Deduplicated {self.__dedupcount} domains')
+        logger.info(f'Added {self.__domaincount}, Deduplicated {self.__dedupcount}')
+        self.__dbwrapper.blockliststats_insert(listname, linecount, self.__domaincount)
 
 
-    def __process_easylist(self, lines, listname):
+    def __process_easylist(self, lines, linecount, listname):
         """
         List of domains in Adblock+ filter format [https://adblockplus.org/filter-cheatsheet]
         1. Reset dedup and domain counters
@@ -314,19 +311,17 @@ class BlockParser:
         self.__dedupcount = 0                              #Reset per list dedup count
         self.__domaincount = 0                             #Reset per list domain count
 
-        print(f'{len(lines)} lines to process')
-
         for line in lines:                                 #Read through list
             matches = Regex_EasyLine.search(line)          #Search for first match
 
             if matches is not None:                        #Has a match been found?
                 self.__add_domain(matches.group(1), '', listname)     #Add group 1 - Domain
 
-        print(f'Added {self.__domaincount} domains')       #Show stats for the list
-        print(f'Deduplicated {self.__dedupcount} domains')
+        logger.info(f'Added {self.__domaincount}, Deduplicated {self.__dedupcount}')
+        self.__dbwrapper.blockliststats_insert(listname, linecount, self.__domaincount)
 
 
-    def __process_plainlist(self, lines, listname):
+    def __process_plainlist(self, lines, linecount, listname):
         """
         List of domains with optional # separated comments
         1. Reset dedup and domain counters
@@ -343,8 +338,6 @@ class BlockParser:
         self.__dedupcount = 0                              #Reset per list dedup count
         self.__domaincount = 0                             #Reset per list domain count
 
-        print(f'{len(lines)} lines to process')
-
         for line in lines:                                 #Read through list
             splitline = line.split('#', 1)                 #Split by hash delimiter
 
@@ -357,11 +350,11 @@ class BlockParser:
             else:                                          #No comment, leave it blank
                 self.__add_domain(splitline[0][:-1], '', listname)
 
-        print(f'Added {self.__domaincount} domains')       #Show stats for the list
-        print(f'Deduplicated {self.__dedupcount} domains')
+        logger.info(f'Added {self.__domaincount}, Deduplicated {self.__dedupcount}')
+        self.__dbwrapper.blockliststats_insert(listname, linecount, self.__domaincount)
 
 
-    def __process_unixlist(self, lines, listname):
+    def __process_unixlist(self, lines, linecount, listname):
         """
         List of domains starting with either 0.0.0.0 or 127.0.0.1 domain.com
         1. Reset dedup and domain counters
@@ -376,33 +369,31 @@ class BlockParser:
         self.__dedupcount = 0                              #Reset per list dedup count
         self.__domaincount = 0                             #Reset per list domain count
 
-        print(f'{len(lines)} lines to process')
-
         for line in lines:                                 #Read through list
             matches = Regex_UnixLine.search(line)          #Search for first match
             if matches is not None:                        #Has a match been found?
                 self.__add_domain(matches.group(1), '', listname)  #Add group 1 - Domain
 
-        print(f'Added {self.__domaincount} domains')       #Show stats for the list
-        print(f'Deduplicated {self.__dedupcount} domains')
+        logger.info(f'Added {self.__domaincount}, Deduplicated {self.__dedupcount}')
+        self.__dbwrapper.blockliststats_insert(listname, linecount, self.__domaincount)
 
 
     def __process_whitelist(self):
         """
-        Load items from whitelist file into self.__blockdomianset array
+        Load items from whitelist file into self.__blockdomainset array
             (A domain being in the self.__blocklist will prevent it from being added later)
         """
         whitedict_len = 0
         sqldata = list()
         splitline = list()
 
-        print('Processing whitelist:')
+        print('Processing whitelist')
 
         filelines = load_file(folders.whitelist)    #Load White list
 
         if filelines == None:
-            print('Nothing in whitelist')
-            delete(folders.dnslists + 'whitelist.list')
+            logger.info('Nothing in whitelist')
+            delete(f'{folders.dnslists}whitelist.list')
             return
 
         for line in filelines:                             #Process each line
@@ -410,7 +401,7 @@ class BlockParser:
             if splitline[0] == '\n' or splitline[0] == '': #Ignore Comment line or Blank
                 continue
 
-            self.__blockdomianset.add(splitline[0][:-1])
+            self.__blockdomainset.add(splitline[0][:-1])
             self.__whiteset.add(splitline[0][:-1])
 
             if len(splitline) > 1:                         #Line has a comment
@@ -422,12 +413,11 @@ class BlockParser:
         whitedict_len = len(self.__whiteset)
 
         if whitedict_len > 0:
-            print(f'Number of domains in whitelist: {whitedict_len}')
+            logger.info(f'Number of domains in whitelist: {whitedict_len}')
             self.__dbwrapper.blocklist_insertdata(sqldata)
         else:
-            print('Nothing in whitelist')
-            delete(folders.dnslists + 'whitelist.list')
-        print()
+            logger.info('Nothing in whitelist')
+            delete(f'{folders.dnslists}whitelist.list')
 
 
     def __tld_whitelist(self):
@@ -445,15 +435,14 @@ class BlockParser:
                 filelines.append(self.__add_whitelist(line))
 
         if len(filelines) > 0:                         #Any domains in whitelist?
-            print(f'{len(filelines)} domains added to whitelist in order avoid block from TLD')
-            save_file(filelines, folders.dnslists + 'whitelist.list')
+            logger.debug(f'{len(filelines)} domains added to whitelist in order avoid block from TLD')
+            save_file(filelines, f'{folders.dnslists}whitelist.list')
 
         else:
-            print('No domains require whitelisting')
-            delete(folders.dnslists + 'whitelist.list')
+            logger.debug('No domains require whitelisting')
+            delete(f'{folders.dnslists}whitelist.list')
 
-        self.__whiteset.clear()                            #self.__whiteset no longer required
-        print()
+        self.__whiteset.clear()                            #whiteset is no longer required
 
 
     def __check_file_age(self, filename):
@@ -467,17 +456,15 @@ class BlockParser:
             True update list
             False list within MAX_AGE
         """
-        print(f'Checking age of {filename}')
-
         if not os.path.isfile(filename):
-            print('File missing')
+            logger.warning(f'{filename} is missing')
             return True
 
         if time.time() > (os.path.getmtime(filename) + MAX_AGE):
-            print('File older than 2 days')
+            logger.info(f'{filename} older than 2 days')
             return True
 
-        print('File in date, skip downloading new copy')
+        logger.info(f'{filename} in date, skip downloading new copy')
         return False
 
 
@@ -531,6 +518,7 @@ class BlockParser:
         blurl = ''                                         #Block list URL
         bltype = ''                                        #Block list type
         blfilename = ''                                    #Block list file name
+        linecount = 0
 
         for bl in blocklistconf.items():
             blname = bl[0]
@@ -541,7 +529,7 @@ class BlockParser:
             if not blenabled:                              #Skip disabled blocklist
                 continue
 
-            print(f'Processing {blname}:')
+            print(f'Processing {blname}')
 
             #Is this a downloadable file or locally stored?
             if blurl.startswith('http') or blurl.startswith('ftp'):
@@ -553,23 +541,22 @@ class BlockParser:
                 blfilename = blurl;                        #URL is actually the filename
 
             filelines = load_file(blfilename)              #Read temp file
+            linecount = len(filelines)
 
             if not filelines:                              #Anything read from file?
-                print(f'Data missing unable to process {blname}')
-                print()
+                logger.warning(f'Data missing unable to process {blname}')
                 continue
 
             if bltype == TYPE_PLAIN:
-                self.__process_plainlist(filelines, blname)
+                self.__process_plainlist(filelines, linecount, blname)
             elif bltype == TYPE_EASYLIST:
-                self.__process_easylist(filelines, blname)
+                self.__process_easylist(filelines, linecount, blname)
             elif bltype == TYPE_UNIXLIST:
-                self.__process_unixlist(filelines, blname)
+                self.__process_unixlist(filelines, linecount, blname)
             elif bltype == TYPE_CSV:
-                self.__process_csv(filelines, blname)
+                self.__process_csv(filelines, linecount, blname)
 
             print(f'Finished processing {blname}')
-            print()
 
 
     def __action_customlists(self):
@@ -589,10 +576,9 @@ class BlockParser:
         i = 0                                              #Loop position (for naming)
         customurllist = list()
 
-        print('Processing Custom Blocklists:')
+        print('Processing Custom Blocklists')
         if self.bl_custom == '':
-            print('No custom blocklists files or URLs set')
-            print()
+            logger.debug('No custom blocklists files or URLs set')
             return
 
         customurllist = self.bl_custom.split(',')          #Explode comma seperated vals
@@ -600,7 +586,7 @@ class BlockParser:
         for blurl in customurllist:
             i += 1
             blname = f'bl_custom{i}'                       #Make up a name
-            print(f'{blname} - {blurl}')
+            logger.info(f'{blname} - {blurl}')
 
             #Is this a downloadable file or locally stored?
             if blurl.startswith('http') or blurl.startswith('ftp'):
@@ -614,13 +600,11 @@ class BlockParser:
 
             filelines = load_file(blfilename)              #Read temp file
             if not filelines:                              #Anything read from file?
-                print(f'Data missing unable to process {blname}')
-                print()
+                logger.warning(f'File missing, unable to process {blname}')
                 continue
 
             self.__process_customlist(filelines, blname)
-            print(f'Finished processing {blname}')
-            print()
+            logger.info(f'Finished processing {blname}')
 
 
     def __dedup_lists(self):
@@ -639,7 +623,6 @@ class BlockParser:
         sqldata = list()
 
         self.__dedupcount = 0
-        print()
         print('Sorting and Deduplicating blocklist')
 
         self.__blocklist.sort(key=lambda x: x[0])          #Sort list on col0 "reversed"
@@ -657,7 +640,7 @@ class BlockParser:
         print(f'Further deduplicated {self.__dedupcount} domains')
         print(f'Final number of domains in blocklist: {len(dns_blacklist)}')
 
-        save_file(dns_blacklist, folders.dnslists + 'notrack.list')
+        save_file(dns_blacklist, f'{folders.dnslists}notrack.list')
         self.__dbwrapper.blocklist_insertdata(sqldata)
 
 
@@ -665,8 +648,8 @@ class BlockParser:
         """
         Create blocklist and restart DNS Server
         """
-        print()
         self.__dbwrapper.blocklist_createtable()                      #Create SQL Tables
+        self.__dbwrapper.blockliststats_createtable()
         self.__dbwrapper.blocklist_cleartable()                       #Clear SQL Tables
 
         self.__process_whitelist()                                    #Need whitelist first
@@ -675,8 +658,8 @@ class BlockParser:
         self.__tld_whitelist()
 
         print('Finished processing all block lists')
-        print('Total number of domains added: %d' % len(self.__blocklist))
-        print('Total number of domains deduplicated: %d' % self.__totaldedupcount)
+        print(f'Total number of domains added: {len(self.__blocklist)}')
+        print(f'Total number of domains deduplicated: {self.__totaldedupcount}')
 
         self.__dedup_lists()                                          #Dedup then insert domains
         self.__services.restart_dnsserver()
@@ -687,9 +670,9 @@ class BlockParser:
         Move blocklist to temp folder
         """
         if move_file(folders.main_blocklist, folders.temp_blocklist):
-            print('Moving blocklist to temp folder')
+            logger.info('Moving blocklist to temp folder')
         else:
-            print('Blocklist missing')
+            logger.warning('Blocklist missing')
 
         self.__services.restart_dnsserver()
 
@@ -699,11 +682,11 @@ class BlockParser:
         Move temp blocklist back to DNS config folder
         """
         if move_file(folders.temp_blocklist, folders.main_blocklist):
-            print('Moving temp blocklist back')
+            logger.info('Moving temp blocklist back')
             self.__services.restart_dnsserver()
 
         else:
-            print('Temp blocklist missing, I will recreate it')
+            logger.warning('Temp blocklist missing, I will recreate it')
             self.create_blocklist()
 
 
@@ -715,11 +698,8 @@ class BlockParser:
 
         blconfig = f'{folders.webconfigdir}/bl.php'
 
-        print()
-        print('Loading blocklist config:')
-
         if not os.path.isfile(blconfig):
-            print('Blocklist config is missing, using default values')
+            logger.warning('Blocklist config is missing, using default values')
             return
 
         filelines = load_file(blconfig)
@@ -753,12 +733,15 @@ class BlockParser:
 
 
 def main():
+    print('NoTrack Block List Parser')
     config = NoTrackConfig()
     check_root()
 
     blockparser = BlockParser(config.dns_blockip)
     blockparser.load_blconfig()
     blockparser.create_blocklist()
+    print('Finished creating block list for NoTrack :-)')
+    print()
 
 if __name__ == "__main__":
     main()

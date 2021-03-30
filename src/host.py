@@ -20,8 +20,7 @@ class Host:
                 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 s.connect(("169.254.0.255", 1))
             except OSError as e:
-                print('Host Init: Error - Unable to open network connection')
-                sys.exit(1)
+                raise Exception('Unable to open network connection')
             else:
                 self.ip = s.getsockname()[0]
             finally:

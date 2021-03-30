@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-#Title : NoTrack
+#Title       : NoTrack
 #Description : Place holder to replace interactive elements of notrack.sh
-#Author : QuidsUp
-#Date : Original 2015-01-14
-#Version :
-#Usage : python3 notrack.py
+#Author      : QuidsUp
+#Date        : Original 2015-01-14
+#Version     : Unreleased
+#Usage       : python3 notrack.py
 
 #Standard imports
 import argparse

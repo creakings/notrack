@@ -262,7 +262,6 @@ function get_ipsearch($ipsearch) {
 /********************************************************************
  *  Draw Filter Toolbar
  *    Populates filter bar with Search Boxes, Search Button
- *    DEPRECATED Reset form is dealt with by queries.js function resetQueriesForm()
  *    Show current value first in <select>, and then read through respective array to output values
  *  Params:
  *    None
@@ -661,7 +660,8 @@ function format_row($dns_request, $severity, $bl_source) {
   if ($severity == 1) {
     $event = "{$bl_source}1";
     if ($bl_source != 'local') {
-      $popupmenu .= "<span onclick=\"reportSite('{$dns_request}', false, true)\">Block</span>";
+      $popupmenu .= "<span onclick=\"reportDomain('{$dns_request}', false)\">Report Domain</span>";
+      $popupmenu .= "<span onclick=\"blockDomain('{$dns_request}', false)\">Block Domain</span>";
     }
   }
   elseif ($severity == 2) {                                //Blocked
@@ -669,7 +669,8 @@ function format_row($dns_request, $severity, $bl_source) {
 
     if ($bl_source == 'bl_notrack') {                      //Show Report on NoTrack list
       $bl_name = '<p class="small grey">Blocked by NoTrack list</p>';
-      $popupmenu .= "<span onclick=\"reportSite('{$dns_request}', true, true)\">Allow</span>";
+      $popupmenu .= "<span onclick=\"reportDomain('{$dns_request}', true)\">Report Domain</span>";
+      $popupmenu .= "<span onclick=\"blockDomain('{$dns_request}', true)\">Allow Domain</span>";
     }
     elseif ($bl_source == 'invalid') {                     //Other blocklist
       $bl_name = '<p class="small">Invalid request</p>';
@@ -677,7 +678,7 @@ function format_row($dns_request, $severity, $bl_source) {
     }
     else {
       $bl_name = '<p class="small grey">Blocked by '.$config->get_blocklistname($bl_source).'</p>';
-      $popupmenu .= "<span onclick=\"reportSite('{$dns_request}', true, false)\">Allow</span>";
+      $popupmenu .= "<span onclick=\"reportDomain('{$dns_request}', true)\">Allow Domain</span>";
     }
   }
   elseif ($severity == 3) {
@@ -688,7 +689,8 @@ function format_row($dns_request, $severity, $bl_source) {
       $event = $config->get_blocklisttype($bl_source).'3';
     }
     $blockreason = '<p class="small grey">'.ucfirst($bl_source).'Accessed</p>';
-    $popupmenu .= "<span onclick=\"reportSite('{$dns_request}', false, true)\">Block</span>";
+    $popupmenu .= "<span onclick=\"reportDomain('{$dns_request}', false)\">Report Domain</span>";
+    $popupmenu .= "<span onclick=\"blockDomain('{$dns_request}', false)\">Block Domain</span>";
   }
 
   $popupmenu .= '<a href="'.$INVESTIGATEURL.$dns_request.'">'.$INVESTIGATE.'</a>';
@@ -948,41 +950,35 @@ $db->close();
 ?>
 </div>
 
-<div id="scrollup" class="button-scroll" onclick="scrollToTop()"><img src="./svg/arrow-up.svg" alt="up"></div>
-<div id="scrolldown" class="button-scroll" onclick="scrollToBottom()"><img src="./svg/arrow-down.svg" alt="down"></div>
-
-<div id="fade" onclick="hideQueriesBox()"></div>'
-
-<div id="queries-box">
-<h2 id="sitename">site</h2>
-<span id="reportmsg">something</span>
-<form action="./investigate.php" method="get" target="_blank">
-<span id="searchitem"></span>
-<span id="invitem"></span>
+<div id="report-dialog">
+<h2>Report Domain</h2>
+<h3 id="reportTitle">domain</h3>
+<form action="https://quidsup.net/notrack/report.php" method="post" target="_blank">
+<input type="hidden" name="site" id="reportInput" value="none">
+<div><input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></div>
+<menu>
+<button type="submit">Confirm</button>
+<button type="button" class="button-grey" onclick="hideDialogs()">Cancel</button>
+</menu>
 </form>
+</div>
+
+<div id="queries-dialog">
+<h2>Block Domain</h2>
 <form action="./config/customblocklist.php" method="POST" target="_blank">
 <input type="hidden" name="v" id="reportv" value="none">
-<input type="hidden" name="action" id="reportaction" value="none">
+<input type="hidden" name="action" id="blockAction" value="none">
 <input type="hidden" name="status" value="add">
 <input type="hidden" name="comment" value="">
-<span id="reportitem1"></span>
-<span id="reportitem2"></span>
+<div id="blockitem1"></div>
+<div id="blockitem2"></div>
 </form>
-<form name="reportform" action="https://quidsup.net/notrack/report.php" method="post" target="_blank">
-<input type="hidden" name="site" id="siterep" value="none">
-<span id="reportitem3"><input type="submit" value="Report">&nbsp;<input type="text" name="comment" class="textbox-small" placeholder="Optional comment"></span>
-</form>
-
-<br>
-<div class="centered"><button class="button-grey" onclick="hideQueriesBox()">Cancel</button></div>
-<div class="close-button" onclick="hideQueriesBox()"><img src="./svg/button_close.svg" onmouseover="this.src='./svg/button_close_over.svg'" onmouseout="this.src='./svg/button_close.svg'" alt="close"></div>
+<menu>
+<button type="button" class="button-grey" onclick="hideDialogs()">Cancel</button>
+</menu>
 </div>
-<script>
-const SEARCHNAME = <?php echo json_encode($config->search_engine)?>;
-const SEARCHURL = <?php echo json_encode($config->search_url)?>;
-const WHOISNAME = <?php echo json_encode($config->whois_provider)?>;
-const WHOISURL = <?php echo json_encode($config->whois_url)?>;
-const WHOISAPI = <?php echo ($config->whois_api == '') ? 0 : 1;?>;
-</script>
+
+<div id="fade" onclick="hideDialogs()"></div>
+
 </body>
 </html>

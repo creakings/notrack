@@ -41,7 +41,36 @@ class MySqliDb {
     unset($this->db);
   }
 
-  
+
+  /******************************************************************
+   *  Search
+   *    Run a specified search and return data in an associative array
+   *    Any errors are added to error.log file
+   *  Params:
+   *    Query
+   *  Return:
+   *    False - Search failed or nothing found
+   *    or array of items
+   */
+  private function search($expr) {
+    if (! $result = $this->db->query($expr)) {             //Run the query
+      error_log($this->db->error, 0);
+      return false;
+    }
+
+    //Leave if nothing found and return false
+    if ($result->num_rows == 0) {
+      $result->free();
+      return false;
+    }
+
+    $values = $result->fetch_all(MYSQLI_ASSOC);            //Get associative array of values from MariaDB result
+    $result->free();
+
+    return $values;
+  }
+
+
   /******************************************************************
    *  Count Table Rows
    *    Count number of rows in table
@@ -310,6 +339,19 @@ class MySqliDb {
     return $result;
   }
   
+
+  /******************************************************************
+   *  Blocklist Stats
+   *    Returns contents of table blockliststats
+   *  Params:
+   *    None
+   *  Return:
+   *    mysqli result class
+   */
+  public function blockliststats_read() {
+    return $this->search('SELECT * FROM blockliststats');
+  }
+
 
   /******************************************************************
    *  Count number of rows in Blocklist table
