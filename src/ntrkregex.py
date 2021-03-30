@@ -46,7 +46,7 @@ Regex_TLDLine = re.compile('^(\.\w{1,63})(?:\s#.*)?\n$')
 Regex_UnixLine = re.compile('^(?:0|127)\.0\.0\.[01]\s+([\w\.\-]{1,250}\.[\w\-]{2,63})\s*#?(.*)\n$')
 
 #Version from bl_notrack DEPRECATED
-Regex_Version = re.compile('^#LatestVersion (\d{1,2}\.\d{1,2}\.?\d?\d?)\n$')
+Regex_Version = re.compile('^# ?LatestVersion (\d{1,2}\.\d{1,2}\.?\d?\d?)\n$')
 
 Regex_BlockListStatus = re.compile('^\$this\->set_blocklist_status\(\'(bl_\w{2,25})\', (true|false)\);\n$')
 
