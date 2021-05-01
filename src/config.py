@@ -231,7 +231,7 @@ class NoTrackConfig:
 
         #If dhcp is disabled, then delete dhcp.conf file
         if self.__config['dhcp_enabled'] == '0':
-            delete_file(folders.dhcpconf)
+            delete(folders.dhcpconf)
             return
 
         print('Saving dhcp.conf')
