@@ -514,7 +514,7 @@ function install_deb() {
   echo
   echo "Installing PHP"
   sleep 2s
-  sudo apt -y install memcached php-memcache php php-fpm php-curl php-mysql
+  sudo apt -y install memcached php-memcache php-memcached php php-fpm php-curl php-mysql
   echo
   echo "Installing Python3"
   sleep 2s
