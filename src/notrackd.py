@@ -193,6 +193,7 @@ def check_config_files():
         blocklist_update()
 
     elif filechanged == 'server.php':                      #Server Config
+        blocklist_update()
         restart_dns()
 
 
