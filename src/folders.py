@@ -64,6 +64,6 @@ if os.name == 'posix':
     #Output Config Files
     localhosts = f'{etcdir}/localhosts.list'
     dhcpconf = f'{etcdir}/dnsmasq.d/dhcp.conf'
-    serverconf = f'{etcdir}/dnsmasq.d/server.conf'
+    serverconf = f'{etcdir}/dnsmasq.d/servers.conf'
 
 
